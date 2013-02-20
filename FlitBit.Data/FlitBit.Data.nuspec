@@ -1,0 +1,16 @@
+<?xml version="1.0"?>
+<package >
+  <metadata>
+    <id>$id$</id>
+    <version>$version$</version>
+    <title>$title$</title>
+    <authors>Phillip Clark</authors>
+    <owners>$author$</owners>
+    <licenseUrl>http://fbdata.codeplex.com/license</licenseUrl>
+    <projectUrl>http://fbdata.codeplex.com/</projectUrl>
+    <requireLicenseAcceptance>false</requireLicenseAcceptance>
+    <description>Data-access-layer utilities and abstractions.</description>
+    <releaseNotes>Published nuget package; moved code repo to CodePlex.</releaseNotes>
+    <copyright>Copyright 2013</copyright>
+  </metadata>
+</package>
