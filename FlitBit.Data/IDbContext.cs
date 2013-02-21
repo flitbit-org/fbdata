@@ -10,7 +10,8 @@ namespace FlitBit.Data
 		IDbConnection NewConnection(string connection);
 
 		T Add<T>(T contextual)
-			where T : IDbContextual;
+			where T : IDisposable;
 
+		
 	}
 }

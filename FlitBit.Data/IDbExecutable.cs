@@ -3,28 +3,15 @@
 #endregion
 
 using System;
-using System.Collections.Generic;
 using System.Data;
-using System.Diagnostics.CodeAnalysis;
-using System.Linq.Expressions;
-using System.Reflection;
+using System.Diagnostics.Contracts;
 using FlitBit.Core;
 using FlitBit.Core.Parallel;
+using FlitBit.Data.Properties;
 
 namespace FlitBit.Data
 {
-	public sealed class DbResult<T>
-	{
-		public DbResult(IDbExecutable exe, T result)
-		{
-			this.Executable = exe;
-			this.Result = result;
-		}
-
-		public IDbExecutable Executable { get; private set; }
-		public T Result { get; private set; }
-	}																		
-
+	[ContractClass(typeof(CodeContracts.ContractForIDbExecutable))]
 	public interface IDbExecutable: IInterrogateDisposable, IDbContextual
 	{
 		CommandBehaviors Behaviors { get; }
@@ -91,7 +78,438 @@ namespace FlitBit.Data
 		IDbCommand MakeDbCommand(IDbConnection connection);
 
 		void PrepareDbCommandForExecute();
-		void PrepareDbCommandForExecute(Action<IDbExecutable> binder);
+		void PrepareDbCommandForExecute(Action<IDbExecutable> binder);					
+	}
 
+	namespace CodeContracts
+	{
+		/// <summary>
+		/// CodeContracts Class for IDbExecutable
+		/// </summary>
+		[ContractClassFor(typeof(IDbExecutable))]
+		internal abstract class ContractForIDbExecutable : IDbExecutable
+		{
+			public CommandBehaviors Behaviors
+			{
+				get { throw new NotImplementedException(); }
+			}
+
+			public string CommandText
+			{
+				get { throw new NotImplementedException(); }
+			}
+
+			public CommandType CommandType
+			{
+				get { throw new NotImplementedException(); }
+			}
+
+			public string ConnectionName
+			{
+				get	{	throw new NotImplementedException(); }
+			}
+
+			public bool IsExecutableCommand
+			{
+				get	{	throw new NotImplementedException(); }
+			}
+
+			public IDbExecutable ExcludeBehaviors(CommandBehaviors behaviors)
+			{
+				throw new NotImplementedException();
+			}
+
+			public IDbExecutable IncludeBehaviors(CommandBehaviors behaviors)
+			{
+				throw new NotImplementedException();
+			}
+
+			public int ExecuteNonQuery(IDbContext context)
+			{
+				Contract.Requires<ArgumentNullException>(context != null);
+				Contract.Requires<InvalidOperationException>(this.IsExecutableCommand, Resources.Chk_CannotExecutCommandDefinition);
+				
+				throw new NotImplementedException();
+			}
+
+			public IDataReader ExecuteReader(IDbContext context)
+			{
+				Contract.Requires<ArgumentNullException>(context != null);
+				Contract.Requires<InvalidOperationException>(this.IsExecutableCommand, Resources.Chk_CannotExecutCommandDefinition);
+				Contract.Ensures(Contract.Result<IDataReader>() != null);
+
+				throw new NotImplementedException();
+			}
+
+			public T ExecuteScalar<T>(IDbContext context)
+			{
+				Contract.Requires<ArgumentNullException>(context != null);
+				Contract.Requires<InvalidOperationException>(this.IsExecutableCommand, Resources.Chk_CannotExecutCommandDefinition);
+				
+				throw new NotImplementedException();
+			}
+
+			public void ExecuteNonQuery(IDbContext context, Continuation<DbResult<int>> continuation)
+			{
+				Contract.Requires<ArgumentNullException>(context != null);
+				Contract.Requires<InvalidOperationException>(this.IsExecutableCommand, Resources.Chk_CannotExecutCommandDefinition);
+				
+				throw new NotImplementedException();
+			}
+
+			public void ExecuteReader(IDbContext context, Continuation<DbResult<IDataReader>> continuation)
+			{
+				Contract.Requires<ArgumentNullException>(context != null);
+				Contract.Requires<InvalidOperationException>(this.IsExecutableCommand, Resources.Chk_CannotExecutCommandDefinition);
+				
+				throw new NotImplementedException();
+			}
+
+			public void ExecuteScalar<T>(IDbContext context, Continuation<DbResult<T>> continuation)
+			{
+				Contract.Requires<ArgumentNullException>(context != null);
+				Contract.Requires<InvalidOperationException>(this.IsExecutableCommand, Resources.Chk_CannotExecutCommandDefinition);
+				
+				throw new NotImplementedException();
+			}
+
+			public IDbExecutable CreateOnConnection(IDbConnection connection)
+			{
+				Contract.Requires<ArgumentNullException>(connection != null);
+				Contract.Ensures(Contract.Result<IDbExecutable>() != null);
+				
+				throw new NotImplementedException();
+			}
+
+			public IDbExecutable CreateOnConnection(string connection)
+			{
+				Contract.Requires<ArgumentNullException>(connection != null);
+				Contract.Ensures(Contract.Result<IDbExecutable>() != null);
+
+				throw new NotImplementedException();
+			}
+
+			public IDbExecutable DefineParameter(string name, Type runtimeType)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<InvalidOperationException>(IndexOfParameter(name) < 0, Resources.Chk_ParameterObstructed);
+				Contract.Requires<ArgumentNullException>(runtimeType != null);
+				Contract.Ensures(Contract.Result<IDbExecutable>() != null);
+				
+				throw new NotImplementedException();
+			}
+
+			public IDbExecutable DefineParameter(string name, Type runtimeType, ParameterDirection direction)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<InvalidOperationException>(IndexOfParameter(name) < 0, Resources.Chk_ParameterObstructed);
+				Contract.Requires<ArgumentNullException>(runtimeType != null);
+				Contract.Ensures(Contract.Result<IDbExecutable>() != null);
+
+				throw new NotImplementedException();
+			}
+
+			public IDbExecutable DefineParameter(string name, Type runtimeType, int length, ParameterDirection direction)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<InvalidOperationException>(IndexOfParameter(name) < 0, Resources.Chk_ParameterObstructed);
+				Contract.Requires<ArgumentNullException>(runtimeType != null);
+				Contract.Requires<ArgumentOutOfRangeException>(length > 0);
+				Contract.Ensures(Contract.Result<IDbExecutable>() != null);
+				
+				throw new NotImplementedException();
+			}
+
+			public IDbExecutable DefineParameter(string name, DbType dbType)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<InvalidOperationException>(IndexOfParameter(name) < 0, Resources.Chk_ParameterObstructed);
+				Contract.Ensures(Contract.Result<IDbExecutable>() != null);
+
+				throw new NotImplementedException();
+			}
+
+			public IDbExecutable DefineParameter(string name, DbType dbType, ParameterDirection direction)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<InvalidOperationException>(IndexOfParameter(name) < 0, Resources.Chk_ParameterObstructed);
+				Contract.Ensures(Contract.Result<IDbExecutable>() != null);
+				
+				throw new NotImplementedException();
+			}
+
+			public IDbExecutable DefineParameter(string name, DbType dbType, int length)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<InvalidOperationException>(IndexOfParameter(name) < 0, Resources.Chk_ParameterObstructed);
+				Contract.Requires<ArgumentOutOfRangeException>(length > 0);
+				Contract.Ensures(Contract.Result<IDbExecutable>() != null);
+				
+				throw new NotImplementedException();
+			}
+
+			public IDbExecutable DefineParameter(string name, DbType dbType, int length, ParameterDirection direction)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<InvalidOperationException>(IndexOfParameter(name) < 0, Resources.Chk_ParameterObstructed);
+				Contract.Requires<ArgumentOutOfRangeException>(length > 0);
+				Contract.Ensures(Contract.Result<IDbExecutable>() != null);
+				
+				throw new NotImplementedException();
+			}
+
+			public IDbExecutable DefineParameter(string name, DbType dbType, int size, byte scale)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<InvalidOperationException>(IndexOfParameter(name) < 0, Resources.Chk_ParameterObstructed);
+				Contract.Requires<ArgumentOutOfRangeException>(size > 0);
+				Contract.Requires<ArgumentOutOfRangeException>(scale >= 0);
+				Contract.Ensures(Contract.Result<IDbExecutable>() != null);
+				
+				throw new NotImplementedException();
+			}
+
+			public IDbExecutable DefineParameter(string name, DbType dbType, int size, byte scale, ParameterDirection direction)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<InvalidOperationException>(IndexOfParameter(name) < 0, Resources.Chk_ParameterObstructed);
+				Contract.Requires<ArgumentOutOfRangeException>(size > 0);
+				Contract.Requires<ArgumentOutOfRangeException>(scale >= 0);
+				Contract.Ensures(Contract.Result<IDbExecutable>() != null);
+
+				throw new NotImplementedException();
+			}
+
+			public IDbExecutable DefineParameter(Func<DbParamDefinition> specializeParam)
+			{
+				Contract.Requires<ArgumentNullException>(specializeParam != null);
+				Contract.Ensures(Contract.Result<IDbExecutable>() != null);
+
+				throw new NotImplementedException();
+			}
+
+			public IDbExecutable SetParameterValue(string name, bool value)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
+				Contract.Ensures(Contract.Result<IDbExecutable>() != null);
+
+				throw new NotImplementedException();
+			}
+
+			public IDbExecutable SetParameterValue(string name, byte[] value)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
+				Contract.Ensures(Contract.Result<IDbExecutable>() != null);
+
+				throw new NotImplementedException();
+			}
+
+			public IDbExecutable SetParameterValue(string name, byte value)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
+				Contract.Ensures(Contract.Result<IDbExecutable>() != null);
+				
+				throw new NotImplementedException();
+			}
+
+			public IDbExecutable SetParameterValue(string name, DateTime value)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
+				Contract.Ensures(Contract.Result<IDbExecutable>() != null);
+				
+				throw new NotImplementedException();
+			}
+
+			public IDbExecutable SetParameterValue(string name, decimal value)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
+				Contract.Ensures(Contract.Result<IDbExecutable>() != null);
+				
+				throw new NotImplementedException();
+			}
+
+			public IDbExecutable SetParameterValue(string name, double value)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
+				Contract.Ensures(Contract.Result<IDbExecutable>() != null);
+				
+				throw new NotImplementedException();
+			}
+
+			public IDbExecutable SetParameterValue(string name, Guid value)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
+				Contract.Ensures(Contract.Result<IDbExecutable>() != null);
+				
+				throw new NotImplementedException();
+			}
+
+			public IDbExecutable SetParameterValue(string name, float value)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
+				Contract.Ensures(Contract.Result<IDbExecutable>() != null);
+				
+				throw new NotImplementedException();
+			}
+
+			public IDbExecutable SetParameterValue(string name, sbyte value)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
+				Contract.Ensures(Contract.Result<IDbExecutable>() != null);
+				
+				throw new NotImplementedException();
+			}
+
+			public IDbExecutable SetParameterValue(string name, string value)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
+				Contract.Ensures(Contract.Result<IDbExecutable>() != null);
+				
+				throw new NotImplementedException();
+			}
+
+			public IDbExecutable SetParameterValue(string name, short value)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
+				Contract.Ensures(Contract.Result<IDbExecutable>() != null);
+				
+				throw new NotImplementedException();
+			}
+
+			public IDbExecutable SetParameterValue(string name, int value)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
+				Contract.Ensures(Contract.Result<IDbExecutable>() != null);
+				
+				throw new NotImplementedException();
+			}
+
+			public IDbExecutable SetParameterValue(string name, long value)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
+				Contract.Ensures(Contract.Result<IDbExecutable>() != null);
+				
+				throw new NotImplementedException();
+			}
+
+			public IDbExecutable SetParameterValue(string name, ushort value)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
+				Contract.Ensures(Contract.Result<IDbExecutable>() != null);
+				
+				throw new NotImplementedException();
+			}
+
+			public IDbExecutable SetParameterValue(string name, uint value)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
+				Contract.Ensures(Contract.Result<IDbExecutable>() != null);
+				
+				throw new NotImplementedException();
+			}
+
+			public IDbExecutable SetParameterValue(string name, ulong value)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
+				Contract.Ensures(Contract.Result<IDbExecutable>() != null);
+				
+				throw new NotImplementedException();
+			}
+
+			public IDbExecutable SetParameterValue<T>(string name, T value)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
+				Contract.Ensures(Contract.Result<IDbExecutable>() != null);
+				
+				throw new NotImplementedException();
+			}
+
+			public IDbExecutable SetParameterValueAsEnum<E>(string name, E value)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
+				Contract.Ensures(Contract.Result<IDbExecutable>() != null);
+
+				throw new NotImplementedException();
+			}
+
+			public IDbExecutable SetParameterDbNull(string name)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
+				Contract.Ensures(Contract.Result<IDbExecutable>() != null);
+				
+				throw new NotImplementedException();
+			}
+
+			public int IndexOfParameter(string name)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Ensures(Contract.Result<int>() >= -1);
+
+				throw new NotImplementedException();
+			}
+
+			public void GetParameterValueAs<T>(string name, out T value)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
+
+				throw new NotImplementedException();
+			}
+
+			public IDbConnection MakeDbConnection(IDbContext context)
+			{
+				Contract.Requires<ArgumentNullException>(context != null);
+				Contract.Ensures(Contract.Result<IDbConnection>() != null);
+
+				throw new NotImplementedException();
+			}
+
+			public IDbCommand MakeDbCommand(IDbConnection connection)
+			{
+				Contract.Requires<ArgumentNullException>(connection != null);
+				Contract.Ensures(Contract.Result<IDbCommand>() != null);
+
+				throw new NotImplementedException();
+			}
+
+			public void PrepareDbCommandForExecute()
+			{
+				throw new NotImplementedException();
+			}
+
+			public void PrepareDbCommandForExecute(Action<IDbExecutable> binder)
+			{
+				throw new NotImplementedException();
+			}
+
+			public bool IsDisposed
+			{
+				get { throw new NotImplementedException(); }
+			}
+
+			public void Dispose()
+			{
+				throw new NotImplementedException();
+			}
+		}
 	}
 }

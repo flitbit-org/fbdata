@@ -19,8 +19,11 @@ namespace FlitBit.Data
 			return false;
 		}
 
-		public abstract bool SupportsAsync { get; }
-
+		public virtual bool SupportsAsynchronousProcessing(IDbConnection connection)
+		{
+			return false;
+		}																	
+		
 		/// <summary>
 		/// Determines if a catalog (database) exists on the connection.
 		/// </summary>
@@ -162,7 +165,8 @@ WHERE ROUTINE_CATALOG = '{0}'
 		public virtual string QuoteObjectName(string name)
 		{
 			Contract.Requires<ArgumentNullException>(name != null);
-			Contract.Requires(name.Length > 0);
+			Contract.Requires<ArgumentException>(name.Length > 0);
+			Contract.Ensures(Contract.Result<string>() != null);
 
 			return (name[0] != '[') ? String.Concat('[', name, ']') : name;
 		}
@@ -187,6 +191,16 @@ WHERE ROUTINE_CATALOG = '{0}'
 		public virtual BasicDbExecutable MakeCommandOnConnection(IDbConnection connection, BasicDbExecutable definition)
 		{
 			return new BasicDbExecutable(connection, definition);
+		}
+
+		public virtual IAsyncResult BeginExecuteNonQuery(IDbCommand command, AsyncCallback callback, Object stateObject) 
+		{
+			throw new NotImplementedException();		
+		}
+
+		public virtual IAsyncResult BeginExecuteReader(IDbCommand command, AsyncCallback callback, Object stateObject)
+		{
+			throw new NotImplementedException();
 		}
 
 		public abstract DbTypeTranslation TranslateRuntimeType(Type type);

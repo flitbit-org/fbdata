@@ -9,6 +9,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using FlitBit.Core;
+using FlitBit.Core.Parallel;
 
 namespace FlitBit.Data
 {		 
@@ -106,20 +107,7 @@ namespace FlitBit.Data
 			_behavior &= (~behaviors);
 			return this;
 		}
-
-		/// <summary>
-		/// Gets the command's db context.
-		/// </summary>
-		public IDbContext Context
-		{
-			get
-			{
-				if (_definition == null)
-					throw new InvalidOperationException("Command definition does not use a DbContext.");
-				return (IDbContext)Util.NonBlockingLazyInitializeVolatile(ref _context, () => new DbContext());
-			}
-		}
-
+				
 		/// <summary>
 		/// Creates an executable command, current command is used as a command definition).
 		/// </summary>
@@ -146,59 +134,11 @@ namespace FlitBit.Data
 				throw new NotImplementedException(String.Concat("DbProviderHelper not found: ", connection));
 
 			return provider.MakeCommandOnConnection(connection, this);
-		}
-
-
-		public IEnumerable<T> ExecuteTransformAll<T>(IDbContext scope, Func<IDataRecord,T> transform)
-		{
-			Contract.Assert(scope != null);
-			if (!this.IsExecutableCommand)
-				throw new InvalidOperationException("Unable to execute a command definition; to execute a command definition use ImmediateExecuteXXXX methods.");
-
-			var cn = MakeDbConnection(scope).EnsureConnectionIsOpen();
-			var result = new List<T>();
-			using (var cmd = MakeDbCommand(cn))
-			{
-				PrepareDbCommandForExecute();
-				using (var reader = cmd.ExecuteReader())
-				{
-					while (reader.Read())
-					{
-						result.Add(transform(reader));
-					}
-				}
-			}
-			return result;
-		}
-
-		public T ExecuteTransformSingleOrDefault<T>(IDbContext context, Func<IDataRecord, T> transform)
-		{
-			Contract.Assert(context != null);
-			if (!this.IsExecutableCommand)
-				throw new InvalidOperationException("Unable to execute a command definition; to execute a command definition use ImmediateExecuteXXXX methods.");
-
-			var cn = MakeDbConnection(context).EnsureConnectionIsOpen();
-			var result = default(T);
-			using (var cmd = MakeDbCommand(cn))
-			{
-				PrepareDbCommandForExecute();
-				using (var reader = cmd.ExecuteReader())
-				{
-					if (reader.Read())
-					{
-						result = transform(reader);
-					}
-				}
-			}
-			return result;
-		}
+		}									 
+		
 
 		public int ExecuteNonQuery(IDbContext context)
 		{
-			Contract.Assert(context != null);
-			if (!this.IsExecutableCommand)
-				throw new InvalidOperationException("Unable to execute a command definition; to execute a command definition use ImmediateExecuteXXXX methods.");
-
 			var cn = MakeDbConnection(context).EnsureConnectionIsOpen();
 			using (var cmd = MakeDbCommand(cn))
 			{
@@ -207,47 +147,17 @@ namespace FlitBit.Data
 			}			
 		}
 
-		public void ExecuteReader(IDbContext context, Action<IDbContext, IDataReader> handler)
-		{
-			Contract.Assert(context != null);
-			Contract.Assert(handler != null);
-
-			if (!this.IsExecutableCommand)
-				throw new InvalidOperationException("Unable to execute a command definition; to execute a command definition use ImmediateExecuteXXXX methods.");
-
+		[SuppressMessage("Microsoft.Reliability", "CA2000", Justification = "By design; the disposable type is added to a CleanupScope.")]
+		public IDataReader ExecuteReader(IDbContext context)
+		{													
 			var cn = MakeDbConnection(context).EnsureConnectionIsOpen();
-			using (var cmd = MakeDbCommand(cn))
-			{
-				PrepareDbCommandForExecute();
-				using (var reader = cmd.ExecuteReader())
-				{
-					handler(context, reader);
-				}
-			}
+			var cmd = MakeDbCommand(cn);
+			PrepareDbCommandForExecute();
+			return context.Add(cmd.ExecuteReader());
 		}
-
-		public int ExecuteNonQuery(IDbContext context, Action<IDbExecutable, int> completion)
-		{
-			Contract.Assert(context != null);
-			Contract.Assert(completion != null);
-			if (!this.IsExecutableCommand)
-				throw new InvalidOperationException("Unable to execute a command definition; to execute a command definition use ImmediateExecuteXXXX methods.");
-			var cn = MakeDbConnection(context).EnsureConnectionIsOpen();
-			using (var cmd = MakeDbCommand(cn))
-			{
-				PrepareDbCommandForExecute();
-				var result = cmd.ExecuteNonQuery();
-				completion(this, result);
-				return result;
-			}
-		}
-
+		
 		public T ExecuteScalar<T>(IDbContext context)
 		{
-			Contract.Assert(context != null);
-			if (!this.IsExecutableCommand)
-				throw new InvalidOperationException("Unable to execute a command definition; to execute a command definition use ImmediateExecuteXXXX methods.");
-
 			var cn = MakeDbConnection(context).EnsureConnectionIsOpen();
 			using (var cmd = MakeDbCommand(cn))
 			{
@@ -256,22 +166,20 @@ namespace FlitBit.Data
 			}
 		}
 
-		public T ExecuteScalar<T>(IDbContext scope, Action<IDbExecutable, T> completion)
+		public void ExecuteNonQuery(IDbContext context, Continuation<DbResult<int>> continuation)
 		{
-			Contract.Assert(scope != null);
-			Contract.Assert(completion != null);
-			if (!this.IsExecutableCommand)
-				throw new InvalidOperationException("Unable to execute a command definition; to execute a command definition use ImmediateExecuteXXXX methods.");
-			var cn = MakeDbConnection(scope).EnsureConnectionIsOpen();
-			using (var cmd = MakeDbCommand(cn))
-			{
-				PrepareDbCommandForExecute();
-				T result = (T)cmd.ExecuteScalar();
-				completion(this, result);
-				return result;
-			}
+
 		}
-		
+
+		public void ExecuteReader(IDbContext context, Continuation<DbResult<IDataReader>> continuation)
+		{
+
+		}
+
+		public void ExecuteScalar<T>(IDbContext context, Continuation<DbResult<T>> continuation)
+		{
+		}		
+				
 		public IDbConnection MakeDbConnection(IDbContext context)
 		{
 			Contract.Assert(context != null);
@@ -307,6 +215,7 @@ namespace FlitBit.Data
 			}
 			return _command;
 		}
+
 		protected virtual IDbCommand PerformMakeDbCommand(IDbConnection connection)
 		{
 			return connection.CreateCommand(this.CommandText, this.CommandType);

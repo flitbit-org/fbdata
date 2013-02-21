@@ -66,6 +66,15 @@ WHERE name = @schema")
 			SqlConnectionStringBuilder cnsb = new SqlConnectionStringBuilder(scn.ConnectionString);
 			return cnsb.MultipleActiveResultSets;
 		}
+
+		public override bool SupportsAsynchronousProcessing(IDbConnection connection)
+		{
+			Contract.Assert(typeof(SqlConnection).IsInstanceOfType(connection), "Invalid IDbConnection for DbProvider");
+
+			SqlConnection scn = (SqlConnection)connection;
+			SqlConnectionStringBuilder cnsb = new SqlConnectionStringBuilder(scn.ConnectionString);
+			return cnsb.AsynchronousProcessing;
+		}
 				
 		public override string FormatParameterName(string name)
 		{
@@ -73,12 +82,7 @@ WHERE name = @schema")
 			Contract.Assert(name.Length > 0);
 			return (name[0] == '@') ? name : String.Concat("@", name);
 		}
-
-		public override bool SupportsAsync
-		{
-			get { return true; }
-		}
-
+				
 		public override string GetServerName(IDbConnection connection)
 		{
 			if (connection == null) throw new ArgumentNullException("connection");

@@ -91,6 +91,7 @@
     <Compile Include="DbProviderFactoryExtensions.cs" />
     <Compile Include="DbProviderHelper.cs" />
     <Compile Include="DbProviderHelpers.cs" />
+    <Compile Include="DbResult.cs" />
     <Compile Include="DbTraceEvents.cs" />
     <Compile Include="DbTypeTranslation.cs" />
     <Compile Include="DbTypeTranslations.cs" />
@@ -103,6 +104,11 @@
     <Compile Include="IDbExecutableExtensions.cs" />
     <Compile Include="ParameterBinding.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
+    <Compile Include="Properties\Resources.Designer.cs">
+      <AutoGen>True</AutoGen>
+      <DesignTime>True</DesignTime>
+      <DependentUpon>Resources.resx</DependentUpon>
+    </Compile>
     <Compile Include="SqlServer\SqlDbCommand.cs" />
     <Compile Include="SqlServer\SqlDbProviderHelper.cs" />
     <Compile Include="SqlServer\SqlDbTypeTranslation.cs" />
@@ -117,6 +123,12 @@
   </ItemGroup>
   <ItemGroup>
     <Content Include="SqlServer\Scripts\SyntheticID.sql" />
+  </ItemGroup>
+  <ItemGroup>
+    <EmbeddedResource Include="Properties\Resources.resx">
+      <Generator>ResXFileCodeGenerator</Generator>
+      <LastGenOutput>Resources.Designer.cs</LastGenOutput>
+    </EmbeddedResource>
   </ItemGroup>
   <Import Project="$(MSBuildThisFileDirectory)\csproj-import-after.targets" Condition="Exists('$(MSBuildThisFileDirectory)\csproj-import-after.targets')" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
