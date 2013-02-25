@@ -1,7 +1,6 @@
-﻿#region COPYRIGHT© 2009-2012 Phillip Clark. All rights reserved.
+﻿#region COPYRIGHT© 2009-2013 Phillip Clark.
 // For licensing information see License.txt (MIT style licensing).
 #endregion
-
 
 using System;
 using System.Collections.Concurrent;
@@ -9,7 +8,6 @@ using System.Data;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Threading;
-using FlitBit.Core.Properties;
 
 namespace FlitBit.Data
 {

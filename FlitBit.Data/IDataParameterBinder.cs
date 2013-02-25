@@ -1,34 +1,28 @@
-﻿#region COPYRIGHT© 2009-2012 Phillip Clark. All rights reserved.
+﻿#region COPYRIGHT© 2009-2013 Phillip Clark.
 // For licensing information see License.txt (MIT style licensing).
 #endregion
 
-
 using System;
+using System.Collections.Generic;
 using System.Data;
-using System.Linq.Expressions;
-using System.Reflection;
+using System.Data.Common;
 using System.Diagnostics.Contracts;
-using FlitBit.Core.Properties;
-using System.Diagnostics.CodeAnalysis;
+using FlitBit.Data.Properties;
 
 namespace FlitBit.Data
 {
-	
+	[ContractClass(typeof(CodeContracts.ContractsForIDataParameterBinder))]
 	public interface IDataParameterBinder
 	{
 		bool ContainsParameter(string name);
+		
+		int IndexOfParameter(string name);
+
 		string PrepareParameterName(string name);
+
 		DbTypeTranslation TranslateRuntimeType(Type type);
 
-		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
-		[SuppressMessage("Microsoft.Design", "CA1006", Justification = "By design.")]
-		IDataParameterBinder DefineParameter<T>(Expression<Func<T, object>> expression);
-		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
-		[SuppressMessage("Microsoft.Design", "CA1006", Justification = "By design.")]
-		IDataParameterBinder DefineParameter<T>(Expression<Func<T, object>> expression, ParameterDirection direction);
-		IDataParameterBinder DefineParameter(PropertyInfo prop);
-		IDataParameterBinder DefineParameter(PropertyInfo prop, ParameterDirection direction);
-		IDataParameterBinder DefineParameter(string bindName, PropertyInfo prop, ParameterDirection direction);
+		IEnumerable<ParameterBinding> Bindings { get; }
 
 		IDataParameterBinder DefineParameter(string name, Type runtimeType);
 		IDataParameterBinder DefineParameter(string name, Type runtimeType, ParameterDirection direction);
@@ -39,6 +33,7 @@ namespace FlitBit.Data
 		IDataParameterBinder DefineParameter(string name, DbType dbType, int length, ParameterDirection direction);
 		IDataParameterBinder DefineParameter(string name, DbType dbType, int size, byte scale);
 		IDataParameterBinder DefineParameter(string name, DbType dbType, int size, byte scale, ParameterDirection direction);
+		IDataParameterBinder DefineParameter(Func<DbParamDefinition> specializeParam);
 
 		IDataParameterBinder SetParameterValue(string name, bool value);
 		IDataParameterBinder SetParameterValue(string name, byte[] value);
@@ -48,287 +43,358 @@ namespace FlitBit.Data
 		IDataParameterBinder SetParameterValue(string name, Double value);
 		IDataParameterBinder SetParameterValue(string name, Guid value);
 		IDataParameterBinder SetParameterValue(string name, Single value);
-		
+
 		IDataParameterBinder SetParameterValue(string name, SByte value);
 		IDataParameterBinder SetParameterValue(string name, string value);
 		IDataParameterBinder SetParameterValue(string name, Int16 value);
 		IDataParameterBinder SetParameterValue(string name, Int32 value);
 		IDataParameterBinder SetParameterValue(string name, Int64 value);
-		
+
 		IDataParameterBinder SetParameterValue(string name, UInt16 value);
-		
+
 		IDataParameterBinder SetParameterValue(string name, UInt32 value);
-		
+
 		IDataParameterBinder SetParameterValue(string name, UInt64 value);
 		IDataParameterBinder SetParameterValue<T>(string name, T value);
 		IDataParameterBinder SetParameterValueAsEnum<E>(string name, E value);
 
 		IDataParameterBinder SetParameterDbNull(string name);
+
+		bool PrepareDbCommand(DbCommand command);
+
+		void Initialize(IEnumerable<ParameterBinding> bindings);
 	}
 
-	public static partial class Extensions
+	namespace CodeContracts
 	{
-		
-		public static IDataParameterBinder DefineAndBindParameter(this IDataParameterBinder binder, string name, bool value)
+		/// <summary>
+		/// CodeContracts Class for IDbExecutable
+		/// </summary>
+		[ContractClassFor(typeof(IDataParameterBinder))]
+		internal abstract class ContractsForIDataParameterBinder : IDataParameterBinder
 		{
-			Contract.Requires<ArgumentNullException>(binder != null);
-			Contract.Requires<ArgumentNullException>(name != null);
-
-			if (!binder.ContainsParameter(name))
+			public IDataParameterBinder DefineParameter(string name, Type runtimeType)
 			{
-				binder.DefineParameter(name, typeof(bool));
-			}
-			binder.SetParameterValue(name, value);			
-			return binder;
-		}
-		
-		public static IDataParameterBinder DefineAndBindParameter(this IDataParameterBinder binder, string name, byte value)
-		{
-			Contract.Requires<ArgumentNullException>(binder != null);
-			Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<InvalidOperationException>(IndexOfParameter(name) < 0, Resources.Chk_ParameterObstructed);
+				Contract.Requires<ArgumentNullException>(runtimeType != null);
+				Contract.Ensures(Contract.Result<IDataParameterBinder>() != null);
 
-			if (!binder.ContainsParameter(name))
-			{
-				binder.DefineParameter(name, typeof(byte));
+				throw new NotImplementedException();
 			}
-			binder.SetParameterValue(name, value);
-			return binder;
-		}
-		
-		public static IDataParameterBinder DefineAndBindParameter(this IDataParameterBinder binder, string name, int length, byte[] value)
-		{
-			Contract.Requires<ArgumentNullException>(binder != null);
-			Contract.Requires<ArgumentNullException>(name != null);
 
-			if (!binder.ContainsParameter(name))
+			public IDataParameterBinder DefineParameter(string name, Type runtimeType, ParameterDirection direction)
 			{
-				binder.DefineParameter(name, typeof(byte[]), length, ParameterDirection.Input);
-			}
-			binder.SetParameterValue(name, value);
-			return binder;
-		}
-		
-		public static IDataParameterBinder DefineAndBindParameter(this IDataParameterBinder binder, string name, byte[] value)
-		{
-			Contract.Requires<ArgumentNullException>(binder != null);
-			Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<InvalidOperationException>(IndexOfParameter(name) < 0, Resources.Chk_ParameterObstructed);
+				Contract.Requires<ArgumentNullException>(runtimeType != null);
+				Contract.Ensures(Contract.Result<IDataParameterBinder>() != null);
 
-			if (!binder.ContainsParameter(name))
-			{
-				binder.DefineParameter(name, typeof(byte[]));
+				throw new NotImplementedException();
 			}
-			binder.SetParameterValue(name, value);
-			return binder;
-		}
-		
-		public static IDataParameterBinder DefineAndBindParameter(this IDataParameterBinder binder, string name, DateTime value)
-		{
-			Contract.Requires<ArgumentNullException>(binder != null);
-			Contract.Requires<ArgumentNullException>(name != null);
 
-			if (!binder.ContainsParameter(name))
+			public IDataParameterBinder DefineParameter(string name, Type runtimeType, int length, ParameterDirection direction)
 			{
-				binder.DefineParameter(name, typeof(DateTime));
-			}
-			binder.SetParameterValue(name, value);
-			return binder;
-		}
-		
-		public static IDataParameterBinder DefineAndBindParameter(this IDataParameterBinder binder, string name, decimal value)
-		{
-			Contract.Requires<ArgumentNullException>(binder != null);
-			Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<InvalidOperationException>(IndexOfParameter(name) < 0, Resources.Chk_ParameterObstructed);
+				Contract.Requires<ArgumentNullException>(runtimeType != null);
+				Contract.Requires<ArgumentOutOfRangeException>(length > 0);
+				Contract.Ensures(Contract.Result<IDataParameterBinder>() != null);
 
-			if (!binder.ContainsParameter(name))
-			{
-				binder.DefineParameter(name, typeof(decimal));
+				throw new NotImplementedException();
 			}
-			binder.SetParameterValue(name, value);
-			return binder;
-		}
-		
-		public static IDataParameterBinder DefineAndBindParameter(this IDataParameterBinder binder, string name, double value)
-		{
-			Contract.Requires<ArgumentNullException>(binder != null);
-			Contract.Requires<ArgumentNullException>(name != null);
 
-			if (!binder.ContainsParameter(name))
+			public IDataParameterBinder DefineParameter(string name, DbType dbType)
 			{
-				binder.DefineParameter(name, typeof(double));
-			}
-			binder.SetParameterValue(name, value);
-			return binder;
-		}
-		
-		public static IDataParameterBinder DefineAndBindParameter(this IDataParameterBinder binder, string name, Guid value)
-		{
-			Contract.Requires<ArgumentNullException>(binder != null);
-			Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<InvalidOperationException>(IndexOfParameter(name) < 0, Resources.Chk_ParameterObstructed);
+				Contract.Ensures(Contract.Result<IDataParameterBinder>() != null);
 
-			if (!binder.ContainsParameter(name))
-			{
-				binder.DefineParameter(name, typeof(Guid));
+				throw new NotImplementedException();
 			}
-			binder.SetParameterValue(name, value);
-			return binder;
-		}
-		
-		public static IDataParameterBinder DefineAndBindParameter(this IDataParameterBinder binder, string name, float value)
-		{
-			Contract.Requires<ArgumentNullException>(binder != null);
-			Contract.Requires<ArgumentNullException>(name != null);
 
-			if (!binder.ContainsParameter(name))
+			public IDataParameterBinder DefineParameter(string name, DbType dbType, ParameterDirection direction)
 			{
-				binder.DefineParameter(name, typeof(float));
-			}
-			binder.SetParameterValue(name, value);
-			return binder;
-		}
-		
-		public static IDataParameterBinder DefineAndBindParameter(this IDataParameterBinder binder, string name, sbyte value)
-		{
-			Contract.Requires<ArgumentNullException>(binder != null);
-			Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<InvalidOperationException>(IndexOfParameter(name) < 0, Resources.Chk_ParameterObstructed);
+				Contract.Ensures(Contract.Result<IDataParameterBinder>() != null);
 
-			if (!binder.ContainsParameter(name))
-			{
-				binder.DefineParameter(name, typeof(sbyte));
+				throw new NotImplementedException();
 			}
-			binder.SetParameterValue(name, value);
-			return binder;
-		}
-		
-		public static IDataParameterBinder DefineAndBindParameter(this IDataParameterBinder binder, string name, int length, string value)
-		{
-			Contract.Requires<ArgumentNullException>(binder != null);
-			Contract.Requires<ArgumentNullException>(name != null);
 
-			if (!binder.ContainsParameter(name))
+			public IDataParameterBinder DefineParameter(string name, DbType dbType, int length)
 			{
-				binder.DefineParameter(name, typeof(string), length, ParameterDirection.Input);
-			}
-			binder.SetParameterValue(name, value);
-			return binder;
-		}
-		
-		public static IDataParameterBinder DefineAndBindParameter(this IDataParameterBinder binder, string name, string value)
-		{
-			Contract.Requires<ArgumentNullException>(binder != null);
-			Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<InvalidOperationException>(IndexOfParameter(name) < 0, Resources.Chk_ParameterObstructed);
+				Contract.Requires<ArgumentOutOfRangeException>(length > 0);
+				Contract.Ensures(Contract.Result<IDataParameterBinder>() != null);
 
-			if (!binder.ContainsParameter(name))
-			{
-				binder.DefineParameter(name, typeof(string));
+				throw new NotImplementedException();
 			}
-			binder.SetParameterValue(name, value);
-			return binder;
-		}
-		
-		public static IDataParameterBinder DefineAndBindParameter(this IDataParameterBinder binder, string name, short value)
-		{
-			Contract.Requires<ArgumentNullException>(binder != null);
-			Contract.Requires<ArgumentNullException>(name != null);
 
-			if (!binder.ContainsParameter(name))
+			public IDataParameterBinder DefineParameter(string name, DbType dbType, int length, ParameterDirection direction)
 			{
-				binder.DefineParameter(name, typeof(short));
-			}
-			binder.SetParameterValue(name, value);
-			return binder;
-		}
-		
-		public static IDataParameterBinder DefineAndBindParameter(this IDataParameterBinder binder, string name, int value)
-		{
-			Contract.Requires<ArgumentNullException>(binder != null);
-			Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<InvalidOperationException>(IndexOfParameter(name) < 0, Resources.Chk_ParameterObstructed);
+				Contract.Requires<ArgumentOutOfRangeException>(length > 0);
+				Contract.Ensures(Contract.Result<IDataParameterBinder>() != null);
 
-			if (!binder.ContainsParameter(name))
-			{
-				binder.DefineParameter(name, typeof(int));
+				throw new NotImplementedException();
 			}
-			binder.SetParameterValue(name, value);
-			return binder;
-		}
-		
-		public static IDataParameterBinder DefineAndBindParameter(this IDataParameterBinder binder, string name, long value)
-		{
-			Contract.Requires<ArgumentNullException>(binder != null);
-			Contract.Requires<ArgumentNullException>(name != null);
 
-			if (!binder.ContainsParameter(name))
+			public IDataParameterBinder DefineParameter(string name, DbType dbType, int size, byte scale)
 			{
-				binder.DefineParameter(name, typeof(long));
-			}
-			binder.SetParameterValue(name, value);
-			return binder;
-		}
-		
-		public static IDataParameterBinder DefineAndBindParameter(this IDataParameterBinder binder, string name, ushort value)
-		{
-			Contract.Requires<ArgumentNullException>(binder != null);
-			Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<InvalidOperationException>(IndexOfParameter(name) < 0, Resources.Chk_ParameterObstructed);
+				Contract.Requires<ArgumentOutOfRangeException>(size > 0);
+				Contract.Requires<ArgumentOutOfRangeException>(scale >= 0);
+				Contract.Ensures(Contract.Result<IDataParameterBinder>() != null);
 
-			if (!binder.ContainsParameter(name))
-			{
-				binder.DefineParameter(name, typeof(ushort));
+				throw new NotImplementedException();
 			}
-			binder.SetParameterValue(name, value);
-			return binder;
-		}
-		
-		public static IDataParameterBinder DefineAndBindParameter(this IDataParameterBinder binder, string name, uint value)
-		{
-			Contract.Requires<ArgumentNullException>(binder != null);
-			Contract.Requires<ArgumentNullException>(name != null);
 
-			if (!binder.ContainsParameter(name))
+			public IDataParameterBinder DefineParameter(string name, DbType dbType, int size, byte scale, ParameterDirection direction)
 			{
-				binder.DefineParameter(name, typeof(uint));
-			}
-			binder.SetParameterValue(name, value);
-			return binder;
-		}
-		
-		public static IDataParameterBinder DefineAndBindParameter(this IDataParameterBinder binder, string name, ulong value)
-		{
-			Contract.Requires<ArgumentNullException>(binder != null);
-			Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<InvalidOperationException>(IndexOfParameter(name) < 0, Resources.Chk_ParameterObstructed);
+				Contract.Requires<ArgumentOutOfRangeException>(size > 0);
+				Contract.Requires<ArgumentOutOfRangeException>(scale >= 0);
+				Contract.Ensures(Contract.Result<IDataParameterBinder>() != null);
 
-			if (!binder.ContainsParameter(name))
-			{
-				binder.DefineParameter(name, typeof(ulong));
+				throw new NotImplementedException();
 			}
-			binder.SetParameterValue(name, value);
-			return binder;
-		}
-		
-		
-		public static IDataParameterBinder DefineAndBindParameter<T>(this IDataParameterBinder binder, string name, T value)
-		{
-			Contract.Requires<ArgumentNullException>(binder != null);
-			Contract.Requires<ArgumentNullException>(name != null);
 
-			if (!binder.ContainsParameter(name))
+			public IDataParameterBinder DefineParameter(Func<DbParamDefinition> specializeParam)
 			{
-				binder.DefineParameter(name, typeof(T));
-			}
-			binder.SetParameterValue(name, value);
-			return binder;
-		}
-		
-		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
-		public static IDataParameterBinder DefineAndSetDbNull<T>(this IDataParameterBinder binder, string name)
-		{
-			Contract.Requires<ArgumentNullException>(binder != null);
-			Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentNullException>(specializeParam != null);
+				Contract.Ensures(Contract.Result<IDataParameterBinder>() != null);
 
-			if (!binder.ContainsParameter(name))
-			{
-				binder.DefineParameter(name, typeof(T));
+				throw new NotImplementedException();
 			}
-			binder.SetParameterDbNull(name);
-			return binder;
+
+			public IDataParameterBinder SetParameterValue(string name, bool value)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
+				Contract.Ensures(Contract.Result<IDataParameterBinder>() != null);
+
+				throw new NotImplementedException();
+			}
+
+			public IDataParameterBinder SetParameterValue(string name, byte[] value)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
+				Contract.Ensures(Contract.Result<IDataParameterBinder>() != null);
+
+				throw new NotImplementedException();
+			}
+
+			public IDataParameterBinder SetParameterValue(string name, byte value)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
+				Contract.Ensures(Contract.Result<IDataParameterBinder>() != null);
+
+				throw new NotImplementedException();
+			}
+
+			public IDataParameterBinder SetParameterValue(string name, DateTime value)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
+				Contract.Ensures(Contract.Result<IDataParameterBinder>() != null);
+
+				throw new NotImplementedException();
+			}
+
+			public IDataParameterBinder SetParameterValue(string name, decimal value)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
+				Contract.Ensures(Contract.Result<IDataParameterBinder>() != null);
+
+				throw new NotImplementedException();
+			}
+
+			public IDataParameterBinder SetParameterValue(string name, double value)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
+				Contract.Ensures(Contract.Result<IDataParameterBinder>() != null);
+
+				throw new NotImplementedException();
+			}
+
+			public IDataParameterBinder SetParameterValue(string name, Guid value)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
+				Contract.Ensures(Contract.Result<IDataParameterBinder>() != null);
+
+				throw new NotImplementedException();
+			}
+
+			public IDataParameterBinder SetParameterValue(string name, float value)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
+				Contract.Ensures(Contract.Result<IDataParameterBinder>() != null);
+
+				throw new NotImplementedException();
+			}
+
+			public IDataParameterBinder SetParameterValue(string name, sbyte value)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
+				Contract.Ensures(Contract.Result<IDataParameterBinder>() != null);
+
+				throw new NotImplementedException();
+			}
+
+			public IDataParameterBinder SetParameterValue(string name, string value)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
+				Contract.Ensures(Contract.Result<IDataParameterBinder>() != null);
+
+				throw new NotImplementedException();
+			}
+
+			public IDataParameterBinder SetParameterValue(string name, short value)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
+				Contract.Ensures(Contract.Result<IDataParameterBinder>() != null);
+
+				throw new NotImplementedException();
+			}
+
+			public IDataParameterBinder SetParameterValue(string name, int value)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
+				Contract.Ensures(Contract.Result<IDataParameterBinder>() != null);
+
+				throw new NotImplementedException();
+			}
+
+			public IDataParameterBinder SetParameterValue(string name, long value)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
+				Contract.Ensures(Contract.Result<IDataParameterBinder>() != null);
+
+				throw new NotImplementedException();
+			}
+
+			public IDataParameterBinder SetParameterValue(string name, ushort value)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
+				Contract.Ensures(Contract.Result<IDataParameterBinder>() != null);
+
+				throw new NotImplementedException();
+			}
+
+			public IDataParameterBinder SetParameterValue(string name, uint value)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
+				Contract.Ensures(Contract.Result<IDataParameterBinder>() != null);
+
+				throw new NotImplementedException();
+			}
+
+			public IDataParameterBinder SetParameterValue(string name, ulong value)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
+				Contract.Ensures(Contract.Result<IDataParameterBinder>() != null);
+
+				throw new NotImplementedException();
+			}
+
+			public IDataParameterBinder SetParameterValue<T>(string name, T value)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
+				Contract.Ensures(Contract.Result<IDataParameterBinder>() != null);
+
+				throw new NotImplementedException();
+			}
+
+			public IDataParameterBinder SetParameterValueAsEnum<E>(string name, E value)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
+				Contract.Ensures(Contract.Result<IDataParameterBinder>() != null);
+
+				throw new NotImplementedException();
+			}
+
+			public IDataParameterBinder SetParameterDbNull(string name)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
+				Contract.Ensures(Contract.Result<IDataParameterBinder>() != null);
+
+				throw new NotImplementedException();
+			}
+
+			public int IndexOfParameter(string name)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Ensures(Contract.Result<int>() >= -1);
+
+				throw new NotImplementedException();
+			}
+
+			public void GetParameterValueAs<T>(string name, out T value)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
+
+				throw new NotImplementedException();
+			}
+
+			public bool ContainsParameter(string name)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				throw new NotImplementedException();
+			}
+
+			public string PrepareParameterName(string name)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Ensures(Contract.Result<string>() != null);
+
+				throw new NotImplementedException();
+			}
+
+			public DbTypeTranslation TranslateRuntimeType(Type type)
+			{
+				throw new NotImplementedException();
+			}
+
+			public bool PrepareDbCommand(DbCommand command)
+			{
+				Contract.Requires<ArgumentNullException>(command != null);
+
+				throw new NotImplementedException();
+			}
+
+
+			public IEnumerable<ParameterBinding> Bindings
+			{
+				get { throw new NotImplementedException(); }
+			}
+
+			public void Initialize(IEnumerable<ParameterBinding> bindings)
+			{
+				throw new NotImplementedException();
+			}
 		}
 	}
 }

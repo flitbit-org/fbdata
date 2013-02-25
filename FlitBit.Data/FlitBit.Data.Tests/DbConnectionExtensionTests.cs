@@ -1,12 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using System.Data.Common;
 using System.Data;
-using System.Diagnostics;
-using FlitBit.Core.Parallel;
+using System.Linq;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace FlitBit.Data.Tests
 {
@@ -28,13 +23,13 @@ namespace FlitBit.Data.Tests
 
 				cn.EnsureConnectionIsOpen();
 				using (var cmd = cn.CreateCommand(spec.CmdText, spec.CmdType))
-				{																										
+				{
 					Assert.AreEqual(spec.CmdText, cmd.CommandText);
-					Assert.AreEqual(spec.CmdType, cmd.CommandType);
-
+					Assert.AreEqual(spec.CmdType, cmd.CommandType);		 
 				}
 			}
 		}
+
 		[TestMethod]
 		public void CreateCommand_with_CommandText()
 		{
@@ -53,26 +48,23 @@ namespace FlitBit.Data.Tests
 				}
 			}
 		}
-				
+
 
 		[TestMethod]
 		public void ImmediateExecuteAndTransform()
 		{
 			var spec = new { CmdText = "SELECT Top 1 System.ItemPathDisplay FROM SYSTEMINDEX", CmdType = CommandType.Text, CmdTimeout = 1000 };
 
-			using (var ctx = DbContext.SharedOrNewContext())
-			using (var cn = ctx.NewConnection("windows-search"))
+			using (var cn = DbExtensions.CreateAndOpenConnection("windows-search"))
+			using (var cmd = cn.CreateCommand(spec.CmdText, spec.CmdType, spec.CmdTimeout))
 			{
-				Assert.IsNotNull(cn, "There should be a connection in the ConnectionStrings configuration section with the name 'windows-search'");
-
-				cn.EnsureConnectionIsOpen();
-				string result = cn.ExecuteReader(spec.CmdText, spec.CmdType, spec.CmdTimeout).TransformSingle(r => r.GetString(0));
+				string result = cmd.ExecuteSingle(r => r.GetString(0));
 
 				// TODO: Revise this test so it gets a predictable result (other than the default 0) upon success.
 				Assert.IsFalse(String.IsNullOrEmpty(result));
 			}
 		}
-				
+
 		class IndexItemDTO
 		{
 			public string ItemPathDisplay { get; set; }
@@ -82,22 +74,17 @@ namespace FlitBit.Data.Tests
 		[TestMethod]
 		public void ImmediateExecuteAndTransform_Transform()
 		{
-			using (var ctx = DbContext.SharedOrNewContext())
+			using (var cn = DbExtensions.CreateAndOpenConnection("windows-search"))
 			{
-				var cn = ctx.NewConnection("windows-search");
-				Assert.IsNotNull(cn, "There should be a connection in the ConnectionStrings configuration section with the name 'windows-search'");
-
-				cn.EnsureConnectionIsOpen();
-			
-				var items = cn.ExecuteReader("SELECT Top 25 System.ItemPathDisplay, System.ItemType FROM SYSTEMINDEX")
-					.TransformAll((d) =>
-					{
-						return new IndexItemDTO
+				var items = cn.ImmediateExecuteEnumerable("SELECT Top 25 System.ItemPathDisplay, System.ItemType FROM SYSTEMINDEX",
+						(d) =>
 						{
-							ItemPathDisplay = d.GetString(0),
-							ItemType = d.GetString(1)
-						};
-					});
+							return new IndexItemDTO
+							{
+								ItemPathDisplay = d.GetString(0),
+								ItemType = d.GetString(1)
+							};
+						});
 				foreach (IndexItemDTO item in items)
 				{
 					Assert.IsFalse(String.IsNullOrEmpty(item.ItemPathDisplay));
@@ -109,12 +96,12 @@ namespace FlitBit.Data.Tests
 		[TestMethod]
 		public void ImmediateExecuteEnumerable()
 		{
-			using (var ctx = DbContext.SharedOrNewContext())
+			using (var cn = DbExtensions.CreateConnection("windows-search"))
 			{
-				var cn = ctx.NewConnection("windows-search");
 				cn.EnsureConnectionIsOpen();
-			
-				var items = from reader in cn.ExecuteReader("SELECT TOP 25 System.ItemPathDisplay, System.ItemType FROM SYSTEMINDEX")
+
+				var data = cn.ImmediateExecuteEnumerable("SELECT TOP 25 System.ItemPathDisplay, System.ItemType FROM SYSTEMINDEX WHERE System.ItemType = '.lnk'");
+				var items = from reader in data
 										select new
 										{
 											ItemPathDisplay = reader.GetString(0),
@@ -136,7 +123,7 @@ namespace FlitBit.Data.Tests
 		//  {
 		//    var cn = ctx.NewConnection("windows-search");
 		//    cn.EnsureConnectionIsOpen();
-			
+
 		//    IFuture<IEnumerable<IndexItemDTO>> futr = cn.AsyncExecuteAndTransform<IndexItemDTO>(scope
 		//      , @"SELECT Top 250 System.ItemPathDisplay, System.ItemType FROM SYSTEMINDEX WHERE System.ItemType = '.lnk'"
 		//      , (d) =>

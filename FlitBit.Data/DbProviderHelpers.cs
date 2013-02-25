@@ -1,32 +1,25 @@
-﻿#region COPYRIGHT© 2009-2012 Phillip Clark. All rights reserved.
+﻿#region COPYRIGHT© 2009-2013 Phillip Clark.
 // For licensing information see License.txt (MIT style licensing).
 #endregion
 
-
 using System;
-using System.Data;
+using System.Data.Common;
 using System.Diagnostics.Contracts;
-using FlitBit.Core.Properties;
 using FlitBit.Registrar;
-using System.Threading;
-using FlitBit.Core;
 
 namespace FlitBit.Data
-{
-	
+{							 	
 	public static class DbProviderHelpers
 	{
-		readonly static Lazy<Registrar<string, Type>> __registry = new Lazy<Registrar<string, Type>>(
-			LazyThreadSafetyMode.ExecutionAndPublication);
+		readonly static Registrar<string, Type> __registry = new Registrar<string, Type>();
 
-		public static DbProviderHelper GetDbProviderHelperForDbConnection(IDbConnection connection)
+		public static DbProviderHelper GetDbProviderHelperForDbConnection(DbConnection connection)
 		{
 			Contract.Requires<ArgumentNullException>(connection != null);
 
-			var key = connection.GetType().AssemblyQualifiedName;
-			var reg = __registry.Value;
+			var key = KeyFor(connection);
 			IRegistrationKey<string, Type> registration;
-			if (reg.TryGetRegistration(key, out registration))
+			if (__registry.TryGetRegistration(key, out registration))
 			{
 				return (DbProviderHelper)Activator.CreateInstance(registration.Handback);
 			}
@@ -36,19 +29,37 @@ namespace FlitBit.Data
 		public static DbProviderHelper GetDbProviderHelperForDbConnection(string connection)
 		{
 			Contract.Requires<ArgumentNullException>(connection != null);
-			Contract.Requires<ArgumentException>(connection.Length > 0);
 
-			var provider = DbExtensions.GetProviderName(connection);
-			if (provider != null)
+			var pr = DbExtensions.GetProviderByConnectionName(connection);
+			var key = KeyFor(pr);
+			IRegistrationKey<string, Type> registration;
+			if (__registry.TryGetRegistration(key, out registration))
 			{
-				var reg = __registry.Value;
-				IRegistrationKey<string, Type> registration;
-				if (reg.TryGetRegistration(provider, out registration))
-				{
-					return (DbProviderHelper)Activator.CreateInstance(registration.Handback);
-				}
+				return (DbProviderHelper)Activator.CreateInstance(registration.Handback);
 			}
 			return default(DbProviderHelper);
 		}
+		
+		static string KeyFor<T>() 
+		{
+			return typeof(T).AssemblyQualifiedName;
+		}
+
+		static string KeyFor(object instance)
+		{
+			return instance.GetType().AssemblyQualifiedName;
+		}			 
+
+		public static void RegisterHelper<Pr, Cn, Cm, H>()
+			where Pr : DbProviderFactory
+			where Cn : DbConnection
+			where Cm : DbCommand
+			where H : DbProviderHelper
+		{
+			IRegistrationKey<string, Type> registration;
+			__registry.TryRegister(KeyFor<Pr>(), typeof(H), out registration);
+			__registry.TryRegister(KeyFor<Cn>(), typeof(H), out registration);
+			__registry.TryRegister(KeyFor<Cm>(), typeof(H), out registration);			
+		}		
 	}
 }

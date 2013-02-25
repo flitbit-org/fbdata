@@ -1,7 +1,6 @@
-﻿#region COPYRIGHT© 2009-2012 Phillip Clark. All rights reserved.
+﻿#region COPYRIGHT© 2009-2013 Phillip Clark.
 // For licensing information see License.txt (MIT style licensing).
 #endregion
-
 
 using System;
 using System.Linq;
@@ -11,6 +10,7 @@ using System.Data.SqlClient;
 using System.Data.SqlTypes;
 using System.Diagnostics.Contracts;
 using FlitBit.Core.Properties;
+using System.Data.Common;
 
 namespace FlitBit.Data.SqlServer
 {																																												 	
@@ -27,14 +27,14 @@ namespace FlitBit.Data.SqlServer
 			return SqlDbTypeTranslations.TranslateRuntimeType(type);
 		}
 
-		protected override IDataParameter MakeParameter(IDbCommand command, string name, DbType dbType, int specializedDbType, int length, ParameterDirection direction)
+		protected override IDataParameter MakeParameter(DbCommand command, string name, DbType dbType, int specializedDbType, int length, ParameterDirection direction)
 		{
 			SqlCommand scmd = (SqlCommand)command;
 			SqlParameter parm = scmd.Parameters.Add(name, (SqlDbType)specializedDbType, length);
 			parm.Direction = direction;
 			return parm;
 		}
-		protected override IDataParameter MakeParameter(IDbCommand command, string name, DbType dbType, int specializedDbType, int size, byte scale, ParameterDirection direction)
+		protected override IDataParameter MakeParameter(DbCommand command, string name, DbType dbType, int specializedDbType, int size, byte scale, ParameterDirection direction)
 		{
 			SqlCommand scmd = (SqlCommand)command;
 			SqlParameter parm = scmd.Parameters.Add(name, (SqlDbType)specializedDbType, size);
@@ -42,7 +42,7 @@ namespace FlitBit.Data.SqlServer
 			parm.Direction = direction;
 			return parm;
 		}
-		protected override IDataParameter MakeParameter(IDbCommand command, string name, DbType dbType, int specializedDbType, ParameterDirection direction)
+		protected override IDataParameter MakeParameter(DbCommand command, string name, DbType dbType, int specializedDbType, ParameterDirection direction)
 		{
 			SqlCommand scmd = (SqlCommand)command;
 			SqlParameter parm = scmd.Parameters.Add(name, (SqlDbType)specializedDbType);

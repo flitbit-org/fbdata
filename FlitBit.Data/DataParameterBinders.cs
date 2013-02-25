@@ -1,7 +1,6 @@
-﻿#region COPYRIGHT© 2009-2012 Phillip Clark. All rights reserved.
+﻿#region COPYRIGHT© 2009-2013 Phillip Clark.
 // For licensing information see License.txt (MIT style licensing).
 #endregion
-
 
 using System;
 using System.Collections.Concurrent;
@@ -9,12 +8,13 @@ using System.Data;
 using System.Data.SqlClient;
 using System.Diagnostics.CodeAnalysis;
 using FlitBit.Data.SqlServer;
+using System.Data.Common;
 
 namespace FlitBit.Data
 {
 	public static class DataParameterBinders
 	{
-		private static ConcurrentDictionary<string, Func<IDbCommand, IDataParameterBinder>> __binderFactories = new ConcurrentDictionary<string, Func<IDbCommand, IDataParameterBinder>>();
+		private static ConcurrentDictionary<string, Func<DbCommand, IDataParameterBinder>> __binderFactories = new ConcurrentDictionary<string, Func<DbCommand, IDataParameterBinder>>();
 
 		[SuppressMessage("Microsoft.Performance", "CA1810", Justification = "By design.")]
 		static DataParameterBinders()
@@ -27,19 +27,18 @@ namespace FlitBit.Data
 		public static class Wireup
 		{
 			[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
-			public static void RegisterBinderFactory<TDbCommand>(Func<IDbCommand, IDataParameterBinder> factory)
-				where TDbCommand : IDbCommand
+			public static void RegisterBinderFactory<TDbCommand>(Func<DbCommand, IDataParameterBinder> factory)
+				where TDbCommand : DbCommand
 			{
 				var key = typeof(TDbCommand).AssemblyQualifiedName;
 				__binderFactories.TryAdd(key, factory);
 			}
-		}
-
+		}				 
 		
-		public static IDataParameterBinder GetBinderForDbCommand(IDbCommand cmd)
+		public static IDataParameterBinder GetBinderForDbCommand(DbCommand cmd)
 		{
 			var key = cmd.GetType().AssemblyQualifiedName;
-			var factory = default(Func<IDbCommand,IDataParameterBinder>);
+			var factory = default(Func<DbCommand,IDataParameterBinder>);
 			if (__binderFactories.TryGetValue(key, out factory))
 			{
 				return factory(cmd);				

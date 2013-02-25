@@ -1,13 +1,11 @@
-﻿#region COPYRIGHT© 2009-2012 Phillip Clark. All rights reserved.
+﻿#region COPYRIGHT© 2009-2013 Phillip Clark.
 // For licensing information see License.txt (MIT style licensing).
 #endregion
 
-
 using System;
-using System.Runtime.Remoting.Messaging;
-using System.Security.Permissions;
-using System.Transactions;
 using System.Diagnostics.CodeAnalysis;
+using System.Runtime.Remoting.Messaging;
+using System.Transactions;
 
 namespace FlitBit.Data
 {

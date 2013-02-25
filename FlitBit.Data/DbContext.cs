@@ -1,14 +1,20 @@
-﻿using System;
+﻿#region COPYRIGHT© 2009-2013 Phillip Clark.
+// For licensing information see License.txt (MIT style licensing).
+#endregion
+
+using System;
 using System.Collections.Concurrent;
-using System.Data;
+using System.Data.Common;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Threading;
 using FlitBit.Core;
 using FlitBit.Core.Parallel;
+using FlitBit.Data.Properties;
 
 namespace FlitBit.Data
 {
-	public class DbContext: Disposable, IDbContext
+	public class DbContext : Disposable, IDbContext
 	{
 		/// <summary>
 		/// Gets the current "ambient" db context.
@@ -34,30 +40,63 @@ namespace FlitBit.Data
 				: new DbContext();
 		}
 
-		ConcurrentDictionary<string, IDbConnection> _connections = new ConcurrentDictionary<string, IDbConnection>();
+		/// <summary>
+		/// Creates a new context.
+		/// </summary>
+		/// <returns>a db context</returns>
+		public static IDbContext NewContext()
+		{
+			return new DbContext();
+		}
+
+		ConcurrentDictionary<string, DbConnection> _connections = new ConcurrentDictionary<string, DbConnection>();
+		ICleanupScope _scope;
 		int _disposers = 1;
 
 		public DbContext()
 		{
-			ContextFlow.Push<DbContext>(this);
+			_scope = new CleanupScope(this, true);
+			ContextFlow.Push<IDbContext>(this);
 		}
 
-		public IDbConnection NewOrSharedConnection(string connection)
+		public DbConnection SharedOrNewConnection(string connectionName)
 		{
-			Contract.Requires<ArgumentNullException>(connection != null);
-			Contract.Requires<ArgumentException>(connection.Length > 0);
+			Contract.Requires<ArgumentNullException>(connectionName != null);
+			Contract.Requires<ArgumentException>(connectionName.Length > 0);
 
-			IDbConnection cn, capture = null;
-			cn = _connections.GetOrAdd(connection, cs => {
-				capture = DbExtensions.CreateAndOpenConnection(cs);
-				return capture;
-			});
-			if (capture != null && !Object.ReferenceEquals(cn, capture))
+			DbConnection cn, capture = null;
+			cn = _connections.GetOrAdd(connectionName,
+				cs =>
+				{
+					capture = NewConnection(connectionName);
+					return capture;
+				});
+			if (capture != null)
 			{
-				capture.Dispose();
+				if (!Object.ReferenceEquals(cn, capture))
+				{
+					capture.Dispose();
+				}
 			}
 			return cn;
 		}
+
+		public DbConnection NewConnection(string connectionName)
+		{
+			var cn = DbExtensions.CreateConnection(connectionName);
+			var disposals = 0;
+			cn.Disposed += (sender, e) => Interlocked.Increment(ref disposals);
+			_scope.AddAction(
+				() =>
+				{
+					if (Thread.VolatileRead(ref disposals) == 0)
+					{
+						cn.Close();
+					}
+				});
+			return cn;
+		}
+
 
 		protected override bool PerformDispose(bool disposing)
 		{
@@ -65,7 +104,15 @@ namespace FlitBit.Data
 			{
 				return false;
 			}
-			ContextFlow.TryPop<DbContext>(this);
+			if (!ContextFlow.TryPop<IDbContext>(this) && DbTraceEvents.ShouldTrace(TraceEventType.Warning))
+			{
+				try
+				{
+					DbTraceEvents.OnTraceEvent(this, TraceEventType.Warning, Resources.Err_DbContextStackDisposedOutOfOrder);
+				}
+				catch { /* no errors surfaced in GC thread */ }
+			}
+			Util.Dispose(ref _scope);
 			return true;
 		}
 
@@ -75,24 +122,46 @@ namespace FlitBit.Data
 			return this;
 		}
 
-		public IDbConnection NewConnection(string connection)
+		public T Add<T>(T item) where T : IDisposable
 		{
-			throw new NotImplementedException();
+			return _scope.Add(item);
 		}
 
-		public IDbConnection Add<T>(IDbConnection cn)
+		public TConnection SharedOrNewConnection<TConnection>(string connectionName)
+			where TConnection : DbConnection, new()
 		{
-			throw new NotImplementedException();
+			DbConnection cn, capture = null;
+			cn = _connections.GetOrAdd(connectionName,
+				cs =>
+				{
+					capture = NewConnection<TConnection>(connectionName);
+					return capture;
+				});
+			if (capture != null)
+			{
+				if (!Object.ReferenceEquals(cn, capture))
+				{						
+					capture.Dispose();
+				}
+			}
+			return (TConnection)cn;
 		}
 
-		public IDbCommand Add<T>(IDbCommand cm)
+		public TConnection NewConnection<TConnection>(string connectionName)
+			where TConnection : DbConnection, new()
 		{
-			throw new NotImplementedException();
-		}	 
-
-		public T Add<T>(T contextual) where T : IDbContextual
-		{
-			throw new NotImplementedException();
+			var cn = DbExtensions.CreateConnection<TConnection>(connectionName);
+			var disposals = 0;
+			cn.Disposed += (sender, e) =>	Interlocked.Increment(ref disposals);
+			_scope.AddAction(
+				() =>
+				{
+					if (Thread.VolatileRead(ref disposals) == 0)
+					{
+						cn.Close();
+					}
+				});
+			return cn;
 		}
 	}
 }

@@ -1,32 +1,28 @@
-﻿#region COPYRIGHT© 2009-2012 Phillip Clark. All rights reserved.
+﻿#region COPYRIGHT© 2009-2013 Phillip Clark.
 // For licensing information see License.txt (MIT style licensing).
 #endregion
 
-
 using System;
-using System.Data;
 using System.Data.Common;
-using System.Text;
-using Newtonsoft.Json;
+using System.Diagnostics.Contracts;
 using System.Xml.Linq;
 using Newtonsoft.Json.Linq;
-using System.Diagnostics.Contracts;
 
 namespace FlitBit.Data
 {
-	public static class IDataReaderExtensions
+	public static class DbDataReaderExtensions
 	{
-		public static string ToJson(this IDataReader reader)
+		public static string ToJson(this DbDataReader reader)
 		{
 			return MultiResultToJArray(reader).ToString();
 		}
 
-		public static string ToJson(this IDataReader reader, string rootName)
+		public static string ToJson(this DbDataReader reader, string rootName)
 		{
 			return MultiResultToJObject(reader, rootName).ToString();
 		}
 
-		public static JArray MultiResultToJArray(this IDataReader reader)
+		public static JArray MultiResultToJArray(this DbDataReader reader)
 		{
 			var result = new JArray();
 			while (true)
@@ -41,7 +37,7 @@ namespace FlitBit.Data
 			return result;
 		}
 
-		public static JArray ResultToJArray(this IDataReader reader)
+		public static JArray ResultToJArray(this DbDataReader reader)
 		{
 			var result = new JArray();
 			while (reader.Read())
@@ -51,7 +47,7 @@ namespace FlitBit.Data
 			return result;
 		}
 
-		public static JObject MultiResultToJObject(this IDataReader reader, params string[] collectionNames)
+		public static JObject MultiResultToJObject(this DbDataReader reader, params string[] collectionNames)
 		{
 			Contract.Requires<ArgumentNullException>(reader != null);
 
@@ -71,7 +67,7 @@ namespace FlitBit.Data
 			return result;
 		}
 
-		public static JObject ResultToJObject(this IDataReader reader, string collectioName)
+		public static JObject ResultToJObject(this DbDataReader reader, string collectioName)
 		{
 			Contract.Requires<ArgumentNullException>(reader != null);
 			Contract.Requires<ArgumentNullException>(collectioName != null);
@@ -80,7 +76,7 @@ namespace FlitBit.Data
 			return new JObject(new JProperty(collectioName, ResultToJArray(reader)));			
 		}
 		
-		public static XElement CurrentRowAsXElement(this IDataRecord record, string elementName)
+		public static XElement CurrentRowAsXElement(this DbDataRecord record, string elementName)
 		{
 			var data = new object[record.FieldCount];
 			var columns = record.GetValues(data);
@@ -93,7 +89,7 @@ namespace FlitBit.Data
 			return result;
 		}
 
-		public static XElement CurrentRowAsXElement(this IDataRecord record, string elementName, bool columnsAsAttributes)
+		public static XElement CurrentRowAsXElement(this DbDataRecord record, string elementName, bool columnsAsAttributes)
 		{
 			var data = new object[record.FieldCount];
 			var columns = record.GetValues(data);

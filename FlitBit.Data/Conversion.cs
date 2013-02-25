@@ -1,11 +1,11 @@
-﻿#region COPYRIGHT© 2009-2012 Phillip Clark. All rights reserved.
+﻿#region COPYRIGHT© 2009-2013 Phillip Clark.
 // For licensing information see License.txt (MIT style licensing).
 #endregion
-
-
+										
 using System;
 using FlitBit.Core;
 using FlitBit.Emit;
+using System.Diagnostics.Contracts;
 
 namespace FlitBit.Data
 {
@@ -13,6 +13,8 @@ namespace FlitBit.Data
 	{
 		public static Guid ToGuid(object source)
 		{
+			Contract.Requires<ArgumentNullException>(source != null);
+
 			if (typeof(Guid).IsInstanceOfType(source))
 			{
 				return (Guid)source;
@@ -25,7 +27,7 @@ namespace FlitBit.Data
 					return result;
 				}
 			}
-			throw new NotImplementedException(
+			throw new ArgumentException(
 				String.Concat("Cannot convert type to Guid: ", 
 				source.GetType().GetReadableFullName())
 				);

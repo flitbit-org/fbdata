@@ -1,11 +1,12 @@
-﻿#region COPYRIGHT© 2009-2012 Phillip Clark. All rights reserved.
+﻿#region COPYRIGHT© 2009-2013 Phillip Clark.
 // For licensing information see License.txt (MIT style licensing).
 #endregion
-			 
+
 using System;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics.Contracts;
+using System.Linq;
 
 namespace FlitBit.Data
 {
@@ -14,12 +15,12 @@ namespace FlitBit.Data
 	{
 		public DbProviderFactory Factory { get; protected set; }
 
-		public virtual bool SupportsMultipleActiveResultSets(IDbConnection connection)
+		public virtual bool SupportsMultipleActiveResultSets(DbConnection connection)
 		{
 			return false;
 		}
 
-		public virtual bool SupportsAsynchronousProcessing(IDbConnection connection)
+		public virtual bool SupportsAsynchronousProcessing(DbConnection connection)
 		{
 			return false;
 		}																	
@@ -29,12 +30,12 @@ namespace FlitBit.Data
 		/// </summary>
 		/// <param name="connection"></param>
 		/// <param name="catalog"></param>
-		public virtual bool CatalogExists(IDbConnection connection, string catalog)
+		public virtual bool CatalogExists(DbConnection connection, string catalog)
 		{
 			throw new NotImplementedException();
 		}
 
-		public virtual bool SchemaExists(IDbConnection connection, string catalog, string schema)
+		public virtual bool SchemaExists(DbConnection connection, string catalog, string schema)
 		{
 			Contract.Requires<ArgumentNullException>(connection != null);
 			Contract.Requires<ArgumentNullException>(catalog != null);
@@ -43,10 +44,10 @@ namespace FlitBit.Data
 			Contract.Requires(schema.Length > 0);
 
 			var sql = String.Format("SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE CATALOG_NAME = '{0}' AND SCHEMA_NAME = '{1}'", catalog, schema);
-			return connection.ExecuteReader(sql).SingleExists("SCHEMA_NAME");
+			return connection.ImmediateExecuteEnumerable(sql).Any();
 		}
 				
-		public bool TableExists(IDbConnection connection, string catalog, string schema, string table)
+		public bool TableExists(DbConnection connection, string catalog, string schema, string table)
 		{
 			Contract.Requires<ArgumentNullException>(connection != null);
 			Contract.Requires<ArgumentNullException>(catalog != null);
@@ -57,8 +58,8 @@ namespace FlitBit.Data
 			Contract.Requires(table.Length > 0);
 
 			return connection
-				.ExecuteReader(FormatTableExistsQuery(catalog, schema, table))
-				.SingleExists("TABLE_NAME");
+				.ImmediateExecuteEnumerable(FormatTableExistsQuery(catalog, schema, table))
+				.Any();
 		}
 
 		protected virtual string FormatTableExistsQuery(string catalogName, string schemaName, string tableName)
@@ -71,7 +72,7 @@ WHERE TABLE_CATALOG = '{0}'
 	AND TABLE_TYPE = 'BASE TABLE'", catalogName, schemaName, tableName);
 		}
 
-		public bool ViewExists(IDbConnection connection, string catalog, string schema, string view)
+		public bool ViewExists(DbConnection connection, string catalog, string schema, string view)
 		{
 			Contract.Requires<ArgumentNullException>(connection != null);
 			Contract.Requires<ArgumentNullException>(catalog != null);
@@ -82,8 +83,8 @@ WHERE TABLE_CATALOG = '{0}'
 			Contract.Requires(view.Length > 0);
 
 			return connection
-				.ExecuteReader(FormatViewExistsQuery(catalog, schema, view))
-				.SingleExists("TABLE_NAME");
+				.ImmediateExecuteEnumerable(FormatViewExistsQuery(catalog, schema, view))
+				.Any();
 		}
 
 		protected virtual string FormatViewExistsQuery(string catalogName, string schemaName, string viewName)
@@ -95,7 +96,7 @@ WHERE TABLE_CATALOG = '{0}'
 	AND TABLE_NAME = '{2}'", catalogName, schemaName, viewName);
 		}
 
-		public bool StoredProcedureExists(IDbConnection connection, string catalog, string schema, string storedProcedure)
+		public bool StoredProcedureExists(DbConnection connection, string catalog, string schema, string storedProcedure)
 		{
 			Contract.Requires<ArgumentNullException>(connection != null);
 			Contract.Requires<ArgumentNullException>(catalog != null);
@@ -106,8 +107,8 @@ WHERE TABLE_CATALOG = '{0}'
 			Contract.Requires(storedProcedure.Length > 0);
 
 			return connection
-				.ExecuteReader(FormatProcedureExistsQuery(catalog, schema, storedProcedure))
-				.SingleExists("ROUTINE_NAME");
+				.ImmediateExecuteEnumerable(FormatProcedureExistsQuery(catalog, schema, storedProcedure))
+				.Any();
 		}
 
 		protected virtual string FormatProcedureExistsQuery(string catalog, string schema, string storedProcedure)
@@ -120,7 +121,7 @@ WHERE ROUTINE_CATALOG = '{0}'
 	AND ROUTINE_TYPE = 'PROCEDURE'", catalog, schema, storedProcedure);
 		}
 
-		public bool FunctionExists(IDbConnection connection, string catalog, string schema, string fun)
+		public bool FunctionExists(DbConnection connection, string catalog, string schema, string fun)
 		{
 			Contract.Requires<ArgumentNullException>(connection != null);
 			Contract.Requires<ArgumentNullException>(catalog != null);
@@ -131,8 +132,8 @@ WHERE ROUTINE_CATALOG = '{0}'
 			Contract.Requires(fun.Length > 0);
 
 			return connection
-				.ExecuteReader(FormatFunctionExistsQuery(catalog, schema, fun))
-				.SingleExists("ROUTINE_NAME");
+				.ImmediateExecuteEnumerable(FormatFunctionExistsQuery(catalog, schema, fun))
+				.Any();
 		}
 
 		protected virtual string FormatFunctionExistsQuery(string catalog, string schema, string fun)
@@ -145,9 +146,9 @@ WHERE ROUTINE_CATALOG = '{0}'
 	AND ROUTINE_TYPE = 'FUNCTION'", catalog, schema, fun);
 		}
 
-		public abstract string GetServerName(IDbConnection connection);
+		public abstract string GetServerName(DbConnection connection);
 
-		public void CreateSchema(IDbConnection connection, string catalog, string schema)
+		public void CreateSchema(DbConnection connection, string catalog, string schema)
 		{
 			Contract.Requires<ArgumentNullException>(connection != null);
 			Contract.Requires<ArgumentNullException>(catalog != null);
@@ -175,34 +176,58 @@ WHERE ROUTINE_CATALOG = '{0}'
 		{
 			return false;
 		}
-
-		public virtual BasicDbExecutable DefineCommandOnConnection(string connection)
+				
+		public virtual IAsyncResult BeginExecuteNonQuery(DbCommand command, AsyncCallback callback, Object stateObject) 
 		{
-			return new BasicDbExecutable(connection);
-		}
-		public virtual BasicDbExecutable DefineCommandOnConnection(string connection, string commandText, CommandType commandType)
-		{
-			return new BasicDbExecutable(connection, commandText, commandType);
-		}
-		public virtual BasicDbExecutable MakeCommandOnConnection(string connection, BasicDbExecutable definition)
-		{
-			return new BasicDbExecutable(connection, definition);
-		}
-		public virtual BasicDbExecutable MakeCommandOnConnection(IDbConnection connection, BasicDbExecutable definition)
-		{
-			return new BasicDbExecutable(connection, definition);
-		}
-
-		public virtual IAsyncResult BeginExecuteNonQuery(IDbCommand command, AsyncCallback callback, Object stateObject) 
-		{
+			Contract.Requires<ArgumentNullException>(command != null);
+			Contract.Ensures(Contract.Result<IAsyncResult>() != null);
+		
 			throw new NotImplementedException();		
 		}
 
-		public virtual IAsyncResult BeginExecuteReader(IDbCommand command, AsyncCallback callback, Object stateObject)
+		public virtual IAsyncResult BeginExecuteReader(DbCommand command, AsyncCallback callback, Object stateObject)
 		{
+			Contract.Requires<ArgumentNullException>(command != null);
+			Contract.Ensures(Contract.Result<IAsyncResult>() != null);
+
 			throw new NotImplementedException();
 		}
 
+		public virtual int EndExecuteNonQuery(DbCommand command, IAsyncResult ar)
+		{
+			Contract.Requires<ArgumentNullException>(command != null);
+			Contract.Requires<ArgumentNullException>(ar != null);
+
+			throw new NotImplementedException();
+		}
+		public virtual DbDataReader EndExecuteReader(DbCommand command, IAsyncResult ar)
+		{
+			Contract.Requires<ArgumentNullException>(command != null);
+			Contract.Requires<ArgumentNullException>(ar != null);
+			Contract.Ensures(Contract.Result<DbDataReader>() != null);
+
+			throw new NotImplementedException();
+		}																								
+
 		public abstract DbTypeTranslation TranslateRuntimeType(Type type);
+
+		public abstract IDbExecutable DefineExecutableOnConnection(string connectionName);
+
+		public abstract IDbExecutable DefineExecutableOnConnection(string connectionName, string cmdText);
+
+		public abstract IDbExecutable DefineExecutableOnConnection(string connectionName, string cmdText, CommandType cmdType);
+
+		public abstract IDbExecutable DefineExecutableOnConnection(string connectionName, string cmdText, CommandType cmdType, int cmdTimeout);
+
+		public abstract IDbExecutable DefineExecutableOnConnection(string connectionName, IDbExecutable exe);
+
+		public abstract IDbExecutable DefineExecutableOnConnection(DbConnection connection, IDbExecutable exe);
+
+		public abstract IDbExecutable DefineExecutableOnConnection(DbConnection connection, string cmdText);
+
+		public abstract IDbExecutable DefineExecutableOnConnection(DbConnection connection, string cmdText, CommandType cmdType);
+
+		public abstract IDbExecutable DefineExecutableOnConnection(DbConnection connection, string cmdText, CommandType cmdType, int cmdTimeout);
+
 	}	
 }

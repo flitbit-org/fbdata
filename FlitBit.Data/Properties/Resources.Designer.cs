@@ -86,5 +86,50 @@ namespace FlitBit.Data.Properties {
                 return ResourceManager.GetString("Chk_ParameterObstructed", resourceCulture);
             }
         }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to DbContext disposed out of order. Usually this is due to a DbContext being used without a `using` clause..
+        /// </summary>
+        internal static string Err_DbContextStackDisposedOutOfOrder {
+            get {
+                return ResourceManager.GetString("Err_DbContextStackDisposedOutOfOrder", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to DbCommand produced more results than expected..
+        /// </summary>
+        internal static string Err_DuplicateDbResult {
+            get {
+                return ResourceManager.GetString("Err_DuplicateDbResult", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to DbCommand produced no results..
+        /// </summary>
+        internal static string Err_EmptyDbResult {
+            get {
+                return ResourceManager.GetString("Err_EmptyDbResult", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Overlapping use of an IDbExecutable not allowed..
+        /// </summary>
+        internal static string Err_OverlappingUseOfExecutable {
+            get {
+                return ResourceManager.GetString("Err_OverlappingUseOfExecutable", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Type not supported. Expected : .
+        /// </summary>
+        internal static string Err_TypeNotSupported {
+            get {
+                return ResourceManager.GetString("Err_TypeNotSupported", resourceCulture);
+            }
+        }
     }
 }

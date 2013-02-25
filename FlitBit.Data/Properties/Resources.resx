@@ -126,4 +126,19 @@
   <data name="Chk_ParameterObstructed" xml:space="preserve">
     <value>Either the parameter is already defined or there is a naming conflict.</value>
   </data>
+  <data name="Err_DbContextStackDisposedOutOfOrder" xml:space="preserve">
+    <value>DbContext disposed out of order. Usually this is due to a DbContext being used without a `using` clause.</value>
+  </data>
+  <data name="Err_DuplicateDbResult" xml:space="preserve">
+    <value>DbCommand produced more results than expected.</value>
+  </data>
+  <data name="Err_EmptyDbResult" xml:space="preserve">
+    <value>DbCommand produced no results.</value>
+  </data>
+  <data name="Err_OverlappingUseOfExecutable" xml:space="preserve">
+    <value>Overlapping use of an IDbExecutable not allowed.</value>
+  </data>
+  <data name="Err_TypeNotSupported" xml:space="preserve">
+    <value>Type not supported. Expected : </value>
+  </data>
 </root>
