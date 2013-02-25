@@ -107,9 +107,9 @@
     <Reference Include="FlitBit.Copy">
       <HintPath>..\packages\FlitBit.Copy.2.6.3\lib\net40\FlitBit.Copy.dll</HintPath>
     </Reference>
-    <Reference Include="FlitBit.Core, Version=2.8.5.0, Culture=neutral, PublicKeyToken=38f03d0878531ff3, processorArchitecture=MSIL">
+    <Reference Include="FlitBit.Core, Version=2.8.8.0, Culture=neutral, PublicKeyToken=38f03d0878531ff3, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\FlitBit.Core.2.8.5\lib\net40\FlitBit.Core.dll</HintPath>
+      <HintPath>..\packages\FlitBit.Core.2.8.8\lib\net40\FlitBit.Core.dll</HintPath>
     </Reference>
     <Reference Include="FlitBit.Emit">
       <HintPath>..\packages\FlitBit.Emit.2.7.1\lib\net40\FlitBit.Emit.dll</HintPath>
@@ -170,6 +170,7 @@
     <Compile Include="DbCommandExtensions.cs" />
     <Compile Include="DbConnectionExtensions.cs" />
     <Compile Include="IDataRepository.cs" />
+    <Compile Include="IDataRepositoryExtensions.cs" />
     <Compile Include="IDbContext.cs" />
     <Compile Include="IDbExecutable.cs" />
     <Compile Include="IDbExecutableExtensions.cs" />
@@ -185,6 +186,7 @@
     <Compile Include="SqlServer\SqlDbTypeTranslation.cs" />
     <Compile Include="SqlServer\SqlDbTypeTranslations.cs" />
     <Compile Include="SqlServer\SqlParameterBinder.cs" />
+    <Compile Include="TableBackedDataRepository.cs" />
     <Compile Include="TransactionScopeHelper.cs" />
     <Compile Include="Wireup.cs" />
   </ItemGroup>

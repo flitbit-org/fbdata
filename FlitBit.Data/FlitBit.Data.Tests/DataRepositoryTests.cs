@@ -54,7 +54,7 @@ CREATE TABLE [", SchemaName, @"].[Peeps]
 		public void Monkey()
 		{
 			var rand = new Random(Environment.TickCount);
-			var gen = new DataGenerator();			
+			var gen = new DataGenerator();
 			var repo = new PeepsRepository("test-data", SchemaName);
 
 			List<Peep> all = new List<Peep>();
@@ -64,27 +64,38 @@ CREATE TABLE [", SchemaName, @"].[Peeps]
 			{
 				for (int i = 0; i < 1000; i++)
 				{
-					var it = new Peep();
-					it.Name = gen.GetWords(2);
-					it.Description = gen.GetWords(rand.Next(6, 80));
+					var name = gen.GetWords(2);
 
-					// ensure we don't overflow the field...
-					if (it.Description.Length > 300)
-						it.Description = it.Description.Substring(0, 300);
-
-					var future = new Future<Peep>();
-					repo.Create(ctx, it, (e, peep) =>
+					var oldPeep = repo.ReadByName(ctx, name);
+					if (oldPeep != null)
 					{
-						if (e != null) future.MarkFaulted(e);
-						else future.MarkCompleted(peep);
-					});
+						Assert.AreEqual(name, oldPeep.Name);
 
-					var created = future.Value;
-					Assert.AreEqual(it.Name, created.Name);
-					Assert.AreEqual(it.Description, created.Description);
-					Assert.AreNotEqual(it.DateCreated, created.DateCreated);
-					Assert.AreNotEqual(it.DateUpdated, created.DateUpdated);
-					all.Add(created);
+						oldPeep.Description = gen.GetWords(rand.Next(6, 80));
+
+						// ensure we don't overflow the field...
+						if (oldPeep.Description.Length > 300)
+							oldPeep.Description = oldPeep.Description.Substring(0, 300);
+
+						repo.Update(ctx, oldPeep);
+					}
+					else
+					{
+						var it = new Peep();
+						it.Name = name;
+						it.Description = gen.GetWords(rand.Next(6, 80));
+
+						// ensure we don't overflow the field...
+						if (it.Description.Length > 300)
+							it.Description = it.Description.Substring(0, 300);
+
+						var newPeep = repo.Create(ctx, it);
+						Assert.AreEqual(it.Name, newPeep.Name);
+						Assert.AreEqual(it.Description, newPeep.Description);
+						Assert.AreNotEqual(it.DateCreated, newPeep.DateCreated);
+						Assert.AreNotEqual(it.DateUpdated, newPeep.DateUpdated);
+						all.Add(newPeep);
+					}
 				}
 			}
 			timer.Start();
