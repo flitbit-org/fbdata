@@ -153,5 +153,10 @@ WHERE [{0}].[Peeps].[ID] = @ID";
 		protected string ReadByNameCommand { get; set; }
 
 		protected string UpdateCommand { get; set; }
+
+		internal void Create(IDbContext ctx, Peep it, Continuation<Peep> continuation)
+		{
+			throw new NotImplementedException();
+		}
 	}
 }

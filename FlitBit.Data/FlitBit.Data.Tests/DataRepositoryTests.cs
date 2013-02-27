@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Collections.Generic;
 using System.Configuration;
 using System.Data;
@@ -8,6 +9,9 @@ using FlitBit.Core;
 using FlitBit.Data.Tests.Model;
 using FlitBit.Wireup;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Threading.Tasks;
+using System.Collections.Concurrent;
+using FlitBit.Core.Parallel;
 
 namespace FlitBit.Data.Tests
 {
@@ -30,7 +34,7 @@ CREATE TABLE [{0}].[Peeps]
 	[DateUpdated] DATETIME NOT NULL
 		CONSTRAINT DF_Peep_DateUpdated DEFAULT (GETUTCDATE()),
 		CONSTRAINT CK_Peep_DateUpdated CHECK ([DateUpdated] >= [DateCreated])
-)";																																		 
+)";
 		static readonly string DropTableCommandFmt = @"
 TRUNCATE TABLE [{0}].[Peeps];
 DROP TABLE [{0}].[Peeps]";
@@ -60,7 +64,7 @@ DROP TABLE [{0}].[Peeps]";
 
 		[TestCleanup]
 		public void Cleanup()
-		{																																											
+		{
 			using (var cx = DbContext.NewContext())
 			{
 				var cndata = cx.NewConnection("test-data").EnsureConnectionIsOpen();
@@ -90,7 +94,7 @@ DROP TABLE [{0}].[Peeps]";
 					{
 						Assert.AreEqual(name, oldPeep.Name);
 
-						oldPeep.Description = gen.GetWords(rand.Next(6, 80));
+						oldPeep.Description = gen.GetWords(rand.Next(6, 60));
 
 						// ensure we don't overflow the field...
 						if (oldPeep.Description.Length > 300)
@@ -102,7 +106,7 @@ DROP TABLE [{0}].[Peeps]";
 					{
 						var it = new Peep();
 						it.Name = name;
-						it.Description = gen.GetWords(rand.Next(6, 80));
+						it.Description = gen.GetWords(rand.Next(6, 20));
 
 						// ensure we don't overflow the field...
 						if (it.Description.Length > 300)
@@ -118,7 +122,7 @@ DROP TABLE [{0}].[Peeps]";
 				}
 				timer.Stop();
 			}
-			
+
 			Console.WriteLine(String.Concat(all.Count, " random peeps in ", TimeSpan.FromMilliseconds(timer.ElapsedMilliseconds).ToString()));
 			Console.WriteLine(String.Concat(timer.ElapsedMilliseconds / all.Count, " milliseconds each."));
 
@@ -127,6 +131,115 @@ DROP TABLE [{0}].[Peeps]";
 			{
 				foreach (var peep in all)
 				{
+					Console.WriteLine(peep.ToJson());
+					Assert.IsTrue(repo.Delete(ctx, peep.ID));
+				}
+			}
+		}
+
+		//[TestMethod]
+		public void TableBackedDataRepository_CreateReadUpdateAndDeleteAsync()
+		{
+			var rand = new Random(Environment.TickCount);
+			var gen = new DataGenerator();
+			var repo = new PeepsRepository("test-data-async", _schemaName);
+
+			ConcurrentBag<Peep> all = new ConcurrentBag<Peep>();
+			ConcurrentQueue<IFuture<bool>> background = new ConcurrentQueue<IFuture<bool>>();
+
+			Stopwatch timer = Stopwatch.StartNew();
+			using (var ctx = DbContext.NewContext())
+			{
+				Parallel.For(0, 1000, i =>
+				{
+					var name = gen.GetWords(2);
+
+					var fread = new Future<bool>();
+					background.Enqueue(fread);
+					repo.ReadByName(ctx, name,
+						(e, res) =>
+						{
+							if (e != null) { fread.MarkFaulted(e); }
+							else
+							{
+								try
+								{
+									if (res != null)
+									{
+										Assert.AreEqual(name, res.Name);
+
+										res.Description = gen.GetWords(rand.Next(6, 60));
+
+										// ensure we don't overflow the field...
+										if (res.Description.Length > 300)
+											res.Description = res.Description.Substring(0, 300);
+
+										var fupdate = new Future<bool>();
+										repo.Update(ctx, res, (ee, updated) =>
+										{
+											if (ee != null) fupdate.MarkFaulted(ee);
+											else fupdate.MarkCompleted(true);
+										});
+									}
+									else
+									{
+										var it = new Peep();
+										it.Name = name;
+										it.Description = gen.GetWords(rand.Next(6, 20));
+
+										// ensure we don't overflow the field...
+										if (it.Description.Length > 300)
+											it.Description = it.Description.Substring(0, 300);
+
+										var fcreated = new Future<bool>();
+										repo.Create(ctx, it, (ee, created) =>
+										{
+											if (ee != null) fcreated.MarkFaulted(ee);
+											else
+											{
+												try
+												{
+													Assert.AreEqual(it.Name, created.Name);
+													Assert.AreEqual(it.Description, created.Description);
+													Assert.AreNotEqual(it.DateCreated, created.DateCreated);
+													Assert.AreNotEqual(it.DateUpdated, created.DateUpdated);
+													all.Add(created);
+													fcreated.MarkCompleted(true);
+												}
+												catch (Exception ce)
+												{
+													fcreated.MarkFaulted(ce);
+												}
+											}
+										});
+									}
+									fread.MarkCompleted(true);
+								}
+								catch (Exception re)
+								{
+									fread.MarkFaulted(re);
+								}
+							}
+						});
+				});
+				
+				// wait for all of the background operations to complete...
+				IFuture<bool> f;
+				while (background.TryDequeue(out f))
+				{
+					f.AwaitValue();
+				}
+				timer.Stop();
+			}
+
+			Console.WriteLine(String.Concat(all.Count, " random peeps in ", TimeSpan.FromMilliseconds(timer.ElapsedMilliseconds).ToString()));
+			Console.WriteLine(String.Concat(timer.ElapsedMilliseconds / all.Count, " milliseconds each."));
+
+			using (var ctx = DbContext.NewContext())
+			{
+				foreach (var peep in all)
+				{
+					Console.WriteLine(peep.ToJson());
 					Assert.IsTrue(repo.Delete(ctx, peep.ID));
 				}
 			}
@@ -136,7 +249,7 @@ DROP TABLE [{0}].[Peeps]";
 		public void DbObjects_CreateReadUpdateAndDelete()
 		{
 			var rand = new Random(Environment.TickCount);
-			var gen = new DataGenerator();			 			
+			var gen = new DataGenerator();
 			string cs = ConfigurationManager.ConnectionStrings["test-data"].ConnectionString;
 			string InsertCommand = String.Format(PeepsRepository.__InsertCommandFmt, _schemaName),
 			UpdateCommand = String.Format(PeepsRepository.__UpdateCommandFmt, _schemaName),
@@ -156,7 +269,7 @@ DROP TABLE [{0}].[Peeps]";
 			using (var cn = new SqlConnection(cs))
 			{
 				cn.Open();
-				
+
 				for (int i = 0; i < 1000; i++)
 				{
 					var name = gen.GetWords(2);
@@ -167,21 +280,21 @@ DROP TABLE [{0}].[Peeps]";
 						using (var reader = cmd.ExecuteReader())
 						{
 							if (reader.Read())
-							{	 
+							{
 								oldPeep = new Peep();
 								oldPeep.ID = reader.GetInt32(0);
 								oldPeep.Name = reader.GetString(1);
 								oldPeep.Description = reader.GetString(2);
 								oldPeep.DateCreated = reader.GetDateTime(3);
-								oldPeep.DateUpdated = reader.GetDateTime(4); 
+								oldPeep.DateUpdated = reader.GetDateTime(4);
 							}
-						}								
+						}
 					}
 					if (oldPeep != null)
 					{
 						Assert.AreEqual(name, oldPeep.Name);
 
-						oldPeep.Description = gen.GetWords(rand.Next(6, 80));
+						oldPeep.Description = gen.GetWords(rand.Next(6, 60));
 
 						// ensure we don't overflow the field...
 						if (oldPeep.Description.Length > 300)
@@ -213,7 +326,7 @@ DROP TABLE [{0}].[Peeps]";
 					{
 						var it = new Peep();
 						it.Name = name;
-						it.Description = gen.GetWords(rand.Next(6, 80));
+						it.Description = gen.GetWords(rand.Next(6, 20));
 
 						// ensure we don't overflow the field...
 						if (it.Description.Length > 300)
@@ -228,14 +341,15 @@ DROP TABLE [{0}].[Peeps]";
 							{
 								if (reader.Read())
 								{
-										newPeep = new Peep();
-										newPeep.ID = reader.GetInt32(0);
-										newPeep.Name = reader.GetString(1);
-										newPeep.Description = reader.GetString(2);
-										newPeep.DateCreated = reader.GetDateTime(3);
-										newPeep.DateUpdated = reader.GetDateTime(4);
-						}	}
-						} 
+									newPeep = new Peep();
+									newPeep.ID = reader.GetInt32(0);
+									newPeep.Name = reader.GetString(1);
+									newPeep.Description = reader.GetString(2);
+									newPeep.DateCreated = reader.GetDateTime(3);
+									newPeep.DateUpdated = reader.GetDateTime(4);
+								}
+							}
+						}
 						Assert.AreEqual(it.Name, newPeep.Name);
 						Assert.AreEqual(it.Description, newPeep.Description);
 						Assert.AreNotEqual(it.DateCreated, newPeep.DateCreated);
@@ -245,7 +359,7 @@ DROP TABLE [{0}].[Peeps]";
 				}
 				timer.Stop();
 			}
-			
+
 			Console.WriteLine(String.Concat(all.Count, " random peeps in ", TimeSpan.FromMilliseconds(timer.ElapsedMilliseconds).ToString()));
 			Console.WriteLine(String.Concat(timer.ElapsedMilliseconds / all.Count, " milliseconds each."));
 
@@ -255,6 +369,7 @@ DROP TABLE [{0}].[Peeps]";
 
 				foreach (var peep in all)
 				{
+					Console.WriteLine(peep.ToJson());
 					using (var cmd = new SqlCommand(DeleteCommand, cn))
 					{
 						cmd.Parameters.Add(new SqlParameter("@ID", SqlDbType.Int)).Value = peep.ID;

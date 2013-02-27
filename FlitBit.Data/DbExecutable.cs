@@ -310,11 +310,21 @@ namespace FlitBit.Data
 				bool needsPostProcessing = PrepareDbCommandForExecute(cmd);
 				var ar = helper.BeginExecuteReader(cmd, res =>
 				{
-					using (var reader = helper.EndExecuteReader(cmd, res))
+					if (!res.CompletedSynchronously)
+					{
+						using (var reader = helper.EndExecuteReader(cmd, res))
+						{
+							continuation(null, new DbResult<DbDataReader>(this, reader));
+						}
+					}
+				}, null);
+				if (ar.CompletedSynchronously)
+				{
+					using (var reader = helper.EndExecuteReader(cmd, ar))
 					{
 						continuation(null, new DbResult<DbDataReader>(this, reader));
 					}
-				}, null);
+				}
 			}
 			else
 			{
@@ -410,10 +420,13 @@ namespace FlitBit.Data
 
 		protected override bool PerformDispose(bool disposing)
 		{
-			Util.Dispose(ref _command);
-			if (_ourConnection) _connection.Close();
-			else _connection.Disposed -= connection_Disposed;
-			return disposing;
+			if (disposing)
+			{
+				Util.Dispose(ref _command);
+				if (_ourConnection) _connection.Close();				
+			}
+			if (_connection != null) _connection.Disposed -= connection_Disposed;
+			return true;
 		}
 	}
 }

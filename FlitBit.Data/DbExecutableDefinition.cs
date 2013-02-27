@@ -142,7 +142,7 @@ namespace FlitBit.Data
 
 		protected override bool PerformDispose(bool disposing)
 		{
-			return disposing;
+			return true;
 		}
 	}
 }

@@ -144,8 +144,11 @@ namespace FlitBit.Data
 				}
 				catch { /* no errors surfaced in GC thread */ }
 			}
-			Util.Dispose(ref _scope);
-			Util.Dispose(ref _parent);
+			if (disposing)
+			{
+				Util.Dispose(ref _scope);
+				Util.Dispose(ref _parent);
+			}
 			return true;
 		}
 	}
