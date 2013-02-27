@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics.Contracts;
@@ -9,14 +10,248 @@ namespace FlitBit.Data
 {
 	public abstract class TableBackedRepository<TModel, Id> : IDataRepository<TModel, Id>
 	{
+		protected static readonly string CCacheKey = typeof(TModel).AssemblyQualifiedName;
+		readonly ConcurrentBag<AbstractCacheHandler> _cacheHandlers = new ConcurrentBag<AbstractCacheHandler>();
+		
+		abstract class AbstractCacheHandler
+		{
+			internal abstract void UpdateCacheItem(IDbContext context, TModel item);			
+			internal abstract void RemoveCacheItem(IDbContext context, TModel item);
+		}
+		class CacheHandler<TCacheKey, TItemKey> : AbstractCacheHandler
+		{
+			private TCacheKey _cacheKey;
+			private Func<TModel, TItemKey> _calculateKey;
+
+			public CacheHandler(TCacheKey cacheKey, Func<TModel, TItemKey> calculateKey)
+			{
+				this._cacheKey = cacheKey;
+				this._calculateKey = calculateKey;
+			}
+			internal override void UpdateCacheItem(IDbContext context, TModel item)
+			{
+				var cache = context.EnsureCache<TCacheKey, ConcurrentDictionary<TItemKey, TModel>>(_cacheKey);
+				var key = _calculateKey(item);
+				cache.AddOrUpdate(key, item, (k, v) => item);
+			}	
+			internal override void RemoveCacheItem(IDbContext context, TModel item)
+			{
+				var cache = context.EnsureCache<TCacheKey, ConcurrentDictionary<TItemKey, TModel>>(_cacheKey);
+				var key = _calculateKey(item);
+				TModel unused;
+				cache.TryRemove(key, out unused);
+			}
+		}
+
+		protected void PerformUpdateCacheItem(IDbContext context, TModel item)
+		{
+			foreach (var handler in _cacheHandlers)
+			{
+				handler.UpdateCacheItem(context, item);
+			}
+		}
+		protected void PerformRemoveCacheItem(IDbContext context, TModel item)
+		{
+			foreach (var handler in _cacheHandlers)
+			{
+				handler.UpdateCacheItem(context, item);
+			}
+		}
+
+		protected void RegisterCacheHandler<TCacheKey, TKey>(TCacheKey cacheKey, Func<TModel, TKey> calculateKey)
+		{
+			_cacheHandlers.Add(new CacheHandler<TCacheKey, TKey>(cacheKey, calculateKey));
+		}
+
 		public TableBackedRepository(string connectionName)
 		{
 			Contract.Requires<ArgumentNullException>(connectionName != null);
 			Contract.Requires<ArgumentException>(connectionName.Length > 0);
+			
 			this.ConnectionName = connectionName;
+			this.RegisterCacheHandler(CCacheKey, GetIdentity);
 		}
 
 		public abstract Id GetIdentity(TModel model);
+
+		public TModel Create(IDbContext context, TModel model)
+		{
+			var result = default(TModel);
+			var cn = context.SharedOrNewConnection(ConnectionName);
+			var helper = DbProviderHelpers.GetDbProviderHelperForDbConnection(cn);
+			using (var exe = helper.DefineExecutableOnConnection(cn, InsertCommand))
+			{
+				BindInsertCommand(exe.ParameterBinder, model);
+
+				exe.ExecuteReader(res =>
+				{
+					var reader = res.Result;
+					if (reader.Read())
+					{
+						result = CreateInstance();
+						PopulateInstance(result, res.Executable, reader);
+						UpdateCacheItem(context, result);
+					}
+				});
+			}
+			return result;
+		}
+
+		public TModel Read(IDbContext context, Id id)
+		{
+			return GetCacheItem(context, CCacheKey, id, PerformDirectRead);				
+		}
+
+		protected TModel GetCacheItem<TCacheKey, TItemKey>(IDbContext context, TCacheKey cacheKey, TItemKey key, Func<IDbContext, TItemKey, TModel> resolver)
+			where TCacheKey: class
+		{
+			if (cacheKey != null && !context.Behaviors.HasFlag(DbContextBehaviors.DisableCaching))
+			{
+				var cache = context.EnsureCache<TCacheKey, ConcurrentDictionary<TItemKey, TModel>>(cacheKey);
+
+				TModel res;
+				if (cache.TryGetValue(key, out res))
+				{
+					return res;
+				}
+			}
+			return resolver(context, key);
+		}
+		
+		protected void UpdateCacheItem(IDbContext context, TModel item)
+		{
+			if (!context.Behaviors.HasFlag(DbContextBehaviors.DisableCaching))
+			{
+				PerformUpdateCacheItem(context, item);
+			}
+		}		
+		protected void RemoveCacheItem(IDbContext context, TModel item)
+		{
+			if (!context.Behaviors.HasFlag(DbContextBehaviors.DisableCaching))
+			{
+				PerformRemoveCacheItem(context, item);	
+			}
+		}												
+
+		TModel PerformDirectRead(IDbContext context, Id id)
+		{
+			var result = default(TModel);
+			var cn = context.SharedOrNewConnection(ConnectionName);
+			var helper = DbProviderHelpers.GetDbProviderHelperForDbConnection(cn);
+			using (var exe = helper.DefineExecutableOnConnection(cn, InsertCommand))
+			{
+				BindReadCommand(exe.ParameterBinder, id);
+
+				exe.ExecuteReader(res =>
+				{
+					var reader = res.Result;
+					if (reader.Read())
+					{
+						result = CreateInstance();
+						PopulateInstance(result, res.Executable, reader);
+						UpdateCacheItem(context, result);
+					}
+				});
+			}
+			return result;
+		}
+
+		protected virtual TModel ReadBy<TCacheKey, TItemKey>(IDbContext context, string command, Action<IDataParameterBinder> binder, TCacheKey cacheKey, TItemKey key)
+			where TCacheKey : class
+		{
+			Contract.Requires<ArgumentNullException>(context != null);
+			Contract.Requires<ArgumentNullException>(command != null);
+			Contract.Requires<ArgumentException>(command.Length > 0);
+
+			return GetCacheItem(context, cacheKey, key, (ctx, k) =>
+			{
+				var result = default(TModel);
+				var cn = context.SharedOrNewConnection(ConnectionName);
+				var helper = DbProviderHelpers.GetDbProviderHelperForDbConnection(cn);
+				using (var exe = helper.DefineExecutableOnConnection(cn, command))
+				{
+					if (binder != null) binder(exe.ParameterBinder);
+
+					exe.ExecuteReader(res =>
+					{
+						var reader = res.Result;
+						if (reader.Read())
+						{
+							result = CreateInstance();
+							PopulateInstance(result, res.Executable, reader);
+							UpdateCacheItem(context, result);
+						}
+					});
+				}
+				return result;
+			});
+		}
+		
+		public TModel Update(IDbContext context, TModel model)
+		{
+			var result = default(TModel);
+			var cn = context.SharedOrNewConnection(ConnectionName);
+			var helper = DbProviderHelpers.GetDbProviderHelperForDbConnection(cn);
+			string updateCmd = MakeUpdateCommand(model);
+			using (var exe = helper.DefineExecutableOnConnection(cn, updateCmd))
+			{
+				BindUpdateCommand(exe.ParameterBinder, model);
+
+				exe.ExecuteReader(res =>
+				{
+					var reader = res.Result;
+					if (reader.Read())
+					{
+						result = CreateInstance();
+						PopulateInstance(result, res.Executable, reader);
+						UpdateCacheItem(context, result);
+					}
+				});
+			}
+			return result;
+		}
+
+		public bool Delete(IDbContext context, Id id)
+		{
+			var cn = context.SharedOrNewConnection(ConnectionName);
+			var helper = DbProviderHelpers.GetDbProviderHelperForDbConnection(cn);
+			using (var exe = helper.DefineExecutableOnConnection(cn, DeleteCommand))
+			{
+				BindDeleteCommand(exe.ParameterBinder, id);
+
+				return (exe.ExecuteNonQuery() > 0);
+			}
+		}
+
+		public IEnumerable<TModel> All(IDbContext context)
+		{
+			throw new NotImplementedException();
+		}
+
+		public IEnumerable<TModel> ReadMatch<TMatch>(IDbContext context, TMatch match)
+		{
+			throw new NotImplementedException();
+		}
+
+		public int UpdateMatch<TMatch, TUpdate>(IDbContext context, TMatch match, TUpdate update)
+		{
+			throw new NotImplementedException();
+		}
+
+		public int DeleteMatch<TMatch>(IDbContext context, TMatch match)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void UpdateMatch<TMatch, TUpdate>(IDbContext context, TMatch match, TUpdate update, Continuation<int> continuation)
+		{
+			throw new NotImplementedException();
+		}
+
+		public void DeleteMatch<TMatch>(IDbContext context, TMatch match, Continuation<int> continuation)
+		{
+			throw new NotImplementedException();
+		}
 
 		public void Create(IDbContext context, TModel model, Continuation<TModel> continuation)
 		{
@@ -221,7 +456,7 @@ namespace FlitBit.Data
 			}
 		}
 
-		public virtual void Match<TMatch>(IDbContext context, TMatch match, Continuation<IEnumerable<TModel>> continuation)
+		public virtual void ReadMatch<TMatch>(IDbContext context, TMatch match, Continuation<IEnumerable<TModel>> continuation)
 		{
 			throw new NotImplementedException();
 		}
@@ -244,5 +479,6 @@ namespace FlitBit.Data
 		protected abstract void BindReadCommand(IDataParameterBinder binder, Id id);
 		protected abstract void BindUpdateCommand(IDataParameterBinder binder, TModel model);
 		protected abstract void BindDeleteCommand(IDataParameterBinder binder, Id id);
+			
 	}	
 }

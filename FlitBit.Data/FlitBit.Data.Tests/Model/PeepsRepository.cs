@@ -8,7 +8,8 @@ using FlitBit.Core.Parallel;
 namespace FlitBit.Data.Tests.Model
 {			
 	public class PeepsRepository : TableBackedRepository<Peep, int>
-	{					
+	{
+		protected static string CCacheKey_Name = String.Concat(TableBackedRepository<Peep, int>.CCacheKey, ".Name");
 		public PeepsRepository(string cnName, string schemaName)
 			: base(cnName)
 		{
@@ -22,11 +23,11 @@ namespace FlitBit.Data.Tests.Model
 				String.Format(__BaseSelectCommandFmt, schemaName),
 				String.Format(__ByNameCommandFmt, schemaName)
 				);
-			this.DeleteCommand = String.Concat(String.Concat(__DeleteCommandFmt, schemaName));
-
+			this.DeleteCommand = String.Format(__DeleteCommandFmt, schemaName);
+			RegisterCacheHandler(CCacheKey_Name, GetItemName);
 		}
 						
-		static string __InsertCommandFmt = @"
+		internal static string __InsertCommandFmt = @"
 DECLARE @generated_timestamp DATETIME
 SET @generated_timestamp = GETUTCDATE()
 DECLARE @ID INT
@@ -54,7 +55,7 @@ SELECT
 FROM [{0}].[Peeps]
 WHERE [ID] = @ID";
 
-		static string __UpdateCommandFmt = @"
+		internal static string __UpdateCommandFmt = @"
 DECLARE @generated_timestamp DATETIME
 SET @generated_timestamp = GETUTCDATE()
 UPDATE [{0}].[Peeps]
@@ -71,7 +72,7 @@ SELECT
 FROM [{0}].[Peeps]
 WHERE [ID] = @ID";
 
-		static string __BaseSelectCommandFmt = @"
+		internal static string __BaseSelectCommandFmt = @"
 SELECT 
 	[{0}].[Peeps].[ID],
 	[{0}].[Peeps].[Name],
@@ -80,13 +81,13 @@ SELECT
 	[{0}].[Peeps].[DateUpdated]
 FROM [{0}].[Peeps]";
 
-		static string __ByIDCommandFmt = @"
+		internal static string __ByIDCommandFmt = @"
 WHERE [{0}].[Peeps].[ID] = @ID";
 
-		static string __ByNameCommandFmt = @"
+		internal static string __ByNameCommandFmt = @"
 WHERE [{0}].[Peeps].[Name] = @Name";
 
-		static string __DeleteCommandFmt = @"
+		internal static string __DeleteCommandFmt = @"
 DELETE FROM [{0}].[Peeps]
 WHERE [{0}].[Peeps].[ID] = @ID";
 
@@ -111,16 +112,10 @@ WHERE [{0}].[Peeps].[ID] = @ID";
 		{
 			Contract.Requires<ArgumentNullException>(context != null);
 
-			using (var future = new Future<Peep>())
-			{
-				ReadByName(context, name, (e, res) =>
-				{
-					if (e != null) future.MarkFaulted(e);
-					else future.MarkCompleted(res);
-				});
-				return future.Value;
-			}
+			return ReadBy(context, ReadByNameCommand, binder => binder.DefineAndBindParameter("Name", name), CCacheKey_Name, name);
 		}
+
+		string GetItemName(Peep peep) { return peep.Name; }
 
 		protected override void PopulateInstance(Peep model, IDbExecutable exe, IDataRecord reader)
 		{

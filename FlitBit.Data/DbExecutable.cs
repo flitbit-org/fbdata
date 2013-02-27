@@ -283,7 +283,21 @@ namespace FlitBit.Data
 				
 		public void ExecuteNonQuery(Continuation<DbResult<int>> continuation)
 		{
-			throw new NotImplementedException();				
+			var cn = MakeDbConnection();
+			var helper = DbProviderHelpers.GetDbProviderHelperForDbConnection(cn);
+			if (helper.SupportsAsynchronousProcessing(cn))
+			{
+				var cmd = MakeDbCommand();
+				bool needsPostProcessing = PrepareDbCommandForExecute(cmd);
+				var ar = helper.BeginExecuteReader(cmd, res =>
+				{
+					continuation(null, new DbResult<int>(this, helper.EndExecuteNonQuery(cmd, res)));
+				}, null);
+			}
+			else
+			{
+				Go.Parallel(() => new DbResult<int>(this, ExecuteNonQuery()), continuation);
+			}
 		}
 
 		public void ExecuteReader(Continuation<DbResult<DbDataReader>> continuation)
@@ -294,22 +308,13 @@ namespace FlitBit.Data
 			{
 				var cmd = MakeDbCommand();
 				bool needsPostProcessing = PrepareDbCommandForExecute(cmd);
-				var ar = helper.BeginExecuteReader(cmd, null, null);
-
-				var self = this;
-				Notification.Instance.ContinueWith(ar,
-					() =>
+				var ar = helper.BeginExecuteReader(cmd, res =>
+				{
+					using (var reader = helper.EndExecuteReader(cmd, res))
 					{
-						var reader = helper.EndExecuteReader(cmd, ar);
-						try
-						{
-							continuation(null, new DbResult<DbDataReader>(self, reader));
-						}
-						finally
-						{
-							reader.Dispose();
-						}
-					});
+						continuation(null, new DbResult<DbDataReader>(this, reader));
+					}
+				}, null);
 			}
 			else
 			{
@@ -317,26 +322,26 @@ namespace FlitBit.Data
 				{
 					ExecuteReader(res =>
 					{
-						try 
+						try
 						{
 							continuation(null, res);
 						}
-						catch (Exception ee) 
+						catch (Exception ee)
 						{
-							Go.NotifyUncaughtException(continuation.Target, ee);					
-						}					
+							Go.NotifyUncaughtException(continuation.Target, ee);
+						}
 					});
 				}
 				catch (Exception e)
 				{
 					continuation(e, default(DbResult<DbDataReader>));
-				}					
+				}
 			}
-		}
+		}		
 
 		public void ExecuteScalar<T>(Continuation<DbResult<T>> continuation)
-		{
-			throw new NotImplementedException();			
+		{																																						 
+			Go.Parallel(() => new DbResult<T>(this, ExecuteScalar<T>()), continuation);
 		}
 
 		protected TConnection MakeDbConnection()

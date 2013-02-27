@@ -14,50 +14,35 @@ using FlitBit.Data.Properties;
 
 namespace FlitBit.Data
 {
-	public class DbContext : Disposable, IDbContext
+	public partial class DbContext : Disposable, IDbContext
 	{
-		/// <summary>
-		/// Gets the current "ambient" db context.
-		/// </summary>
-		public static IDbContext Current
-		{
-			get
-			{
-				IDbContext ambient;
-				return (ContextFlow.TryPeek<IDbContext>(out ambient)) ? ambient : default(IDbContext);
-			}
-		}
-
-		/// <summary>
-		/// Shares the ambient context if it exists; otherwise, creates a new context.
-		/// </summary>
-		/// <returns>a db context</returns>
-		public static IDbContext SharedOrNewContext()
-		{
-			IDbContext ambient;
-			return (ContextFlow.TryPeek<IDbContext>(out ambient))
-				? (IDbContext)ambient.ParallelShare()
-				: new DbContext();
-		}
-
-		/// <summary>
-		/// Creates a new context.
-		/// </summary>
-		/// <returns>a db context</returns>
-		public static IDbContext NewContext()
-		{
-			return new DbContext();
-		}
-
 		ConcurrentDictionary<string, DbConnection> _connections = new ConcurrentDictionary<string, DbConnection>();
+		IDbContext _parent;
 		ICleanupScope _scope;
+		DbContextBehaviors _behaviors;
 		int _disposers = 1;
 
 		public DbContext()
+			: this(DbContext.Current, DbContextBehaviors.Default)
 		{
-			_scope = new CleanupScope(this, true);
-			ContextFlow.Push<IDbContext>(this);
+			
 		}
+
+		public DbContext(IDbContext parent, DbContextBehaviors behaviors)
+		{
+			_behaviors = behaviors;
+			if (parent != null)
+			{
+				_parent = (IDbContext)parent.ParallelShare();
+			}
+			_scope = new CleanupScope(this, true);
+			if (!behaviors.HasFlag(DbContextBehaviors.NoContextFlow))
+			{
+				ContextFlow.Push<IDbContext>(this);
+			}		 
+		}
+
+		public DbContextBehaviors Behaviors { get { return _behaviors; } }
 
 		public DbConnection SharedOrNewConnection(string connectionName)
 		{
@@ -95,33 +80,8 @@ namespace FlitBit.Data
 					}
 				});
 			return cn;
-		}
-
-
-		protected override bool PerformDispose(bool disposing)
-		{
-			if (disposing && Interlocked.Decrement(ref _disposers) > 0)
-			{
-				return false;
-			}
-			if (!ContextFlow.TryPop<IDbContext>(this) && DbTraceEvents.ShouldTrace(TraceEventType.Warning))
-			{
-				try
-				{
-					DbTraceEvents.OnTraceEvent(this, TraceEventType.Warning, Resources.Err_DbContextStackDisposedOutOfOrder);
-				}
-				catch { /* no errors surfaced in GC thread */ }
-			}
-			Util.Dispose(ref _scope);
-			return true;
-		}
-
-		public object ParallelShare()
-		{
-			Interlocked.Increment(ref _disposers);
-			return this;
-		}
-
+		}		
+		
 		public T Add<T>(T item) where T : IDisposable
 		{
 			return _scope.Add(item);
@@ -162,6 +122,31 @@ namespace FlitBit.Data
 					}
 				});
 			return cn;
+		}
+
+		public object ParallelShare()
+		{
+			Interlocked.Increment(ref _disposers);
+			return this;
+		}
+
+		protected override bool PerformDispose(bool disposing)
+		{
+			if (disposing && Interlocked.Decrement(ref _disposers) > 0)
+			{
+				return false;
+			}
+			if (!ContextFlow.TryPop<IDbContext>(this) && DbTraceEvents.ShouldTrace(TraceEventType.Warning))
+			{
+				try
+				{
+					DbTraceEvents.OnTraceEvent(this, TraceEventType.Warning, Resources.Err_DbContextStackDisposedOutOfOrder);
+				}
+				catch { /* no errors surfaced in GC thread */ }
+			}
+			Util.Dispose(ref _scope);
+			Util.Dispose(ref _parent);
+			return true;
 		}
 	}
 }
