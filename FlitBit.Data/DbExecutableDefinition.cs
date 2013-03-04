@@ -94,12 +94,7 @@ namespace FlitBit.Data
 		{
 			throw new NotImplementedException();
 		}
-
-		public void ExecuteEnumerable(Core.Parallel.Continuation<DbResult<IEnumerable<IDataRecord>>> continuation)
-		{
-			throw new NotImplementedException();
-		}
-
+				
 		public void ExecuteScalar<T>(Core.Parallel.Continuation<DbResult<T>> continuation)
 		{
 			throw new NotImplementedException();

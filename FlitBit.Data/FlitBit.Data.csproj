@@ -108,7 +108,6 @@
       <HintPath>..\packages\FlitBit.Copy.2.6.3\lib\net40\FlitBit.Copy.dll</HintPath>
     </Reference>
     <Reference Include="FlitBit.Core, Version=2.8.15.0, Culture=neutral, PublicKeyToken=38f03d0878531ff3, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\FlitBit.Core.2.8.15\lib\net40\FlitBit.Core.dll</HintPath>
     </Reference>
     <Reference Include="FlitBit.Emit">
@@ -146,6 +145,9 @@
     <Compile Include="..\AssemblyInfo.corporate.cs">
       <Link>Properties\AssemblyInfo.corporate.cs</Link>
     </Compile>
+    <Compile Include="Binding\Expositor.cs" />
+    <Compile Include="Binding\ILoadModel.cs" />
+    <Compile Include="Binding\IPrepareModelCommand.cs" />
     <Compile Include="DbContext.static.cs" />
     <Compile Include="DbContext.cache.cs" />
     <Compile Include="DbContextBehaviors.cs" />
@@ -177,6 +179,39 @@
     <Compile Include="IDbContext.cs" />
     <Compile Include="IDbExecutable.cs" />
     <Compile Include="IDbExecutableExtensions.cs" />
+    <Compile Include="Meta\CollectionMapping.cs" />
+    <Compile Include="Meta\ColumnMapping.cs" />
+    <Compile Include="Meta\DDL\DDLBatch.cs" />
+    <Compile Include="Meta\DDL\DDLBehaviors.cs" />
+    <Compile Include="Meta\DDL\DDLCatalog.cs" />
+    <Compile Include="Meta\DDL\DDLNode.cs" />
+    <Compile Include="Meta\DDL\DDLSchema.cs" />
+    <Compile Include="Meta\DDL\DDLTable.cs" />
+    <Compile Include="Meta\DDL\DDLColumn.cs" />
+    <Compile Include="Meta\DDL\DDLIndex.cs" />
+    <Compile Include="Meta\DDL\DDLNodeKind.cs" />
+    <Compile Include="Meta\Dependency.cs" />
+    <Compile Include="Meta\Enum.cs" />
+    <Compile Include="Meta\Exceptions.cs" />
+    <Compile Include="Meta\IdentityMapping.cs" />
+    <Compile Include="Meta\IMapping.cs" />
+    <Compile Include="Meta\IMappingExtensions.cs" />
+    <Compile Include="Meta\IndexMapping.cs" />
+    <Compile Include="LogSink.cs" />
+    <Compile Include="Meta\MapCollectionAttribute.cs" />
+    <Compile Include="Meta\MapColumnAttribute.cs" />
+    <Compile Include="Meta\MapConnectionAttribute.cs" />
+    <Compile Include="Meta\MapEntityAttribute.cs" />
+    <Compile Include="Meta\MapEnumAttribute.cs" />
+    <Compile Include="Meta\MapIndexAttribute.cs" />
+    <Compile Include="Meta\MapOrderByAttribute.cs" />
+    <Compile Include="Meta\MapOwnershipAttribute.cs" />
+    <Compile Include="Meta\Mapping.cs" />
+    <Compile Include="Meta\Mapping.T.cs" />
+    <Compile Include="Meta\MapSchemaAttribute.cs" />
+    <Compile Include="Meta\NaturalKeyMapping.cs" />
+    <Compile Include="Meta\SyntheticID.cs" />
+    <Compile Include="Meta\SyntheticIDAttribute.cs" />
     <Compile Include="ParameterBinding.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
@@ -184,6 +219,7 @@
       <DesignTime>True</DesignTime>
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
+    <Compile Include="SqlServer\DirectSqlParameterBinder.cs" />
     <Compile Include="SqlServer\SqlDbExecutable.cs" />
     <Compile Include="SqlServer\SqlDbProviderHelper.cs" />
     <Compile Include="SqlServer\SqlDbTypeTranslation.cs" />

@@ -13,6 +13,7 @@ namespace FlitBit.Data.Tests.Model
 		public PeepsRepository(string cnName, string schemaName)
 			: base(cnName)
 		{
+			this.AllCommand = String.Format(__BaseSelectCommandFmt, schemaName);
 			this.InsertCommand = String.Format(__InsertCommandFmt, schemaName);
 			this.UpdateCommand = String.Format(__UpdateCommandFmt, schemaName);
 			this.ReadCommand = String.Concat(
@@ -105,19 +106,19 @@ WHERE [{0}].[Peeps].[ID] = @ID";
 
 		public void ReadByName(IDbContext context, string name, Continuation<Peep> continuation)
 		{
-			ReadBy(context, ReadByNameCommand, binder => binder.DefineAndBindParameter("Name", name), continuation);
+			ReadBy(context, ReadByNameCommand, (n, binder) => binder.DefineAndBindParameter("Name", n), CCacheKey_Name, name, continuation);
 		}
 
 		public Peep ReadByName(IDbContext context, string name)
 		{
 			Contract.Requires<ArgumentNullException>(context != null);
 
-			return ReadBy(context, ReadByNameCommand, binder => binder.DefineAndBindParameter("Name", name), CCacheKey_Name, name);
+			return ReadBy(context, ReadByNameCommand, (n,binder) => binder.DefineAndBindParameter("Name", n), CCacheKey_Name, name);
 		}
 
 		string GetItemName(Peep peep) { return peep.Name; }
 
-		protected override void PopulateInstance(Peep model, IDbExecutable exe, IDataRecord reader)
+		protected override void PopulateInstance(IDbContext context, Peep model, IDataRecord reader, object state)
 		{
 			model.ID = reader.GetInt32(0);
 			model.Name = reader.GetValueOrDefault<string>(1);
@@ -152,11 +153,6 @@ WHERE [{0}].[Peeps].[ID] = @ID";
 
 		protected string ReadByNameCommand { get; set; }
 
-		protected string UpdateCommand { get; set; }
-
-		internal void Create(IDbContext ctx, Peep it, Continuation<Peep> continuation)
-		{
-			throw new NotImplementedException();
-		}
+		protected string UpdateCommand { get; set; }		
 	}
 }

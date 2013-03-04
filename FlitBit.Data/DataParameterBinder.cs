@@ -358,13 +358,13 @@ namespace FlitBit.Data
 			return this;
 		}
 
-		public IDataParameterBinder SetParameterValueAsEnum<E>(string name, E value)
+		public IDataParameterBinder SetParameterValueAsEnum<E>(string name, E value, bool useName)
 		{
 			Contract.Assert(name != null);
 			Contract.Assert(typeof(E).IsEnum, "typeof value must be an enum");
 			int p = IndexOfParameter(name);
 			if (p < 0) throw new ArgumentOutOfRangeException(String.Concat("Parameter not defined: ", name));
-			PerformSetParameterValueAsEnum(_parameters, p, name, value);
+			PerformSetParameterValueAsEnum(_parameters, p, name, value, useName);
 			return this;
 		}
 
@@ -451,9 +451,16 @@ namespace FlitBit.Data
 			parameters[p].SpecializedValue = value;
 		}
 
-		protected virtual void PerformSetParameterValueAsEnum<E>(ParameterBinding[] parameters, int p, string name, E value)
+		protected virtual void PerformSetParameterValueAsEnum<E>(ParameterBinding[] parameters, int p, string name, E value, bool useName)
 		{
-			_parameters[p].SpecializedValue = Convert.ToInt32(value);
+			if (useName)
+			{
+				_parameters[p].SpecializedValue = Enum.GetName(typeof(E), value);
+			}
+			else
+			{
+				_parameters[p].SpecializedValue = Convert.ToInt32(value);
+			}
 		}
 		protected virtual void PerformSetParameterValueT<T>(ParameterBinding[] parameters, int p, string name, T value)
 		{

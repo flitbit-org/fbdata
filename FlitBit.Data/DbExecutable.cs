@@ -14,12 +14,12 @@ using FlitBit.Data.Properties;
 
 namespace FlitBit.Data
 {
-	public partial class DbExecutable<THelper, TConnection, TCommand, TDataReader, TDataBinder> 
+	public partial class DbExecutable<THelper, TConnection, TCommand, TDbDataReader, TDataBinder> 
 		: Disposable, IDbExecutable
 		where THelper: DbProviderHelper, new()
 		where TConnection : DbConnection, new()
 		where TCommand : DbCommand, new()
-		where TDataReader : DbDataReader
+		where TDbDataReader : DbDataReader
 		where TDataBinder : class, IDataParameterBinder, new()
 	{
 		IDbExecutable _definition;
@@ -208,7 +208,7 @@ namespace FlitBit.Data
 		/// <returns></returns>
 		public IDbExecutable CreateOnConnection(string connectionName)
 		{
-			return new DbExecutable<THelper, TConnection, TCommand, TDataReader, TDataBinder>(connectionName, this);
+			return new DbExecutable<THelper, TConnection, TCommand, TDbDataReader, TDataBinder>(connectionName, this);
 		}
 
 		/// <summary>
@@ -221,7 +221,7 @@ namespace FlitBit.Data
 			if (!typeof(TConnection).IsInstanceOfType(connection))
 				throw new InvalidOperationException(String.Concat(Resources.Err_TypeNotSupported, connection.GetType().GetReadableSimpleName()));
 
-			return new DbExecutable<THelper, TConnection, TCommand, TDataReader, TDataBinder>((TConnection)connection, this);
+			return new DbExecutable<THelper, TConnection, TCommand, TDbDataReader, TDataBinder>((TConnection)connection, this);
 		}
 
 		public int ExecuteNonQuery()

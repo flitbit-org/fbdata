@@ -9,8 +9,7 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 
 namespace FlitBit.Data
-{
-	
+{		
 	public abstract class DbProviderHelper
 	{
 		public DbProviderFactory Factory { get; protected set; }
@@ -229,5 +228,8 @@ WHERE ROUTINE_CATALOG = '{0}'
 
 		public abstract IDbExecutable DefineExecutableOnConnection(DbConnection connection, string cmdText, CommandType cmdType, int cmdTimeout);
 
+		public abstract IDataParameterBinder MakeParameterBinder();
+
+		public abstract IDataParameterBinder MakeParameterBinder(DbCommand cmd);
 	}	
 }

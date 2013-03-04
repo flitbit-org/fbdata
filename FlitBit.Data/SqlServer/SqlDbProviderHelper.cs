@@ -161,12 +161,21 @@ WHERE name = @schema")
 		public override IAsyncResult BeginExecuteReader(DbCommand command, AsyncCallback callback, object stateObject)
 		{
 			var sql = (SqlCommand)command;
-			return sql.BeginExecuteReader(callback, stateObject);
+			return sql.BeginExecuteReader(callback, stateObject, CommandBehavior.CloseConnection);
 		}
 		public override DbDataReader EndExecuteReader(DbCommand command, IAsyncResult ar)
 		{
 			var sql = (SqlCommand)command;
 			return sql.EndExecuteReader(ar);
+		}
+		public override IDataParameterBinder MakeParameterBinder()
+		{
+			return new SqlParameterBinder();
+		}
+
+		public override IDataParameterBinder MakeParameterBinder(DbCommand cmd)
+		{
+			return new DirectSqlParameterBinder((SqlCommand)cmd);
 		}
 	}
 

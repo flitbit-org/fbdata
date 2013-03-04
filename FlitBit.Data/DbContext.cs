@@ -17,9 +17,11 @@ namespace FlitBit.Data
 	public partial class DbContext : Disposable, IDbContext
 	{
 		ConcurrentDictionary<string, DbConnection> _connections = new ConcurrentDictionary<string, DbConnection>();
+		ConcurrentDictionary<DbConnection, DbProviderHelper> _helpers = new ConcurrentDictionary<DbConnection, DbProviderHelper>();
 		IDbContext _parent;
 		ICleanupScope _scope;
 		DbContextBehaviors _behaviors;
+		int _queryCount = 0;
 		int _disposers = 1;
 
 		public DbContext()
@@ -61,7 +63,7 @@ namespace FlitBit.Data
 				if (!Object.ReferenceEquals(cn, capture))
 				{
 					capture.Dispose();
-				}
+				}				
 			}
 			return cn;
 		}
@@ -80,8 +82,8 @@ namespace FlitBit.Data
 					}
 				});
 			return cn;
-		}		
-		
+		}
+				
 		public T Add<T>(T item) where T : IDisposable
 		{
 			return _scope.Add(item);
@@ -150,6 +152,28 @@ namespace FlitBit.Data
 				Util.Dispose(ref _parent);
 			}
 			return true;
+		}
+
+
+		public int QueryCount
+		{
+			get { return Thread.VolatileRead(ref _queryCount); }
+		}
+
+		public int IncrementQueryCounter(int count)
+		{
+			return Interlocked.Add(ref _queryCount, count);
+		}																									 
+
+		public DbProviderHelper HelperForConnection(DbConnection cn)
+		{
+			DbProviderHelper res = default(DbProviderHelper);
+			if (!_helpers.TryGetValue(cn, out res))
+			{
+				res = DbProviderHelpers.GetDbProviderHelperForDbConnection(cn);
+				_helpers.TryAdd(cn, res);
+			}
+			return res;
 		}
 	}
 }

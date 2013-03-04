@@ -56,7 +56,7 @@ namespace FlitBit.Data
 
 		IDataParameterBinder SetParameterValue(string name, UInt64 value);
 		IDataParameterBinder SetParameterValue<T>(string name, T value);
-		IDataParameterBinder SetParameterValueAsEnum<E>(string name, E value);
+		IDataParameterBinder SetParameterValueAsEnum<E>(string name, E value, bool useName);
 
 		IDataParameterBinder SetParameterDbNull(string name);
 
@@ -393,6 +393,14 @@ namespace FlitBit.Data
 
 			public void Initialize(IEnumerable<ParameterBinding> bindings)
 			{
+				throw new NotImplementedException();
+			}									 
+
+			public IDataParameterBinder SetParameterValueAsEnum<E>(string name, E value, bool useName)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
+
 				throw new NotImplementedException();
 			}
 		}

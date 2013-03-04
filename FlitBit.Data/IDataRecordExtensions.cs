@@ -5,6 +5,7 @@
 using System.Data;
 using System.Xml.Linq;
 using Newtonsoft.Json.Linq;
+using System.Data.Common;
 
 namespace FlitBit.Data
 {

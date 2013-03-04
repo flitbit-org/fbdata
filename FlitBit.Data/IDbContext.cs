@@ -12,6 +12,11 @@ namespace FlitBit.Data
 	public interface IDbContext : IInterrogateDisposable, IParallelShared
 	{
 		DbContextBehaviors Behaviors { get; }
+		int QueryCount { get; }
+		int CachePuts { get; }
+		int CacheAttempts { get; }
+		int CacheHits { get; }
+		int CacheRemoves { get; }		
 
 		DbConnection SharedOrNewConnection(string connection);
 		DbConnection NewConnection(string connection);
@@ -23,12 +28,17 @@ namespace FlitBit.Data
 			where TConnection : DbConnection, new();
 
 		TConnection NewConnection<TConnection>(string connectionName)
-			where TConnection : DbConnection, new();	
-		
-		C EnsureCache<K, C>(K key, Func<C> factory);
-		
+			where TConnection : DbConnection, new();
+
+		void PutCacheItem<TCacheKey, TItemKey, TItem>(TCacheKey cacheKey, TItem item, TItemKey key, Func<TItemKey, TItem, TItem> updateCachedItem);
+		void RemoveCacheItem<TCacheKey, TItemKey, TItem>(TCacheKey cacheKey, TItem item, TItemKey key);
+		bool TryGetCacheItem<TCacheKey, TItemKey, TItem>(TCacheKey cacheKey, TItemKey key, out TItem item);
+
 		C EnsureCache<K, C>(K key)
 			where C : new();
 
+		int IncrementQueryCounter(int count);
+
+		DbProviderHelper HelperForConnection(DbConnection cn);
 	}
 }
