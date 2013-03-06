@@ -12,7 +12,7 @@ namespace FlitBit.Data.Meta.Tests
 		{
 			Mapping.Instance
 				//.UseDefaultConnection("test-data")
-				.ForType<IPerson>()
+				.ForType<Person>()
 					.Column(x => x.ID).WithBehaviors(ColumnBehaviors.Synthetic).End()
 					.Column(x => x.ExternalID).WithBehaviors(ColumnBehaviors.AlternateKey).End()
 					.Column(x => x.Name).WithVariableLength(50).End()
@@ -20,14 +20,14 @@ namespace FlitBit.Data.Meta.Tests
 					.End();
 
 			// Check the mapping for People...
-			var people = Mapping.Instance.ForType<IPerson>();
+			var people = Mapping.Instance.ForType<Person>();
 
-			Assert.IsTrue(people.ParticipatingMembers.Contains(typeof(IPerson).GetProperty("ID")));
-			Assert.IsTrue(people.ParticipatingMembers.Contains(typeof(IPerson).GetProperty("ExternalID")));
-			Assert.IsTrue(people.ParticipatingMembers.Contains(typeof(IPerson).GetProperty("Name")));
+			Assert.IsTrue(people.ParticipatingMembers.Contains(typeof(Person).GetProperty("ID")));
+			Assert.IsTrue(people.ParticipatingMembers.Contains(typeof(Person).GetProperty("ExternalID")));
+			Assert.IsTrue(people.ParticipatingMembers.Contains(typeof(Person).GetProperty("Name")));
 
 			// It knows the runtime type...
-			Assert.AreEqual(typeof(IPerson), people.RuntimeType);
+			Assert.AreEqual(typeof(Person), people.RuntimeType);
 
 			// We mapped two columns...
 			Assert.AreEqual(3, people.Columns.Count());

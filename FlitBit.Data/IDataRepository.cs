@@ -2,11 +2,10 @@
 // For licensing information see License.txt (MIT style licensing).
 #endregion
 
-using System.Collections.Generic;
-using System.Linq;
-using FlitBit.Core.Parallel;
-using System.Diagnostics.Contracts;
 using System;
+using System.Collections.Generic;
+using System.Diagnostics.Contracts;
+using System.Linq;
 
 namespace FlitBit.Data
 {
@@ -25,21 +24,14 @@ namespace FlitBit.Data
 		TModel Update(IDbContext context, TModel model);
 		bool Delete(IDbContext context, Id id);
 		
-		IEnumerable<TModel> All(IDbContext context);
+		IEnumerable<TModel> All(IDbContext context, QueryBehavior behavior);
 
-		IEnumerable<TModel> ReadMatch<TMatch>(IDbContext context, TMatch match);
-		int UpdateMatch<TMatch, TUpdate>(IDbContext context, TMatch match, TUpdate update);
-		int DeleteMatch<TMatch>(IDbContext context, TMatch match);
-				
-		void Create(IDbContext context, TModel model, Continuation<TModel> continuation);
-		void Read(IDbContext context, Id id, Continuation<TModel> continuation);
-		void Update(IDbContext context, TModel model, Continuation<TModel> continuation);
-		void Delete(IDbContext context, Id id, Continuation<bool> continuation);				 
-
-		void All(IDbContext context, Continuation<IEnumerable<TModel>> continuation);
-		void ReadMatch<TMatch>(IDbContext context, TMatch match, Continuation<IEnumerable<TModel>> continuation);
-		void UpdateMatch<TMatch, TUpdate>(IDbContext context, TMatch match, TUpdate update, Continuation<int> continuation);
-		void DeleteMatch<TMatch>(IDbContext context, TMatch match, Continuation<int> continuation);
+		IEnumerable<TModel> ReadMatch<TMatch>(IDbContext context, QueryBehavior behavior, TMatch match)
+			where TMatch : class;
+		int UpdateMatch<TMatch, TUpdate>(IDbContext context, TMatch match, TUpdate update)
+			where TMatch : class;
+		int DeleteMatch<TMatch>(IDbContext context, TMatch match)
+			where TMatch : class;
 
 		IQueryable<TModel> Query();
 	}
@@ -90,23 +82,25 @@ namespace FlitBit.Data
 				throw new NotImplementedException();
 			}
 
-			public IEnumerable<M> All(IDbContext context)
+			public IEnumerable<M> All(IDbContext context, QueryBehavior behavior)
 			{
+				Contract.Requires<ArgumentNullException>(context != null);
 				Contract.Requires<ArgumentNullException>(context != null);
 				Contract.Ensures(Contract.Result<IEnumerable<M>>() != null);
 
 				throw new NotImplementedException();
 			}
 
-			public IEnumerable<M> ReadMatch<TMatch>(IDbContext context, TMatch match)
+			public IEnumerable<M> ReadMatch<TMatch>(IDbContext context, QueryBehavior behavior, TMatch match)	where TMatch : class	
 			{
+				Contract.Requires<ArgumentNullException>(context != null);
 				Contract.Requires<ArgumentNullException>(context != null);
 				Contract.Requires<ArgumentNullException>(match != null);
 				Contract.Ensures(Contract.Result<IEnumerable<M>>() != null);
 				throw new NotImplementedException();
 			}
 
-			public int UpdateMatch<TMatch, TUpdate>(IDbContext context, TMatch match, TUpdate update)
+			public int UpdateMatch<TMatch, TUpdate>(IDbContext context, TMatch match, TUpdate update) where TMatch : class
 			{
 				Contract.Requires<ArgumentNullException>(context != null);
 				Contract.Requires<ArgumentNullException>(match != null);
@@ -114,75 +108,13 @@ namespace FlitBit.Data
 				throw new NotImplementedException();
 			}
 
-			public int DeleteMatch<TMatch>(IDbContext context, TMatch match)
+			public int DeleteMatch<TMatch>(IDbContext context, TMatch match) where TMatch : class
 			{
 				Contract.Requires<ArgumentNullException>(context != null);
 				Contract.Requires<ArgumentNullException>(match != null);
 				throw new NotImplementedException();
 			}
-
-			public void Create(IDbContext context, M model, Continuation<M> continuation)
-			{
-				Contract.Requires<ArgumentNullException>(context != null);
-				Contract.Requires<ArgumentNullException>(model != null);
-				Contract.Requires<ArgumentNullException>(continuation != null);
-				throw new NotImplementedException();
-			}
-
-			public void Read(IDbContext context, I id, Continuation<M> continuation)
-			{
-				Contract.Requires<ArgumentNullException>(context != null);
-				Contract.Requires<ArgumentNullException>(continuation != null);
-				throw new NotImplementedException();
-			}
-
-			public void Update(IDbContext context, M model, Continuation<M> continuation)
-			{
-				Contract.Requires<ArgumentNullException>(context != null);
-				Contract.Requires<ArgumentNullException>(model != null);
-				Contract.Requires<ArgumentNullException>(continuation != null);
-				throw new NotImplementedException();
-			}
-
-			public void Delete(IDbContext context, I id, Continuation<bool> continuation)
-			{
-				Contract.Requires<ArgumentNullException>(context != null);
-				Contract.Requires<ArgumentNullException>(continuation != null);
-				throw new NotImplementedException();
-			}
-
-			public void All(IDbContext context, Continuation<IEnumerable<M>> continuation)
-			{
-				Contract.Requires<ArgumentNullException>(context != null);
-				Contract.Requires<ArgumentNullException>(continuation != null);
-				throw new NotImplementedException();
-			}
-
-			public void ReadMatch<TMatch>(IDbContext context, TMatch match, Continuation<IEnumerable<M>> continuation)
-			{
-				Contract.Requires<ArgumentNullException>(context != null);
-				Contract.Requires<ArgumentNullException>(match != null);
-				Contract.Requires<ArgumentNullException>(continuation != null);
-				throw new NotImplementedException();
-			}
-
-			public void UpdateMatch<TMatch, TUpdate>(IDbContext context, TMatch match, TUpdate update, Continuation<int> continuation)
-			{
-				Contract.Requires<ArgumentNullException>(context != null);
-				Contract.Requires<ArgumentNullException>(match != null);
-				Contract.Requires<ArgumentNullException>(update != null);
-				Contract.Requires<ArgumentNullException>(continuation != null);
-				throw new NotImplementedException();
-			}
-
-			public void DeleteMatch<TMatch>(IDbContext context, TMatch match, Continuation<int> continuation)
-			{
-				Contract.Requires<ArgumentNullException>(context != null);
-				Contract.Requires<ArgumentNullException>(match != null);
-				Contract.Requires<ArgumentNullException>(continuation != null);
-				throw new NotImplementedException();
-			}
-
+			
 			public IQueryable<M> Query()
 			{
 				Contract.Ensures(Contract.Result<IQueryable<M>>() != null);

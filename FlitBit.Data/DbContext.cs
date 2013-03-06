@@ -160,6 +160,11 @@ namespace FlitBit.Data
 			get { return Thread.VolatileRead(ref _queryCount); }
 		}
 
+		public int IncrementQueryCounter()
+		{
+			return Interlocked.Increment(ref _queryCount);
+		}		
+
 		public int IncrementQueryCounter(int count)
 		{
 			return Interlocked.Add(ref _queryCount, count);

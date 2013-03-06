@@ -37,8 +37,10 @@ namespace FlitBit.Data
 		C EnsureCache<K, C>(K key)
 			where C : new();
 
+		int IncrementQueryCounter();
 		int IncrementQueryCounter(int count);
 
 		DbProviderHelper HelperForConnection(DbConnection cn);
+
 	}
 }

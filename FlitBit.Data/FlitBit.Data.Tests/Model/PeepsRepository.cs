@@ -103,12 +103,7 @@ WHERE [{0}].[Peeps].[ID] = @ID";
 		}
 
 		protected override Peep CreateInstance() { return new Peep(); }
-
-		public void ReadByName(IDbContext context, string name, Continuation<Peep> continuation)
-		{
-			ReadBy(context, ReadByNameCommand, (n, binder) => binder.DefineAndBindParameter("Name", n), CCacheKey_Name, name, continuation);
-		}
-
+		
 		public Peep ReadByName(IDbContext context, string name)
 		{
 			Contract.Requires<ArgumentNullException>(context != null);
@@ -149,6 +144,11 @@ WHERE [{0}].[Peeps].[ID] = @ID";
 		protected override void BindDeleteCommand(IDataParameterBinder binder, int id)
 		{
 			binder.DefineAndBindParameter("ID", id);
+		}
+
+		protected override IEnumerable<Peep> PerformDirectQueryBy<TItemKey>(IDbContext context, string command, Action<TItemKey, IDataParameterBinder> binder, TItemKey key)
+		{
+			return base.PerformDirectQueryBy<TItemKey>(context, command, binder, key);
 		}
 
 		protected string ReadByNameCommand { get; set; }

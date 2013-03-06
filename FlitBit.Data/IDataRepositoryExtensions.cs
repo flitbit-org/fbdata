@@ -1,9 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Diagnostics.Contracts;
-using FlitBit.Core.Parallel;
 
 namespace FlitBit.Data
 {
@@ -40,6 +37,46 @@ namespace FlitBit.Data
 			{
 				return repo.Read(context, id);
 			}
+		}
+
+		public static IEnumerable<TModel> All<TModel, Id>(this IDataRepository<TModel, Id> repo, QueryBehavior behavior)
+		{
+			Contract.Requires<ArgumentNullException>(repo != null);
+
+			using (var context = DbContext.SharedOrNewContext())
+			{
+				return repo.All(context, behavior);
+			}
+		}
+
+		public static IEnumerable<TModel> All<TModel, Id>(this IDataRepository<TModel, Id> repo, IDbContext context)
+		{
+			Contract.Requires<ArgumentNullException>(repo != null);
+			Contract.Requires<ArgumentNullException>(context != null);
+
+			return repo.All(context, QueryBehavior.Default);			
+		}
+
+		public static IEnumerable<TModel> ReadMatch<TModel, Id, TMatch>(this IDataRepository<TModel, Id> repo, QueryBehavior behavior, TMatch match)
+				where TMatch : class
+		{
+			Contract.Requires<ArgumentNullException>(repo != null);
+			Contract.Requires<ArgumentNullException>(match != null);
+
+			using (var context = DbContext.SharedOrNewContext())
+			{
+				return repo.ReadMatch(context, behavior, match);
+			}
+		}
+
+		public static IEnumerable<TModel> ReadMatch<TModel, Id, TMatch>(this IDataRepository<TModel, Id> repo, IDbContext context, TMatch match)
+				where TMatch : class
+		{
+			Contract.Requires<ArgumentNullException>(repo != null);
+			Contract.Requires<ArgumentNullException>(context != null);
+			Contract.Requires<ArgumentNullException>(match != null);
+
+			return repo.ReadMatch(context, QueryBehavior.Default, match);
 		}
 	}
 }
