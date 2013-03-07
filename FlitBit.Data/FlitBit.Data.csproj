@@ -254,10 +254,12 @@
     </Compile>
     <Compile Include="QueryBehavior.cs" />
     <Compile Include="SqlServer\DirectSqlParameterBinder.cs" />
+    <Compile Include="SqlServer\DynamicHybridInheritanceTreeBinder.cs" />
     <Compile Include="SqlServer\SqlDbExecutable.cs" />
     <Compile Include="SqlServer\SqlDbProviderHelper.cs" />
     <Compile Include="SqlServer\SqlDbTypeTranslation.cs" />
     <Compile Include="SqlServer\SqlDbTypeTranslations.cs" />
+    <Compile Include="SqlServer\SqlModelBinderFactory.cs" />
     <Compile Include="SqlServer\SqlParameterBinder.cs" />
     <Compile Include="TableBackedDataRepository.cs">
       <DependentUpon>IDataRepository.cs</DependentUpon>

@@ -1,11 +1,10 @@
 ﻿using System.Data.Common;
+using FlitBit.Data.Meta;
 
 namespace FlitBit.Data
 {
 	public interface IModelBinderFactory
 	{
-		IModelBinder<TModel, Id, TModelImpl, TDbConnection> GetModelBinder<TModel, Id, TModelImpl, TDbConnection>(IDataModelCatalog catalog, ModelBindingScheme scheme)
-			where TModelImpl : class, TModel, new()
-			where TDbConnection : DbConnection;
+		IModelBinder<TModel, Id> GetModelBinder<TModel, Id>(IDataModelCatalog catalog, MappingStrategy strategy);
 	}
 }

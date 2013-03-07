@@ -1,69 +1,73 @@
 ﻿using System.Data.Common;
+using FlitBit.Data.Meta;
 
 namespace FlitBit.Data
 {
 	/// <summary>
-	/// Indicates the model binding scheme used.
+	/// Binds a model to an underlying database structure.
 	/// </summary>
-	/// <remarks>
-	/// These are analogous to ORM patterns documented since 
-	/// the `90s here http://www.objectarchitects.de/ObjectArchitects/orpatterns/
-	/// and later here http://martinfowler.com/eaaCatalog/
-	/// </remarks>
-	public enum ModelBindingScheme
-	{
+	/// <typeparam name="TModel">the model's type.</typeparam>
+	/// <typeparam name="Id">the model's identity type</typeparam>
+	public interface IModelBinder<TModel, Id>
+	{	
 		/// <summary>
-		/// Indicates the default `DynamicHybridInheritanceTree`
+		/// A data model catalog where the binding info is stored.
 		/// </summary>
-		Default = 0,
+		IDataModelCatalog Catalog { get; }
 		/// <summary>
-		/// A hybrid inheritance path scheme.
+		/// Indicates the binder's mapping stretegy.
 		/// </summary>
-		DynamicHybridInheritanceTree = 0,
+		MappingStrategy Strategy { get; }
 		/// <summary>
-		/// Indicates that one class maps to one table.
+		/// Gets a create command.
 		/// </summary>
-		/// <remarks>
-		/// As described by http://www.objectarchitects.de/ObjectArchitects/orpatterns/ 
-		/// Map the attributes of each class to a separate table. Insert a Synthetic OID into each table 
-		/// to link derived classes rows with their parent table's corresponding rows.
-		/// </remarks>
-		OneClassOneTable = 1,
+		/// <returns></returns>
+		IModelCommand<TModel, TModel, DbConnection> GetCreateCommand();
 		/// <summary>
-		/// Indicates that one class hierarchy maps to one table.
-		/// </summary>																					 
-		/// <remarks>
-		/// As described by http://www.objectarchitects.de/ObjectArchitects/orpatterns/ 
-		/// Use the union of all attributes of all objects in the inheritance hierarchy as the 
-		/// columns of a single database table. Use Null values to fill the unused fields in each record.
-		/// </remarks>
-		OneInheritanceTreeOneTable = 2,
-		/// <summary>
-		/// Maps each class in a hierarchy to its own table.
+		/// Gets a read (by ID) command.
 		/// </summary>
-		/// <remarks>
-		/// As described by http://www.objectarchitects.de/ObjectArchitects/orpatterns/ 
-		/// Map the attributes of each class to a separate table. To a classes’ 
-		/// table add the attributes of all classes the class inherits from.
-		/// </remarks>
-		OneInheritancePathOneTable = 3,
-	}
+		/// <returns></returns>
+		IModelCommand<TModel, Id, DbConnection> GetReadCommand();
+		/// <summary>
+		/// Gets an update command.
+		/// </summary>
+		/// <returns></returns>
+		IModelCommand<TModel, TModel, DbConnection> GetUpdateCommand();
+		/// <summary>
+		/// Gets a delete (by ID) command.
+		/// </summary>
+		/// <returns></returns>
+		IModelCommand<TModel, Id, DbConnection> GetDeleteCommand();
+		/// <summary>
+		/// Gets an all command.
+		/// </summary>
+		/// <returns></returns>
+		IModelCommand<TModel, DbConnection> GetAllCommand();
+		/// <summary>
+		/// Makes a read-match command.
+		/// </summary>
+		/// <typeparam name="TMatch">the match's type</typeparam>
+		/// <param name="match">an match specification</param>
+		/// <returns></returns>
+		IModelCommand<TModel, TMatch, DbConnection> MakeReadMatchCommand<TMatch>(TMatch match)
+			where TMatch : class;
+		/// <summary>
+		/// Makes an update-match command.
+		/// </summary>
+		/// <typeparam name="TMatch">the match's type</typeparam>
+		/// <param name="match">an match specification</param>
+		/// <returns></returns>
+		IModelCommand<TModel, TMatch, DbConnection> MakeUpdateMatchCommand<TMatch>(TMatch match)
+			where TMatch : class;
+		/// <summary>
+		/// Makes a delete-match command.
+		/// </summary>
+		/// <typeparam name="TMatch">the match's type</typeparam>
+		/// <param name="match">an match specification</param>
+		/// <returns></returns>
+		IModelCommand<TModel, TMatch, DbConnection> MakeDeleteMatchCommand<TMatch>(TMatch match)
+			where TMatch : class;
 
-	public interface IModelBinder<TModel, Id, in TModelImpl, in TDbConnection>
-		where TModelImpl: class, TModel, new()
-		where TDbConnection : DbConnection
-	{
-		ModelBindingScheme Scheme { get; }
-		IModelCommand<TModel, TModelImpl, TDbConnection> GetCreateCommand();
-		IModelCommand<TModel, Id, TDbConnection> GetReadCommand();
-		IModelCommand<TModel, TModelImpl, TDbConnection> GetUpdateCommand();
-		IModelCommand<TModel, Id, TDbConnection> GetDeleteCommand();
-		IModelCommand<TModel, object, TDbConnection> GetAllCommand();
-		IModelCommand<TModel, TMatch, TDbConnection> MakeReadMatchCommand<TMatch>(TMatch match)
-			where TMatch : class;
-		IModelCommand<TModel, TMatch, TDbConnection> MakeUpdateMatchCommand<TMatch>(TMatch match)
-			where TMatch : class;
-		IModelCommand<TModel, TMatch, TDbConnection> MakeDeleteMatchCommand<TMatch>(TMatch match)
-			where TMatch : class;
+		string BuildDdlBatch();
 	}	
 }

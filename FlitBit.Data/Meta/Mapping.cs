@@ -76,11 +76,6 @@ namespace FlitBit.Data.Meta
 		}
 
 		public string DefaultSchema { get; private set; }
-		public string DefaultConnection { get; private set; }
-
-		public static Mapping<T> BinderFor<T>()
-		{
-			throw new NotImplementedException();
-		}
+		public string DefaultConnection { get; private set; }		
 	}  
 }

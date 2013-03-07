@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using FlitBit.Data.Meta.Tests.Models;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using FlitBit.Data.SqlServer;
 
 namespace FlitBit.Data.Meta.Tests
 {
@@ -112,6 +113,10 @@ namespace FlitBit.Data.Meta.Tests
 			var ddl = people.GetDdlBatch(DDL.DDLBehaviors.Create);
 			Assert.IsNotNull(ddl);
 			Assert.IsNotNull(ddl.Name);
+
+			var binder = new DynamicHybridInheritanceTreeBinder<Person, int, Person>(null);
+			var sql = binder.BuildDdlBatch();
+			Assert.IsNotNull(sql);
 		}
 	}
 }

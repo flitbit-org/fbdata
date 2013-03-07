@@ -11,7 +11,7 @@ namespace FlitBit.Data
 	public abstract class MappedDataRepository<TModel, Id, TModelImpl, TDbConnection, TModelBinder> : AbstractCachingRepository<TModel, Id>
 		where TModelImpl: class, TModel, new()
 		where TDbConnection: DbConnection, new()
-		where TModelBinder: IModelBinder<TModel, Id, TModelImpl, TDbConnection>
+		where TModelBinder: IModelBinder<TModel, Id>
 	{
 		Mapping<TModel> _mapping;
 		TModelBinder _binder;
@@ -56,7 +56,7 @@ namespace FlitBit.Data
 		{
 			var cn = context.SharedOrNewConnection<TDbConnection>(_mapping.ConnectionName);
 			if (!cn.State.HasFlag(ConnectionState.Open)) cn.Open();
-			return _binder.GetAllCommand().ExecuteMany(context, cn, behavior, null);
+			return _binder.GetAllCommand().ExecuteMany(context, cn, behavior);
 		}
 
 		public override IEnumerable<TModel> ReadMatch<TMatch>(IDbContext context, QueryBehavior behavior, TMatch match)
