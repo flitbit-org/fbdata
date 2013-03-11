@@ -8,20 +8,6 @@ using System.Text;
 
 namespace FlitBit.Data
 {
-	[Flags]
-	public enum DbTypeLengthRequirements
-	{
-		None = 0,
-		Length = 1,
-		Precision = 2,
-		Scale = 4,
-		OptionalScale = Scale | 8,
-		IndicatedByBrackets = 16,
-		IndicatedByParenthesis = 32,
-		ApproximationMapping = 0x08000000,
-		LengthSpecifierMask = Length | Precision | OptionalScale,
-	}
-
 	public class DbTypeTranslation
 	{
 		public DbTypeTranslation(DbType dbType, int specializedDbType, Type runtimeType, bool isDefaultForRuntimeType, string providerSqlTypeName)

@@ -110,8 +110,9 @@
     <Reference Include="FlitBit.Core, Version=2.8.15.0, Culture=neutral, PublicKeyToken=38f03d0878531ff3, processorArchitecture=MSIL">
       <HintPath>..\packages\FlitBit.Core.2.8.15\lib\net40\FlitBit.Core.dll</HintPath>
     </Reference>
-    <Reference Include="FlitBit.Emit">
-      <HintPath>..\packages\FlitBit.Emit.2.7.1\lib\net40\FlitBit.Emit.dll</HintPath>
+    <Reference Include="FlitBit.Emit, Version=2.7.2.0, Culture=neutral, PublicKeyToken=38f03d0878531ff3, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\FlitBit.Emit.2.7.2\lib\net40\FlitBit.Emit.dll</HintPath>
     </Reference>
     <Reference Include="FlitBit.ObjectIdentity">
       <HintPath>..\packages\FlitBit.ObjectIdentity.1.2.1\lib\net40\FlitBit.ObjectIdentity.dll</HintPath>
@@ -148,6 +149,16 @@
     <Compile Include="AbstractCachingRepository.cs">
       <DependentUpon>IDataRepository.cs</DependentUpon>
     </Compile>
+    <Compile Include="Catalog\IMappedType.cs" />
+    <Compile Include="DataModel.M.cs" />
+    <Compile Include="IDataModelReference.M.IK.cs" />
+    <Compile Include="IDataModelReferenceFactory.M.IK.cs" />
+    <Compile Include="IDataModelResolver.M.IK.cs" />
+    <Compile Include="IModelBinderExtensions.cs" />
+    <Compile Include="IDataModel.cs" />
+    <Compile Include="DataModels.cs" />
+    <Compile Include="DbTypeLengthRequirements.cs" />
+    <Compile Include="Meta\ColumnMapping.T.cs" />
     <Compile Include="DbContext.static.cs">
       <DependentUpon>IDbContext.cs</DependentUpon>
     </Compile>
@@ -201,13 +212,13 @@
     <Compile Include="IDbExecutableExtensions.cs">
       <DependentUpon>IDbExecutable.cs</DependentUpon>
     </Compile>
-    <Compile Include="IModelBinderFactory.cs" />
     <Compile Include="IModelCommand.cs" />
     <Compile Include="MappedDataRepository.cs">
       <DependentUpon>IDataRepository.cs</DependentUpon>
     </Compile>
     <Compile Include="Meta\CollectionMapping.cs" />
     <Compile Include="Meta\ColumnMapping.cs" />
+    <Compile Include="Meta\CollectionMapping.T.cs" />
     <Compile Include="Meta\DDL\DDLBatch.cs" />
     <Compile Include="Meta\DDL\DDLBehaviors.cs" />
     <Compile Include="Meta\DDL\DDLCatalog.cs" />
@@ -220,9 +231,10 @@
     <Compile Include="Meta\Dependency.cs" />
     <Compile Include="Meta\Enum.cs" />
     <Compile Include="Meta\Exceptions.cs" />
+    <Compile Include="IDbTypeTranslator.cs" />
     <Compile Include="Meta\IdentityMapping.cs" />
-    <Compile Include="Meta\IMapping.cs" />
-    <Compile Include="Meta\IMappingExtensions.cs">
+    <Compile Include="IMapping.cs" />
+    <Compile Include="IMappingExtensions.cs">
       <DependentUpon>IMapping.cs</DependentUpon>
     </Compile>
     <Compile Include="Meta\IndexMapping.cs" />
@@ -233,9 +245,12 @@
     <Compile Include="Meta\MapEntityAttribute.cs" />
     <Compile Include="Meta\MapEnumAttribute.cs" />
     <Compile Include="Meta\MapIndexAttribute.cs" />
+    <Compile Include="Meta\MapInplaceColumnsAttribute.cs" />
+    <Compile Include="Meta\MapInplaceEntityAttribute.cs" />
+    <Compile Include="Meta\MapLiftedColumnAttribute.cs" />
     <Compile Include="Meta\MapOrderByAttribute.cs" />
     <Compile Include="Meta\MapOwnershipAttribute.cs" />
-    <Compile Include="Meta\Mapping.cs" />
+    <Compile Include="Meta\Mappings.cs" />
     <Compile Include="Meta\Mapping.T.cs" />
     <Compile Include="Meta\MapSchemaAttribute.cs" />
     <Compile Include="Meta\NaturalKeyMapping.cs" />
@@ -259,7 +274,6 @@
     <Compile Include="SqlServer\SqlDbProviderHelper.cs" />
     <Compile Include="SqlServer\SqlDbTypeTranslation.cs" />
     <Compile Include="SqlServer\SqlDbTypeTranslations.cs" />
-    <Compile Include="SqlServer\SqlModelBinderFactory.cs" />
     <Compile Include="SqlServer\SqlParameterBinder.cs" />
     <Compile Include="TableBackedDataRepository.cs">
       <DependentUpon>IDataRepository.cs</DependentUpon>
@@ -280,6 +294,9 @@
       <Generator>ResXFileCodeGenerator</Generator>
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
+  </ItemGroup>
+  <ItemGroup>
+    <Folder Include="Translators\" />
   </ItemGroup>
   <Import Project="$(MSBuildThisFileDirectory)\csproj-import-after.targets" Condition="Exists('$(MSBuildThisFileDirectory)\csproj-import-after.targets')" />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

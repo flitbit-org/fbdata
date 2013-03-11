@@ -9,7 +9,7 @@ namespace FlitBit.Data.Meta.Tests.Models
 	{
 		long ID { get; }
 
-		Person Person { get; set; }
+		TestPerson Person { get; set; }
 		IPhoneKind Kind { get; set; }
 		bool IsPrimaryContactNumber { get; set; }
 		string Number { get; set; }

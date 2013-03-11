@@ -5,12 +5,12 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using FlitBit.Core;
 using FlitBit.Data.Meta.DDL;
+using FlitBit.Data.Meta;
 
-namespace FlitBit.Data.Meta
+namespace FlitBit.Data
 {
 	public static class IMappingExtensions
-	{
-
+	{														
 		public static ColumnMapping GetPreferredReferenceColumn(this IMapping mapping)
 		{
 			if (mapping.IsEnum)

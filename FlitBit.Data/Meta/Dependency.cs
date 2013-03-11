@@ -17,37 +17,48 @@ namespace FlitBit.Data.Meta
 		/// </summary>
 		None = 0,
 		/// <summary>
+		/// Indicates a base-type dependency.
+		/// </summary>
+		Base = 1,
+		/// <summary>
 		/// Indicates a direct dependency via a column reference.
 		/// </summary>
-		Direct = 1,
+		Direct = 1 << 1,
 		/// <summary>
 		/// Indicates an indirect dependency >= 1 degree of separation via
 		/// direct dependency.
 		/// </summary>
-		Indirect = 2,
+		Indirect = 1 << 2,
 		/// <summary>
 		/// Indicates a soft dependency supporting a query path or
 		/// collection criteria.
 		/// </summary>
-		Soft = 4,
+		Soft = 1 << 3,
 		/// <summary>
 		/// Indicates the dependency path results in a circular dependency.
 		/// </summary>
-		Circular = 8,
+		Circular = 1 << 4,
+
+		/// <summary>
+		/// Indicates a dependency on self.
+		/// </summary>
+		Self = 1 << 5 | Circular,
+
+		/// <summary>
+		/// Indicates a dependency on columns contributed by the target.
+		/// </summary>
+		ColumnContributor = 1 << 6,
+
 
 		DirectCircular = Direct | Circular,
 		IndirectCircular = Indirect | Circular,
 		SoftCircular = Soft | Circular,
-		/// <summary>
-		/// Indicates a dependency on self.
-		/// </summary>
-		Self = 16 | Circular
 	}
 
 	public sealed class Dependency
 	{
 		static readonly int CHashCodeSeed = typeof(Dependency).AssemblyQualifiedName.GetHashCode();
-		
+
 		readonly Object _lock = new Object();
 		Status<DependencyKind> _kind = new Status<DependencyKind>();
 		IEnumerable<IEnumerable<MemberInfo>> _inderdependencyPaths = new IEnumerable<MemberInfo>[0].ToReadOnly();
@@ -78,17 +89,17 @@ namespace FlitBit.Data.Meta
 			{
 				_kind.ChangeState(_kind.CurrentState | DependencyKind.Self);
 			}
-			else
+			else if (_kind.CurrentState != DependencyKind.Base && _kind.CurrentState != DependencyKind.ColumnContributor)
 			{
 				var self = this;
 				var path = new MemberInfo[] { Member };
 				Target.Completed(() =>
 				{
-					var refs = Target.ParticipatingMembers.Where(info => Mapping.ExistsFor(info.GetTypeOfValue().FindElementType()));
+					var refs = Target.ParticipatingMembers.Where(info => Mappings.ExistsFor(info.GetTypeOfValue().FindElementType()));
 					foreach (var mbr in refs)
 					{
 						ExhaustiveSeekCircularDependency(self, mbr, path);
-					}		
+					}
 				});
 			}
 			return this;
@@ -99,7 +110,7 @@ namespace FlitBit.Data.Meta
 			lock (this)
 			{
 				_kind.ChangeState(_kind.CurrentState | DependencyKind.Circular);
-			
+
 				_inderdependencyPaths = _inderdependencyPaths
 					.Concat(new IEnumerable<MemberInfo>[] { path })
 					.OrderBy(e => e.Count()).ToReadOnly();
@@ -109,22 +120,22 @@ namespace FlitBit.Data.Meta
 		static void ExhaustiveSeekCircularDependency(Dependency origin, MemberInfo member, IEnumerable<MemberInfo> path)
 		{
 			var mtype = member.GetTypeOfValue().FindElementType();
-			path = path.Concat(new MemberInfo[] { member }).ToArray();				
+			path = path.Concat(new MemberInfo[] { member }).ToArray();
 			if (origin.Origin.RuntimeType == mtype)
 			{
 				origin.AddInterdependencyPath(path);
-				
+
 			}
 			else if (!path.Contains(member))
 			{
-				IMapping m = Mapping.AccessMappingFor(mtype);
-				m.Completed(() => 
+				IMapping m = Mappings.AccessMappingFor(mtype);
+				m.Completed(() =>
 				{
-					var refs = m.ParticipatingMembers.Where(info => Mapping.ExistsFor(info.GetTypeOfValue().FindElementType()));
+					var refs = m.ParticipatingMembers.Where(info => Mappings.ExistsFor(info.GetTypeOfValue().FindElementType()));
 					foreach (var mbr in refs)
 					{
 						ExhaustiveSeekCircularDependency(origin, mbr, path);
-					}					
+					}
 				});
 			}
 		}
@@ -158,10 +169,12 @@ namespace FlitBit.Data.Meta
 		{
 			var buffer = new StringBuilder(400)
 				.Append("{ Kind: ").Append(_kind.CurrentState)
-				.Append(", Origin: ").Append('"').Append(Origin.RuntimeType.FullName).Append('"')
-				.Append(", Member: ").Append('"').Append(Member.Name).Append('"')
-				.Append(", Target: ").Append('"').Append(Target.RuntimeType.FullName).Append('"')
-				;
+				.Append(", Origin: ").Append('"').Append(Origin.RuntimeType.FullName).Append('"');
+			if (Member != null)
+			{
+				buffer.Append(", Member: ").Append('"').Append(Member.Name).Append('"');
+			}
+			buffer.Append(", Target: ").Append('"').Append(Target.RuntimeType.FullName).Append('"');
 
 			if (_inderdependencyPaths.Count() > 0)
 			{
@@ -175,7 +188,7 @@ namespace FlitBit.Data.Meta
 				buffer.Append(" ]");
 			}
 			return buffer.Append(
-				" }").ToString();		
+				" }").ToString();
 		}
 		#endregion
 	}

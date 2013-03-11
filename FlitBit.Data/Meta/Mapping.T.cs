@@ -5,11 +5,12 @@
 using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.ComponentModel;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
-using System.Threading;
 using FlitBit.Core;
 using FlitBit.Emit;
 using FlitBit.Wireup;
@@ -17,19 +18,33 @@ using FlitBit.Wireup;
 namespace FlitBit.Data.Meta
 {
 	public partial class Mapping<T> : IMapping
-	{	
-		readonly Dictionary<string, ColumnMapping> _columns = new Dictionary<string, ColumnMapping>();
+	{
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
+		readonly Object _sync = new Object();
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
+		readonly List<ColumnMapping> _declaredColumns = new List<ColumnMapping>();
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 		readonly Dictionary<string, CollectionMapping<T>> _collections = new Dictionary<string, CollectionMapping<T>>();
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
+		readonly List<ColumnMapping> _columns = new List<ColumnMapping>();
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
+		readonly List<IMapping> _baseTypes = new List<IMapping>();
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 		readonly List<Dependency> _dependencies = new List<Dependency>();
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 		readonly ConcurrentQueue<Action> _whenCompleted = new ConcurrentQueue<Action>();
 
-		int _columnCount = 0;
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 		IdentityMapping<T> _identity;
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 		NaturalKeyMapping<T> _naturalKey;
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 		List<string> _errors;
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 		string _connectionName;
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 		string _targetSchema;
-		
+
 		internal Mapping()
 		{
 			_identity = new IdentityMapping<T>(this);
@@ -39,7 +54,7 @@ namespace FlitBit.Data.Meta
 				name = name.Substring(1);
 			this.TargetObject = name;
 		}
-		
+
 		public Type RuntimeType { get { return typeof(T); } }
 
 		/// <summary>
@@ -61,7 +76,7 @@ namespace FlitBit.Data.Meta
 		/// </summary>
 		public string TargetSchema
 		{
-			get { return String.IsNullOrEmpty(_targetSchema) ? Mapping.Instance.DefaultSchema : _targetSchema; }
+			get { return String.IsNullOrEmpty(_targetSchema) ? Mappings.Instance.DefaultSchema : _targetSchema; }
 			set { _targetSchema = value; }
 		}
 		/// <summary>
@@ -73,7 +88,7 @@ namespace FlitBit.Data.Meta
 		/// </summary>
 		public string ConnectionName
 		{
-			get { return String.IsNullOrEmpty(_connectionName) ? Mapping.Instance.DefaultConnection : _connectionName; }
+			get { return String.IsNullOrEmpty(_connectionName) ? Mappings.Instance.DefaultConnection : _connectionName; }
 			set { _connectionName = value; }
 		}
 		/// <summary>
@@ -95,19 +110,23 @@ namespace FlitBit.Data.Meta
 			get { return _identity.Columns.Count() > 0; }
 		}
 
+		public object Discriminator { get; private set; }
+
 		/// <summary>
 		/// The columns that are mapped to the object.
 		/// </summary>
-		public IEnumerable<ColumnMapping> Columns
-		{
-			get { return _columns.Values.OrderBy(c => c.Ordinal).ToReadOnly(); }
-		}
+		public IEnumerable<ColumnMapping> Columns { get { return _columns.AsReadOnly(); } }
+
+		/// <summary>
+		/// The columns that are mapped to the object.
+		/// </summary>
+		public IEnumerable<ColumnMapping> DeclaredColumns { get { return _declaredColumns.AsReadOnly(); } }
 
 		public IEnumerable<MemberInfo> ParticipatingMembers
 		{
 			get
 			{
-				return _columns.Select(kvp => kvp.Value.Member)
+				return Columns.Select(c => c.Member)
 					.Concat(_collections.Select(kvp => kvp.Value.Member))
 					.ToReadOnly();
 			}
@@ -116,7 +135,24 @@ namespace FlitBit.Data.Meta
 		/// <summary>
 		/// The collections that are mapped to the object.
 		/// </summary>
-		public IEnumerable<CollectionMapping<T>> Collections
+		public IEnumerable<CollectionMapping> Collections
+		{
+			get
+			{
+				var res = new List<CollectionMapping>();
+				foreach (var it in _baseTypes)
+				{
+					res.AddRange(it.DeclaredCollections);
+				}
+				res.AddRange(_collections.Values);
+				return res.AsReadOnly();
+			}
+		}
+
+		/// <summary>
+		/// The collections that are mapped to the object.
+		/// </summary>
+		public IEnumerable<CollectionMapping> DeclaredCollections
 		{
 			get { return _collections.Values.ToReadOnly(); }
 		}
@@ -140,29 +176,22 @@ namespace FlitBit.Data.Meta
 			Contract.Assert(memberType == MemberTypes.Field
 				|| memberType == MemberTypes.Property, "Expression must reference a field or property member");
 
+			return DefineColumn(member);
+		}
+
+		internal ColumnMapping<T> DefineColumn(MemberInfo member)
+		{
 			var name = member.Name;
 
 			ColumnMapping col;
-			lock (_columns)
+			lock (_sync)
 			{
-				if (!_columns.TryGetValue(name, out col))
-				{
-					_columns.Add(name, col = ColumnMapping.FromMember<T>(this, member, Interlocked.Increment(ref _columnCount)));
-				}
-			}
-			return (ColumnMapping<T>)col;
-		}
-		internal ColumnMapping<T> DefineColumn(PropertyInfo p)
-		{
-			var name = p.Name;
+				if (_columns.Where(c => c.TargetName == name).SingleOrDefault() != null)
+					throw new MappingException(String.Concat("Duplicate column definition: ", name));
 
-			ColumnMapping col;
-			lock (_columns)
-			{
-				if (!_columns.TryGetValue(name, out col))
-				{
-					_columns.Add(name, col = ColumnMapping.FromMember<T>(this, p, Interlocked.Increment(ref _columnCount)));
-				}
+				col = ColumnMapping.FromMember<T>(this, member, _columns.Count);
+				_declaredColumns.Add(col);
+				_columns.Add(col);
 			}
 			return (ColumnMapping<T>)col;
 		}
@@ -181,7 +210,7 @@ namespace FlitBit.Data.Meta
 			var name = member.Name;
 
 			CollectionMapping<T> col;
-			lock (_collections)
+			lock (_sync)
 			{
 				if (!_collections.TryGetValue(name, out col))
 				{
@@ -190,12 +219,12 @@ namespace FlitBit.Data.Meta
 			}
 			return (CollectionMapping<T>)col;
 		}
-		CollectionMapping<T> DefineCollection(PropertyInfo property)
+		internal CollectionMapping<T> DefineCollection(PropertyInfo property)
 		{
 			var name = property.Name;
 
 			CollectionMapping<T> col;
-			lock (_collections)
+			lock (_sync)
 			{
 				if (!_collections.TryGetValue(name, out col))
 				{
@@ -233,7 +262,7 @@ namespace FlitBit.Data.Meta
 		{
 			return this;
 		}
-				
+
 		public Mapping<T> MapAllOperations()
 		{
 			return MapAllOperations(MappingStrategy.OneClassOneTable);
@@ -313,6 +342,20 @@ namespace FlitBit.Data.Meta
 
 		public IEnumerable<Dependency> Dependencies
 		{
+			get
+			{
+				var res = new List<Dependency>();
+				foreach (var it in _baseTypes)
+				{
+					res.AddRange(it.DeclaredDependencies);
+				}
+				res.AddRange(_dependencies);
+				return res.AsReadOnly();
+			}
+		}
+
+		public IEnumerable<Dependency> DeclaredDependencies
+		{
 			get { return _dependencies.ToArray(); }
 		}
 
@@ -320,7 +363,7 @@ namespace FlitBit.Data.Meta
 		/// Completes the mapping.
 		/// </summary>
 		/// <returns></returns>
-		public Mapping End()
+		public Mappings End()
 		{
 			if (!HasIdentity)
 			{ // Try to discover identity columns from column definitions.
@@ -330,7 +373,7 @@ namespace FlitBit.Data.Meta
 				}
 			}
 			this.MarkComplete();
-			return Mapping.Instance;
+			return Mappings.Instance;
 		}
 
 		private void MarkComplete()
@@ -339,6 +382,16 @@ namespace FlitBit.Data.Meta
 			Action a;
 			while (_whenCompleted.TryDequeue(out a))
 				a();
+		}
+
+		public IModelBinder GetBinder()
+		{
+			Contract.Requires<ArgumentNullException>(ConnectionName != null && ConnectionName.Length > 0, "ConnectionName must be set before creating SQL commands for a model");
+
+			var helper = DbProviderHelpers.GetDbProviderHelperForDbConnection(ConnectionName);
+			var id = Identity.Columns.First();
+			var method = typeof(DbProviderHelper).GetGenericMethod("GetModelBinder", 1, 2).MakeGenericMethod(typeof(T), id.RuntimeType);
+			return (IModelBinder)method.Invoke(helper, new object[] { this });
 		}
 
 		internal Mapping<T> InitFromMetadata()
@@ -372,11 +425,40 @@ namespace FlitBit.Data.Meta
 					.GetCustomAttributes(typeof(MapSchemaAttribute), false).First();
 				schema.PrepareMapping(this);
 			}
-			if (typ.IsDefined(typeof(MapEntityAttribute), false))
+			foreach (var it in typeof(T).GetTypeHierarchyInDeclarationOrder()
+				.Except(new Type[] 
+				{ 
+					typeof(Object), 
+					typeof(INotifyPropertyChanged)
+				}))
 			{
-				var entity = (MapEntityAttribute)typ
-					.GetCustomAttributes(typeof(MapEntityAttribute), false).First();
-				entity.PrepareMapping(this);
+				if (it.IsDefined(typeof(MapEntityAttribute), false))
+				{
+					if (it != typeof(T))
+					{
+						var baseMapping = Mappings.AccessMappingFor(it);
+						_baseTypes.Add(baseMapping);
+						this.AddDependency(baseMapping, DependencyKind.Base, null);
+						_columns.AddRange(baseMapping.DeclaredColumns);
+					}
+					else
+					{
+						var entity = (MapEntityAttribute)it
+							.GetCustomAttributes(typeof(MapEntityAttribute), false).Single();
+						entity.PrepareMapping(this, it);
+					}
+				}
+			}
+			if (Behaviors.HasFlag(EntityBehaviors.MapEnum))
+			{
+				var idcol = Identity.Columns.Where(c => c.RuntimeType.IsEnum).SingleOrDefault();
+				if (idcol == null)
+					throw new MappingException(String.Concat("Entity type ", typeof(T).Name, " declares behavior EntityBehaviors.MapEnum but the enum type cannot be determined. Specify an identity column of enum type."));
+				var namecol = Columns.Where(c => c.RuntimeType == typeof(String) && c.IsAlternateKey).FirstOrDefault();
+				if (namecol == null)
+					throw new MappingException(String.Concat("Entity type ", typeof(T).Name, " declares behavior EntityBehaviors.MapEnum but a column to hold the enum name cannot be determined. Specify a string column with alternate key behavior."));
+				var names = Enum.GetNames(idcol.Member.GetTypeOfValue());
+				namecol.VariableLength = names.Max(n => n.Length);
 			}
 			return this;
 		}
@@ -384,7 +466,7 @@ namespace FlitBit.Data.Meta
 		internal void MapCollectionFromMeta(PropertyInfo p, MapCollectionAttribute mapColl)
 		{
 			var elmType = p.PropertyType.FindElementType();
-			if (!Mapping.ExistsFor(elmType))
+			if (!Mappings.ExistsFor(elmType))
 				new MappingException(String.Concat(typeof(T).Name, ": reference collection must be mapped over other mapped types: ", p.Name));
 
 			MemberInfo refColumn = null;
@@ -398,23 +480,23 @@ namespace FlitBit.Data.Meta
 				refColumn = elmType.GetProperty(refColumnName);
 				if (refColumn == null)
 					throw new InvalidOperationException(String.Concat(typeof(T).Name, ": relationship property doesn't exist on the target type: ", refColumnName));
-			}																																																																										
-			
+			}
+
 			var coll = DefineCollection(p);
 			coll.ReferenceJoinMember = refColumn;
 			coll.ReferenceBehaviors = mapColl.ReferenceBehaviors;
 		}
 
-		internal MemberInfo InferCollectionReferenceTargetMember(MemberInfo p, Type elementType)
+		public MemberInfo InferCollectionReferenceTargetMember(MemberInfo member, Type elementType)
 		{
-			var elmMapping = Mapping.AccessMappingFor(elementType);
-			AddDependency(elmMapping, DependencyKind.Soft, p);
+			var elmMapping = Mappings.AccessMappingFor(elementType);
+			AddDependency(elmMapping, DependencyKind.Soft, member);
 
 			var foreign_object_id = elmMapping.GetPreferredReferenceColumn();
 			if (foreign_object_id == null)
-				throw new MappingException(String.Concat("Relationship not defined between ", typeof(T).Name, ".", p.Name, " and the referenced type: ", elementType.Name));
+				throw new MappingException(String.Concat("Relationship not defined between ", typeof(T).Name, ".", member.Name, " and the referenced type: ", elementType.Name));
 
-			return foreign_object_id.Member;			
+			return foreign_object_id.Member;
 		}
 
 		internal void MapColumnFromMeta(PropertyInfo p, MapColumnAttribute mapColumn)
@@ -435,9 +517,9 @@ namespace FlitBit.Data.Meta
 				Identity.AddColumn(column);
 			}
 
-			if (Mapping.ExistsFor(p.PropertyType))
+			if (Mappings.ExistsFor(p.PropertyType))
 			{
-				var foreignMapping = Mapping.AccessMappingFor(p.PropertyType);
+				var foreignMapping = Mappings.AccessMappingFor(p.PropertyType);
 				var foreignColumn = default(ColumnMapping);
 				AddDependency(foreignMapping, DependencyKind.Direct, column.Member);
 
@@ -462,10 +544,10 @@ namespace FlitBit.Data.Meta
 		}
 
 		public EntityBehaviors Behaviors { get; internal set; }
-				
+
 		internal void AddDependency(IMapping target, DependencyKind kind, MemberInfo member)
 		{
-			lock (_dependencies)
+			lock (_sync)
 			{
 				var dep = _dependencies.Find(d => d.Target == target);
 				if (dep == null)
@@ -489,6 +571,24 @@ namespace FlitBit.Data.Meta
 				}
 			}
 			return this;
+		}
+
+		internal void SetDiscriminator(object discriminator)
+		{
+			this.Discriminator = discriminator;
+		}
+
+		internal void AddContributedColumn(ColumnMapping contributed)
+		{
+			var name = contributed.TargetName;
+			lock (_sync)
+			{
+				if (_columns.Where(c => c.TargetName == name).SingleOrDefault() != null)
+					throw new MappingException(String.Concat("Duplicate column definition: ", name));
+
+				_declaredColumns.Add(contributed);
+				_columns.Add(contributed);
+			}
 		}
 	}
 }

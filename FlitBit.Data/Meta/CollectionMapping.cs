@@ -3,20 +3,19 @@
 #endregion
 
 using System;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
-using System.Linq.Expressions;
 using System.Reflection;
-using FlitBit.Core;
 using FlitBit.Emit;
 
 namespace FlitBit.Data.Meta
 {
-	public class CollectionMapping<T>
+	public abstract class CollectionMapping
 	{
-		Mapping<T> _mapping;
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 		MemberInfo _referenceTargetMember;
 
-		internal CollectionMapping(Mapping<T> mapping, MemberInfo member)
+		internal CollectionMapping(IMapping mapping, MemberInfo member)
 		{
 			Contract.Requires(mapping != null);
 			Contract.Requires(member != null);
@@ -24,9 +23,10 @@ namespace FlitBit.Data.Meta
 			this.Member = member;
 			this.ElementType = member.GetTypeOfValue().FindElementType();
 			this.TargetName = member.Name;
-			this._mapping = mapping;
+			this.Mapping = mapping;
 		}
 
+		public IMapping Mapping { get; private set; }
 		public string TargetName { get; set; }
 		public MemberInfo Member { get; private set; }
 		public MemberInfo ReferenceJoinMember
@@ -35,7 +35,7 @@ namespace FlitBit.Data.Meta
 			{
 				if (_referenceTargetMember == null)
 				{
-					_referenceTargetMember = _mapping.InferCollectionReferenceTargetMember(Member, ElementType);
+					_referenceTargetMember = InferCollectionReferenceTargetMember(Member, ElementType);
 				}
 				return _referenceTargetMember;
 			}
@@ -44,44 +44,16 @@ namespace FlitBit.Data.Meta
 				_referenceTargetMember = value;
 			}
 		}
+
+		protected abstract MemberInfo InferCollectionReferenceTargetMember(MemberInfo Member, Type ElementType);
+		
 		public ReferenceBehaviors ReferenceBehaviors { get; internal set; }
 		public Type ElementType { get; private set; }
+
 		internal Type CollectionType { get; set; }
 		internal ColumnMapping BackReference { get; set; }
 
-		public CollectionMapping<T> JoinReference<U>(Expression<Func<U, object>> expression)
-		{
-			Contract.Requires(expression != null);			
-
-			MemberInfo member = expression.GetMemberFromExpression();
-			Contract.Assert(member != null, "Expression must reference a field or property member");
-
-			var memberType = member.MemberType;
-			Contract.Assert(memberType == MemberTypes.Field
-				|| memberType == MemberTypes.Property, "Expression must reference a field or property member");
-			Contract.Assert(member.DeclaringType == this.ElementType,
-				"Type mismatch; typeof(U) must match the collection's element type");
-			
-			this.ReferenceJoinMember = member;
-			return this;
-		}
-
-		public CollectionMapping<T> Where<U>(Expression<Func<T, U, bool>> expression)
-		{
-			Contract.Requires(expression != null);
-			
-			if (expression.Body is BinaryExpression)
-			{
-				BinaryExpression bin = (BinaryExpression)expression.Body;				
-				
-			}			
-			return this;
-		}
-
-		public Mapping<T> End()
-		{
-			return _mapping;
-		}
+		
 	}
 }
 

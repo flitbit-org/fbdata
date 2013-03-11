@@ -82,7 +82,7 @@ namespace FlitBit.Data.Meta
 		public IEnumerable<string> References { get; set; }
 		public ReferenceBehaviors ReferenceBehaviors { get; set; }
 
-		public Type UDTProvider { get; set; }
+		public Type DbTypeTranslator { get; set; }
 
 		internal static MapColumnAttribute DefineOnProperty<T>(PropertyInfo property)
 		{
@@ -117,10 +117,9 @@ namespace FlitBit.Data.Meta
 			{
 				mapping.Identity.AddColumn(column);
 			}
-
-			if (Mapping.ExistsFor(p.PropertyType))
+			if (this.DbTypeTranslator == null && Mappings.ExistsFor(p.PropertyType))
 			{
-				var foreignMapping = Mapping.AccessMappingFor(p.PropertyType);
+				var foreignMapping = Mappings.AccessMappingFor(p.PropertyType);
 				var foreignColumn = default(ColumnMapping);
 
 				if (References == null || References.Count() == 0)

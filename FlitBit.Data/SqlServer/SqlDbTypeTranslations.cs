@@ -1,14 +1,12 @@
 ﻿#region COPYRIGHT© 2009-2013 Phillip Clark.
 // For licensing information see License.txt (MIT style licensing).
 #endregion
-
-
+						 
 using System;
 using System.Collections.Concurrent;
 using System.Data;
 using System.Diagnostics.Contracts;
 using System.Linq;
-using FlitBit.Core.Properties;
 
 namespace FlitBit.Data.SqlServer
 {
@@ -21,7 +19,7 @@ namespace FlitBit.Data.SqlServer
 			, new SqlDbTypeTranslation(DbType.Boolean, SqlDbType.Bit, typeof(bool), true, "BIT", DbTypeLengthRequirements.None)
 			, new SqlDbTypeTranslation(DbType.Currency, SqlDbType.Money, typeof(decimal), false, "MONEY", DbTypeLengthRequirements.None)
 			, new SqlDbTypeTranslation(DbType.Date, SqlDbType.Date, typeof(DateTime), false, "DATE", DbTypeLengthRequirements.None)
-			, new SqlDbTypeTranslation(DbType.DateTime, SqlDbType.DateTime, typeof(DateTime), true)
+			, new SqlDbTypeTranslation(DbType.DateTime, SqlDbType.DateTime2, typeof(DateTime), true)
 			, new SqlDbTypeTranslation(DbType.Decimal, SqlDbType.Decimal, typeof(decimal), true, "DECIMAL", DbTypeLengthRequirements.Precision | DbTypeLengthRequirements.Scale | DbTypeLengthRequirements.IndicatedByParenthesis)
 			, new SqlDbTypeTranslation(DbType.Double, SqlDbType.Float, typeof(double), true)
 			, new SqlDbTypeTranslation(DbType.Guid, SqlDbType.UniqueIdentifier, typeof(Guid), true)
@@ -49,12 +47,12 @@ namespace FlitBit.Data.SqlServer
 		static SqlDbTypeTranslations()
 		{
 			__runtimeTypeMappings.TryAdd(typeof(Char).AssemblyQualifiedName, new SqlDbTypeTranslation(DbType.AnsiStringFixedLength, SqlDbType.Char, typeof(char), true, "CHAR", DbTypeLengthRequirements.Length | DbTypeLengthRequirements.IndicatedByParenthesis, "1"));
-			__runtimeTypeMappings.TryAdd(typeof(Type).AssemblyQualifiedName, new SqlDbTypeTranslation(DbType.String, SqlDbType.NVarChar, typeof(Type), true, DbTypeLengthRequirements.Length | DbTypeLengthRequirements.IndicatedByParenthesis, "200"));
+			__runtimeTypeMappings.TryAdd(typeof(Type).AssemblyQualifiedName, new SqlDbTypeTranslation(DbType.String, SqlDbType.NVarChar, typeof(Type), true, DbTypeLengthRequirements.Length | DbTypeLengthRequirements.IndicatedByParenthesis, "400"));
 			__runtimeTypeMappings.TryAdd(typeof(Char[]).AssemblyQualifiedName, new SqlDbTypeTranslation(DbType.String, SqlDbType.NChar, typeof(Char[]), true, "NVARCHAR", DbTypeLengthRequirements.Length | DbTypeLengthRequirements.IndicatedByParenthesis, "MAX"));
 
 			__runtimeTypeMappings.TryAdd(typeof(byte?).AssemblyQualifiedName, new SqlDbTypeTranslation(DbType.Byte, SqlDbType.TinyInt, typeof(byte), true));
 			__runtimeTypeMappings.TryAdd(typeof(bool?).AssemblyQualifiedName, new SqlDbTypeTranslation(DbType.Boolean, SqlDbType.Bit, typeof(bool), true));
-			__runtimeTypeMappings.TryAdd(typeof(DateTime?).AssemblyQualifiedName, new SqlDbTypeTranslation(DbType.DateTime, SqlDbType.DateTime, typeof(DateTime), true, "DATETIME", DbTypeLengthRequirements.None));
+			__runtimeTypeMappings.TryAdd(typeof(DateTime?).AssemblyQualifiedName, new SqlDbTypeTranslation(DbType.DateTime, SqlDbType.DateTime2, typeof(DateTime), true, "DATETIME2", DbTypeLengthRequirements.Length | DbTypeLengthRequirements.IndicatedByParenthesis, "7"));
 			__runtimeTypeMappings.TryAdd(typeof(decimal?).AssemblyQualifiedName, new SqlDbTypeTranslation(DbType.Decimal, SqlDbType.Decimal, typeof(decimal), true, "DECIMAL", DbTypeLengthRequirements.Precision | DbTypeLengthRequirements.Scale | DbTypeLengthRequirements.IndicatedByParenthesis));
 			__runtimeTypeMappings.TryAdd(typeof(double?).AssemblyQualifiedName, new SqlDbTypeTranslation(DbType.Double, SqlDbType.Float, typeof(double), true, "FLOAT", DbTypeLengthRequirements.None));
 			__runtimeTypeMappings.TryAdd(typeof(Guid?).AssemblyQualifiedName, new SqlDbTypeTranslation(DbType.Guid, SqlDbType.UniqueIdentifier, typeof(Guid), true, "UNIQUEIDENTIFIER", DbTypeLengthRequirements.None));

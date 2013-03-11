@@ -15,13 +15,13 @@ using FlitBit.Core.Factory;
 namespace FlitBit.Data.Meta
 {
 	[AttributeUsage(AttributeTargets.Interface | AttributeTargets.Class)]
-	public sealed class MapEntityAttribute: AutoImplementedAttribute
-	{	
+	public sealed class MapEntityAttribute : AutoImplementedAttribute
+	{
 		public MapEntityAttribute() : base(InstanceScopeKind.OnDemand) { }
 		public MapEntityAttribute(EntityBehaviors behaviors)
 			: this(null, null, null, MappingStrategy.OneClassOneTable, behaviors)
-		{ 
-		}		
+		{
+		}
 		public MapEntityAttribute(string targetSchema)
 			: this(targetSchema, null, null, MappingStrategy.OneClassOneTable, EntityBehaviors.Default)
 		{
@@ -38,7 +38,7 @@ namespace FlitBit.Data.Meta
 			: this(targetSchema, targetName, null, MappingStrategy.OneClassOneTable, behaviors)
 		{
 		}
-		public MapEntityAttribute(string targetSchema, string targetName, 
+		public MapEntityAttribute(string targetSchema, string targetName,
 			string connectionName, MappingStrategy strategy, EntityBehaviors behaviors)
 			: base(InstanceScopeKind.OnDemand)
 		{
@@ -48,73 +48,78 @@ namespace FlitBit.Data.Meta
 			this.Strategy = strategy;
 			this.Behaviors = behaviors;
 		}
-		
+
 		public string TargetName { get; set; }
 		public string TargetSchema { get; set; }
 		public string ConnectionName { get; set; }
 		public MappingStrategy Strategy { get; private set; }
 		public EntityBehaviors Behaviors { get; private set; }
+		public object Discriminator { get; set; }
 
-		internal void PrepareMapping<T>(Mapping<T> mapping)
+		internal void PrepareMapping<T>(Mapping<T> mapping, Type declaringType)
 		{
-			if (!String.IsNullOrEmpty(TargetName))
+			if (declaringType == mapping.RuntimeType)
 			{
-				mapping.WithName(TargetName);
-			}
-			if (!String.IsNullOrEmpty(ConnectionName))
-			{
-				mapping.UsesConnection(ConnectionName);
-			}
-			if (!String.IsNullOrEmpty(TargetSchema))
-			{
-				mapping.InSchema(TargetSchema);
-			}
-			mapping.Behaviors = this.Behaviors;
-			
-			foreach (var type in typeof(T).GetTypeHierarchyInDeclarationOrder()
-				.Except(new Type[] 
-				{ 
-					typeof(Object), 
-					typeof(INotifyPropertyChanged) 
-				}))
-			{
-				var mapAllProperties = this.Behaviors.HasFlag(EntityBehaviors.MapAllProperties);
-				foreach (var p in type.GetProperties())
+				if (!String.IsNullOrEmpty(TargetName))
 				{
-					var mapColumn = (MapColumnAttribute)p.GetCustomAttributes(typeof(MapColumnAttribute), false).SingleOrDefault();
-					if (mapColumn == null
-						&& mapAllProperties
-						&& !typeof(IEnumerable).IsAssignableFrom(p.PropertyType))
+					mapping.WithName(TargetName);
+				}
+				if (!String.IsNullOrEmpty(ConnectionName))
+				{
+					mapping.UsesConnection(ConnectionName);
+				}
+				if (!String.IsNullOrEmpty(TargetSchema))
+				{
+					mapping.InSchema(TargetSchema);
+				}
+				mapping.Behaviors = this.Behaviors;
+			}
+
+			var mapAllProperties = this.Behaviors.HasFlag(EntityBehaviors.MapAllProperties);
+			foreach (var p in declaringType.GetProperties())
+			{												 
+				var mapColumn = (MapColumnAttribute)p.GetCustomAttributes(typeof(MapColumnAttribute), false).SingleOrDefault();
+				if (mapColumn != null)
+				{
+					mapColumn.PrepareMapping(mapping, p);
+				}
+				else
+				{
+					if (p.IsDefined(typeof(MapInplaceColumnsAttribute), false))
 					{
-						mapColumn = MapColumnAttribute.DefineOnProperty<T>(p);
+						var meta = (MapInplaceColumnsAttribute)p.GetCustomAttributes(typeof(MapInplaceColumnsAttribute), false).Single();
+						meta.PrepareMapping(mapping, p);																										 						
 					}
-					if (mapColumn != null)
+					else if (p.IsDefined(typeof(MapCollectionAttribute), false))
 					{
-						mapColumn.PrepareMapping(mapping, p);
-					}
-					var mapColl = (MapCollectionAttribute)p.GetCustomAttributes(typeof(MapCollectionAttribute), false).SingleOrDefault();
-					if (mapColl != null)
-					{
+						var mapColl = (MapCollectionAttribute)p.GetCustomAttributes(typeof(MapCollectionAttribute), false).Single();
 						mapping.MapCollectionFromMeta(p, mapColl);
 					}
-				}
+					else if (mapAllProperties && !typeof(IEnumerable).IsAssignableFrom(p.PropertyType))
+					{
+						mapColumn = MapColumnAttribute.DefineOnProperty<T>(p);
+						mapColumn.PrepareMapping(mapping, p);
+					}
+				}	 				
 			}
-			if (mapping.Behaviors.HasFlag(EntityBehaviors.MapEnum))
-			{
-				var idcol = mapping.Identity.Columns.Where(c => c.RuntimeType.IsEnum).SingleOrDefault();
-				if (idcol == null)
-					throw new MappingException(String.Concat("Entity type ", typeof(T).Name, " declares behavior EntityBehaviors.MapEnum but the enum type cannot be determined. Specify an identity column of enum type."));
-				var namecol = mapping.Columns.Where(c => c.RuntimeType == typeof(String) && c.IsAlternateKey).FirstOrDefault();
-				if (namecol == null)
-					throw new MappingException(String.Concat("Entity type ", typeof(T).Name, " declares behavior EntityBehaviors.MapEnum but a column to hold the enum name cannot be determined. Specify a string column with alternate key behavior."));
-				var names = Enum.GetNames(idcol.Member.GetTypeOfValue());
-				namecol.VariableLength = names.Max(n => n.Length);				
-			}
+			mapping.SetDiscriminator(this.Discriminator);
 		}
 
+		/// <summary>
+		/// Implements the stereotypical DataModel behavior for interfaces of type T.
+		/// </summary>
+		/// <typeparam name="T">target type T</typeparam>
+		/// <param name="factory">the requesting factory</param>
+		/// <param name="complete">callback invoked with the implementation type or the type's factory function.</param> 
+		/// <returns><em>true</em> if the data model was generated; otherwise <em>false</em>.</returns>
 		public override bool GetImplementation<T>(IFactory factory, Action<Type, Func<T>> complete)
 		{
-			throw new NotImplementedException();
-		}		
+			if (typeof(T).IsDefined(typeof(MapEntityAttribute), true))
+			{
+				complete(DataModels.ConcreteType<T>(), null);
+				return true;
+			}
+			return false;
+		}
 	}
 }

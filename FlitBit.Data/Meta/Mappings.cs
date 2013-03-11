@@ -3,25 +3,27 @@
 #endregion
 
 using System;
+using System.Linq;
 using System.Collections.Concurrent;
 using System.Diagnostics.Contracts;
 using System.Threading;
 using FlitBit.Core;
+using System.Reflection;
 
 namespace FlitBit.Data.Meta
 {
-	public class Mapping
+	public class Mappings
 	{
-		public const int CInvalidOrdinal = -1;
+		public const int CInvalidOrdinal = -1;		
 
 		readonly static ConcurrentDictionary<object, IMapping> __mappings = new ConcurrentDictionary<object, IMapping>();
 		
-		static Lazy<Mapping> __instance = new Lazy<Mapping>(() => { return new Mapping(); }, LazyThreadSafetyMode.PublicationOnly);
-		internal Mapping()
+		static Lazy<Mappings> __instance = new Lazy<Mappings>(() => { return new Mappings(); }, LazyThreadSafetyMode.PublicationOnly);
+		internal Mappings()
 		{
 		}
 
-		public static Mapping Instance
+		public static Mappings Instance
 		{
 			get { return __instance.Value; }
 		}
@@ -43,7 +45,7 @@ namespace FlitBit.Data.Meta
 			return m as Mapping<T>;
 		}
 				
-		public Mapping UseDefaultSchema(string schema)
+		public Mappings UseDefaultSchema(string schema)
 		{
 			Contract.Requires(schema != null);
 			Contract.Requires(schema.Length > 0);
@@ -51,7 +53,7 @@ namespace FlitBit.Data.Meta
 			return this;
 		}						
 
-		public Mapping UseDefaultConnection(string connection)
+		public Mappings UseDefaultConnection(string connection)
 		{
 			Contract.Requires(connection != null);
 			Contract.Requires(connection.Length > 0);
@@ -61,16 +63,22 @@ namespace FlitBit.Data.Meta
 
 		internal static IMapping AccessMappingFor(Type type)
 		{
-			// Admittedly this is slow, but it is only called at wireup time while generating IL.
-			return (IMapping)typeof(Mapping).GetMethod("ForType").MakeGenericMethod(type).Invoke(__instance.Value, null);
+			// Admittedly this is slow, but it is only called at wireup time while generating mappings and IL.
+			return (IMapping)typeof(Mappings).GetMethod("ForType").MakeGenericMethod(type).Invoke(__instance.Value, null);
 		}
 
 		internal static bool ExistsFor(Type type)
 		{
 			if (Type.GetTypeCode(type) == TypeCode.Object && !type.IsValueType)
 			{
-				IMapping m = AccessMappingFor(type);
-				return m != null;
+				// The type either comes from this assembly or an assembly that references this one.
+				var thisAssemblyName = Assembly.GetExecutingAssembly().GetName().FullName;
+				if (type.Assembly.GetName().FullName == thisAssemblyName 
+					|| type.Assembly.GetReferencedAssemblies().Any(n => n.FullName == thisAssemblyName))
+				{
+					IMapping m = AccessMappingFor(type);
+					return m != null;
+				}
 			}
 			return false;
 		}

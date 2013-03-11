@@ -2,6 +2,7 @@
 using FlitBit.Data.Meta.Tests.Models;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 using FlitBit.Data.SqlServer;
+using System.Text;
 
 namespace FlitBit.Data.Meta.Tests
 {
@@ -11,9 +12,9 @@ namespace FlitBit.Data.Meta.Tests
 		[TestMethod]
 		public void Monkey()
 		{
-			Mapping.Instance
+			Mappings.Instance
 				//.UseDefaultConnection("test-data")
-				.ForType<Person>()
+				.ForType<TestPerson>()
 					.Column(x => x.ID).WithBehaviors(ColumnBehaviors.Synthetic).End()
 					.Column(x => x.ExternalID).WithBehaviors(ColumnBehaviors.AlternateKey).End()
 					.Column(x => x.Name).WithVariableLength(50).End()
@@ -21,14 +22,14 @@ namespace FlitBit.Data.Meta.Tests
 					.End();
 
 			// Check the mapping for People...
-			var people = Mapping.Instance.ForType<Person>();
+			var people = Mappings.Instance.ForType<TestPerson>();
 
-			Assert.IsTrue(people.ParticipatingMembers.Contains(typeof(Person).GetProperty("ID")));
-			Assert.IsTrue(people.ParticipatingMembers.Contains(typeof(Person).GetProperty("ExternalID")));
-			Assert.IsTrue(people.ParticipatingMembers.Contains(typeof(Person).GetProperty("Name")));
+			Assert.IsTrue(people.ParticipatingMembers.Contains(typeof(TestPerson).GetProperty("ID")));
+			Assert.IsTrue(people.ParticipatingMembers.Contains(typeof(TestPerson).GetProperty("ExternalID")));
+			Assert.IsTrue(people.ParticipatingMembers.Contains(typeof(TestPerson).GetProperty("Name")));
 
 			// It knows the runtime type...
-			Assert.AreEqual(typeof(Person), people.RuntimeType);
+			Assert.AreEqual(typeof(TestPerson), people.RuntimeType);
 
 			// We mapped two columns...
 			Assert.AreEqual(3, people.Columns.Count());
@@ -114,8 +115,10 @@ namespace FlitBit.Data.Meta.Tests
 			Assert.IsNotNull(ddl);
 			Assert.IsNotNull(ddl.Name);
 
-			var binder = new DynamicHybridInheritanceTreeBinder<Person, int, Person>(null);
-			var sql = binder.BuildDdlBatch();
+			var binder = new DynamicHybridInheritanceTreeBinder<TestPerson, int, TestPerson>(null);
+			var builder = new StringBuilder(2000);
+			binder.BuildDdlBatch(builder);
+			var sql = builder.ToString();
 			Assert.IsNotNull(sql);
 		}
 	}

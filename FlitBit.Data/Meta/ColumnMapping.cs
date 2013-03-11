@@ -12,9 +12,7 @@ using FlitBit.Emit;
 namespace FlitBit.Data.Meta
 {
 	public class ColumnMapping
-	{
-		IMapping _mapping;
-
+	{			
 		protected ColumnMapping(IMapping mapping, MemberInfo member, int ordinal)
 		{
 			Contract.Requires(mapping != null);
@@ -23,9 +21,10 @@ namespace FlitBit.Data.Meta
 			this.Member = member;
 			this.TargetName = member.Name;
 			this.Ordinal = ordinal;
-			this._mapping = mapping;
+			this.Mapping = mapping;
 		}
 
+		public IMapping Mapping { get; private set; }
 		public string TargetName { get; set; }
 		public MemberInfo Member { get; private set; }
 		public int Ordinal { get; internal set; }
@@ -40,7 +39,7 @@ namespace FlitBit.Data.Meta
 		public bool IsIdentity { get { return Behaviors.HasFlag(ColumnBehaviors.Identity); } }
 		public bool IsTimestampOnInsert { get { return Behaviors.HasFlag(ColumnBehaviors.TimestampOnInsert); } }
 		public bool IsTimestampOnUpdate { get { return Behaviors.HasFlag(ColumnBehaviors.TimestampOnUpdate); } }
-		public bool IsRevisionTracking { get { return Behaviors.HasFlag(ColumnBehaviors.RevisionTracking); } }
+		public bool IsRevisionTracking { get { return Behaviors.HasFlag(ColumnBehaviors.RevisionConcurrency); } }
 		public MemberInfo ReferenceTargetMember { get; internal set; }
 		public ReferenceBehaviors ReferenceBehaviors { get; internal set; }
 
@@ -72,7 +71,7 @@ namespace FlitBit.Data.Meta
 		{
 			get
 			{				
-				return String.Concat(_mapping.DbObjectReference, '.', _mapping.QuoteObjectNameForSQL(TargetName));
+				return String.Concat(Mapping.DbObjectReference, '.', Mapping.QuoteObjectNameForSQL(TargetName));
 			}
 		}
 
@@ -83,69 +82,6 @@ namespace FlitBit.Data.Meta
 			var memberType = member.MemberType;
 
 			return new ColumnMapping<T>(mapping, member, ordinal);
-		}
-	}
-
-	public sealed class ColumnMapping<T> : ColumnMapping
-	{
-		internal ColumnMapping(IMapping mapping, MemberInfo member, int ordinal)
-			: base(mapping, member, ordinal)
-		{
-		}
-
-		public ColumnMapping<T> WithBehaviors(ColumnBehaviors behaviors)
-		{
-			this.Behaviors = behaviors;
-			return this;
-		}
-
-		public ColumnMapping<T> WithVariableLength(int length)
-		{
-			Contract.Requires(length >= 0, "length must be greater than zero");
-			this.VariableLength = length;
-			return this;
-		}
-
-		public ColumnMapping<T> WithReference<U>(Expression<Func<U, object>> expression, ReferenceBehaviors behaviors = ReferenceBehaviors.Lazy)
-		{
-			Contract.Requires(expression != null);
-
-			MemberInfo member = expression.GetMemberFromExpression();
-			Contract.Assert(member != null, "Expression must reference a field or property member");
-			Contract.Assert(member.DeclaringType == this.RuntimeType,
-				"Type mismatch; typeof(U) must match the column's CLR type");
-
-			var memberType = member.MemberType;
-			Contract.Assert(memberType == MemberTypes.Field
-				|| memberType == MemberTypes.Property, "Expression must reference a field or property member");
-						
-			this.ReferenceTargetMember = member;
-			this.ReferenceBehaviors = behaviors;
-			this.IsReference = true;
-			return this;
-		}
-
-		internal ColumnMapping<T> DefineReference(ColumnMapping foreignColumn, ReferenceBehaviors behaviors = ReferenceBehaviors.Lazy)
-		{
-			this.ReferenceTargetMember = foreignColumn.Member;
-			this.ReferenceBehaviors = behaviors;
-			this.IsReference = true;
-			this.VariableLength = foreignColumn.VariableLength;
-			return this;
-		}
-
-		public ColumnMapping<T> WithTargetName(string name)
-		{
-			Contract.Requires(name != null, "name cannot be null");
-			Contract.Requires(name.Length > 0, "name cannot be empty");
-
-			this.TargetName = name;
-			return this;
-		}
-
-		public Mapping<T> End()
-		{
-			return Mapping.Instance.ForType<T>();
 		}
 	}
 }

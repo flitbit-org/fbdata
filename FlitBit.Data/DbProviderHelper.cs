@@ -7,6 +7,7 @@ using System.Data;
 using System.Data.Common;
 using System.Diagnostics.Contracts;
 using System.Linq;
+using FlitBit.Data.Meta;
 
 namespace FlitBit.Data
 {		
@@ -231,5 +232,8 @@ WHERE ROUTINE_CATALOG = '{0}'
 		public abstract IDataParameterBinder MakeParameterBinder();
 
 		public abstract IDataParameterBinder MakeParameterBinder(DbCommand cmd);
+
+		public abstract IModelBinder<TModel, Id> GetModelBinder<TModel, Id>(Mapping<TModel> mapping);
+
 	}	
 }

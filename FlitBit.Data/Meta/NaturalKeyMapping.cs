@@ -66,7 +66,7 @@ namespace FlitBit.Data.Meta
 		
 		public Mapping<T> End()
 		{
-			return Mapping.Instance.ForType<T>();
+			return Mappings.Instance.ForType<T>();
 		}
 	}
 }

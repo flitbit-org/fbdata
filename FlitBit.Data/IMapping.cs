@@ -5,8 +5,9 @@
 using System;
 using System.Collections.Generic;
 using System.Reflection;
+using FlitBit.Data.Meta;
 
-namespace FlitBit.Data.Meta
+namespace FlitBit.Data
 {
 	public interface IMapping
 	{
@@ -42,15 +43,21 @@ namespace FlitBit.Data.Meta
 		string QuoteObjectNameForSQL(string name);
 
 		IEnumerable<ColumnMapping> Columns { get; }
+		IEnumerable<ColumnMapping> DeclaredColumns { get; }
+
+		IEnumerable<CollectionMapping> Collections { get; }
+		IEnumerable<CollectionMapping> DeclaredCollections { get; }
 
 		IEnumerable<Dependency> Dependencies { get; }
+		IEnumerable<Dependency> DeclaredDependencies { get; }
 
 		/// <summary>
 		/// All members on the RuntimeType participating in the mapping.
 		/// </summary>
 		IEnumerable<MemberInfo> ParticipatingMembers { get; }
 
+		IModelBinder GetBinder();
+
 		IMapping Completed(Action action);
 	}
-
 }

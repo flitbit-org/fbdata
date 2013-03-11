@@ -9,6 +9,8 @@ using System.Data.Common;
 using System.Data.SqlClient;
 using System.Diagnostics.Contracts;
 using FlitBit.Core.Properties;
+using FlitBit.Data.Meta;
+using FlitBit.Core;
 
 namespace FlitBit.Data.SqlServer
 {																																					
@@ -176,6 +178,21 @@ WHERE name = @schema")
 		public override IDataParameterBinder MakeParameterBinder(DbCommand cmd)
 		{
 			return new DirectSqlParameterBinder((SqlCommand)cmd);
+		}
+
+		public override IModelBinder<TModel, Id> GetModelBinder<TModel, Id>(Mapping<TModel> mapping)
+		{	
+			// Currently only support the default hybrid scheme...
+			if (mapping.Strategy != MappingStrategy.DynamicHybridInheritanceTree)
+				throw new NotImplementedException();
+
+			var concreteType = typeof(TModel);
+			if (concreteType.IsAbstract && FactoryProvider.Factory.CanConstruct<TModel>())
+			{
+				concreteType = FactoryProvider.Factory.GetImplementationType<TModel>();
+			}
+			var binderType = typeof(DynamicHybridInheritanceTreeBinder<,,>).MakeGenericType(typeof(TModel), typeof(Id), concreteType);
+			return (IModelBinder<TModel, Id>)Activator.CreateInstance(binderType, mapping);
 		}
 	}
 

@@ -103,8 +103,9 @@
     <Reference Include="FlitBit.Core, Version=2.8.15.0, Culture=neutral, PublicKeyToken=38f03d0878531ff3, processorArchitecture=MSIL">
       <HintPath>..\..\packages\FlitBit.Core.2.8.15\lib\net40\FlitBit.Core.dll</HintPath>
     </Reference>
-    <Reference Include="FlitBit.Emit">
-      <HintPath>..\..\packages\FlitBit.Emit.2.7.1\lib\net40\FlitBit.Emit.dll</HintPath>
+    <Reference Include="FlitBit.Emit, Version=2.7.2.0, Culture=neutral, PublicKeyToken=38f03d0878531ff3, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\packages\FlitBit.Emit.2.7.2\lib\net40\FlitBit.Emit.dll</HintPath>
     </Reference>
     <Reference Include="FlitBit.ObjectIdentity">
       <HintPath>..\..\packages\FlitBit.ObjectIdentity.1.2.1\lib\net40\FlitBit.ObjectIdentity.dll</HintPath>
@@ -131,13 +132,20 @@
   </ItemGroup>
   <ItemGroup>
     <Compile Include="BasicDbCommandTests.cs" />
+    <Compile Include="Catalog\MappedTypeTests.cs" />
+    <Compile Include="Catalog\Models\IMappedTypeDataModel.cs" />
+    <Compile Include="Catalog\Models\IMappedTypeDataModelData.cs" />
+    <Compile Include="Catalog\Models\IMappedTypeModelReferenceFactory.cs" />
+    <Compile Include="Catalog\Models\IMappedTypeReference.cs" />
     <Compile Include="DataRepositoryTests.cs" />
     <Compile Include="DbConnectionExtensionTests.cs" />
     <Compile Include="DbContextTests.cs" />
+    <Compile Include="Meta\HierarchyMappingTests.cs" />
     <Compile Include="Meta\MappingTests.cs" />
-    <Compile Include="Meta\Models\IPerson.cs" />
+    <Compile Include="Meta\Models\TestPerson.cs" />
     <Compile Include="Meta\Models\IPhone.cs" />
     <Compile Include="Meta\Models\IPhoneKind.cs" />
+    <Compile Include="Meta\Models\IParty.cs" />
     <Compile Include="Model\Peep.cs" />
     <Compile Include="Model\PeepsRepository.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

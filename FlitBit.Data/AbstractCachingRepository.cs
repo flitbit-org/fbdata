@@ -8,37 +8,37 @@ using FlitBit.Core;
 
 namespace FlitBit.Data
 {
-	public abstract class AbstractCachingRepository<TModel, Id> : IDataRepository<TModel, Id>
+	public abstract class AbstractCachingRepository<M, IK> : IDataRepository<M, IK>
 	{
-		protected static readonly string CCacheKey = typeof(TModel).AssemblyQualifiedName;
+		protected static readonly string CCacheKey = typeof(M).AssemblyQualifiedName;
 		readonly ConcurrentBag<AbstractCacheHandler> _cacheHandlers = new ConcurrentBag<AbstractCacheHandler>();
 		readonly DbProviderHelper _helper;
 
 		abstract class AbstractCacheHandler
 		{
-			internal abstract void PerformUpdateCacheItem(IDbContext context, TModel item);
-			internal abstract void RemoveCacheItem(IDbContext context, TModel item);
+			internal abstract void PerformUpdateCacheItem(IDbContext context, M item);
+			internal abstract void RemoveCacheItem(IDbContext context, M item);
 		}
 		class CacheHandler<TCacheKey, TItemKey> : AbstractCacheHandler
 		{
 			private TCacheKey _cacheKey;
-			private Func<TModel, TItemKey> _calculateKey;
+			private Func<M, TItemKey> _calculateKey;
 
-			public CacheHandler(TCacheKey cacheKey, Func<TModel, TItemKey> calculateKey)
+			public CacheHandler(TCacheKey cacheKey, Func<M, TItemKey> calculateKey)
 			{
 				this._cacheKey = cacheKey;
 				this._calculateKey = calculateKey;
 			}
-			internal override void PerformUpdateCacheItem(IDbContext context, TModel item)
+			internal override void PerformUpdateCacheItem(IDbContext context, M item)
 			{
 				context.PutCacheItem(_cacheKey, item, _calculateKey(item), (k, v) => item);
 			}
-			internal override void RemoveCacheItem(IDbContext context, TModel item)
+			internal override void RemoveCacheItem(IDbContext context, M item)
 			{
 				context.RemoveCacheItem(_cacheKey, item, _calculateKey(item));
 			}
 		}
-		protected void PerformUpdateCacheItems(IDbContext context, IEnumerable<TModel> items)
+		protected void PerformUpdateCacheItems(IDbContext context, IEnumerable<M> items)
 		{
 			foreach (var item in items)
 			{
@@ -48,14 +48,14 @@ namespace FlitBit.Data
 				}
 			}
 		}		
-		protected void PerformUpdateCacheItem(IDbContext context, TModel item)
+		protected void PerformUpdateCacheItem(IDbContext context, M item)
 		{
 			foreach (var handler in _cacheHandlers)
 			{
 				handler.PerformUpdateCacheItem(context, item);
 			}
 		}
-		protected void PerformRemoveCacheItem(IDbContext context, TModel item)
+		protected void PerformRemoveCacheItem(IDbContext context, M item)
 		{
 			foreach (var handler in _cacheHandlers)
 			{
@@ -63,7 +63,7 @@ namespace FlitBit.Data
 			}
 		}
 
-		protected void RegisterCacheHandler<TCacheKey, TKey>(TCacheKey cacheKey, Func<TModel, TKey> calculateKey)
+		protected void RegisterCacheHandler<TCacheKey, TKey>(TCacheKey cacheKey, Func<M, TKey> calculateKey)
 		{
 			_cacheHandlers.Add(new CacheHandler<TCacheKey, TKey>(cacheKey, calculateKey));
 		}
@@ -78,10 +78,10 @@ namespace FlitBit.Data
 			this._helper = DbProviderHelpers.GetDbProviderHelperForDbConnection(connectionName);
 		}
 
-		protected TModel GetCacheItem<TCacheKey, TItemKey>(IDbContext context, TCacheKey cacheKey, TItemKey key, Func<IDbContext, TItemKey, TModel> resolver)
+		protected M GetCacheItem<TCacheKey, TItemKey>(IDbContext context, TCacheKey cacheKey, TItemKey key, Func<IDbContext, TItemKey, M> resolver)
 			where TCacheKey : class
 		{
-			TModel res;
+			M res;
 			if (cacheKey != null)
 			{
 				if (context.TryGetCacheItem(cacheKey, key, out res))
@@ -97,10 +97,10 @@ namespace FlitBit.Data
 			return res;
 		}
 
-		protected IEnumerable<TModel> GetCacheCollection<TCacheKey, TItemKey>(IDbContext context, TCacheKey cacheKey, TItemKey key, Func<IDbContext, TItemKey, IEnumerable<TModel>> resolver)
+		protected IEnumerable<M> GetCacheCollection<TCacheKey, TItemKey>(IDbContext context, TCacheKey cacheKey, TItemKey key, Func<IDbContext, TItemKey, IEnumerable<M>> resolver)
 			where TCacheKey : class
 		{
-			IEnumerable<TModel> res;				
+			IEnumerable<M> res;				
 			if (cacheKey != null)
 			{
 				if (context.TryGetCacheItem(cacheKey, key, out res))
@@ -120,9 +120,9 @@ namespace FlitBit.Data
 
 		protected DbProviderHelper Helper { get { return _helper; } }
 
-		public abstract Id GetIdentity(TModel model);
+		public abstract IK GetIdentity(M model);
 
-		public TModel Create(IDbContext context, TModel model)
+		public M Create(IDbContext context, M model)
 		{
 			var res = PerformCreate(context, model);
 			if (res != null)
@@ -133,9 +133,9 @@ namespace FlitBit.Data
 			return res;
 		}
 		
-		protected abstract TModel PerformCreate(IDbContext context, TModel model);
+		protected abstract M PerformCreate(IDbContext context, M model);
 
-		public TModel Read(IDbContext context, Id id)
+		public M Read(IDbContext context, IK id)
 		{
 			if (context.Behaviors.HasFlag(DbContextBehaviors.DisableCaching))
 			{
@@ -147,9 +147,9 @@ namespace FlitBit.Data
 			}
 		}
 
-		protected abstract TModel PerformRead(IDbContext context, Id id);
+		protected abstract M PerformRead(IDbContext context, IK id);
 
-		protected TModel ReadBy<TCacheKey, TItemKey>(IDbContext context, string command, Action<TItemKey, IDataParameterBinder> binder, TCacheKey cacheKey, TItemKey key)
+		protected M ReadBy<TCacheKey, TItemKey>(IDbContext context, string command, Action<TItemKey, IDataParameterBinder> binder, TCacheKey cacheKey, TItemKey key)
 			where TCacheKey : class
 		{
 			Contract.Requires<ArgumentNullException>(context != null);
@@ -167,9 +167,9 @@ namespace FlitBit.Data
 			}
 		}
 
-		protected abstract TModel PerformDirectReadBy<TItemKey>(IDbContext context, string command, Action<TItemKey, IDataParameterBinder> binder, TItemKey key);
+		protected abstract M PerformDirectReadBy<TItemKey>(IDbContext context, string command, Action<TItemKey, IDataParameterBinder> binder, TItemKey key);
 		
-		protected IEnumerable<TModel> QueryBy<TCacheKey, TQueryKey>(IDbContext context, string command, Action<TQueryKey, IDataParameterBinder> binder, TCacheKey cacheKey, TQueryKey key)
+		protected IEnumerable<M> QueryBy<TCacheKey, TQueryKey>(IDbContext context, string command, Action<TQueryKey, IDataParameterBinder> binder, TCacheKey cacheKey, TQueryKey key)
 			where TCacheKey : class
 		{
 			Contract.Requires<ArgumentNullException>(context != null);
@@ -187,9 +187,9 @@ namespace FlitBit.Data
 			}
 		}
 
-		protected abstract IEnumerable<TModel> PerformDirectQueryBy<TItemKey>(IDbContext context, string command, Action<TItemKey, IDataParameterBinder> binder, TItemKey key);
+		protected abstract IEnumerable<M> PerformDirectQueryBy<TItemKey>(IDbContext context, string command, Action<TItemKey, IDataParameterBinder> binder, TItemKey key);
 
-		public TModel Update(IDbContext context, TModel model)
+		public M Update(IDbContext context, M model)
 		{
 			var res = PerformUpdate(context, model);
 			if (!context.Behaviors.HasFlag(DbContextBehaviors.DisableCaching))
@@ -199,12 +199,12 @@ namespace FlitBit.Data
 			return res;
 		}
 
-		protected abstract TModel PerformUpdate(IDbContext context, TModel model);
+		protected abstract M PerformUpdate(IDbContext context, M model);
 
-		public bool Delete(IDbContext context, Id id)
+		public bool Delete(IDbContext context, IK id)
 		{
 			bool disableCaching = context.Behaviors.HasFlag(DbContextBehaviors.DisableCaching);
-			TModel cached = default(TModel);
+			M cached = default(M);
 			if (!disableCaching)
 			{
 				context.TryGetCacheItem(CCacheKey, id, out cached);
@@ -217,9 +217,9 @@ namespace FlitBit.Data
 			return res;
 		}
 
-		protected abstract bool PerformDelete(IDbContext context, Id id);
+		protected abstract bool PerformDelete(IDbContext context, IK id);
 
-		public IEnumerable<TModel> All(IDbContext context, QueryBehavior behavior)
+		public IEnumerable<M> All(IDbContext context, QueryBehavior behavior)
 		{
 			var res = PerformAll(context, behavior);
 
@@ -230,15 +230,15 @@ namespace FlitBit.Data
 			return res;
 		}
 
-		protected abstract IEnumerable<TModel> PerformAll(IDbContext context, QueryBehavior behavior);
+		protected abstract IEnumerable<M> PerformAll(IDbContext context, QueryBehavior behavior);
 
-		public abstract IEnumerable<TModel> ReadMatch<TMatch>(IDbContext context, QueryBehavior behavior, TMatch match) where TMatch : class;
+		public abstract IEnumerable<M> ReadMatch<TMatch>(IDbContext context, QueryBehavior behavior, TMatch match) where TMatch : class;
 
 		public abstract int UpdateMatch<TMatch, TUpdate>(IDbContext context, TMatch match, TUpdate update)	where TMatch : class;
 
 		public abstract int DeleteMatch<TMatch>(IDbContext context, TMatch match) where TMatch : class;
 
-		public abstract IQueryable<TModel> Query();
+		public abstract IQueryable<M> Query();
 	}
 
 }

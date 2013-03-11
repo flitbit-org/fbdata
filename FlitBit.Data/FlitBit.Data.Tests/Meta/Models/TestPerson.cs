@@ -7,7 +7,7 @@ using System.Data;
 
 namespace FlitBit.Data.Meta.Tests.Models
 {
-	public class Person
+	public class TestPerson
 	{
 		public int ID { get; private set; }
 		public Guid ExternalID { get; set; }
@@ -24,14 +24,14 @@ namespace FlitBit.Data.Meta.Tests.Models
 		Lazy<PersonReadBinding> _readByID = new Lazy<PersonReadBinding>(System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 		Lazy<PersonReadByNameBinding> _readByName = new Lazy<PersonReadByNameBinding>(System.Threading.LazyThreadSafetyMode.ExecutionAndPublication);
 
-		public IModelCommand<Person, Person, DbConnection> CreateCommand { get { return (IModelCommand<Person, Person, DbConnection>)_create.Value; } }
-		public IModelCommand<Person, Person, DbConnection> UpdateCommand { get { return (IModelCommand<Person, Person, DbConnection>)_update.Value; } }
-		public IModelCommand<Person, int, DbConnection> ReadByIdCommand { get { return (IModelCommand<Person, int, DbConnection>)_readByID.Value; } }
-		public IModelCommand<Person, string, DbConnection> ReadByNameCommand { get { return (IModelCommand<Person, string, DbConnection>)_readByName.Value; } }
+		public IModelCommand<TestPerson, TestPerson, DbConnection> CreateCommand { get { return (IModelCommand<TestPerson, TestPerson, DbConnection>)_create.Value; } }
+		public IModelCommand<TestPerson, TestPerson, DbConnection> UpdateCommand { get { return (IModelCommand<TestPerson, TestPerson, DbConnection>)_update.Value; } }
+		public IModelCommand<TestPerson, int, DbConnection> ReadByIdCommand { get { return (IModelCommand<TestPerson, int, DbConnection>)_readByID.Value; } }
+		public IModelCommand<TestPerson, string, DbConnection> ReadByNameCommand { get { return (IModelCommand<TestPerson, string, DbConnection>)_readByName.Value; } }
 
-		class PersonCreateBinding : ModelCommand<Person, Person, Person, SqlConnection>
+		class PersonCreateBinding : ModelCommand<TestPerson, TestPerson, TestPerson, SqlConnection>
 		{			 
-			public override Person ExecuteSingle(IDbContext cx, SqlConnection cn, Person key)
+			public override TestPerson ExecuteSingle(IDbContext cx, SqlConnection cn, TestPerson key)
 			{
 				var res = key;
 				using (var cmd = cn.CreateCommand(@"
@@ -62,20 +62,20 @@ SELECT SCOPE_IDENTITY()
 				return res;
 			}
 
-			public override IEnumerable<Person> ExecuteMany(IDbContext cx, SqlConnection cn, QueryBehavior behavior, Person key)
+			public override IEnumerable<TestPerson> ExecuteMany(IDbContext cx, SqlConnection cn, QueryBehavior behavior, TestPerson key)
 			{
 				throw new NotImplementedException();
 			}
 
-			public override int Execute(IDbContext cx, SqlConnection cn, Person key)
+			public override int Execute(IDbContext cx, SqlConnection cn, TestPerson key)
 			{
 				throw new NotImplementedException();
 			}
 		}
 
-		class PersonUpdateBinding : ModelCommand<Person, Person, Person, SqlConnection>
+		class PersonUpdateBinding : ModelCommand<TestPerson, TestPerson, TestPerson, SqlConnection>
 		{
-			public override Person ExecuteSingle(IDbContext cx, SqlConnection cn, Person key)
+			public override TestPerson ExecuteSingle(IDbContext cx, SqlConnection cn, TestPerson key)
 			{
 				var res = key;
 				using (var cmd = cn.CreateCommand(@"
@@ -100,23 +100,23 @@ WHERE [ID] = @ID
 				return res;
 			}
 
-			public override IEnumerable<Person> ExecuteMany(IDbContext cx, SqlConnection cn, QueryBehavior behavior, Person key)
+			public override IEnumerable<TestPerson> ExecuteMany(IDbContext cx, SqlConnection cn, QueryBehavior behavior, TestPerson key)
 			{
 				throw new NotImplementedException();
 			}
 
 			
-			public override int Execute(IDbContext cx, SqlConnection cn, Person key)
+			public override int Execute(IDbContext cx, SqlConnection cn, TestPerson key)
 			{
 				throw new NotImplementedException();
 			}
 		}
 		
-		class PersonReadBinding : ModelCommand<Person, int, Person, SqlConnection>
+		class PersonReadBinding : ModelCommand<TestPerson, int, TestPerson, SqlConnection>
 		{
-			public override Person ExecuteSingle(IDbContext cx, SqlConnection cn, int key)
+			public override TestPerson ExecuteSingle(IDbContext cx, SqlConnection cn, int key)
 			{
-				var res = default(Person);
+				var res = default(TestPerson);
 				using (var cmd = cn.CreateCommand("SELECT [ID], [ExternalID], [Name] FROM [Person] WHERE [ID] = @ID"))
 				{
 					cmd.Parameters.Add(new SqlParameter("@ID", key));
@@ -125,7 +125,7 @@ WHERE [ID] = @ID
 						cx.IncrementQueryCounter();
 						if (reader.Read())
 						{
-							res = new Person();
+							res = new TestPerson();
 							res.ID = reader.GetInt32(0);
 							if (!reader.IsDBNull(1))
 							{
@@ -141,7 +141,7 @@ WHERE [ID] = @ID
 				}
 				return res;
 			}
-			public override IEnumerable<Person> ExecuteMany(IDbContext cx, SqlConnection cn, QueryBehavior behavior, int key)
+			public override IEnumerable<TestPerson> ExecuteMany(IDbContext cx, SqlConnection cn, QueryBehavior behavior, int key)
 			{
 				throw new NotImplementedException();
 			}
@@ -152,11 +152,11 @@ WHERE [ID] = @ID
 			}
 		}
 
-		class PersonReadByNameBinding : ModelCommand<Person, string, Person, SqlConnection>
+		class PersonReadByNameBinding : ModelCommand<TestPerson, string, TestPerson, SqlConnection>
 		{
-			public override Person ExecuteSingle(IDbContext cx, SqlConnection cn, string key)
+			public override TestPerson ExecuteSingle(IDbContext cx, SqlConnection cn, string key)
 			{
-				var res = default(Person);
+				var res = default(TestPerson);
 				using (var cmd = cn.CreateCommand("SELECT [ID], [ExternalID], [Name] FROM [Person] WHERE [Name] = @Name"))
 				{
 					var parm = new SqlParameter("@Name", SqlDbType.NVarChar, 50);
@@ -167,7 +167,7 @@ WHERE [ID] = @ID
 						cx.IncrementQueryCounter();
 						if (reader.Read())
 						{
-							res = new Person();
+							res = new TestPerson();
 							res.ID = reader.GetInt32(0);
 							if (!reader.IsDBNull(1))
 							{
@@ -184,7 +184,7 @@ WHERE [ID] = @ID
 				return res;
 			}
 
-			public override IEnumerable<Person> ExecuteMany(IDbContext cx, SqlConnection cn, QueryBehavior behavior, string key)
+			public override IEnumerable<TestPerson> ExecuteMany(IDbContext cx, SqlConnection cn, QueryBehavior behavior, string key)
 			{
 				throw new NotImplementedException();
 			}
