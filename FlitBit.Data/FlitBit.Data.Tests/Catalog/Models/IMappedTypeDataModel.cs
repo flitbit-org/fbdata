@@ -107,11 +107,12 @@ namespace FlitBit.Data.Tests.Catalog.Models
 		{
 			get
 			{
-				return this._data.IMappedType_MappedBaseType;
+				return this._data.IMappedType_MappedBaseType.Model;
 			}
 			set
 			{
-				this._data.WriteIMappedType_MappedBaseType(value);
+				this._data.WriteIMappedType_MappedBaseType(
+					DataModel<IMappedType>.ReferenceFactory.MakeFromReferent(value));
 			}
 		}
 

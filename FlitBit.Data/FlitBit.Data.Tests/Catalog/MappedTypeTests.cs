@@ -27,7 +27,7 @@ namespace FlitBit.Data.Tests.Catalog
 
 			Assert.IsNotNull(mapping);
 			Assert.IsNotNull(mapping.Columns);
-			
+
 			var binder = mapping.GetBinder();
 			var builder = new StringBuilder(2000);
 			binder.BuildDdlBatch(builder);

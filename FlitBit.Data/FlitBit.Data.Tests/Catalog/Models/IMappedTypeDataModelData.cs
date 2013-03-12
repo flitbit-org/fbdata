@@ -15,7 +15,7 @@ namespace FlitBit.Data.Tests.Catalog.Models
 		public BitVector DirtyFlags;
 		public int IMappedType_ID;
 		public Type IMappedType_RuntimeType;
-		public IMappedType IMappedType_MappedBaseType;
+		public IDataModelReference<IMappedType> IMappedType_MappedBaseType;
 		public string IMappedType_Catalog;
 		public string IMappedType_Schema;
 		public string IMappedType_MappedTable;
@@ -96,10 +96,10 @@ namespace FlitBit.Data.Tests.Catalog.Models
 			return false;
 		}
 
-		public bool WriteIMappedType_MappedBaseType(IMappedType value)
-		{
-			if (!object.Equals(this.IMappedType_MappedBaseType, value))
-			{
+		public bool WriteIMappedType_MappedBaseType(IDataModelReference<IMappedType> value)
+		{			
+			if (!IMappedType_MappedBaseType.Equals(value))
+			{					
 				this.IMappedType_MappedBaseType = value;
 				this.DirtyFlags[2] = true;
 				return true;
@@ -235,8 +235,10 @@ namespace FlitBit.Data.Tests.Catalog.Models
 		}
 
 		internal static IMappedTypeDataModelData Create()
-		{
-			return new IMappedTypeDataModelData { DirtyFlags = new BitVector(14) };
+		{						
+			var res = new IMappedTypeDataModelData { DirtyFlags = new BitVector(14) };
+			res.IMappedType_MappedBaseType = DataModel<IMappedType>.ReferenceFactory.MakeFromReferent(default(IMappedType));
+			return res;
 		}
 
 		internal IMappedTypeDataModelData Copy()

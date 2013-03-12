@@ -59,5 +59,11 @@ namespace FlitBit.Data
 		IModelBinder GetBinder();
 
 		IMapping Completed(Action action);
+
+		void NotifySubtype(IMapping mapping);
+	}
+
+	public interface IMapping<out M> : IMapping
+	{	
 	}
 }

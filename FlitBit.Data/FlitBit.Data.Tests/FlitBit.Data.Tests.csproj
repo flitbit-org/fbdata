@@ -135,8 +135,6 @@
     <Compile Include="Catalog\MappedTypeTests.cs" />
     <Compile Include="Catalog\Models\IMappedTypeDataModel.cs" />
     <Compile Include="Catalog\Models\IMappedTypeDataModelData.cs" />
-    <Compile Include="Catalog\Models\IMappedTypeModelReferenceFactory.cs" />
-    <Compile Include="Catalog\Models\IMappedTypeReference.cs" />
     <Compile Include="DataRepositoryTests.cs" />
     <Compile Include="DbConnectionExtensionTests.cs" />
     <Compile Include="DbContextTests.cs" />

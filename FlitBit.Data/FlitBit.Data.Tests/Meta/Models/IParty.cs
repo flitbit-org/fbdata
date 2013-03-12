@@ -1,5 +1,6 @@
 ﻿using System;
 using FlitBit.Data.Meta;
+using FlitBit.ObjectIdentity;
 
 [module: MapConnection("test-data")]
 
@@ -18,7 +19,7 @@ namespace FlitBit.Data.Tests.Meta.Models
 	[MapIndex(IndexBehaviors.Index, "Name")]
 	public interface IParty
 	{
-		[MapColumn(ColumnBehaviors.Synthetic)]
+		[MapColumn(ColumnBehaviors.Synthetic), IdentityKey]
 		int ID { get; }
 
 		[MapColumn(ColumnBehaviors.Discriminator)]

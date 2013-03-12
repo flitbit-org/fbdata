@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using FlitBit.Core.Meta;
 
 namespace FlitBit.Data
 {
@@ -10,6 +11,7 @@ namespace FlitBit.Data
 	/// </summary>
 	/// <typeparam name="M">model type M</typeparam>
 	/// <typeparam name="IK">identity key type IK</typeparam>
+	[DataModelReferenceFactoryAutoImplement]
 	public interface IDataModelReferenceFactory<M>
 	{
 		/// <summary>
@@ -25,5 +27,19 @@ namespace FlitBit.Data
 		/// <param name="id">an identity key</param>
 		/// <returns>a reference to an model's identity key</returns>
 		IDataModelReference<M, IK> MakeFromReferentID<IK>(IK id);
+	}
+
+	public sealed class DataModelReferenceFactoryAutoImplement : AutoImplementedAttribute
+	{
+		public DataModelReferenceFactoryAutoImplement()
+			: base(InstanceScopeKind.OnDemand)
+		{																		
+		}
+		public override bool GetImplementation<T>(Core.Factory.IFactory factory, Action<Type, Func<T>> complete)
+		{
+			var ftype = typeof(DataModelReferenceFactory<,>).MakeGenericType(typeof(T), DataModel<T>.IdentityKey.KeyType);
+			complete(ftype, null);
+			return true;
+		}
 	}
 }

@@ -23,19 +23,23 @@ namespace FlitBit.Data.Tests.Meta
 		[TestMethod]
 		public void TestMethod1()
 		{
-			var party = Mappings.Instance.ForType<IParty>();
+			var party = DataModel<IParty>.Mapping;
+			var idk = DataModel<IParty>.IdentityKey;
 			Assert.IsNotNull(party);
 			Assert.IsNotNull(party.Columns);
 			Assert.AreEqual(5, party.Columns.Count());
 
 			var binder = party.GetBinder();
+
 			var builder = new StringBuilder(2000);			
 			binder.BuildDdlBatch(builder);
 			var sql = builder.ToString();
 			
 			Assert.IsNotNull(sql);
 
-			var people = Mappings.Instance.ForType<IPerson>();
+			var people = DataModel<IPerson>.Mapping;
+			idk = DataModel<IParty>.IdentityKey;
+
 			Assert.IsNotNull(people);
 
 			Assert.IsNotNull(people.Columns);
@@ -51,6 +55,11 @@ namespace FlitBit.Data.Tests.Meta
 
 			Assert.IsNotNull(sql);
 
+			var organizations = DataModel<IOrganization>.Mapping;
+			var groups = DataModel<IGroup>.Mapping;
+			
+			var parties = DataModel<IParty>.Hierarchy.KnownSubtypes;
+			Assert.IsNotNull(parties);
 		}
 	}
 }

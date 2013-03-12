@@ -26,7 +26,7 @@ namespace FlitBit.Data
 			);
 
 		static EmittedModule Module { get { return __module.Value; } }
-
+		
 		#region Emit ConcreteType<T>
 
 		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]

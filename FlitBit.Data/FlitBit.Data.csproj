@@ -150,9 +150,12 @@
       <DependentUpon>IDataRepository.cs</DependentUpon>
     </Compile>
     <Compile Include="Catalog\IMappedType.cs" />
+    <Compile Include="DataModelReferenceFactory.M.IK.cs" />
     <Compile Include="DataModel.M.cs" />
+    <Compile Include="DataModelReference.M.IK.cs" />
+    <Compile Include="HierarchyMapping.cs" />
     <Compile Include="IDataModelReference.M.IK.cs" />
-    <Compile Include="IDataModelReferenceFactory.M.IK.cs" />
+    <Compile Include="IDataModelReferenceFactory.M.cs" />
     <Compile Include="IDataModelResolver.M.IK.cs" />
     <Compile Include="IModelBinderExtensions.cs" />
     <Compile Include="IDataModel.cs" />
@@ -251,7 +254,7 @@
     <Compile Include="Meta\MapOrderByAttribute.cs" />
     <Compile Include="Meta\MapOwnershipAttribute.cs" />
     <Compile Include="Meta\Mappings.cs" />
-    <Compile Include="Meta\Mapping.T.cs" />
+    <Compile Include="Meta\Mapping.M.cs" />
     <Compile Include="Meta\MapSchemaAttribute.cs" />
     <Compile Include="Meta\NaturalKeyMapping.cs" />
     <Compile Include="Meta\SyntheticID.cs" />
