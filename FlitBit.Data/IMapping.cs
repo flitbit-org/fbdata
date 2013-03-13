@@ -1,5 +1,7 @@
 ﻿#region COPYRIGHT© 2009-2012 Phillip Clark. All rights reserved.
+
 // For licensing information see License.txt (MIT style licensing).
+
 #endregion
 
 using System;
@@ -16,31 +18,33 @@ namespace FlitBit.Data
 		Type RuntimeType { get; }
 
 		/// <summary>
-		/// The Db object to which type T maps; either a table or view.
+		///   The Db object to which type T maps; either a table or view.
 		/// </summary>
 		string TargetObject { get; }
+
 		/// <summary>
-		/// The Db schema where the target object resides.
+		///   The Db schema where the target object resides.
 		/// </summary>
 		string TargetSchema { get; }
+
 		/// <summary>
-		/// The Db catalog (database) where the target object resides.
+		///   The Db catalog (database) where the target object resides.
 		/// </summary>
 		string TargetCatalog { get; }
+
 		/// <summary>
-		/// The connection name where the type's data resides.
+		///   The connection name where the type's data resides.
 		/// </summary>
 		string ConnectionName { get; }
+
 		/// <summary>
-		/// The ORM strategy.
+		///   The ORM strategy.
 		/// </summary>
 		MappingStrategy Strategy { get; }
 
 		bool IsEnum { get; }
 
 		string DbObjectReference { get; }
-
-		string QuoteObjectNameForSQL(string name);
 
 		IEnumerable<ColumnMapping> Columns { get; }
 		IEnumerable<ColumnMapping> DeclaredColumns { get; }
@@ -52,18 +56,18 @@ namespace FlitBit.Data
 		IEnumerable<Dependency> DeclaredDependencies { get; }
 
 		/// <summary>
-		/// All members on the RuntimeType participating in the mapping.
+		///   All members on the RuntimeType participating in the mapping.
 		/// </summary>
 		IEnumerable<MemberInfo> ParticipatingMembers { get; }
 
+		IMapping Completed(Action action);
 		IModelBinder GetBinder();
 
-		IMapping Completed(Action action);
-
 		void NotifySubtype(IMapping mapping);
+		string QuoteObjectNameForSQL(string name);
 	}
 
 	public interface IMapping<out M> : IMapping
-	{	
+	{
 	}
 }

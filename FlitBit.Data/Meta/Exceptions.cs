@@ -1,97 +1,77 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Runtime.Serialization;
 
 namespace FlitBit.Data.Meta
 {
 	/// <summary>
-	/// Base object mapping exception.
+	///   Base object mapping exception.
 	/// </summary>
 	[Serializable]
 	public class MappingException : ApplicationException
 	{
 		/// <summary>
-		/// Default constructor; creates a new instance.
+		///   Default constructor; creates a new instance.
 		/// </summary>
 		public MappingException()
-			: base()
-		{
-		}
+			: base() { }
 
 		/// <summary>
-		/// Creates a new instance using the error message given.
+		///   Creates a new instance using the error message given.
 		/// </summary>
 		/// <param name="errorMessage">An error message describing the exception.</param>
 		public MappingException(string errorMessage)
-			: base(errorMessage)
-		{
-		}
+			: base(errorMessage) { }
 
 		/// <summary>
-		/// Creates a new instance using the error message and cuase given.
+		///   Creates a new instance using the error message and cuase given.
 		/// </summary>
 		/// <param name="errorMessage">An error message describing the exception.</param>
 		/// <param name="cause">An inner exception that caused this exception</param>
 		public MappingException(string errorMessage, Exception cause)
-			: base(errorMessage, cause)
-		{
-		}
+			: base(errorMessage, cause) { }
 
 		/// <summary>
-		/// Used during serialization.
+		///   Used during serialization.
 		/// </summary>
 		/// <param name="si">SerializationInfo</param>
 		/// <param name="sc">StreamingContext</param>
 		protected MappingException(SerializationInfo si, StreamingContext sc)
-			: base(si, sc)
-		{
-		}
+			: base(si, sc) { }
 	}
 
 	/// <summary>
-	/// Indicates that an identity type is not supported for an object.
+	///   Indicates that an identity type is not supported for an object.
 	/// </summary>
 	[Serializable]
 	public class IdentityTypeNotSupportedException : MappingException
 	{
 		/// <summary>
-		/// Default constructor; creates a new instance.
+		///   Default constructor; creates a new instance.
 		/// </summary>
 		public IdentityTypeNotSupportedException()
-			: base()
-		{
-		}
+			: base() { }
 
 		/// <summary>
-		/// Creates a new instance using the error message given.
+		///   Creates a new instance using the error message given.
 		/// </summary>
 		/// <param name="errorMessage">An error message describing the exception.</param>
 		public IdentityTypeNotSupportedException(string errorMessage)
-			: base(errorMessage)
-		{
-		}
+			: base(errorMessage) { }
 
 		/// <summary>
-		/// Creates a new instance using the error message and cuase given.
+		///   Creates a new instance using the error message and cuase given.
 		/// </summary>
 		/// <param name="errorMessage">An error message describing the exception.</param>
 		/// <param name="cause">An inner exception that caused this exception</param>
 		public IdentityTypeNotSupportedException(string errorMessage, Exception cause)
-			: base(errorMessage, cause)
-		{
-		}
+			: base(errorMessage, cause) { }
 
 		/// <summary>
-		/// Used during serialization.
+		///   Used during serialization.
 		/// </summary>
 		/// <param name="si">SerializationInfo</param>
 		/// <param name="sc">StreamingContext</param>
 		protected IdentityTypeNotSupportedException(SerializationInfo si, StreamingContext sc)
-			: base(si, sc)
-		{
-		}
+			: base(si, sc) { }
 	}
-
 }

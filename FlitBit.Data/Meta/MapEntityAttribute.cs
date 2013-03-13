@@ -1,43 +1,38 @@
 ﻿#region COPYRIGHT© 2009-2012 Phillip Clark. All rights reserved.
+
 // For licensing information see License.txt (MIT style licensing).
+
 #endregion
 
 using System;
 using System.Collections;
-using System.ComponentModel;
-using System.Diagnostics.Contracts;
 using System.Linq;
-using FlitBit.Core;
-using FlitBit.Emit;
-using FlitBit.Core.Meta;
 using FlitBit.Core.Factory;
+using FlitBit.Core.Meta;
 
 namespace FlitBit.Data.Meta
 {
 	[AttributeUsage(AttributeTargets.Interface | AttributeTargets.Class)]
 	public sealed class MapEntityAttribute : AutoImplementedAttribute
 	{
-		public MapEntityAttribute() : base(InstanceScopeKind.OnDemand) { }
+		public MapEntityAttribute()
+			: base(InstanceScopeKind.OnDemand) { }
+
 		public MapEntityAttribute(EntityBehaviors behaviors)
-			: this(null, null, null, MappingStrategy.OneClassOneTable, behaviors)
-		{
-		}
+			: this(null, null, null, MappingStrategy.OneClassOneTable, behaviors) { }
+
 		public MapEntityAttribute(string targetSchema)
-			: this(targetSchema, null, null, MappingStrategy.OneClassOneTable, EntityBehaviors.Default)
-		{
-		}
+			: this(targetSchema, null, null, MappingStrategy.OneClassOneTable, EntityBehaviors.Default) { }
+
 		public MapEntityAttribute(string targetSchema, EntityBehaviors behaviors)
-			: this(targetSchema, null, null, MappingStrategy.OneClassOneTable, behaviors)
-		{
-		}
+			: this(targetSchema, null, null, MappingStrategy.OneClassOneTable, behaviors) { }
+
 		public MapEntityAttribute(string targetSchema, string targetName)
-			: this(targetSchema, targetName, null, MappingStrategy.OneClassOneTable, EntityBehaviors.Default)
-		{
-		}
+			: this(targetSchema, targetName, null, MappingStrategy.OneClassOneTable, EntityBehaviors.Default) { }
+
 		public MapEntityAttribute(string targetSchema, string targetName, EntityBehaviors behaviors)
-			: this(targetSchema, targetName, null, MappingStrategy.OneClassOneTable, behaviors)
-		{
-		}
+			: this(targetSchema, targetName, null, MappingStrategy.OneClassOneTable, behaviors) { }
+
 		public MapEntityAttribute(string targetSchema, string targetName,
 			string connectionName, MappingStrategy strategy, EntityBehaviors behaviors)
 			: base(InstanceScopeKind.OnDemand)
@@ -55,6 +50,25 @@ namespace FlitBit.Data.Meta
 		public MappingStrategy Strategy { get; private set; }
 		public EntityBehaviors Behaviors { get; private set; }
 		public object Discriminator { get; set; }
+
+		/// <summary>
+		///   Implements the stereotypical DataModel behavior for interfaces of type T.
+		/// </summary>
+		/// <typeparam name="T">target type T</typeparam>
+		/// <param name="factory">the requesting factory</param>
+		/// <param name="complete">callback invoked with the implementation type or the type's factory function.</param>
+		/// <returns>
+		///   <em>true</em> if the data model was generated; otherwise <em>false</em>.
+		/// </returns>
+		public override bool GetImplementation<T>(IFactory factory, Action<Type, Func<T>> complete)
+		{
+			if (typeof(T).IsDefined(typeof(MapEntityAttribute), true))
+			{
+				complete(DataModels.ConcreteType<T>(), null);
+				return true;
+			}
+			return false;
+		}
 
 		internal void PrepareMapping<T>(Mapping<T> mapping, Type declaringType)
 		{
@@ -77,8 +91,8 @@ namespace FlitBit.Data.Meta
 
 			var mapAllProperties = this.Behaviors.HasFlag(EntityBehaviors.MapAllProperties);
 			foreach (var p in declaringType.GetProperties())
-			{												 
-				var mapColumn = (MapColumnAttribute)p.GetCustomAttributes(typeof(MapColumnAttribute), false).SingleOrDefault();
+			{
+				var mapColumn = (MapColumnAttribute) p.GetCustomAttributes(typeof(MapColumnAttribute), false).SingleOrDefault();
 				if (mapColumn != null)
 				{
 					mapColumn.PrepareMapping(mapping, p);
@@ -87,12 +101,12 @@ namespace FlitBit.Data.Meta
 				{
 					if (p.IsDefined(typeof(MapInplaceColumnsAttribute), false))
 					{
-						var meta = (MapInplaceColumnsAttribute)p.GetCustomAttributes(typeof(MapInplaceColumnsAttribute), false).Single();
-						meta.PrepareMapping(mapping, p);																										 						
+						var meta = (MapInplaceColumnsAttribute) p.GetCustomAttributes(typeof(MapInplaceColumnsAttribute), false).Single();
+						meta.PrepareMapping(mapping, p);
 					}
 					else if (p.IsDefined(typeof(MapCollectionAttribute), false))
 					{
-						var mapColl = (MapCollectionAttribute)p.GetCustomAttributes(typeof(MapCollectionAttribute), false).Single();
+						var mapColl = (MapCollectionAttribute) p.GetCustomAttributes(typeof(MapCollectionAttribute), false).Single();
 						mapping.MapCollectionFromMeta(p, mapColl);
 					}
 					else if (mapAllProperties && !typeof(IEnumerable).IsAssignableFrom(p.PropertyType))
@@ -100,26 +114,9 @@ namespace FlitBit.Data.Meta
 						mapColumn = MapColumnAttribute.DefineOnProperty<T>(p);
 						mapColumn.PrepareMapping(mapping, p);
 					}
-				}	 				
+				}
 			}
 			mapping.SetDiscriminator(this.Discriminator);
-		}
-
-		/// <summary>
-		/// Implements the stereotypical DataModel behavior for interfaces of type T.
-		/// </summary>
-		/// <typeparam name="T">target type T</typeparam>
-		/// <param name="factory">the requesting factory</param>
-		/// <param name="complete">callback invoked with the implementation type or the type's factory function.</param> 
-		/// <returns><em>true</em> if the data model was generated; otherwise <em>false</em>.</returns>
-		public override bool GetImplementation<T>(IFactory factory, Action<Type, Func<T>> complete)
-		{
-			if (typeof(T).IsDefined(typeof(MapEntityAttribute), true))
-			{
-				complete(DataModels.ConcreteType<T>(), null);
-				return true;
-			}
-			return false;
 		}
 	}
 }

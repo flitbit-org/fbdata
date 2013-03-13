@@ -1,12 +1,8 @@
-﻿using System;
+﻿using System.Linq;
 using System.Text;
-using System.Collections.Generic;
-using System.Linq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using FlitBit.Data.Meta;
 using FlitBit.Data.Tests.Meta.Models;
-using FlitBit.Data.SqlServer;
 using FlitBit.Emit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace FlitBit.Data.Tests.Meta
 {
@@ -31,10 +27,10 @@ namespace FlitBit.Data.Tests.Meta
 
 			var binder = party.GetBinder();
 
-			var builder = new StringBuilder(2000);			
+			var builder = new StringBuilder(2000);
 			binder.BuildDdlBatch(builder);
 			var sql = builder.ToString();
-			
+
 			Assert.IsNotNull(sql);
 
 			var people = DataModel<IPerson>.Mapping;
@@ -48,7 +44,7 @@ namespace FlitBit.Data.Tests.Meta
 			Assert.AreEqual(11, people.Columns.Count());
 
 			var peepsBinder = people.GetBinder();
-			
+
 			builder = new StringBuilder(2000);
 			peepsBinder.BuildDdlBatch(builder);
 			sql = builder.ToString();
@@ -57,7 +53,7 @@ namespace FlitBit.Data.Tests.Meta
 
 			var organizations = DataModel<IOrganization>.Mapping;
 			var groups = DataModel<IGroup>.Mapping;
-			
+
 			var parties = DataModel<IParty>.Hierarchy.KnownSubtypes;
 			Assert.IsNotNull(parties);
 		}

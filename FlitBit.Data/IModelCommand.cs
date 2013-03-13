@@ -4,7 +4,7 @@ using System.Data.Common;
 namespace FlitBit.Data
 {
 	/// <summary>
-	/// Interface for model commands.
+	///   Interface for model commands.
 	/// </summary>
 	/// <typeparam name="TModel"></typeparam>
 	/// <typeparam name="TKey"></typeparam>
@@ -13,12 +13,12 @@ namespace FlitBit.Data
 		where TDbConnection : DbConnection
 	{
 		int Execute(IDbContext cx, TDbConnection cn, TKey key);
-		TModel ExecuteSingle(IDbContext cx, TDbConnection cn, TKey key);
 		IEnumerable<TModel> ExecuteMany(IDbContext cx, TDbConnection cn, QueryBehavior behavior, TKey key);
+		TModel ExecuteSingle(IDbContext cx, TDbConnection cn, TKey key);
 	}
 
 	/// <summary>
-	/// Interface for model commands.
+	///   Interface for model commands.
 	/// </summary>
 	/// <typeparam name="TModel"></typeparam>
 	/// <typeparam name="TKey"></typeparam>
@@ -27,7 +27,7 @@ namespace FlitBit.Data
 		where TDbConnection : DbConnection
 	{
 		int Execute(IDbContext cx, TDbConnection cn);
-		TModel ExecuteSingle(IDbContext cx, TDbConnection cn);
 		IEnumerable<TModel> ExecuteMany(IDbContext cx, TDbConnection cn, QueryBehavior behavior);
-	}	
+		TModel ExecuteSingle(IDbContext cx, TDbConnection cn);
+	}
 }

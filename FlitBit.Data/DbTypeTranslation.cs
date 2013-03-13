@@ -1,5 +1,7 @@
 ﻿#region COPYRIGHT© 2009-2013 Phillip Clark.
+
 // For licensing information see License.txt (MIT style licensing).
+
 #endregion
 
 using System;
@@ -10,23 +12,29 @@ namespace FlitBit.Data
 {
 	public class DbTypeTranslation
 	{
-		public DbTypeTranslation(DbType dbType, int specializedDbType, Type runtimeType, bool isDefaultForRuntimeType, string providerSqlTypeName)
-			: this(dbType, specializedDbType, runtimeType, isDefaultForRuntimeType, providerSqlTypeName, DbTypeLengthRequirements.None, null, null)
-		{
-		}
-		public DbTypeTranslation(DbType dbType, int specializedDbType, Type runtimeType, bool isDefaultForRuntimeType, string providerSqlTypeName, DbTypeLengthRequirements lengthRequirements)
-			: this(dbType, specializedDbType, runtimeType, isDefaultForRuntimeType, providerSqlTypeName, lengthRequirements, null, null)
-		{			
-		}
-		public DbTypeTranslation(DbType dbType, int specializedDbType, Type runtimeType, bool isDefaultForRuntimeType, string providerSqlTypeName, DbTypeLengthRequirements lengthRequirements, string defaultLength)
-			: this(dbType, specializedDbType, runtimeType, isDefaultForRuntimeType, providerSqlTypeName, lengthRequirements, defaultLength, null)
-		{			
-		}
-		public DbTypeTranslation(DbType dbType, 
-			int specializedDbType, 
+		public DbTypeTranslation(DbType dbType, int specializedDbType, Type runtimeType, bool isDefaultForRuntimeType,
+			string providerSqlTypeName)
+			: this(
+				dbType, specializedDbType, runtimeType, isDefaultForRuntimeType, providerSqlTypeName, DbTypeLengthRequirements.None,
+				null, null) { }
+
+		public DbTypeTranslation(DbType dbType, int specializedDbType, Type runtimeType, bool isDefaultForRuntimeType,
+			string providerSqlTypeName, DbTypeLengthRequirements lengthRequirements)
+			: this(
+				dbType, specializedDbType, runtimeType, isDefaultForRuntimeType, providerSqlTypeName, lengthRequirements, null, null
+				) { }
+
+		public DbTypeTranslation(DbType dbType, int specializedDbType, Type runtimeType, bool isDefaultForRuntimeType,
+			string providerSqlTypeName, DbTypeLengthRequirements lengthRequirements, string defaultLength)
+			: this(
+				dbType, specializedDbType, runtimeType, isDefaultForRuntimeType, providerSqlTypeName, lengthRequirements,
+				defaultLength, null) { }
+
+		public DbTypeTranslation(DbType dbType,
+			int specializedDbType,
 			Type runtimeType,
-			bool isDefaultForRuntimeType, 
-			string providerSqlTypeName, 
+			bool isDefaultForRuntimeType,
+			string providerSqlTypeName,
 			DbTypeLengthRequirements lengthRequirements,
 			string defaultLength,
 			string defaultScale)
@@ -42,53 +50,51 @@ namespace FlitBit.Data
 		}
 
 		/// <summary>
-		/// Gets the DbType. This is the type whose translation is described.
+		///   Gets the DbType. This is the type whose translation is described.
 		/// </summary>
 		public DbType DbType { get; internal set; }
 
 		/// <summary>
-		/// Gets the specialized type. This is the int equivalent of a provider's
-		/// db type (such as SqlDbType).
+		///   Gets the specialized type. This is the int equivalent of a provider's
+		///   db type (such as SqlDbType).
 		/// </summary>
 		public int SpecializedDbType { get; internal set; }
 
 		/// <summary>
-		/// Gets the runtime type corresponding to the DbType.
+		///   Gets the runtime type corresponding to the DbType.
 		/// </summary>
 		public Type RuntimeType { get; internal set; }
 
 		/// <summary>
-		/// Gets the name of the type as known by the provider (SQL type name).
+		///   Gets the name of the type as known by the provider (SQL type name).
 		/// </summary>
 		public string ProviderSqlTypeName { get; internal set; }
 
 		/// <summary>
-		/// Indicates any length requirements.
+		///   Indicates any length requirements.
 		/// </summary>
 		public DbTypeLengthRequirements LengthRequirements { get; internal set; }
 
 		/// <summary>
-		/// Indicates whether this translation is used by default for the 
-		/// indicated runtime type.
+		///   Indicates whether this translation is used by default for the
+		///   indicated runtime type.
 		/// </summary>
 		public bool IsDefaultForRuntimeType { get; internal set; }
 
 		/// <summary>
-		/// Length to be used when no length is given for a column that requires
-		/// a length.
+		///   Length to be used when no length is given for a column that requires
+		///   a length.
 		/// </summary>
 		public string DefaultLength { get; internal set; }
 
 		/// <summary>
-		/// Scale to be used when no scale is given for a column that requires
-		/// a scale.
-		/// </summary>		
+		///   Scale to be used when no scale is given for a column that requires
+		///   a scale.
+		/// </summary>
 		public string DefaultScale { get; internal set; }
 
-		public virtual bool MustWriteLength(int declaredLength, int declaredScale)
-		{
-			return (this.LengthRequirements & (DbTypeLengthRequirements.LengthSpecifierMask)) != DbTypeLengthRequirements.None;
-		}
+		public virtual bool MustWriteLength(int declaredLength, int declaredScale) { return (this.LengthRequirements & (DbTypeLengthRequirements.LengthSpecifierMask)) != DbTypeLengthRequirements.None; }
+
 		public virtual void WriteLength(int declaredLength, int declaredScale, StringBuilder sql)
 		{
 			var lbracket = (this.LengthRequirements.HasFlag(DbTypeLengthRequirements.IndicatedByBrackets)) ? '[' : '(';
@@ -118,7 +124,7 @@ namespace FlitBit.Data
 				else
 				{
 					sql.Append(',').Append(declaredLength);
-				}				
+				}
 			}
 			sql.Append(rbracket);
 		}

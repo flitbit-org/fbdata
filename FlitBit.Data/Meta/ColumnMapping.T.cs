@@ -9,9 +9,9 @@ namespace FlitBit.Data.Meta
 	public sealed class ColumnMapping<T> : ColumnMapping
 	{
 		internal ColumnMapping(IMapping mapping, MemberInfo member, int ordinal)
-			: base(mapping, member, ordinal)
-		{
-		}
+			: base(mapping, member, ordinal) { }
+
+		public Mapping<T> End() { return (Mapping<T>) Mapping; }
 
 		public ColumnMapping<T> WithBehaviors(ColumnBehaviors behaviors)
 		{
@@ -19,21 +19,15 @@ namespace FlitBit.Data.Meta
 			return this;
 		}
 
-		public ColumnMapping<T> WithVariableLength(int length)
-		{
-			Contract.Requires(length >= 0, "length must be greater than zero");
-			this.VariableLength = length;
-			return this;
-		}
-
-		public ColumnMapping<T> WithReference<U>(Expression<Func<U, object>> expression, ReferenceBehaviors behaviors = ReferenceBehaviors.Lazy)
+		public ColumnMapping<T> WithReference<U>(Expression<Func<U, object>> expression,
+			ReferenceBehaviors behaviors = ReferenceBehaviors.Lazy)
 		{
 			Contract.Requires(expression != null);
 
-			MemberInfo member = expression.GetMemberFromExpression();
+			var member = expression.GetMemberFromExpression();
 			Contract.Assert(member != null, "Expression must reference a field or property member");
 			Contract.Assert(member.DeclaringType == this.RuntimeType,
-				"Type mismatch; typeof(U) must match the column's CLR type");
+											"Type mismatch; typeof(U) must match the column's CLR type");
 
 			var memberType = member.MemberType;
 			Contract.Assert(memberType == MemberTypes.Field
@@ -42,15 +36,6 @@ namespace FlitBit.Data.Meta
 			this.ReferenceTargetMember = member;
 			this.ReferenceBehaviors = behaviors;
 			this.IsReference = true;
-			return this;
-		}
-
-		internal ColumnMapping<T> DefineReference(ColumnMapping foreignColumn, ReferenceBehaviors behaviors = ReferenceBehaviors.Lazy)
-		{
-			this.ReferenceTargetMember = foreignColumn.Member;
-			this.ReferenceBehaviors = behaviors;
-			this.IsReference = true;
-			this.VariableLength = foreignColumn.VariableLength;
 			return this;
 		}
 
@@ -63,9 +48,21 @@ namespace FlitBit.Data.Meta
 			return this;
 		}
 
-		public Mapping<T> End()
+		public ColumnMapping<T> WithVariableLength(int length)
 		{
-			return (Mapping<T>)Mapping;
+			Contract.Requires(length >= 0, "length must be greater than zero");
+			this.VariableLength = length;
+			return this;
+		}
+
+		internal ColumnMapping<T> DefineReference(ColumnMapping foreignColumn,
+			ReferenceBehaviors behaviors = ReferenceBehaviors.Lazy)
+		{
+			this.ReferenceTargetMember = foreignColumn.Member;
+			this.ReferenceBehaviors = behaviors;
+			this.IsReference = true;
+			this.VariableLength = foreignColumn.VariableLength;
+			return this;
 		}
 	}
 }

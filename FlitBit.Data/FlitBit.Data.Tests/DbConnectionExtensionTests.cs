@@ -12,63 +12,63 @@ namespace FlitBit.Data.Tests
 		public TestContext TestContext { get; set; }
 
 		[TestMethod]
-		public void CreateCommand_with_CommandText_CommandType()
+		public void CreateCommand_with_CommandText()
 		{
-			var spec = new { CmdText = "SELECT Top 25 System.ItemPathDisplay FROM SYSTEMINDEX", CmdType = CommandType.Text };
+			var spec = new {CmdText = "SELECT Top 25 System.ItemPathDisplay FROM SYSTEMINDEX"};
 
 			using (var ctx = DbContext.SharedOrNewContext())
 			using (var cn = ctx.NewConnection("windows-search"))
 			{
-				Assert.IsNotNull(cn, "There should be a connection in the ConnectionStrings configuration section with the name 'windows-search'");
+				Assert.IsNotNull(cn,
+												"There should be a connection in the ConnectionStrings configuration section with the name 'windows-search'");
+
+				cn.EnsureConnectionIsOpen();
+				using (var cmd = cn.CreateCommand(spec.CmdText))
+				{
+					Assert.AreEqual(spec.CmdText, cmd.CommandText);
+				}
+			}
+		}
+
+		[TestMethod]
+		public void CreateCommand_with_CommandText_CommandType()
+		{
+			var spec = new {CmdText = "SELECT Top 25 System.ItemPathDisplay FROM SYSTEMINDEX", CmdType = CommandType.Text};
+
+			using (var ctx = DbContext.SharedOrNewContext())
+			using (var cn = ctx.NewConnection("windows-search"))
+			{
+				Assert.IsNotNull(cn,
+												"There should be a connection in the ConnectionStrings configuration section with the name 'windows-search'");
 
 				cn.EnsureConnectionIsOpen();
 				using (var cmd = cn.CreateCommand(spec.CmdText, spec.CmdType))
 				{
 					Assert.AreEqual(spec.CmdText, cmd.CommandText);
-					Assert.AreEqual(spec.CmdType, cmd.CommandType);		 
+					Assert.AreEqual(spec.CmdType, cmd.CommandType);
 				}
 			}
 		}
-
-		[TestMethod]
-		public void CreateCommand_with_CommandText()
-		{
-			var spec = new { CmdText = "SELECT Top 25 System.ItemPathDisplay FROM SYSTEMINDEX" };
-
-			using (var ctx = DbContext.SharedOrNewContext())
-			using (var cn = ctx.NewConnection("windows-search"))
-			{
-				Assert.IsNotNull(cn, "There should be a connection in the ConnectionStrings configuration section with the name 'windows-search'");
-
-				cn.EnsureConnectionIsOpen();
-				using (var cmd = cn.CreateCommand(spec.CmdText))
-				{
-
-					Assert.AreEqual(spec.CmdText, cmd.CommandText);
-				}
-			}
-		}
-
 
 		[TestMethod]
 		public void ImmediateExecuteAndTransform()
 		{
-			var spec = new { CmdText = "SELECT Top 1 System.ItemPathDisplay FROM SYSTEMINDEX", CmdType = CommandType.Text, CmdTimeout = 1000 };
+			var spec =
+				new
+					{
+						CmdText = "SELECT Top 1 System.ItemPathDisplay FROM SYSTEMINDEX",
+						CmdType = CommandType.Text,
+						CmdTimeout = 1000
+					};
 
 			using (var cn = DbExtensions.CreateAndOpenConnection("windows-search"))
 			using (var cmd = cn.CreateCommand(spec.CmdText, spec.CmdType, spec.CmdTimeout))
 			{
-				string result = cmd.ExecuteSingle(r => r.GetString(0));
+				var result = cmd.ExecuteSingle(r => r.GetString(0));
 
 				// TODO: Revise this test so it gets a predictable result (other than the default 0) upon success.
 				Assert.IsFalse(String.IsNullOrEmpty(result));
 			}
-		}
-
-		class IndexItemDTO
-		{
-			public string ItemPathDisplay { get; set; }
-			public string ItemType { get; set; }
 		}
 
 		[TestMethod]
@@ -77,15 +77,15 @@ namespace FlitBit.Data.Tests
 			using (var cn = DbExtensions.CreateAndOpenConnection("windows-search"))
 			{
 				var items = cn.ImmediateExecuteEnumerable("SELECT Top 25 System.ItemPathDisplay, System.ItemType FROM SYSTEMINDEX",
-						(d) =>
-						{
-							return new IndexItemDTO
-							{
-								ItemPathDisplay = d.GetString(0),
-								ItemType = d.GetString(1)
-							};
-						});
-				foreach (IndexItemDTO item in items)
+																									(d) =>
+																										{
+																											return new IndexItemDTO
+																												{
+																													ItemPathDisplay = d.GetString(0),
+																													ItemType = d.GetString(1)
+																												};
+																										});
+				foreach (var item in items)
 				{
 					Assert.IsFalse(String.IsNullOrEmpty(item.ItemPathDisplay));
 					Assert.IsFalse(String.IsNullOrEmpty(item.ItemType));
@@ -100,13 +100,15 @@ namespace FlitBit.Data.Tests
 			{
 				cn.EnsureConnectionIsOpen();
 
-				var data = cn.ImmediateExecuteEnumerable("SELECT TOP 25 System.ItemPathDisplay, System.ItemType FROM SYSTEMINDEX WHERE System.ItemType = '.lnk'");
+				var data =
+					cn.ImmediateExecuteEnumerable(
+																			 "SELECT TOP 25 System.ItemPathDisplay, System.ItemType FROM SYSTEMINDEX WHERE System.ItemType = '.lnk'");
 				var items = from reader in data
 										select new
-										{
-											ItemPathDisplay = reader.GetString(0),
-											ItemType = reader.GetString(1)
-										};
+											{
+												ItemPathDisplay = reader.GetString(0),
+												ItemType = reader.GetString(1)
+											};
 
 				foreach (var item in items)
 				{
@@ -114,6 +116,12 @@ namespace FlitBit.Data.Tests
 					Assert.IsFalse(String.IsNullOrEmpty(item.ItemType));
 				}
 			}
+		}
+
+		class IndexItemDTO
+		{
+			public string ItemPathDisplay { get; set; }
+			public string ItemType { get; set; }
 		}
 
 		//[TestMethod]

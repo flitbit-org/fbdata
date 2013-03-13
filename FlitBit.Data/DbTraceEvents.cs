@@ -1,5 +1,7 @@
 ﻿#region COPYRIGHT© 2009-2013 Phillip Clark.
+
 // For licensing information see License.txt (MIT style licensing).
+
 #endregion
 
 using System;
@@ -9,13 +11,7 @@ namespace FlitBit.Data
 {
 	public static class DbTraceEvents
 	{
-		internal static bool ShouldTrace(TraceEventType traceEventType)
-		{
-			return false;
-		}
-
-		internal static void OnTraceEvent(Object sender, TraceEventType eventType, string description)
-		{			
-		}
+		internal static void OnTraceEvent(Object sender, TraceEventType eventType, string description) { }
+		internal static bool ShouldTrace(TraceEventType traceEventType) { return false; }
 	}
 }

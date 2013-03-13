@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Data;
 using System.Data.Common;
-using System.Linq;
 using FlitBit.Data;
 using FlitBit.Wireup;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
@@ -28,7 +27,7 @@ CREATE TABLE [", SchemaName, @"].[Peeps]
 		CONSTRAINT DF_Peep_DateUpdated DEFAULT (GETUTCDATE()),
 		CONSTRAINT CK_Peep_DateUpdated CHECK ([DateUpdated] >= [DateCreated])
 )");
-							 
+
 		static readonly string SelectPeepByNameCommand = String.Concat(@"
 SELECT 
   [", SchemaName, @"].[Peeps].[ID],
@@ -51,8 +50,26 @@ SELECT
 FROM [", SchemaName, @"].[Peeps]
 WHERE [", SchemaName, @"].[Peeps].[ID] = @ID");
 
+		[TestMethod]
+		public void CanCreateAndDropSchemas()
+		{
+			var gen = new DataGenerator();
+			DbConnection cn;
 
-			
+			Assert.IsNull(DbContext.Current, "There shouldn't be a current DbContext");
+
+			using (var cx = DbContext.NewContext())
+			{
+				Assert.AreSame(cx, DbContext.Current, "Our context should be current");
+
+				cn = cx.NewConnection("test-data");
+				Assert.IsFalse(cn.State.HasFlag(ConnectionState.Open), "the connection shouldn't be open");
+				cn.EnsureConnectionIsOpen();
+				Assert.IsTrue(cn.State.HasFlag(ConnectionState.Open), "the connection should now be open");
+			}
+			Assert.IsTrue(cn.State == ConnectionState.Closed);
+		}
+
 		[TestInitialize]
 		public void SetupTestCatalog()
 		{
@@ -67,32 +84,10 @@ WHERE [", SchemaName, @"].[Peeps].[ID] = @ID");
 						cn.ImmediateExecuteNonQuery(CreateDatabaseCommand);
 					}
 				}
-				var cndata = cx.NewConnection("test-data").EnsureConnectionIsOpen();				
+				var cndata = cx.NewConnection("test-data").EnsureConnectionIsOpen();
 				cndata.ImmediateExecuteNonQuery(CreateSchemaCommand);
-				cndata.ImmediateExecuteNonQuery(CreatePeepCommand);								
+				cndata.ImmediateExecuteNonQuery(CreatePeepCommand);
 			}
 		}
-
-		[TestMethod]
-		public void CanCreateAndDropSchemas()
-		{
-			DataGenerator gen = new DataGenerator(); 
-			DbConnection cn;
-
-			Assert.IsNull(DbContext.Current, "There shouldn't be a current DbContext");
-
-			using (var cx = DbContext.NewContext())
-			{
-				Assert.AreSame(cx, DbContext.Current, "Our context should be current");
-				
-				cn = cx.NewConnection("test-data");
-				Assert.IsFalse(cn.State.HasFlag(ConnectionState.Open), "the connection shouldn't be open");
-				cn.EnsureConnectionIsOpen();
-				Assert.IsTrue(cn.State.HasFlag(ConnectionState.Open), "the connection should now be open");
-
-												
-			}
-			Assert.IsTrue(cn.State == ConnectionState.Closed);
-		}	
 	}
 }

@@ -1,5 +1,7 @@
 ﻿#region COPYRIGHT© 2009-2013 Phillip Clark.
+
 // For licensing information see License.txt (MIT style licensing).
+
 #endregion
 
 using System;
@@ -16,11 +18,13 @@ namespace FlitBit.Data
 		{
 			Contract.Requires<ArgumentNullException>(factory != null);
 			Contract.Requires<ArgumentNullException>(connection != null);
-			
+
 			// Ensure we can identify the connection string...			
-			string cs = ConfigurationManager.ConnectionStrings[connection].ConnectionString;
+			var cs = ConfigurationManager.ConnectionStrings[connection].ConnectionString;
 			if (cs == null)
+			{
 				throw new ArgumentException(String.Format("Connection string not defined: {0}", connection));
+			}
 
 			var cn = factory.CreateConnection();
 			cn.ConnectionString = cs;

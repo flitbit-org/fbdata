@@ -2,32 +2,13 @@
 using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics.Contracts;
-using System.Linq;
-using FlitBit.Core.Parallel;
 
 namespace FlitBit.Data.Tests.Model
-{			
+{
 	public class PeepsRepository : TableBackedRepository<Peep, int>
 	{
-		protected static string CCacheKey_Name = String.Concat(TableBackedRepository<Peep, int>.CCacheKey, ".Name");
-		public PeepsRepository(string cnName, string schemaName)
-			: base(cnName)
-		{
-			this.AllCommand = String.Format(__BaseSelectCommandFmt, schemaName);
-			this.InsertCommand = String.Format(__InsertCommandFmt, schemaName);
-			this.UpdateCommand = String.Format(__UpdateCommandFmt, schemaName);
-			this.ReadCommand = String.Concat(
-				String.Format(__BaseSelectCommandFmt, schemaName), 
-				String.Format(__ByIDCommandFmt, schemaName)
-				);
-			this.ReadByNameCommand = String.Concat(
-				String.Format(__BaseSelectCommandFmt, schemaName),
-				String.Format(__ByNameCommandFmt, schemaName)
-				);
-			this.DeleteCommand = String.Format(__DeleteCommandFmt, schemaName);
-			RegisterCacheHandler(CCacheKey_Name, GetItemName);
-		}
-						
+		protected static string CCacheKey_Name = String.Concat(CCacheKey, ".Name");
+
 		internal static string __InsertCommandFmt = @"
 DECLARE @generated_timestamp DATETIME
 SET @generated_timestamp = GETUTCDATE()
@@ -92,26 +73,73 @@ WHERE [{0}].[Peeps].[Name] = @Name";
 DELETE FROM [{0}].[Peeps]
 WHERE [{0}].[Peeps].[ID] = @ID";
 
-		public override int GetIdentity(Peep model)
+		public PeepsRepository(string cnName, string schemaName)
+			: base(cnName)
 		{
-			return model.ID;
-		}	 		
-
-		protected override string MakeUpdateCommand(Peep model)
-		{
-			return UpdateCommand;
+			this.AllCommand = String.Format(__BaseSelectCommandFmt, schemaName);
+			this.InsertCommand = String.Format(__InsertCommandFmt, schemaName);
+			this.UpdateCommand = String.Format(__UpdateCommandFmt, schemaName);
+			this.ReadCommand = String.Concat(
+																			 String.Format(__BaseSelectCommandFmt, schemaName),
+																			String.Format(__ByIDCommandFmt, schemaName)
+				);
+			this.ReadByNameCommand = String.Concat(
+																						 String.Format(__BaseSelectCommandFmt, schemaName),
+																						String.Format(__ByNameCommandFmt, schemaName)
+				);
+			this.DeleteCommand = String.Format(__DeleteCommandFmt, schemaName);
+			RegisterCacheHandler(CCacheKey_Name, GetItemName);
 		}
 
-		protected override Peep CreateInstance() { return new Peep(); }
-		
+		protected string ReadByNameCommand { get; set; }
+
+		protected string UpdateCommand { get; set; }
+
+		public override int GetIdentity(Peep model) { return model.ID; }
+
 		public Peep ReadByName(IDbContext context, string name)
 		{
 			Contract.Requires<ArgumentNullException>(context != null);
 
-			return ReadBy(context, ReadByNameCommand, (n,binder) => binder.DefineAndBindParameter("Name", n), CCacheKey_Name, name);
+			return ReadBy(context, ReadByNameCommand, (n, binder) => binder.DefineAndBindParameter("Name", n), CCacheKey_Name,
+										name);
 		}
 
-		string GetItemName(Peep peep) { return peep.Name; }
+		protected override void BindDeleteCommand(IDataParameterBinder binder, int id) { binder.DefineAndBindParameter("ID", id); }
+
+		protected override void BindInsertCommand(IDataParameterBinder binder, Peep model)
+		{
+			if (model.Name == null)
+			{
+				binder.DefineAndSetDbNull<string>("Name");
+			}
+			else
+			{
+				binder.DefineAndBindParameter("Name", model.Name);
+			}
+			if (model.Description == null)
+			{
+				binder.DefineAndSetDbNull<string>("Description");
+			}
+			else
+			{
+				binder.DefineAndBindParameter("Description", model.Description);
+			}
+		}
+
+		protected override void BindReadCommand(IDataParameterBinder binder, int id) { binder.DefineAndBindParameter("ID", id); }
+
+		protected override void BindUpdateCommand(IDataParameterBinder binder, Peep model)
+		{
+			binder.DefineAndBindParameter("ID", model.ID);
+			BindInsertCommand(binder, model);
+		}
+
+		protected override Peep CreateInstance() { return new Peep(); }
+		protected override string MakeUpdateCommand(Peep model) { return UpdateCommand; }
+
+		protected override IEnumerable<Peep> PerformDirectQueryBy<TItemKey>(IDbContext context, string command,
+			Action<TItemKey, IDataParameterBinder> binder, TItemKey key) { return base.PerformDirectQueryBy<TItemKey>(context, command, binder, key); }
 
 		protected override void PopulateInstance(IDbContext context, Peep model, IDataRecord reader, object state)
 		{
@@ -119,40 +147,9 @@ WHERE [{0}].[Peeps].[ID] = @ID";
 			model.Name = reader.GetValueOrDefault<string>(1);
 			model.Description = reader.GetValueOrDefault<string>(2);
 			model.DateCreated = reader.GetValueOrDefault<DateTime>(3);
-			model.DateUpdated = reader.GetValueOrDefault<DateTime>(4); 
+			model.DateUpdated = reader.GetValueOrDefault<DateTime>(4);
 		}
 
-		protected override void BindInsertCommand(IDataParameterBinder binder, Peep model)
-		{
-			if (model.Name == null) binder.DefineAndSetDbNull<string>("Name");
-			else binder.DefineAndBindParameter("Name", model.Name);
-			if (model.Description == null) binder.DefineAndSetDbNull<string>("Description");
-			else binder.DefineAndBindParameter("Description", model.Description);
-		}
-
-		protected override void BindReadCommand(IDataParameterBinder binder, int id)
-		{
-			binder.DefineAndBindParameter("ID", id);
-		}
-
-		protected override void BindUpdateCommand(IDataParameterBinder binder, Peep model)
-		{
-			binder.DefineAndBindParameter("ID", model.ID);
-			BindInsertCommand(binder, model);			
-		}
-
-		protected override void BindDeleteCommand(IDataParameterBinder binder, int id)
-		{
-			binder.DefineAndBindParameter("ID", id);
-		}
-
-		protected override IEnumerable<Peep> PerformDirectQueryBy<TItemKey>(IDbContext context, string command, Action<TItemKey, IDataParameterBinder> binder, TItemKey key)
-		{
-			return base.PerformDirectQueryBy<TItemKey>(context, command, binder, key);
-		}
-
-		protected string ReadByNameCommand { get; set; }
-
-		protected string UpdateCommand { get; set; }		
+		string GetItemName(Peep peep) { return peep.Name; }
 	}
 }

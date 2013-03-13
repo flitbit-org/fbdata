@@ -1,5 +1,7 @@
 ﻿#region COPYRIGHT© 2009-2013 Phillip Clark.
+
 // For licensing information see License.txt (MIT style licensing).
+
 #endregion
 
 using System;
@@ -15,63 +17,6 @@ namespace FlitBit.Data
 {
 	public static class IDataParameterBinderExtensions
 	{
-		[SuppressMessage("Microsoft.Design", "CA1006", Justification = "By design.")]
-		public static IDataParameterBinder DefineParameter<T>(this IDataParameterBinder exe, Expression<Func<T, object>> expression)
-		{
-			Contract.Requires<ArgumentNullException>(exe != null);
-			Contract.Requires<ArgumentNullException>(expression != null);
-			Contract.Ensures(Contract.Result<IDataParameterBinder>() != null);
-
-			return DefineParameter(exe, expression, ParameterDirection.Input);
-		}
-
-		[SuppressMessage("Microsoft.Design", "CA1006", Justification = "By design.")]
-		public static IDataParameterBinder DefineParameter<T>(this IDataParameterBinder exe, Expression<Func<T, object>> expression, ParameterDirection direction)
-		{
-			Contract.Requires<ArgumentNullException>(exe != null);
-			Contract.Requires<ArgumentNullException>(expression != null);
-			Contract.Ensures(Contract.Result<IDataParameterBinder>() != null);
-
-			MemberInfo member = expression.GetMemberFromExpression();
-			Contract.Assert(member != null, "Expression must reference a field or property member");
-
-			var memberType = member.MemberType;
-			Contract.Assert(memberType == MemberTypes.Property, "Expression must reference a property member");
-
-			return exe.DefineParameter(member.Name, member.GetTypeOfValue(), direction);
-		}
-
-		public static IDataParameterBinder DefineParameter(this IDataParameterBinder exe, PropertyInfo property)
-		{
-			Contract.Requires<ArgumentNullException>(exe != null);
-			Contract.Requires<ArgumentNullException>(property != null);
-			Contract.Ensures(Contract.Result<IDataParameterBinder>() != null);
-
-			return DefineParameter(exe, property, ParameterDirection.Input);
-		}
-
-		public static IDataParameterBinder DefineParameter(this IDataParameterBinder exe, PropertyInfo property, ParameterDirection direction)
-		{
-			Contract.Requires<ArgumentNullException>(exe != null);
-			Contract.Requires<ArgumentNullException>(property != null);
-			Contract.Ensures(Contract.Result<IDataParameterBinder>() != null);
-
-			return exe.DefineParameter(property.Name, property.PropertyType, direction);
-		}
-
-		public static IDataParameterBinder DefineParameter(this IDataParameterBinder exe, string bindName, PropertyInfo property, ParameterDirection direction)
-		{
-			Contract.Requires<ArgumentNullException>(exe != null);
-			Contract.Requires<ArgumentNullException>(bindName != null);
-			Contract.Requires<ArgumentException>(bindName.Length > 0);
-			Contract.Requires<ArgumentNullException>(property != null);
-			Contract.Requires<ArgumentNullException>(property.Name != null);
-			Contract.Requires<ArgumentNullException>(property.Name.Length > 0);
-			Contract.Ensures(Contract.Result<IDataParameterBinder>() != null);
-
-			return exe.DefineParameter(() => new DbParamDefinition(property.Name, bindName, property.PropertyType, direction));
-		}
-
 		public static IDataParameterBinder DefineAndBindParameter(this IDataParameterBinder binder, string name, bool value)
 		{
 			Contract.Requires<ArgumentNullException>(binder != null);
@@ -98,7 +43,8 @@ namespace FlitBit.Data
 			return binder;
 		}
 
-		public static IDataParameterBinder DefineAndBindParameter(this IDataParameterBinder binder, string name, int length, byte[] value)
+		public static IDataParameterBinder DefineAndBindParameter(this IDataParameterBinder binder, string name, int length,
+			byte[] value)
 		{
 			Contract.Requires<ArgumentNullException>(binder != null);
 			Contract.Requires<ArgumentNullException>(name != null);
@@ -124,7 +70,8 @@ namespace FlitBit.Data
 			return binder;
 		}
 
-		public static IDataParameterBinder DefineAndBindParameter(this IDataParameterBinder binder, string name, DateTime value)
+		public static IDataParameterBinder DefineAndBindParameter(this IDataParameterBinder binder, string name,
+			DateTime value)
 		{
 			Contract.Requires<ArgumentNullException>(binder != null);
 			Contract.Requires<ArgumentNullException>(name != null);
@@ -202,7 +149,8 @@ namespace FlitBit.Data
 			return binder;
 		}
 
-		public static IDataParameterBinder DefineAndBindParameter(this IDataParameterBinder binder, string name, int length, string value)
+		public static IDataParameterBinder DefineAndBindParameter(this IDataParameterBinder binder, string name, int length,
+			string value)
 		{
 			Contract.Requires<ArgumentNullException>(binder != null);
 			Contract.Requires<ArgumentNullException>(name != null);
@@ -306,7 +254,6 @@ namespace FlitBit.Data
 			return binder;
 		}
 
-
 		public static IDataParameterBinder DefineAndBindParameter<T>(this IDataParameterBinder binder, string name, T value)
 		{
 			Contract.Requires<ArgumentNullException>(binder != null);
@@ -334,5 +281,65 @@ namespace FlitBit.Data
 			return binder;
 		}
 
+		[SuppressMessage("Microsoft.Design", "CA1006", Justification = "By design.")]
+		public static IDataParameterBinder DefineParameter<T>(this IDataParameterBinder exe,
+			Expression<Func<T, object>> expression)
+		{
+			Contract.Requires<ArgumentNullException>(exe != null);
+			Contract.Requires<ArgumentNullException>(expression != null);
+			Contract.Ensures(Contract.Result<IDataParameterBinder>() != null);
+
+			return DefineParameter(exe, expression, ParameterDirection.Input);
+		}
+
+		[SuppressMessage("Microsoft.Design", "CA1006", Justification = "By design.")]
+		public static IDataParameterBinder DefineParameter<T>(this IDataParameterBinder exe,
+			Expression<Func<T, object>> expression, ParameterDirection direction)
+		{
+			Contract.Requires<ArgumentNullException>(exe != null);
+			Contract.Requires<ArgumentNullException>(expression != null);
+			Contract.Ensures(Contract.Result<IDataParameterBinder>() != null);
+
+			var member = expression.GetMemberFromExpression();
+			Contract.Assert(member != null, "Expression must reference a field or property member");
+
+			var memberType = member.MemberType;
+			Contract.Assert(memberType == MemberTypes.Property, "Expression must reference a property member");
+
+			return exe.DefineParameter(member.Name, member.GetTypeOfValue(), direction);
+		}
+
+		public static IDataParameterBinder DefineParameter(this IDataParameterBinder exe, PropertyInfo property)
+		{
+			Contract.Requires<ArgumentNullException>(exe != null);
+			Contract.Requires<ArgumentNullException>(property != null);
+			Contract.Ensures(Contract.Result<IDataParameterBinder>() != null);
+
+			return DefineParameter(exe, property, ParameterDirection.Input);
+		}
+
+		public static IDataParameterBinder DefineParameter(this IDataParameterBinder exe, PropertyInfo property,
+			ParameterDirection direction)
+		{
+			Contract.Requires<ArgumentNullException>(exe != null);
+			Contract.Requires<ArgumentNullException>(property != null);
+			Contract.Ensures(Contract.Result<IDataParameterBinder>() != null);
+
+			return exe.DefineParameter(property.Name, property.PropertyType, direction);
+		}
+
+		public static IDataParameterBinder DefineParameter(this IDataParameterBinder exe, string bindName,
+			PropertyInfo property, ParameterDirection direction)
+		{
+			Contract.Requires<ArgumentNullException>(exe != null);
+			Contract.Requires<ArgumentNullException>(bindName != null);
+			Contract.Requires<ArgumentException>(bindName.Length > 0);
+			Contract.Requires<ArgumentNullException>(property != null);
+			Contract.Requires<ArgumentNullException>(property.Name != null);
+			Contract.Requires<ArgumentNullException>(property.Name.Length > 0);
+			Contract.Ensures(Contract.Result<IDataParameterBinder>() != null);
+
+			return exe.DefineParameter(() => new DbParamDefinition(property.Name, bindName, property.PropertyType, direction));
+		}
 	}
 }

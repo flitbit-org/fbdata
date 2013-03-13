@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
-
-namespace FlitBit.Data.Meta.Tests.Models
+﻿namespace FlitBit.Data.Meta.Tests.Models
 {
 	public interface IPhoneKind
 	{

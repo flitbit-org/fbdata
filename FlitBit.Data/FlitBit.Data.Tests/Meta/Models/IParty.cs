@@ -9,14 +9,14 @@ namespace FlitBit.Data.Tests.Meta.Models
 	[MapEntity]
 	public interface IPartyKind
 	{
-		[MapColumn(ColumnBehaviors.Synthetic, 20)]
+		[MapColumn(ColumnBehaviors.Synthetic, 20), IdentityKey]
 		string Kind { get; }
-		[MapColumn(ColumnBehaviors.Nullable, 400)]		
-		string Description { get; set; }					
+
+		[MapColumn(ColumnBehaviors.Nullable, 400)]
+		string Description { get; set; }
 	}
 
-	[MapEntity(Discriminator = "Parties")]
-	[MapIndex(IndexBehaviors.Index, "Name")]
+	[MapEntity(Discriminator = "Parties"), MapIndex(IndexBehaviors.Index, "Name")]
 	public interface IParty
 	{
 		[MapColumn(ColumnBehaviors.Synthetic), IdentityKey]
@@ -35,38 +35,37 @@ namespace FlitBit.Data.Tests.Meta.Models
 		DateTime DateUpdated { get; }
 	}
 
-	[MapEnum(EnumBehavior.ReferenceValue)]
-	[Flags]
-	public enum EmailVerificationStates 
-	{	
+	[MapEnum(EnumBehavior.ReferenceValue), Flags]
+	public enum EmailVerificationStates
+	{
 		Unverified = 0,
 		Verified = 1,
 
 		/// <summary>
-		/// Indicates the system sent a verification email.
+		///   Indicates the system sent a verification email.
 		/// </summary>
 		VerificationEmailSent = 1 << 1,
+
 		/// <summary>
-		/// Indicates the system did not receive a response from
-		/// the verification email in the verification period.
+		///   Indicates the system did not receive a response from
+		///   the verification email in the verification period.
 		/// </summary>
 		VerificationEmailExpired = 1 << 2,
+
 		/// <summary>
-		/// Indicates the system recieved a rejection in response 
-		/// tho the verification email.
+		///   Indicates the system recieved a rejection in response
+		///   tho the verification email.
 		/// </summary>
 		VerificationEmailRejected = 1 << 3,
 	}
 
-	[MapEntity]
-	[MapIndex(IndexBehaviors.Index, "EmailAddress", "VerificationState")]
-	public interface IEmailAddress 
+	[MapEntity, MapIndex(IndexBehaviors.Index, "EmailAddress", "VerificationState")]
+	public interface IEmailAddress
 	{
 		[MapColumn(ColumnBehaviors.Identity | ColumnBehaviors.Discriminator, 80)]
 		string Discriminator { get; }
 
-		[MapColumn(ColumnBehaviors.Identity | ColumnBehaviors.Immutable)]
-		[MapLiftedColumn(LiftedColumnBehaviors.Identity)]
+		[MapColumn(ColumnBehaviors.Identity | ColumnBehaviors.Immutable), MapLiftedColumn(LiftedColumnBehaviors.Identity)]
 		int OwnerID { get; }
 
 		[MapColumn(200)]
@@ -79,7 +78,7 @@ namespace FlitBit.Data.Tests.Meta.Models
 		DateTime DateUpdated { get; }
 	}
 
-	[MapEntity(Discriminator="People")]
+	[MapEntity(Discriminator = "People")]
 	public interface IPerson : IParty
 	{
 		[MapColumn(ColumnBehaviors.Nullable, 40)]
@@ -97,8 +96,8 @@ namespace FlitBit.Data.Tests.Meta.Models
 		[MapInplaceColumns("Person:PrimaryEmail", "ID")]
 		IEmailAddress PrimaryEmail { get; }
 	}
-	
-	[MapEntity(Discriminator="Organizations")]
+
+	[MapEntity(Discriminator = "Organizations")]
 	public interface IOrganization : IParty
 	{
 		[MapColumn(ColumnBehaviors.Nullable)]
@@ -113,5 +112,5 @@ namespace FlitBit.Data.Tests.Meta.Models
 	{
 		[MapColumn(ColumnBehaviors.Nullable, 200)]
 		string Description { get; set; }
-	}	
+	}
 }

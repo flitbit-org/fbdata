@@ -10,7 +10,7 @@ namespace FlitBit.Data.Tests.Catalog.Models
 	[Serializable, StructLayout(LayoutKind.Sequential)]
 	public struct IMappedTypeDataModelData : IEquatable<IMappedTypeDataModelData>
 	{
-		static readonly int CHashCodeSeed;	 		
+		static readonly int CHashCodeSeed;
 
 		public BitVector DirtyFlags;
 		public int IMappedType_ID;
@@ -26,53 +26,47 @@ namespace FlitBit.Data.Tests.Catalog.Models
 		public DateTime IMappedType_DateCreated;
 		public DateTime IMappedType_DateUpdated;
 		public IEnumerable<IMappedType> IMappedType_RegisteredSubtypes;
-		
-		public override bool Equals(object obj)
-		{
-			return (typeof(IMappedTypeDataModelData).IsInstanceOfType(obj) && this.Equals((IMappedTypeDataModelData)obj));
-		}
+
+		public override bool Equals(object obj) { return (typeof(IMappedTypeDataModelData).IsInstanceOfType(obj) && this.Equals((IMappedTypeDataModelData) obj)); }
 
 		public override int GetHashCode()
 		{
-			int num = 0xf3e9b;
-			int num2 = CHashCodeSeed * num;
-			num2 ^= num * this.IMappedType_ID;
-			num2 ^= num * this.IMappedType_RuntimeType.GetHashCode();
-			num2 ^= num * this.IMappedType_MappedBaseType.GetHashCode();
+			var num = 0xf3e9b;
+			var num2 = CHashCodeSeed*num;
+			num2 ^= num*this.IMappedType_ID;
+			num2 ^= num*this.IMappedType_RuntimeType.GetHashCode();
+			num2 ^= num*this.IMappedType_MappedBaseType.GetHashCode();
 			if (this.IMappedType_Catalog != null)
 			{
-				num2 ^= num * this.IMappedType_Catalog.GetHashCode();
+				num2 ^= num*this.IMappedType_Catalog.GetHashCode();
 			}
 			if (this.IMappedType_Schema != null)
 			{
-				num2 ^= num * this.IMappedType_Schema.GetHashCode();
+				num2 ^= num*this.IMappedType_Schema.GetHashCode();
 			}
 			if (this.IMappedType_MappedTable != null)
 			{
-				num2 ^= num * this.IMappedType_MappedTable.GetHashCode();
+				num2 ^= num*this.IMappedType_MappedTable.GetHashCode();
 			}
 			if (this.IMappedType_ReadObjectName != null)
 			{
-				num2 ^= num * this.IMappedType_ReadObjectName.GetHashCode();
+				num2 ^= num*this.IMappedType_ReadObjectName.GetHashCode();
 			}
-			num2 ^= num * (int)this.IMappedType_Strategy;
+			num2 ^= num*(int) this.IMappedType_Strategy;
 			if (this.IMappedType_OriginalVersion != null)
 			{
-				num2 ^= num * this.IMappedType_OriginalVersion.GetHashCode();
+				num2 ^= num*this.IMappedType_OriginalVersion.GetHashCode();
 			}
 			if (this.IMappedType_LatestVersion != null)
 			{
-				num2 ^= num * this.IMappedType_LatestVersion.GetHashCode();
+				num2 ^= num*this.IMappedType_LatestVersion.GetHashCode();
 			}
-			num2 ^= num * this.IMappedType_DateCreated.GetHashCode();
-			num2 ^= num * this.IMappedType_DateUpdated.GetHashCode();
-			return (num2 ^ (num * this.IMappedType_RegisteredSubtypes.GetHashCode()));
+			num2 ^= num*this.IMappedType_DateCreated.GetHashCode();
+			num2 ^= num*this.IMappedType_DateUpdated.GetHashCode();
+			return (num2 ^ (num*this.IMappedType_RegisteredSubtypes.GetHashCode()));
 		}
 
-		static IMappedTypeDataModelData()
-		{
-			CHashCodeSeed = typeof(IMappedTypeDataModelData).AssemblyQualifiedName.GetHashCode();
-		}
+		static IMappedTypeDataModelData() { CHashCodeSeed = typeof(IMappedTypeDataModelData).AssemblyQualifiedName.GetHashCode(); }
 
 		public bool WriteIMappedType_ID(int value)
 		{
@@ -97,9 +91,9 @@ namespace FlitBit.Data.Tests.Catalog.Models
 		}
 
 		public bool WriteIMappedType_MappedBaseType(IDataModelReference<IMappedType> value)
-		{			
+		{
 			if (!IMappedType_MappedBaseType.Equals(value))
-			{					
+			{
 				this.IMappedType_MappedBaseType = value;
 				this.DirtyFlags[2] = true;
 				return true;
@@ -208,7 +202,7 @@ namespace FlitBit.Data.Tests.Catalog.Models
 
 		public bool WriteIMappedType_RegisteredSubtypes(IEnumerable<IMappedType> value)
 		{
-			if (!object.Equals(this.IMappedType_RegisteredSubtypes, value))
+			if (!Equals(this.IMappedType_RegisteredSubtypes, value))
 			{
 				this.IMappedType_RegisteredSubtypes = value;
 				this.DirtyFlags[12] = true;
@@ -221,7 +215,7 @@ namespace FlitBit.Data.Tests.Catalog.Models
 		{
 			return this.IMappedType_ID == other.IMappedType_ID
 				&& this.IMappedType_RuntimeType == other.IMappedType_RuntimeType
-				&& object.Equals(this.IMappedType_MappedBaseType, other.IMappedType_MappedBaseType)
+				&& Equals(this.IMappedType_MappedBaseType, other.IMappedType_MappedBaseType)
 				&& this.IMappedType_Catalog == other.IMappedType_Catalog
 				&& this.IMappedType_Schema == other.IMappedType_Schema
 				&& this.IMappedType_MappedTable == other.IMappedType_MappedTable
@@ -231,32 +225,25 @@ namespace FlitBit.Data.Tests.Catalog.Models
 				&& this.IMappedType_LatestVersion == other.IMappedType_LatestVersion
 				&& this.IMappedType_DateCreated == other.IMappedType_DateCreated
 				&& this.IMappedType_DateUpdated == other.IMappedType_DateUpdated
-				&& object.Equals(this.IMappedType_RegisteredSubtypes, other.IMappedType_RegisteredSubtypes);
+				&& Equals(this.IMappedType_RegisteredSubtypes, other.IMappedType_RegisteredSubtypes);
 		}
 
 		internal static IMappedTypeDataModelData Create()
-		{						
-			var res = new IMappedTypeDataModelData { DirtyFlags = new BitVector(14) };
+		{
+			var res = new IMappedTypeDataModelData {DirtyFlags = new BitVector(14)};
 			res.IMappedType_MappedBaseType = DataModel<IMappedType>.ReferenceFactory.MakeFromReferent(default(IMappedType));
 			return res;
 		}
 
 		internal IMappedTypeDataModelData Copy()
 		{
-			IMappedTypeDataModelData res = this;
-			res.DirtyFlags = this.DirtyFlags.Copy();				
+			var res = this;
+			res.DirtyFlags = this.DirtyFlags.Copy();
 			return res;
 		}
 
-		public static bool operator ==(IMappedTypeDataModelData rhs, IMappedTypeDataModelData data1)
-		{
-			return rhs.Equals(data1);
-		}
+		public static bool operator ==(IMappedTypeDataModelData rhs, IMappedTypeDataModelData data1) { return rhs.Equals(data1); }
 
-		public static bool operator !=(IMappedTypeDataModelData rhs, IMappedTypeDataModelData data1)
-		{
-			return !rhs.Equals(data1);
-		}
+		public static bool operator !=(IMappedTypeDataModelData rhs, IMappedTypeDataModelData data1) { return !rhs.Equals(data1); }
 	}
-
 }

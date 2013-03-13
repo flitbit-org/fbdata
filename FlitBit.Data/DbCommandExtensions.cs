@@ -1,15 +1,15 @@
 ﻿#region COPYRIGHT© 2009-2013 Phillip Clark.
+
 // For licensing information see License.txt (MIT style licensing).
+
 #endregion
 
 using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using System.Data;
+using System.Data.Common;
 using System.Diagnostics.Contracts;
 using FlitBit.Data.Properties;
-using System.Data.Common;
 
 namespace FlitBit.Data
 {
@@ -60,7 +60,8 @@ namespace FlitBit.Data
 			}
 		}
 
-		public static IEnumerable<T> ExecuteEnumerable<T>(this DbCommand command, CommandBehavior behavior, Func<IDataRecord, T> transform)
+		public static IEnumerable<T> ExecuteEnumerable<T>(this DbCommand command, CommandBehavior behavior,
+			Func<IDataRecord, T> transform)
 		{
 			Contract.Requires<ArgumentNullException>(command != null);
 			Contract.Requires<ArgumentNullException>(transform != null);
@@ -96,81 +97,6 @@ namespace FlitBit.Data
 			}
 		}
 
-		public static T ExecuteSingle<T>(this DbCommand command, Func<IDataRecord, T> transform)
-		{
-			Contract.Requires<ArgumentNullException>(command != null);
-			Contract.Requires<ArgumentNullException>(!String.IsNullOrEmpty(command.CommandText));
-			Contract.Requires<InvalidOperationException>(command.Connection != null);
-			Contract.Requires<InvalidOperationException>(command.Connection.State.HasFlag(ConnectionState.Open));
-
-			return ExecuteSingle<T>(command, null, transform);
-		}
-
-		public static T ExecuteSingle<T>(this DbCommand command, Action<IDataParameterBinder> bind, Func<IDataRecord, T> transform)
-		{
-			Contract.Requires<ArgumentNullException>(command != null);
-			Contract.Requires<ArgumentNullException>(transform != null);
-			Contract.Requires<ArgumentNullException>(!String.IsNullOrEmpty(command.CommandText));
-			Contract.Requires<InvalidOperationException>(command.Connection != null);
-			Contract.Requires<InvalidOperationException>(command.Connection.State.HasFlag(ConnectionState.Open));
-
-			if (bind != null)
-			{
-				bind(DataParameterBinders.GetBinderForDbCommand(command));
-			}
-			using (var reader = command.ExecuteReader())
-			{
-				if (!reader.Read())
-				{
-					throw new InvalidOperationException(Resources.Err_EmptyDbResult);
-				}
-				T res = transform(reader);
-				if (reader.Read())
-				{
-					throw new InvalidOperationException(Resources.Err_DuplicateDbResult);
-				}
-				return res;
-			}
-		}
-
-		public static T ExecuteSingleOrDefault<T>(this DbCommand command, Func<IDataRecord, T> transform)
-		{
-			Contract.Requires<ArgumentNullException>(command != null);
-			Contract.Requires<ArgumentNullException>(transform != null);
-			Contract.Requires<ArgumentNullException>(!String.IsNullOrEmpty(command.CommandText));
-			Contract.Requires<InvalidOperationException>(command.Connection != null);
-			Contract.Requires<InvalidOperationException>(command.Connection.State.HasFlag(ConnectionState.Open));
-
-			return ExecuteSingleOrDefault<T>(command, null, transform);
-		}
-
-		public static T ExecuteSingleOrDefault<T>(this DbCommand command, Action<IDataParameterBinder> bind, Func<IDataRecord, T> transform)
-		{
-			Contract.Requires<ArgumentNullException>(command != null);
-			Contract.Requires<ArgumentNullException>(transform != null);
-			Contract.Requires<ArgumentNullException>(!String.IsNullOrEmpty(command.CommandText));
-			Contract.Requires<InvalidOperationException>(command.Connection != null);
-			Contract.Requires<InvalidOperationException>(command.Connection.State.HasFlag(ConnectionState.Open));
-
-			if (bind != null)
-			{
-				bind(DataParameterBinders.GetBinderForDbCommand(command));
-			}
-			using (var reader = command.ExecuteReader())
-			{
-				if (!reader.Read())
-				{
-					return default(T);
-				}
-				T res = transform(reader);
-				if (reader.Read())
-				{
-					throw new InvalidOperationException(Resources.Err_DuplicateDbResult);
-				}
-				return res;
-			}
-		}
-
 		public static T ExecuteFirst<T>(this DbCommand command, Func<IDataRecord, T> transform)
 		{
 			Contract.Requires<ArgumentNullException>(command != null);
@@ -182,7 +108,8 @@ namespace FlitBit.Data
 			return ExecuteFirst<T>(command, null, transform);
 		}
 
-		public static T ExecuteFirst<T>(this DbCommand command, Action<IDataParameterBinder> bind, Func<IDataRecord, T> transform)
+		public static T ExecuteFirst<T>(this DbCommand command, Action<IDataParameterBinder> bind,
+			Func<IDataRecord, T> transform)
 		{
 			Contract.Requires<ArgumentNullException>(command != null);
 			Contract.Requires<ArgumentNullException>(transform != null);
@@ -215,7 +142,8 @@ namespace FlitBit.Data
 			return ExecuteFirstOrDefault<T>(command, null, transform);
 		}
 
-		public static T ExecuteFirstOrDefault<T>(this DbCommand command, Action<IDataParameterBinder> bind, Func<IDataRecord, T> transform)
+		public static T ExecuteFirstOrDefault<T>(this DbCommand command, Action<IDataParameterBinder> bind,
+			Func<IDataRecord, T> transform)
 		{
 			Contract.Requires<ArgumentNullException>(command != null);
 			Contract.Requires<ArgumentNullException>(transform != null);
@@ -237,5 +165,81 @@ namespace FlitBit.Data
 			}
 		}
 
+		public static T ExecuteSingle<T>(this DbCommand command, Func<IDataRecord, T> transform)
+		{
+			Contract.Requires<ArgumentNullException>(command != null);
+			Contract.Requires<ArgumentNullException>(!String.IsNullOrEmpty(command.CommandText));
+			Contract.Requires<InvalidOperationException>(command.Connection != null);
+			Contract.Requires<InvalidOperationException>(command.Connection.State.HasFlag(ConnectionState.Open));
+
+			return ExecuteSingle<T>(command, null, transform);
+		}
+
+		public static T ExecuteSingle<T>(this DbCommand command, Action<IDataParameterBinder> bind,
+			Func<IDataRecord, T> transform)
+		{
+			Contract.Requires<ArgumentNullException>(command != null);
+			Contract.Requires<ArgumentNullException>(transform != null);
+			Contract.Requires<ArgumentNullException>(!String.IsNullOrEmpty(command.CommandText));
+			Contract.Requires<InvalidOperationException>(command.Connection != null);
+			Contract.Requires<InvalidOperationException>(command.Connection.State.HasFlag(ConnectionState.Open));
+
+			if (bind != null)
+			{
+				bind(DataParameterBinders.GetBinderForDbCommand(command));
+			}
+			using (var reader = command.ExecuteReader())
+			{
+				if (!reader.Read())
+				{
+					throw new InvalidOperationException(Resources.Err_EmptyDbResult);
+				}
+				var res = transform(reader);
+				if (reader.Read())
+				{
+					throw new InvalidOperationException(Resources.Err_DuplicateDbResult);
+				}
+				return res;
+			}
+		}
+
+		public static T ExecuteSingleOrDefault<T>(this DbCommand command, Func<IDataRecord, T> transform)
+		{
+			Contract.Requires<ArgumentNullException>(command != null);
+			Contract.Requires<ArgumentNullException>(transform != null);
+			Contract.Requires<ArgumentNullException>(!String.IsNullOrEmpty(command.CommandText));
+			Contract.Requires<InvalidOperationException>(command.Connection != null);
+			Contract.Requires<InvalidOperationException>(command.Connection.State.HasFlag(ConnectionState.Open));
+
+			return ExecuteSingleOrDefault<T>(command, null, transform);
+		}
+
+		public static T ExecuteSingleOrDefault<T>(this DbCommand command, Action<IDataParameterBinder> bind,
+			Func<IDataRecord, T> transform)
+		{
+			Contract.Requires<ArgumentNullException>(command != null);
+			Contract.Requires<ArgumentNullException>(transform != null);
+			Contract.Requires<ArgumentNullException>(!String.IsNullOrEmpty(command.CommandText));
+			Contract.Requires<InvalidOperationException>(command.Connection != null);
+			Contract.Requires<InvalidOperationException>(command.Connection.State.HasFlag(ConnectionState.Open));
+
+			if (bind != null)
+			{
+				bind(DataParameterBinders.GetBinderForDbCommand(command));
+			}
+			using (var reader = command.ExecuteReader())
+			{
+				if (!reader.Read())
+				{
+					return default(T);
+				}
+				var res = transform(reader);
+				if (reader.Read())
+				{
+					throw new InvalidOperationException(Resources.Err_DuplicateDbResult);
+				}
+				return res;
+			}
+		}
 	}
 }

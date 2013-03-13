@@ -1,8 +1,6 @@
-﻿using System.Data.Common;
-using System.Text;
-using FlitBit.Data.Meta;
+﻿using System;
 using System.Collections.Generic;
-using System;
+using System.Text;
 
 namespace FlitBit.Data
 {
@@ -10,8 +8,8 @@ namespace FlitBit.Data
 	{
 		public static void BuildDdlBatch(this IModelBinder binder, StringBuilder batch)
 		{
-			List<Type> members = new List<Type>();
+			var members = new List<Type>();
 			binder.BuildDdlBatch(batch, members);
 		}
-	}	
+	}
 }

@@ -1,5 +1,7 @@
 ﻿#region COPYRIGHT© 2009-2013 Phillip Clark.
+
 // For licensing information see License.txt (MIT style licensing).
+
 #endregion
 
 using System;
@@ -9,12 +11,13 @@ using System.Data.Common;
 using System.Diagnostics.Contracts;
 using FlitBit.Core;
 using FlitBit.Core.Parallel;
+using FlitBit.Data.CodeContracts;
 using FlitBit.Data.Properties;
 
 namespace FlitBit.Data
-{		
-	[ContractClass(typeof(CodeContracts.ContractForIDbExecutable))]
-	public interface IDbExecutable: IInterrogateDisposable
+{
+	[ContractClass(typeof(ContractForIDbExecutable))]
+	public interface IDbExecutable : IInterrogateDisposable
 	{
 		CommandBehaviors Behaviors { get; }
 		string CommandText { get; }
@@ -23,35 +26,34 @@ namespace FlitBit.Data
 		string ConnectionName { get; }
 		bool IsExecutableCommand { get; }
 		IDbContext Context { get; }
-
-		IDbExecutable ExcludeBehaviors(CommandBehaviors behaviors);
-		IDbExecutable IncludeBehaviors(CommandBehaviors behaviors);
-
-		int ExecuteNonQuery();
-		void ExecuteReader(Action<DbResult<DbDataReader>> action);
-		IEnumerable<IDataRecord> ExecuteEnumerable();		
-		T ExecuteScalar<T>();
-		
-		void ExecuteNonQuery(Continuation<DbResult<int>> continuation);
-		void ExecuteReader(Continuation<DbResult<DbDataReader>> continuation);
-		void ExecuteScalar<T>(Continuation<DbResult<T>> continuation);
+		IDataParameterBinder ParameterBinder { get; }
+		IEnumerable<ParameterBinding> Bindings { get; }
 
 		/// <summary>
-		/// Creates an instance of the executable on the connection given.
+		///   Creates an instance of the executable on the connection given.
 		/// </summary>
 		/// <param name="connection"></param>
 		/// <returns></returns>
 		IDbExecutable CreateOnConnection(DbConnection connection);
+
 		IDbExecutable CreateOnConnection(string connection);
 
-		IDataParameterBinder ParameterBinder { get; }
-		IEnumerable<ParameterBinding> Bindings { get; }
+		IDbExecutable ExcludeBehaviors(CommandBehaviors behaviors);
+		IEnumerable<IDataRecord> ExecuteEnumerable();
+		int ExecuteNonQuery();
+
+		void ExecuteNonQuery(Continuation<DbResult<int>> continuation);
+		void ExecuteReader(Action<DbResult<DbDataReader>> action);
+		void ExecuteReader(Continuation<DbResult<DbDataReader>> continuation);
+		T ExecuteScalar<T>();
+		void ExecuteScalar<T>(Continuation<DbResult<T>> continuation);
+		IDbExecutable IncludeBehaviors(CommandBehaviors behaviors);
 	}
 
 	namespace CodeContracts
 	{
 		/// <summary>
-		/// CodeContracts Class for IDbExecutable
+		///   CodeContracts Class for IDbExecutable
 		/// </summary>
 		[ContractClassFor(typeof(IDbExecutable))]
 		internal abstract class ContractForIDbExecutable : IDbExecutable
@@ -73,12 +75,12 @@ namespace FlitBit.Data
 
 			public string ConnectionName
 			{
-				get	{	throw new NotImplementedException(); }
+				get { throw new NotImplementedException(); }
 			}
 
 			public bool IsExecutableCommand
 			{
-				get	{	throw new NotImplementedException(); }
+				get { throw new NotImplementedException(); }
 			}
 
 			public IDbContext Context
@@ -86,20 +88,14 @@ namespace FlitBit.Data
 				get { throw new NotImplementedException(); }
 			}
 
-			public IDbExecutable ExcludeBehaviors(CommandBehaviors behaviors)
-			{
-				throw new NotImplementedException();
-			}
+			public IDbExecutable ExcludeBehaviors(CommandBehaviors behaviors) { throw new NotImplementedException(); }
 
-			public IDbExecutable IncludeBehaviors(CommandBehaviors behaviors)
-			{
-				throw new NotImplementedException();
-			}
+			public IDbExecutable IncludeBehaviors(CommandBehaviors behaviors) { throw new NotImplementedException(); }
 
 			public int ExecuteNonQuery()
 			{
 				Contract.Requires<InvalidOperationException>(this.IsExecutableCommand, Resources.Chk_CannotExecutCommandDefinition);
-				
+
 				throw new NotImplementedException();
 			}
 
@@ -115,21 +111,21 @@ namespace FlitBit.Data
 			{
 				Contract.Requires<InvalidOperationException>(this.IsExecutableCommand, Resources.Chk_CannotExecutCommandDefinition);
 				Contract.Ensures(Contract.Result<IEnumerable<IDataRecord>>() != null);
-				
+
 				throw new NotImplementedException();
 			}
 
 			public T ExecuteScalar<T>()
 			{
 				Contract.Requires<InvalidOperationException>(this.IsExecutableCommand, Resources.Chk_CannotExecutCommandDefinition);
-				
+
 				throw new NotImplementedException();
-			}					
-			
+			}
+
 			public void ExecuteNonQuery(Continuation<DbResult<int>> continuation)
 			{
 				Contract.Requires<InvalidOperationException>(this.IsExecutableCommand, Resources.Chk_CannotExecutCommandDefinition);
-				
+
 				throw new NotImplementedException();
 			}
 
@@ -137,14 +133,14 @@ namespace FlitBit.Data
 			{
 				Contract.Requires<InvalidOperationException>(this.IsExecutableCommand, Resources.Chk_CannotExecutCommandDefinition);
 				Contract.Requires<ArgumentNullException>(continuation != null);
-				
+
 				throw new NotImplementedException();
 			}
 
 			public void ExecuteScalar<T>(Continuation<DbResult<T>> continuation)
 			{
 				Contract.Requires<InvalidOperationException>(this.IsExecutableCommand, Resources.Chk_CannotExecutCommandDefinition);
-				
+
 				throw new NotImplementedException();
 			}
 
@@ -152,7 +148,7 @@ namespace FlitBit.Data
 			{
 				Contract.Requires<ArgumentNullException>(connection != null);
 				Contract.Ensures(Contract.Result<IDbExecutable>() != null);
-				
+
 				throw new NotImplementedException();
 			}
 
@@ -162,17 +158,14 @@ namespace FlitBit.Data
 				Contract.Ensures(Contract.Result<IDbExecutable>() != null);
 
 				throw new NotImplementedException();
-			}	
-			
+			}
+
 			public bool IsDisposed
 			{
 				get { throw new NotImplementedException(); }
 			}
 
-			public void Dispose()
-			{
-				throw new NotImplementedException();
-			}				
+			public void Dispose() { throw new NotImplementedException(); }
 
 			public IDataParameterBinder ParameterBinder
 			{

@@ -1,5 +1,7 @@
 ﻿#region COPYRIGHT© 2009-2013 Phillip Clark.
+
 // For licensing information see License.txt (MIT style licensing).
+
 #endregion
 
 using System;
@@ -11,13 +13,16 @@ namespace FlitBit.Data
 {
 	public partial class DbContext
 	{
-		Lazy<ConcurrentDictionary<object, object>> _localCaches = new Lazy<ConcurrentDictionary<object, object>>(LazyThreadSafetyMode.PublicationOnly);
 		int _cacheAttempts = 0;
-		int _cachePuts = 0;
 		int _cacheHits = 0;
+		int _cachePuts = 0;
 		int _cacheRemoves = 0;
 
-		public void PutCacheItem<TCacheKey, TItemKey, TItem>(TCacheKey cacheKey, TItem item, TItemKey key, Func<TItemKey, TItem, TItem> updateCachedItem) 
+		Lazy<ConcurrentDictionary<object, object>> _localCaches =
+			new Lazy<ConcurrentDictionary<object, object>>(LazyThreadSafetyMode.PublicationOnly);
+
+		public void PutCacheItem<TCacheKey, TItemKey, TItem>(TCacheKey cacheKey, TItem item, TItemKey key,
+			Func<TItemKey, TItem, TItem> updateCachedItem)
 		{
 			Contract.Requires<InvalidOperationException>(!Behaviors.HasFlag(DbContextBehaviors.DisableCaching));
 
@@ -51,7 +56,7 @@ namespace FlitBit.Data
 			}
 			item = default(TItem);
 			return false;
-		}	
+		}
 
 		public C EnsureCache<K, C>(K key)
 			where C : new()
@@ -65,7 +70,7 @@ namespace FlitBit.Data
 			else
 			{
 				var caches = _localCaches.Value;
-				return (C)caches.GetOrAdd(key, ignored => new C());
+				return (C) caches.GetOrAdd(key, ignored => new C());
 			}
 		}
 

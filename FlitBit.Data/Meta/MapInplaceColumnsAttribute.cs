@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Reflection;
 
 namespace FlitBit.Data.Meta
@@ -25,7 +23,7 @@ namespace FlitBit.Data.Meta
 			foreach (var c in contributor.Columns.Where(c => c.IsIdentity == false))
 			{
 				mapping.AddContributedColumn(c);
-			}				
+			}
 		}
 	}
 }

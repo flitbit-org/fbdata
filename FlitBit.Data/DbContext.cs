@@ -1,5 +1,7 @@
 ﻿#region COPYRIGHT© 2009-2013 Phillip Clark.
+
 // For licensing information see License.txt (MIT style licensing).
+
 #endregion
 
 using System;
@@ -16,35 +18,38 @@ namespace FlitBit.Data
 {
 	public partial class DbContext : Disposable, IDbContext
 	{
-		ConcurrentDictionary<string, DbConnection> _connections = new ConcurrentDictionary<string, DbConnection>();
-		ConcurrentDictionary<DbConnection, DbProviderHelper> _helpers = new ConcurrentDictionary<DbConnection, DbProviderHelper>();
-		IDbContext _parent;
-		ICleanupScope _scope;
 		DbContextBehaviors _behaviors;
-		int _queryCount = 0;
+		ConcurrentDictionary<string, DbConnection> _connections = new ConcurrentDictionary<string, DbConnection>();
 		int _disposers = 1;
 
+		ConcurrentDictionary<DbConnection, DbProviderHelper> _helpers =
+			new ConcurrentDictionary<DbConnection, DbProviderHelper>();
+
+		IDbContext _parent;
+		int _queryCount = 0;
+		ICleanupScope _scope;
+
 		public DbContext()
-			: this(DbContext.Current, DbContextBehaviors.Default)
-		{
-			
-		}
+			: this(Current, DbContextBehaviors.Default) { }
 
 		public DbContext(IDbContext parent, DbContextBehaviors behaviors)
 		{
 			_behaviors = behaviors;
 			if (parent != null)
 			{
-				_parent = (IDbContext)parent.ParallelShare();
+				_parent = (IDbContext) parent.ParallelShare();
 			}
 			_scope = new CleanupScope(this, true);
 			if (!behaviors.HasFlag(DbContextBehaviors.NoContextFlow))
 			{
 				ContextFlow.Push<IDbContext>(this);
-			}		 
+			}
 		}
 
-		public DbContextBehaviors Behaviors { get { return _behaviors; } }
+		public DbContextBehaviors Behaviors
+		{
+			get { return _behaviors; }
+		}
 
 		public DbConnection SharedOrNewConnection(string connectionName)
 		{
@@ -53,17 +58,17 @@ namespace FlitBit.Data
 
 			DbConnection cn, capture = null;
 			cn = _connections.GetOrAdd(connectionName,
-				cs =>
-				{
-					capture = NewConnection(connectionName);
-					return capture;
-				});
+																cs =>
+																	{
+																		capture = NewConnection(connectionName);
+																		return capture;
+																	});
 			if (capture != null)
 			{
-				if (!Object.ReferenceEquals(cn, capture))
+				if (!ReferenceEquals(cn, capture))
 				{
 					capture.Dispose();
-				}				
+				}
 			}
 			return cn;
 		}
@@ -74,39 +79,36 @@ namespace FlitBit.Data
 			var disposals = 0;
 			cn.Disposed += (sender, e) => Interlocked.Increment(ref disposals);
 			_scope.AddAction(
-				() =>
-				{
-					if (Thread.VolatileRead(ref disposals) == 0)
-					{
-						cn.Close();
-					}
-				});
+											 () =>
+												 {
+													if (Thread.VolatileRead(ref disposals) == 0)
+													{
+														cn.Close();
+													}
+												 });
 			return cn;
 		}
-				
-		public T Add<T>(T item) where T : IDisposable
-		{
-			return _scope.Add(item);
-		}
+
+		public T Add<T>(T item) where T : IDisposable { return _scope.Add(item); }
 
 		public TConnection SharedOrNewConnection<TConnection>(string connectionName)
 			where TConnection : DbConnection, new()
 		{
 			DbConnection cn, capture = null;
 			cn = _connections.GetOrAdd(connectionName,
-				cs =>
-				{
-					capture = NewConnection<TConnection>(connectionName);
-					return capture;
-				});
+																cs =>
+																	{
+																		capture = NewConnection<TConnection>(connectionName);
+																		return capture;
+																	});
 			if (capture != null)
 			{
-				if (!Object.ReferenceEquals(cn, capture))
-				{						
+				if (!ReferenceEquals(cn, capture))
+				{
 					capture.Dispose();
 				}
 			}
-			return (TConnection)cn;
+			return (TConnection) cn;
 		}
 
 		public TConnection NewConnection<TConnection>(string connectionName)
@@ -114,15 +116,15 @@ namespace FlitBit.Data
 		{
 			var cn = DbExtensions.CreateConnection<TConnection>(connectionName);
 			var disposals = 0;
-			cn.Disposed += (sender, e) =>	Interlocked.Increment(ref disposals);
+			cn.Disposed += (sender, e) => Interlocked.Increment(ref disposals);
 			_scope.AddAction(
-				() =>
-				{
-					if (Thread.VolatileRead(ref disposals) == 0)
-					{
-						cn.Close();
-					}
-				});
+											 () =>
+												 {
+													if (Thread.VolatileRead(ref disposals) == 0)
+													{
+														cn.Close();
+													}
+												 });
 			return cn;
 		}
 
@@ -130,6 +132,26 @@ namespace FlitBit.Data
 		{
 			Interlocked.Increment(ref _disposers);
 			return this;
+		}
+
+		public int QueryCount
+		{
+			get { return Thread.VolatileRead(ref _queryCount); }
+		}
+
+		public int IncrementQueryCounter() { return Interlocked.Increment(ref _queryCount); }
+
+		public int IncrementQueryCounter(int count) { return Interlocked.Add(ref _queryCount, count); }
+
+		public DbProviderHelper HelperForConnection(DbConnection cn)
+		{
+			var res = default(DbProviderHelper);
+			if (!_helpers.TryGetValue(cn, out res))
+			{
+				res = DbProviderHelpers.GetDbProviderHelperForDbConnection(cn);
+				_helpers.TryAdd(cn, res);
+			}
+			return res;
 		}
 
 		protected override bool PerformDispose(bool disposing)
@@ -144,7 +166,10 @@ namespace FlitBit.Data
 				{
 					DbTraceEvents.OnTraceEvent(this, TraceEventType.Warning, Resources.Err_DbContextStackDisposedOutOfOrder);
 				}
-				catch { /* no errors surfaced in GC thread */ }
+				catch
+				{
+					/* no errors surfaced in GC thread */
+				}
 			}
 			if (disposing)
 			{
@@ -152,33 +177,6 @@ namespace FlitBit.Data
 				Util.Dispose(ref _parent);
 			}
 			return true;
-		}
-
-
-		public int QueryCount
-		{
-			get { return Thread.VolatileRead(ref _queryCount); }
-		}
-
-		public int IncrementQueryCounter()
-		{
-			return Interlocked.Increment(ref _queryCount);
-		}		
-
-		public int IncrementQueryCounter(int count)
-		{
-			return Interlocked.Add(ref _queryCount, count);
-		}																									 
-
-		public DbProviderHelper HelperForConnection(DbConnection cn)
-		{
-			DbProviderHelper res = default(DbProviderHelper);
-			if (!_helpers.TryGetValue(cn, out res))
-			{
-				res = DbProviderHelpers.GetDbProviderHelperForDbConnection(cn);
-				_helpers.TryAdd(cn, res);
-			}
-			return res;
 		}
 	}
 }

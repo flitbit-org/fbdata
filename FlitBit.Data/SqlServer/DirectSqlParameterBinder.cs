@@ -1,5 +1,7 @@
 ﻿#region COPYRIGHT© 2009-2013 Phillip Clark.
+
 // For licensing information see License.txt (MIT style licensing).
+
 #endregion
 
 using System;
@@ -30,10 +32,7 @@ namespace FlitBit.Data.SqlServer
 			return (name[0] != '@') ? String.Concat('@', name) : name;
 		}
 
-		public DbTypeTranslation TranslateRuntimeType(Type type)
-		{
-			return SqlDbTypeTranslations.TranslateRuntimeType(type);
-		}
+		public DbTypeTranslation TranslateRuntimeType(Type type) { return SqlDbTypeTranslations.TranslateRuntimeType(type); }
 
 		public bool ContainsParameter(string name)
 		{
@@ -54,15 +53,15 @@ namespace FlitBit.Data.SqlServer
 
 		public IDataParameterBinder DefineParameter(string name, Type runtimeType)
 		{
-			DbTypeTranslation trans = SqlDbTypeTranslations.TranslateRuntimeType(runtimeType);
-			_command.Parameters.Add(new SqlParameter(PrepareParameterName(name), (SqlDbType)trans.SpecializedDbType));
+			var trans = SqlDbTypeTranslations.TranslateRuntimeType(runtimeType);
+			_command.Parameters.Add(new SqlParameter(PrepareParameterName(name), (SqlDbType) trans.SpecializedDbType));
 			return this;
 		}
 
 		public IDataParameterBinder DefineParameter(string name, Type runtimeType, ParameterDirection direction)
 		{
-			DbTypeTranslation trans = SqlDbTypeTranslations.TranslateRuntimeType(runtimeType);
-			_mru = new SqlParameter(PrepareParameterName(name), (SqlDbType)trans.SpecializedDbType);
+			var trans = SqlDbTypeTranslations.TranslateRuntimeType(runtimeType);
+			_mru = new SqlParameter(PrepareParameterName(name), (SqlDbType) trans.SpecializedDbType);
 			_mru.Direction = direction;
 			_command.Parameters.Add(_mru);
 			return this;
@@ -70,8 +69,8 @@ namespace FlitBit.Data.SqlServer
 
 		public IDataParameterBinder DefineParameter(string name, Type runtimeType, int length, ParameterDirection direction)
 		{
-			DbTypeTranslation trans = SqlDbTypeTranslations.TranslateRuntimeType(runtimeType);
-			_mru = new SqlParameter(PrepareParameterName(name), (SqlDbType)trans.SpecializedDbType);
+			var trans = SqlDbTypeTranslations.TranslateRuntimeType(runtimeType);
+			_mru = new SqlParameter(PrepareParameterName(name), (SqlDbType) trans.SpecializedDbType);
 			_mru.Size = length;
 			_mru.Direction = direction;
 			_command.Parameters.Add(_mru);
@@ -80,16 +79,16 @@ namespace FlitBit.Data.SqlServer
 
 		public IDataParameterBinder DefineParameter(string name, DbType dbType)
 		{
-			DbTypeTranslation trans = SqlDbTypeTranslations.TranslateDbType(dbType);
-			_mru = new SqlParameter(PrepareParameterName(name), (SqlDbType)trans.SpecializedDbType);
+			var trans = SqlDbTypeTranslations.TranslateDbType(dbType);
+			_mru = new SqlParameter(PrepareParameterName(name), (SqlDbType) trans.SpecializedDbType);
 			_command.Parameters.Add(_mru);
 			return this;
 		}
 
 		public IDataParameterBinder DefineParameter(string name, DbType dbType, ParameterDirection direction)
 		{
-			DbTypeTranslation trans = SqlDbTypeTranslations.TranslateDbType(dbType);
-			_mru = new SqlParameter(PrepareParameterName(name), (SqlDbType)trans.SpecializedDbType);
+			var trans = SqlDbTypeTranslations.TranslateDbType(dbType);
+			_mru = new SqlParameter(PrepareParameterName(name), (SqlDbType) trans.SpecializedDbType);
 			_mru.Direction = direction;
 			_command.Parameters.Add(_mru);
 			return this;
@@ -97,16 +96,16 @@ namespace FlitBit.Data.SqlServer
 
 		public IDataParameterBinder DefineParameter(string name, DbType dbType, int length)
 		{
-			DbTypeTranslation trans = SqlDbTypeTranslations.TranslateDbType(dbType); 
-			_mru = new SqlParameter(PrepareParameterName(name), (SqlDbType)trans.SpecializedDbType);
+			var trans = SqlDbTypeTranslations.TranslateDbType(dbType);
+			_mru = new SqlParameter(PrepareParameterName(name), (SqlDbType) trans.SpecializedDbType);
 			_command.Parameters.Add(_mru);
 			return this;
 		}
 
 		public IDataParameterBinder DefineParameter(string name, DbType dbType, int length, ParameterDirection direction)
 		{
-			DbTypeTranslation trans = SqlDbTypeTranslations.TranslateDbType(dbType);
-			_mru = new SqlParameter(PrepareParameterName(name), (SqlDbType)trans.SpecializedDbType);
+			var trans = SqlDbTypeTranslations.TranslateDbType(dbType);
+			_mru = new SqlParameter(PrepareParameterName(name), (SqlDbType) trans.SpecializedDbType);
 			_mru.Direction = direction;
 			_mru.Size = length;
 			_command.Parameters.Add(_mru);
@@ -115,29 +114,27 @@ namespace FlitBit.Data.SqlServer
 
 		public IDataParameterBinder DefineParameter(string name, DbType dbType, int size, byte scale)
 		{
-			DbTypeTranslation trans = SqlDbTypeTranslations.TranslateDbType(dbType);
-			_mru = new SqlParameter(PrepareParameterName(name), (SqlDbType)trans.SpecializedDbType);
-			_mru.Precision = (byte)size;
+			var trans = SqlDbTypeTranslations.TranslateDbType(dbType);
+			_mru = new SqlParameter(PrepareParameterName(name), (SqlDbType) trans.SpecializedDbType);
+			_mru.Precision = (byte) size;
 			_mru.Scale = scale;
 			_command.Parameters.Add(_mru);
 			return this;
 		}
 
-		public IDataParameterBinder DefineParameter(string name, DbType dbType, int size, byte scale, ParameterDirection direction)
+		public IDataParameterBinder DefineParameter(string name, DbType dbType, int size, byte scale,
+			ParameterDirection direction)
 		{
-			DbTypeTranslation trans = SqlDbTypeTranslations.TranslateDbType(dbType);
-			_mru = new SqlParameter(PrepareParameterName(name), (SqlDbType)trans.SpecializedDbType);
+			var trans = SqlDbTypeTranslations.TranslateDbType(dbType);
+			_mru = new SqlParameter(PrepareParameterName(name), (SqlDbType) trans.SpecializedDbType);
 			_mru.Direction = direction;
-			_mru.Precision = (byte)size;
+			_mru.Precision = (byte) size;
 			_mru.Scale = scale;
 			_command.Parameters.Add(_mru);
 			return this;
 		}
 
-		public IDataParameterBinder DefineParameter(Func<DbParamDefinition> specializeParam)
-		{
-			throw new NotImplementedException();
-		}
+		public IDataParameterBinder DefineParameter(Func<DbParamDefinition> specializeParam) { throw new NotImplementedException(); }
 
 		public IDataParameterBinder SetParameterValue(string name, bool value)
 		{
@@ -243,7 +240,7 @@ namespace FlitBit.Data.SqlServer
 				_mru = _command.Parameters[bindName];
 			}
 
-			_mru.SqlValue = new SqlByte((byte)value);
+			_mru.SqlValue = new SqlByte((byte) value);
 			return this;
 		}
 
@@ -303,7 +300,7 @@ namespace FlitBit.Data.SqlServer
 				_mru = _command.Parameters[bindName];
 			}
 
-			_mru.SqlValue = new SqlInt16((short)value);
+			_mru.SqlValue = new SqlInt16((short) value);
 			return this;
 		}
 
@@ -315,7 +312,7 @@ namespace FlitBit.Data.SqlServer
 				_mru = _command.Parameters[bindName];
 			}
 
-			_mru.SqlValue = new SqlInt32((int)value);
+			_mru.SqlValue = new SqlInt32((int) value);
 			return this;
 		}
 
@@ -327,7 +324,7 @@ namespace FlitBit.Data.SqlServer
 				_mru = _command.Parameters[bindName];
 			}
 
-			_mru.SqlValue = new SqlInt64((long)value);
+			_mru.SqlValue = new SqlInt64((long) value);
 			return this;
 		}
 
@@ -337,8 +334,8 @@ namespace FlitBit.Data.SqlServer
 			if (_mru == null || !String.Equals(bindName, _mru.ParameterName))
 			{
 				_mru = _command.Parameters[bindName];
-			} 
-			
+			}
+
 			return this;
 		}
 
@@ -382,18 +379,12 @@ namespace FlitBit.Data.SqlServer
 				_mru = _command.Parameters[bindName];
 			}
 
-			_mru.SqlValue = DBNull.Value;			
+			_mru.SqlValue = DBNull.Value;
 			return this;
 		}
 
-		public bool PrepareDbCommand(DbCommand command)
-		{
-			throw new NotImplementedException();
-		}
+		public bool PrepareDbCommand(DbCommand command) { throw new NotImplementedException(); }
 
-		public void Initialize(IEnumerable<ParameterBinding> bindings)
-		{
-			throw new NotImplementedException();
-		}
+		public void Initialize(IEnumerable<ParameterBinding> bindings) { throw new NotImplementedException(); }
 	}
 }

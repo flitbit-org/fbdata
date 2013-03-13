@@ -1,11 +1,8 @@
-﻿using System;
-using System.Text;
-using System.Collections.Generic;
-using System.Linq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using FlitBit.Data.Meta;
+﻿using System.Text;
 using FlitBit.Data.Catalog;
+using FlitBit.Data.Meta;
 using FlitBit.Emit;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace FlitBit.Data.Tests.Catalog
 {

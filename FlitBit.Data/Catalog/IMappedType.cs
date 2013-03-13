@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using FlitBit.Data.Meta;
 
 namespace FlitBit.Data.Catalog
-{		
+{
 	[MapEntity("OrmCatalog", EntityBehaviors.DefinedColumnsOnly)]
 	public interface IMappedType
 	{

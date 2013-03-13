@@ -1,5 +1,4 @@
 ﻿using System;
-using FlitBit.Core;
 
 namespace FlitBit.Data
 {
@@ -14,52 +13,54 @@ namespace FlitBit.Data
 	}
 
 	/// <summary>
-	/// Base interface for model references.
+	///   Base interface for model references.
 	/// </summary>
 	/// <typeparam name="M">model type M</typeparam>
 	public interface IDataModelReference<out M> : ICloneable
 	{
 		/// <summary>
-		/// Indicates whether the reference is empty.
+		///   Indicates whether the reference is empty.
 		/// </summary>
 		bool IsEmpty { get; }
+
 		/// <summary>
-		/// Indicates whether the reference has a model.
+		///   Indicates whether the reference has a model.
 		/// </summary>
 		bool HasModel { get; }
+
 		/// <summary>
-		/// Gets the referenced model.
+		///   Gets the referenced model.
 		/// </summary>
 		M Model { get; }
 	}
 
 	/// <summary>
-	/// A model reference.
+	///   A model reference.
 	/// </summary>
 	/// <typeparam name="M">model type M</typeparam>
 	/// <typeparam name="IK">identity key type IK</typeparam>
 	public interface IDataModelReference<out M, IK> : IDataModelReference<M>
 	{
 		/// <summary>
-		/// Gets the referenced model's identity key.
+		///   Gets the referenced model's identity key.
 		/// </summary>
-		IK IdentityKey { get; }																										
+		IK IdentityKey { get; }
 	}
 
 	public static class IDataModelReferenceExtensions
 	{
+		public static IDataModelReference<M, IK> SetIdentityKey<M, IK>(this IDataModelReference<M> reference, IK id)
+		{
+			var referent = (IDataModelReferent<M, IK>) reference;
+			referent.SetIdentityKey(id);
+			return (IDataModelReference<M, IK>) reference;
+		}
+
 		public static IDataModelReference<M> SetReferent<M>(this IDataModelReference<M> reference, M model)
 		{
-			IDataModelReferent<M> referent = (IDataModelReferent<M>)reference;
+			var referent = (IDataModelReferent<M>) reference;
 			referent.SetReferent(model);
 			return reference;
 		}
-		
-		public static IDataModelReference<M, IK> SetIdentityKey<M, IK>(this IDataModelReference<M> reference, IK id)
-		{
-			IDataModelReferent<M, IK> referent = (IDataModelReferent<M, IK>)reference;
-			referent.SetIdentityKey(id);
-			return (IDataModelReference<M, IK>)reference;
-		}	
 	}
 }

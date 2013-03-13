@@ -1,5 +1,7 @@
 ﻿#region COPYRIGHT© 2009-2012 Phillip Clark. All rights reserved.
+
 // For licensing information see License.txt (MIT style licensing).
+
 #endregion
 
 using System;
@@ -12,8 +14,9 @@ namespace FlitBit.Data.Meta
 		Default = 0,
 		LinearCongruentGenerated = 1,
 		NibbleValue = 2,
-		UseCheckDigit = 4		
+		UseCheckDigit = 4
 	}
+
 	public enum SyntheticIDSize
 	{
 		Undefined = 0,
@@ -30,9 +33,9 @@ namespace FlitBit.Data.Meta
 	[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
 	public sealed class SyntheticIDAttribute : Attribute
 	{
-		public SyntheticIDAttribute(SyntheticIDBehaviors behaviors) : this(behaviors, SyntheticIDSize.Bits_31)
-		{
-		}
+		public SyntheticIDAttribute(SyntheticIDBehaviors behaviors)
+			: this(behaviors, SyntheticIDSize.Bits_31) { }
+
 		public SyntheticIDAttribute(SyntheticIDBehaviors behaviors, SyntheticIDSize size)
 		{
 			this.Behaviors = behaviors;

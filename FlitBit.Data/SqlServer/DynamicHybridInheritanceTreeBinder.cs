@@ -1,19 +1,19 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Data.Common;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
 using FlitBit.Core;
 using FlitBit.Data.Meta;
-using System.Collections.Generic;
 
 namespace FlitBit.Data.SqlServer
 {
 	public class DynamicHybridInheritanceTreeBinder<TModel, Id, TModelImpl> : IModelBinder<TModel, Id>
 		where TModelImpl : class, TModel, new()
 	{
-		bool _initialized;
 		readonly Mapping<TModel> _mapping;
+		bool _initialized;
 
 		public DynamicHybridInheritanceTreeBinder(Mapping<TModel> mapping)
 		{
@@ -24,60 +24,31 @@ namespace FlitBit.Data.SqlServer
 			this._mapping = mapping;
 		}
 
-		void Initialize()
+		public IMapping Mapping
 		{
-			if (!_initialized)
-			{
-				_initialized = true;
-			}
+			get { return _mapping; }
 		}
-
-		public IMapping Mapping { get { return _mapping; } }
 
 		public MappingStrategy Strategy
 		{
 			get { return MappingStrategy.DynamicHybridInheritanceTree; }
 		}
 
-		public IModelCommand<TModel, TModel, DbConnection> GetCreateCommand()
-		{
-			throw new NotImplementedException();
-		}
+		public IModelCommand<TModel, TModel, DbConnection> GetCreateCommand() { throw new NotImplementedException(); }
 
-		public IModelCommand<TModel, Id, DbConnection> GetReadCommand()
-		{
-			throw new NotImplementedException();
-		}
+		public IModelCommand<TModel, Id, DbConnection> GetReadCommand() { throw new NotImplementedException(); }
 
-		public IModelCommand<TModel, TModel, DbConnection> GetUpdateCommand()
-		{
-			throw new NotImplementedException();
-		}
+		public IModelCommand<TModel, TModel, DbConnection> GetUpdateCommand() { throw new NotImplementedException(); }
 
-		public IModelCommand<TModel, Id, DbConnection> GetDeleteCommand()
-		{
-			throw new NotImplementedException();
-		}
+		public IModelCommand<TModel, Id, DbConnection> GetDeleteCommand() { throw new NotImplementedException(); }
 
-		public IModelCommand<TModel, DbConnection> GetAllCommand()
-		{
-			throw new NotImplementedException();
-		}
+		public IModelCommand<TModel, DbConnection> GetAllCommand() { throw new NotImplementedException(); }
 
-		public IModelCommand<TModel, TMatch, DbConnection> MakeReadMatchCommand<TMatch>(TMatch match) where TMatch : class
-		{
-			throw new NotImplementedException();
-		}
+		public IModelCommand<TModel, TMatch, DbConnection> MakeReadMatchCommand<TMatch>(TMatch match) where TMatch : class { throw new NotImplementedException(); }
 
-		public IModelCommand<TModel, TMatch, DbConnection> MakeUpdateMatchCommand<TMatch>(TMatch match) where TMatch : class
-		{
-			throw new NotImplementedException();
-		}
+		public IModelCommand<TModel, TMatch, DbConnection> MakeUpdateMatchCommand<TMatch>(TMatch match) where TMatch : class { throw new NotImplementedException(); }
 
-		public IModelCommand<TModel, TMatch, DbConnection> MakeDeleteMatchCommand<TMatch>(TMatch match) where TMatch : class
-		{
-			throw new NotImplementedException();
-		}
+		public IModelCommand<TModel, TMatch, DbConnection> MakeDeleteMatchCommand<TMatch>(TMatch match) where TMatch : class { throw new NotImplementedException(); }
 
 		public void BuildDdlBatch(StringBuilder batch, IList<Type> members)
 		{
@@ -85,12 +56,14 @@ namespace FlitBit.Data.SqlServer
 			{
 				members.Add(_mapping.RuntimeType);
 				var mapping = _mapping;
-				Contract.Assert(mapping.ConnectionName != null && mapping.ConnectionName.Length > 0, "ConnectionName must be set before creating SQL commands for a model");
+				Contract.Assert(mapping.ConnectionName != null && mapping.ConnectionName.Length > 0,
+												"ConnectionName must be set before creating SQL commands for a model");
 
 				var helper = DbProviderHelpers.GetDbProviderHelperForDbConnection(mapping.ConnectionName);
 				batch.Append("-- BEGIN: ").Append(typeof(TModel).GetReadableSimpleName()).Append(Environment.NewLine);
 
-				foreach (var dep in mapping.Dependencies.Where(d => d.Kind == DependencyKind.Base || d.Kind.HasFlag(DependencyKind.Direct)))
+				foreach (
+					var dep in mapping.Dependencies.Where(d => d.Kind == DependencyKind.Base || d.Kind.HasFlag(DependencyKind.Direct)))
 				{
 					var dmap = Mappings.AccessMappingFor(dep.Target.RuntimeType);
 					var binder = dmap.GetBinder();
@@ -108,11 +81,13 @@ namespace FlitBit.Data.SqlServer
 				batch.Append("CREATE TABLE ").Append(mapping.DbObjectReference).Append(Environment.NewLine).Append('(');
 
 				var hasLcgColumns = false;
-				int i = 0;
+				var i = 0;
 				foreach (var col in mapping.Identity.Columns)
 				{
 					if (i++ > 0)
+					{
 						batch.Append(',');
+					}
 					var dbt = default(DbTypeTranslation);
 					if (col.RuntimeType == typeof(String) && col.Behaviors.HasFlag(ColumnBehaviors.LinearCongruentGenerated))
 					{
@@ -124,10 +99,15 @@ namespace FlitBit.Data.SqlServer
 					}
 					if (dbt == null)
 					{
-						throw new MappingException(String.Concat("Model type '", typeof(TModel).Name, "' declares a column on property '", col.Member.Name, "' and the property's type cannot be mapped to a database type: ",
-							col.RuntimeType.GetReadableSimpleName()));
+						throw new MappingException(String.Concat("Model type '", typeof(TModel).Name, "' declares a column on property '",
+																										col.Member.Name, "' and the property's type cannot be mapped to a database type: ",
+																										col.RuntimeType.GetReadableSimpleName()));
 					}
-					batch.Append(Environment.NewLine).Append('\t').Append(mapping.QuoteObjectNameForSQL(col.TargetName)).Append(" ").Append(dbt.ProviderSqlTypeName);
+					batch.Append(Environment.NewLine)
+							.Append('\t')
+							.Append(mapping.QuoteObjectNameForSQL(col.TargetName))
+							.Append(" ")
+							.Append(dbt.ProviderSqlTypeName);
 					if (dbt.MustWriteLength(col.VariableLength, 0))
 					{
 						dbt.WriteLength(col.VariableLength, 0, batch);
@@ -147,21 +127,24 @@ namespace FlitBit.Data.SqlServer
 							if (col.RuntimeType == typeof(Guid))
 							{
 								batch.Append(Environment.NewLine).Append("\t\tCONSTRAINT DF_").Append(mapping.TargetSchema)
-									.Append(mapping.TargetObject).Append('_').Append(col.TargetName)
-									.Append(" DEFAULT (NEWID())");
+										.Append(mapping.TargetObject).Append('_').Append(col.TargetName)
+										.Append(" DEFAULT (NEWID())");
 							}
-							if ((col.Behaviors & ColumnBehaviors.LinearCongruentGeneratedWithCheckDigit) == ColumnBehaviors.LinearCongruentGeneratedWithCheckDigit)
+							if ((col.Behaviors & ColumnBehaviors.LinearCongruentGeneratedWithCheckDigit) ==
+								ColumnBehaviors.LinearCongruentGeneratedWithCheckDigit)
 							{
 								batch.Append(',').Append(Environment.NewLine)
-									.Append("\t\tCONSTRAINT CK_").Append(mapping.TargetSchema)
-									.Append(mapping.TargetObject).Append('_').Append(col.TargetName)
-									.Append(" CHECK ([SynthenticID].[IsValidID](").Append(mapping.QuoteObjectNameForSQL(col.TargetName)).Append(")");
+										.Append("\t\tCONSTRAINT CK_").Append(mapping.TargetSchema)
+										.Append(mapping.TargetObject).Append('_').Append(col.TargetName)
+										.Append(" CHECK ([SynthenticID].[IsValidID](")
+										.Append(mapping.QuoteObjectNameForSQL(col.TargetName))
+										.Append(")");
 							}
 						}
 						if (mapping.Identity.Columns.Count() == 1)
 						{
 							batch.Append(Environment.NewLine).Append("\t\tCONSTRAINT PK_")
-								.Append(mapping.TargetSchema).Append(mapping.TargetObject).Append(" PRIMARY KEY");
+									.Append(mapping.TargetSchema).Append(mapping.TargetObject).Append(" PRIMARY KEY");
 						}
 					}
 					else
@@ -169,15 +152,18 @@ namespace FlitBit.Data.SqlServer
 						if (mapping.Identity.Columns.Count() == 1)
 						{
 							batch.Append(" NOT NULL")
-								.Append(Environment.NewLine).Append("\t\tCONSTRAINT PK_")
-								.Append(mapping.TargetSchema).Append(mapping.TargetObject).Append(" PRIMARY KEY");
+									.Append(Environment.NewLine).Append("\t\tCONSTRAINT PK_")
+									.Append(mapping.TargetSchema).Append(mapping.TargetObject).Append(" PRIMARY KEY");
 
-							IMapping foreignM = col.Mapping;
+							var foreignM = col.Mapping;
 							var foreignC = foreignM.GetPreferredReferenceColumn();
 							batch.Append(Environment.NewLine).Append("\t\tCONSTRAINT FK_").Append(mapping.TargetSchema)
 									.Append(mapping.TargetObject).Append('_').Append(col.TargetName)
 									.Append(Environment.NewLine).Append("\t\t\tFOREIGN KEY REFERENCES ")
-									.Append(foreignM.DbObjectReference).Append('(').Append(foreignM.QuoteObjectNameForSQL(foreignC.TargetName)).Append(')')
+									.Append(foreignM.DbObjectReference)
+									.Append('(')
+									.Append(foreignM.QuoteObjectNameForSQL(foreignC.TargetName))
+									.Append(')')
 									.Append(Environment.NewLine).Append("\t\t\t\tON DELETE CASCADE")
 									.Append(Environment.NewLine).Append("\t\t\t\tON UPDATE CASCADE");
 						}
@@ -187,7 +173,9 @@ namespace FlitBit.Data.SqlServer
 				{
 					hasLcgColumns = hasLcgColumns || col.Behaviors.HasFlag(ColumnBehaviors.LinearCongruentGenerated);
 					if (i++ > 0)
+					{
 						batch.Append(',');
+					}
 					var dbt = default(DbTypeTranslation);
 					if (col.RuntimeType == typeof(String) && col.Behaviors.HasFlag(ColumnBehaviors.LinearCongruentGenerated))
 					{
@@ -199,10 +187,15 @@ namespace FlitBit.Data.SqlServer
 					}
 					if (dbt == null)
 					{
-						throw new MappingException(String.Concat("Model type '", typeof(TModel).Name, "' declares a column on property '", col.Member.Name, "' and the property's type cannot be mapped to a database type: ",
-							col.RuntimeType.GetReadableSimpleName()));
+						throw new MappingException(String.Concat("Model type '", typeof(TModel).Name, "' declares a column on property '",
+																										col.Member.Name, "' and the property's type cannot be mapped to a database type: ",
+																										col.RuntimeType.GetReadableSimpleName()));
 					}
-					batch.Append(Environment.NewLine).Append('\t').Append(mapping.QuoteObjectNameForSQL(col.TargetName)).Append(" ").Append(dbt.ProviderSqlTypeName);
+					batch.Append(Environment.NewLine)
+							.Append('\t')
+							.Append(mapping.QuoteObjectNameForSQL(col.TargetName))
+							.Append(" ")
+							.Append(dbt.ProviderSqlTypeName);
 					if (dbt.MustWriteLength(col.VariableLength, 0))
 					{
 						dbt.WriteLength(col.VariableLength, 0, batch);
@@ -210,7 +203,9 @@ namespace FlitBit.Data.SqlServer
 
 					// NULL or NOT NULL
 					if (!col.IsNullable)
+					{
 						batch.Append(" NOT");
+					}
 					batch.Append(" NULL");
 
 					if (col.RuntimeType == typeof(DateTime))
@@ -218,8 +213,8 @@ namespace FlitBit.Data.SqlServer
 						if (col.IsTimestampOnInsert || col.IsTimestampOnUpdate)
 						{
 							batch.Append(Environment.NewLine).Append("\t\tCONSTRAINT DF_").Append(mapping.TargetSchema)
-								.Append(mapping.TargetObject).Append('_').Append(col.TargetName)
-								.Append(" DEFAULT (GETUTCDATE())");
+									.Append(mapping.TargetObject).Append('_').Append(col.TargetName)
+									.Append(" DEFAULT (GETUTCDATE())");
 						}
 						if (col.IsTimestampOnUpdate)
 						{
@@ -227,28 +222,31 @@ namespace FlitBit.Data.SqlServer
 							if (timestampOnInsertCol != null)
 							{
 								batch.Append(',').Append(Environment.NewLine).Append("\t\tCONSTRAINT CK_").Append(mapping.TargetSchema)
-									.Append(mapping.TargetObject).Append('_').Append(col.TargetName)
-									.Append(" CHECK (").Append(mapping.QuoteObjectNameForSQL(col.TargetName))
-									.Append(" >= ").Append(mapping.QuoteObjectNameForSQL(timestampOnInsertCol.TargetName))
-									.Append(")");
+										.Append(mapping.TargetObject).Append('_').Append(col.TargetName)
+										.Append(" CHECK (").Append(mapping.QuoteObjectNameForSQL(col.TargetName))
+										.Append(" >= ").Append(mapping.QuoteObjectNameForSQL(timestampOnInsertCol.TargetName))
+										.Append(")");
 							}
 						}
 					}
 					if (col.IsAlternateKey)
 					{
 						batch.Append(Environment.NewLine).Append("\t\tCONSTRAINT AK_")
-							.Append(mapping.TargetSchema).Append(mapping.TargetObject).Append('_').Append(col.TargetName)
-							.Append(" UNIQUE");
+								.Append(mapping.TargetSchema).Append(mapping.TargetObject).Append('_').Append(col.TargetName)
+								.Append(" UNIQUE");
 					}
 
 					if (col.IsReference)
 					{
-						IMapping foreignM = Mappings.AccessMappingFor(col.ReferenceTargetMember.DeclaringType);
+						var foreignM = Mappings.AccessMappingFor(col.ReferenceTargetMember.DeclaringType);
 						var foreignC = foreignM.Columns.Where(c => c.Member == col.ReferenceTargetMember).Single();
 						batch.Append(Environment.NewLine).Append("\t\tCONSTRAINT FK_").Append(mapping.TargetSchema)
 								.Append(mapping.TargetObject).Append('_').Append(col.TargetName)
 								.Append(Environment.NewLine).Append("\t\t\tFOREIGN KEY REFERENCES ")
-								.Append(foreignM.DbObjectReference).Append('(').Append(foreignM.QuoteObjectNameForSQL(foreignC.TargetName)).Append(')');
+								.Append(foreignM.DbObjectReference)
+								.Append('(')
+								.Append(foreignM.QuoteObjectNameForSQL(foreignC.TargetName))
+								.Append(')');
 						if (col.ReferenceBehaviors.HasFlag(ReferenceBehaviors.OnDeleteCascade))
 						{
 							batch.Append(Environment.NewLine).Append("\t\t\t\tON DELETE CASCADE");
@@ -271,36 +269,45 @@ namespace FlitBit.Data.SqlServer
 				batch.Append(Environment.NewLine).Append(')');
 				AddIndexesForTable(mapping, batch);
 				if (hasLcgColumns)
+				{
 					AddGeneratorMethodsForLcgColumns(mapping, batch);
+				}
 				if (mapping.Behaviors.HasFlag(EntityBehaviors.MapEnum))
 				{
 					var idenum = mapping.Identity.Columns.Where(c => c.RuntimeType.IsEnum).Single();
 					if (idenum == null)
-						throw new MappingException(String.Concat("Model type '", typeof(TModel).Name, "' declares behavior EntityBehaviors.MapEnum but the enum type cannot be determined. Specify an identity column of enum type."));
+					{
+						throw new MappingException(String.Concat("Model type '", typeof(TModel).Name,
+																										"' declares behavior EntityBehaviors.MapEnum but the enum type cannot be determined. Specify an identity column of enum type."));
+					}
 					var namecol = mapping.Columns.Where(c => c.RuntimeType == typeof(String) && c.IsAlternateKey).FirstOrDefault();
 					if (namecol == null)
-						throw new MappingException(String.Concat("Model type ", typeof(TModel).Name, " declares behavior EntityBehaviors.MapEnum but a column to hold the enum name cannot be determined. Specify a string column with alternate key behavior."));
+					{
+						throw new MappingException(String.Concat("Model type ", typeof(TModel).Name,
+																										" declares behavior EntityBehaviors.MapEnum but a column to hold the enum name cannot be determined. Specify a string column with alternate key behavior."));
+					}
 
 					var enumNames = Enum.GetNames(idenum.RuntimeType);
 					var enumValues = Enum.GetValues(idenum.RuntimeType);
 					for (var j = 0; j < enumNames.Length; j++)
 					{
 						batch.Append(Environment.NewLine).Append("INSERT INTO ").Append(mapping.DbObjectReference)
-							.Append(" (").Append(mapping.QuoteObjectNameForSQL(idenum.TargetName))
-							.Append(", ").Append(mapping.QuoteObjectNameForSQL(namecol.TargetName)).Append(") VALUES (")
-							.Append(Convert.ToInt32(enumValues.GetValue(j))).Append(", '").Append(enumNames[j]).Append("')");
+								.Append(" (").Append(mapping.QuoteObjectNameForSQL(idenum.TargetName))
+								.Append(", ").Append(mapping.QuoteObjectNameForSQL(namecol.TargetName)).Append(") VALUES (")
+								.Append(Convert.ToInt32(enumValues.GetValue(j))).Append(", '").Append(enumNames[j]).Append("')");
 					}
 				}
 				batch.Append(Environment.NewLine)
-					.Append("GO").Append(Environment.NewLine)
-					.Append("-- END: ").Append(typeof(TModel).GetReadableSimpleName())
-					.Append(Environment.NewLine);
+						.Append("GO").Append(Environment.NewLine)
+						.Append("-- END: ").Append(typeof(TModel).GetReadableSimpleName())
+						.Append(Environment.NewLine);
 			}
 		}
-		private void AddGeneratorMethodsForLcgColumns(Mapping<TModel> mapping, StringBuilder sql)
+
+		void AddGeneratorMethodsForLcgColumns(Mapping<TModel> mapping, StringBuilder sql)
 		{
 			var lcgColumns = mapping.Identity.Columns
-				.Where(c => c.Behaviors.HasFlag(ColumnBehaviors.LinearCongruentGenerated));
+															.Where(c => c.Behaviors.HasFlag(ColumnBehaviors.LinearCongruentGenerated));
 
 			foreach (var col in lcgColumns)
 			{
@@ -320,25 +327,8 @@ namespace FlitBit.Data.SqlServer
 			}
 		}
 
-		private void AddIndexesForTable(Mapping<TModel> mapping, StringBuilder sql)
-		{
-			var dbObjectName = mapping.DbObjectReference;
-			var indexBaseName = String.Concat("AK_", mapping.TargetSchema, mapping.TargetObject, "_");
-
-			foreach (MapIndexAttribute index in typeof(TModel).GetCustomAttributes(typeof(MapIndexAttribute), false))
-			{
-				AddIndex(mapping, sql, dbObjectName, indexBaseName, index, false);					
-			}
-			foreach (var dep in mapping.Dependencies.Where(d => d.Kind == DependencyKind.ColumnContributor))
-			{
-				foreach (MapIndexAttribute index in dep.Target.RuntimeType.GetCustomAttributes(typeof(MapIndexAttribute), false))
-				{
-					AddIndex(mapping, sql, dbObjectName, indexBaseName, index, true);
-				}
-			}
-		}
-
-		private void AddIndex(Mapping<TModel> mapping, StringBuilder sql, string dbObjectName, string indexBaseName, MapIndexAttribute index, bool any)
+		void AddIndex(Mapping<TModel> mapping, StringBuilder sql, string dbObjectName, string indexBaseName,
+			MapIndexAttribute index, bool any)
 		{
 			var includedColumns = index.GetIncludedColumns(typeof(TModel));
 			if (any || (!index.Behaviors.HasFlag(IndexBehaviors.Unique)
@@ -363,7 +353,10 @@ namespace FlitBit.Data.SqlServer
 				{
 					var col = mapping.Columns.Where(c => c.Member.Name == def.Column).SingleOrDefault();
 					if (col == null)
-						throw new MappingException(String.Concat("Index on model type ", typeof(TModel).Name, " names a property that was not found: ", def.Column));
+					{
+						throw new MappingException(String.Concat("Index on model type ", typeof(TModel).Name,
+																										" names a property that was not found: ", def.Column));
+					}
 
 					sql.Append(col.TargetName);
 				}
@@ -374,7 +367,9 @@ namespace FlitBit.Data.SqlServer
 				{
 					var col = mapping.Columns.Where(c => c.Member.Name == def.Column).Single();
 					if (j++ > 0)
+					{
 						sql.Append(", ");
+					}
 					sql.Append(mapping.QuoteObjectNameForSQL(col.TargetName))
 						.Append(" ").Append(def.Order.ToString().ToUpper());
 				}
@@ -387,9 +382,15 @@ namespace FlitBit.Data.SqlServer
 					{
 						var col = mapping.Columns.Where(c => c.Member.Name == n).SingleOrDefault();
 						if (col == null)
-							throw new MappingException(String.Concat("Index on model type ", typeof(TModel).Name, " names a property that was not found: ", n));
+						{
+							throw new MappingException(String.Concat("Index on model type ", typeof(TModel).Name,
+																											" names a property that was not found: ", n));
+						}
 
-						if (j++ > 0) sql.Append(", ");
+						if (j++ > 0)
+						{
+							sql.Append(", ");
+						}
 						sql.Append(mapping.QuoteObjectNameForSQL(col.TargetName));
 					}
 					sql.Append(")");
@@ -397,7 +398,25 @@ namespace FlitBit.Data.SqlServer
 			}
 		}
 
-		private void AddTableConstraintsForIndexes(Mapping<TModel> mapping, StringBuilder sql)
+		void AddIndexesForTable(Mapping<TModel> mapping, StringBuilder sql)
+		{
+			var dbObjectName = mapping.DbObjectReference;
+			var indexBaseName = String.Concat("AK_", mapping.TargetSchema, mapping.TargetObject, "_");
+
+			foreach (MapIndexAttribute index in typeof(TModel).GetCustomAttributes(typeof(MapIndexAttribute), false))
+			{
+				AddIndex(mapping, sql, dbObjectName, indexBaseName, index, false);
+			}
+			foreach (var dep in mapping.Dependencies.Where(d => d.Kind == DependencyKind.ColumnContributor))
+			{
+				foreach (MapIndexAttribute index in dep.Target.RuntimeType.GetCustomAttributes(typeof(MapIndexAttribute), false))
+				{
+					AddIndex(mapping, sql, dbObjectName, indexBaseName, index, true);
+				}
+			}
+		}
+
+		void AddTableConstraintsForIndexes(Mapping<TModel> mapping, StringBuilder sql)
 		{
 			var tableConstraints = 0;
 			foreach (MapIndexAttribute index in typeof(TModel).GetCustomAttributes(typeof(MapIndexAttribute), false))
@@ -407,7 +426,9 @@ namespace FlitBit.Data.SqlServer
 				{
 					sql.Append(',');
 					if (tableConstraints++ == 0)
+					{
 						sql.Append(Environment.NewLine).Append(Environment.NewLine).Append("\t-- Table Constraints");
+					}
 					sql.Append(Environment.NewLine).Append("\tCONSTRAINT AK_").Append(mapping.TargetSchema)
 						.Append(mapping.TargetObject).Append('_');
 					var columnDefs = index.GetColumnSpecs(typeof(TModel));
@@ -415,22 +436,31 @@ namespace FlitBit.Data.SqlServer
 					{
 						var col = mapping.Columns.Where(c => c.Member.Name == def.Column).SingleOrDefault();
 						if (col == null)
-							throw new MappingException(String.Concat("Index on model ", typeof(TModel).Name, " names a property that was not found: '", def.Column, "'"));
+						{
+							throw new MappingException(String.Concat("Index on model ", typeof(TModel).Name,
+																											" names a property that was not found: '", def.Column, "'"));
+						}
 
 						sql.Append(col.TargetName);
 					}
 					sql.Append(" UNIQUE");
 					if (index.Behaviors.HasFlag(IndexBehaviors.Clustered))
+					{
 						sql.Append(" CLUSTERED (");
+					}
 					else
+					{
 						sql.Append(" NONCLUSTERED (");
+					}
 
 					var j = 0;
 					foreach (var def in columnDefs)
 					{
 						var col = mapping.Columns.Where(c => c.Member.Name == def.Column).Single();
 						if (j++ > 0)
+						{
 							sql.Append(", ");
+						}
 						sql.Append(mapping.QuoteObjectNameForSQL(col.TargetName))
 							.Append(" ").Append(def.Order.ToString().ToUpper());
 					}
@@ -439,5 +469,12 @@ namespace FlitBit.Data.SqlServer
 			}
 		}
 
+		void Initialize()
+		{
+			if (!_initialized)
+			{
+				_initialized = true;
+			}
+		}
 	}
 }

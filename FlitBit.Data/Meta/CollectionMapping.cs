@@ -1,5 +1,7 @@
 ﻿#region COPYRIGHT© 2009-2012 Phillip Clark. All rights reserved.
+
 // For licensing information see License.txt (MIT style licensing).
+
 #endregion
 
 using System;
@@ -19,7 +21,7 @@ namespace FlitBit.Data.Meta
 		{
 			Contract.Requires(mapping != null);
 			Contract.Requires(member != null);
-			
+
 			this.Member = member;
 			this.ElementType = member.GetTypeOfValue().FindElementType();
 			this.TargetName = member.Name;
@@ -29,6 +31,7 @@ namespace FlitBit.Data.Meta
 		public IMapping Mapping { get; private set; }
 		public string TargetName { get; set; }
 		public MemberInfo Member { get; private set; }
+
 		public MemberInfo ReferenceJoinMember
 		{
 			get
@@ -39,21 +42,14 @@ namespace FlitBit.Data.Meta
 				}
 				return _referenceTargetMember;
 			}
-			internal set
-			{
-				_referenceTargetMember = value;
-			}
+			internal set { _referenceTargetMember = value; }
 		}
 
-		protected abstract MemberInfo InferCollectionReferenceTargetMember(MemberInfo Member, Type ElementType);
-		
 		public ReferenceBehaviors ReferenceBehaviors { get; internal set; }
 		public Type ElementType { get; private set; }
 
 		internal Type CollectionType { get; set; }
 		internal ColumnMapping BackReference { get; set; }
-
-		
+		protected abstract MemberInfo InferCollectionReferenceTargetMember(MemberInfo Member, Type ElementType);
 	}
 }
-

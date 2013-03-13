@@ -1,8 +1,9 @@
 ﻿using System.Linq;
-using FlitBit.Data.Meta.Tests.Models;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
-using FlitBit.Data.SqlServer;
 using System.Text;
+using FlitBit.Data.Meta.DDL;
+using FlitBit.Data.Meta.Tests.Models;
+using FlitBit.Data.SqlServer;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace FlitBit.Data.Meta.Tests
 {
@@ -14,12 +15,12 @@ namespace FlitBit.Data.Meta.Tests
 		{
 			Mappings.Instance
 				//.UseDefaultConnection("test-data")
-				.ForType<TestPerson>()
-					.Column(x => x.ID).WithBehaviors(ColumnBehaviors.Synthetic).End()
-					.Column(x => x.ExternalID).WithBehaviors(ColumnBehaviors.AlternateKey).End()
-					.Column(x => x.Name).WithVariableLength(50).End()
-					.Collection(p => p.PhoneNumbers).JoinReference<IPhone>(p => p.Person).End()
-					.End();
+							.ForType<TestPerson>()
+							.Column(x => x.ID).WithBehaviors(ColumnBehaviors.Synthetic).End()
+							.Column(x => x.ExternalID).WithBehaviors(ColumnBehaviors.AlternateKey).End()
+							.Column(x => x.Name).WithVariableLength(50).End()
+							.Collection(p => p.PhoneNumbers).JoinReference<IPhone>(p => p.Person).End()
+							.End();
 
 			// Check the mapping for People...
 			var people = Mappings.Instance.ForType<TestPerson>();
@@ -84,8 +85,8 @@ namespace FlitBit.Data.Meta.Tests
 			Assert.AreEqual(0, ext.VariableLength);
 
 			var nm = Enumerable.First(from c in columns
-																 where c.TargetName == "Name"
-																 select c);
+																where c.TargetName == "Name"
+																select c);
 
 			Assert.AreEqual("Person.Name", nm.DbObjectReference);
 			// things we specified...		
@@ -111,7 +112,7 @@ namespace FlitBit.Data.Meta.Tests
 
 			people.ConnectionName = "test-data";
 			people.TargetCatalog = "testing";
-			var ddl = people.GetDdlBatch(DDL.DDLBehaviors.Create);
+			var ddl = people.GetDdlBatch(DDLBehaviors.Create);
 			Assert.IsNotNull(ddl);
 			Assert.IsNotNull(ddl.Name);
 

@@ -4,6 +4,7 @@ using System.Data;
 using System.Data.Common;
 using System.Linq;
 using FlitBit.Core;
+using FlitBit.Core.Parallel;
 
 namespace FlitBit.Data
 {
@@ -11,18 +12,15 @@ namespace FlitBit.Data
 	{
 		DataParameterBinder _binder;
 
-		public DbExecutableDefinition()
-		{
-		}
-		public DbExecutableDefinition(string cmdText)
-		{
-			this.CommandText = cmdText;
-		}
+		public DbExecutableDefinition() { }
+		public DbExecutableDefinition(string cmdText) { this.CommandText = cmdText; }
+
 		public DbExecutableDefinition(string cmdText, CommandType cmdType)
 		{
 			this.CommandText = cmdText;
 			this.CommandType = cmdType;
 		}
+
 		public DbExecutableDefinition(string cmdText, CommandType cmdType, int cmdTimeout)
 		{
 			this.CommandText = cmdText;
@@ -30,7 +28,7 @@ namespace FlitBit.Data
 			this.CommandTimeout = cmdTimeout;
 		}
 
-		public CommandBehaviors Behaviors {	get; internal set; }
+		public CommandBehaviors Behaviors { get; internal set; }
 
 		public string CommandText { get; internal set; }
 
@@ -45,10 +43,10 @@ namespace FlitBit.Data
 		public IDbContext Context { get; internal set; }
 
 		/// <summary>
-		/// Ensures the command includes the given behaviors.
+		///   Ensures the command includes the given behaviors.
 		/// </summary>
 		/// <param name="behaviors">behaviors being included</param>
-		/// <returns></returns>																						 		
+		/// <returns></returns>
 		public IDbExecutable IncludeBehaviors(CommandBehaviors behaviors)
 		{
 			Behaviors |= behaviors;
@@ -56,49 +54,28 @@ namespace FlitBit.Data
 		}
 
 		/// <summary>
-		/// Ensures the command DOES NOT include the given behaviors.
+		///   Ensures the command DOES NOT include the given behaviors.
 		/// </summary>
-		/// <param name="behaviors">behaviors being excluded</param>		 		
+		/// <param name="behaviors">behaviors being excluded</param>
 		public IDbExecutable ExcludeBehaviors(CommandBehaviors behaviors)
 		{
 			Behaviors &= (~behaviors);
 			return this;
 		}
 
-		public int ExecuteNonQuery()
-		{
-			throw new NotImplementedException();
-		}
+		public int ExecuteNonQuery() { throw new NotImplementedException(); }
 
-		public void ExecuteReader(Action<DbResult<DbDataReader>> action)
-		{
-			throw new NotImplementedException();
-		}
+		public void ExecuteReader(Action<DbResult<DbDataReader>> action) { throw new NotImplementedException(); }
 
-		public IEnumerable<IDataRecord> ExecuteEnumerable()
-		{
-			throw new NotImplementedException();
-		}
+		public IEnumerable<IDataRecord> ExecuteEnumerable() { throw new NotImplementedException(); }
 
-		public T ExecuteScalar<T>()
-		{
-			throw new NotImplementedException();
-		}
+		public T ExecuteScalar<T>() { throw new NotImplementedException(); }
 
-		public void ExecuteNonQuery(Core.Parallel.Continuation<DbResult<int>> continuation)
-		{
-			throw new NotImplementedException();
-		}
+		public void ExecuteNonQuery(Continuation<DbResult<int>> continuation) { throw new NotImplementedException(); }
 
-		public void ExecuteReader(Core.Parallel.Continuation<DbResult<DbDataReader>> continuation)
-		{
-			throw new NotImplementedException();
-		}
-				
-		public void ExecuteScalar<T>(Core.Parallel.Continuation<DbResult<T>> continuation)
-		{
-			throw new NotImplementedException();
-		}
+		public void ExecuteReader(Continuation<DbResult<DbDataReader>> continuation) { throw new NotImplementedException(); }
+
+		public void ExecuteScalar<T>(Continuation<DbResult<T>> continuation) { throw new NotImplementedException(); }
 
 		public IDbExecutable CreateOnConnection(DbConnection connection)
 		{
@@ -106,24 +83,18 @@ namespace FlitBit.Data
 			return helper.DefineExecutableOnConnection(connection, this);
 		}
 
-		public IDbExecutable CreateOnConnection(string connection)
-		{
-			throw new NotImplementedException();
-		}
+		public IDbExecutable CreateOnConnection(string connection) { throw new NotImplementedException(); }
 
 		/// <summary>
-		/// Gets the command's parameter bindings.
+		///   Gets the command's parameter bindings.
 		/// </summary>
 		public IDataParameterBinder ParameterBinder
 		{
-			get
-			{
-				return Util.NonBlockingLazyInitializeVolatile(ref _binder);
-			}
+			get { return Util.NonBlockingLazyInitializeVolatile(ref _binder); }
 		}
 
 		/// <summary>
-		/// Gets the command's parameter bindings.
+		///   Gets the command's parameter bindings.
 		/// </summary>
 		public IEnumerable<ParameterBinding> Bindings
 		{
@@ -135,9 +106,6 @@ namespace FlitBit.Data
 			}
 		}
 
-		protected override bool PerformDispose(bool disposing)
-		{
-			return true;
-		}
+		protected override bool PerformDispose(bool disposing) { return true; }
 	}
 }

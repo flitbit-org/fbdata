@@ -1,5 +1,7 @@
 ﻿#region COPYRIGHT© 2009-2013 Phillip Clark.
+
 // For licensing information see License.txt (MIT style licensing).
+
 #endregion
 
 using System;
@@ -16,31 +18,31 @@ namespace FlitBit.Data
 		int CachePuts { get; }
 		int CacheAttempts { get; }
 		int CacheHits { get; }
-		int CacheRemoves { get; }		
-
-		DbConnection SharedOrNewConnection(string connection);
-		DbConnection NewConnection(string connection);
+		int CacheRemoves { get; }
 
 		T Add<T>(T item)
 			where T : IDisposable;
-		
-		TConnection SharedOrNewConnection<TConnection>(string connectionName)
-			where TConnection : DbConnection, new();
-
-		TConnection NewConnection<TConnection>(string connectionName)
-			where TConnection : DbConnection, new();
-
-		void PutCacheItem<TCacheKey, TItemKey, TItem>(TCacheKey cacheKey, TItem item, TItemKey key, Func<TItemKey, TItem, TItem> updateCachedItem);
-		void RemoveCacheItem<TCacheKey, TItemKey, TItem>(TCacheKey cacheKey, TItem item, TItemKey key);
-		bool TryGetCacheItem<TCacheKey, TItemKey, TItem>(TCacheKey cacheKey, TItemKey key, out TItem item);
 
 		C EnsureCache<K, C>(K key)
 			where C : new();
 
+		DbProviderHelper HelperForConnection(DbConnection cn);
 		int IncrementQueryCounter();
 		int IncrementQueryCounter(int count);
+		DbConnection NewConnection(string connection);
 
-		DbProviderHelper HelperForConnection(DbConnection cn);
+		TConnection NewConnection<TConnection>(string connectionName)
+			where TConnection : DbConnection, new();
 
+		void PutCacheItem<TCacheKey, TItemKey, TItem>(TCacheKey cacheKey, TItem item, TItemKey key,
+			Func<TItemKey, TItem, TItem> updateCachedItem);
+
+		void RemoveCacheItem<TCacheKey, TItemKey, TItem>(TCacheKey cacheKey, TItem item, TItemKey key);
+		DbConnection SharedOrNewConnection(string connection);
+
+		TConnection SharedOrNewConnection<TConnection>(string connectionName)
+			where TConnection : DbConnection, new();
+
+		bool TryGetCacheItem<TCacheKey, TItemKey, TItem>(TCacheKey cacheKey, TItemKey key, out TItem item);
 	}
 }

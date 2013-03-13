@@ -1,49 +1,54 @@
 ﻿#region COPYRIGHT© 2009-2013 Phillip Clark.
+
 // For licensing information see License.txt (MIT style licensing).
+
 #endregion
 
 using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
+using FlitBit.Data.CodeContracts;
 
 namespace FlitBit.Data
 {
 	/// <summary>
-	/// Basic repository interface for performing CRUD over model type TModel.
+	///   Basic repository interface for performing CRUD over model type TModel.
 	/// </summary>
 	/// <typeparam name="M">model type M</typeparam>
 	/// <typeparam name="IK">identity key type IK</typeparam>
-	[ContractClass(typeof(CodeContracts.ContractForIDataRepository<,>))]
+	[ContractClass(typeof(ContractForIDataRepository<,>))]
 	public interface IDataRepository<M, IK>
 	{
-		IK GetIdentity(M model);
-
-		M Create(IDbContext context, M model);
-		M Read(IDbContext context, IK id);
-		M Update(IDbContext context, M model);
-		bool Delete(IDbContext context, IK id);
-		
 		IEnumerable<M> All(IDbContext context, QueryBehavior behavior);
+		M Create(IDbContext context, M model);
+		bool Delete(IDbContext context, IK id);
 
-		IEnumerable<M> ReadMatch<TMatch>(IDbContext context, QueryBehavior behavior, TMatch match)
-			where TMatch : class;
-		int UpdateMatch<TMatch, TUpdate>(IDbContext context, TMatch match, TUpdate update)
-			where TMatch : class;
 		int DeleteMatch<TMatch>(IDbContext context, TMatch match)
 			where TMatch : class;
 
+		IK GetIdentity(M model);
+
 		IQueryable<M> Query();
+		M Read(IDbContext context, IK id);
+
+		IEnumerable<M> ReadMatch<TMatch>(IDbContext context, QueryBehavior behavior, TMatch match)
+			where TMatch : class;
+
+		M Update(IDbContext context, M model);
+
+		int UpdateMatch<TMatch, TUpdate>(IDbContext context, TMatch match, TUpdate update)
+			where TMatch : class;
 	}
 
 	namespace CodeContracts
 	{
 		/// <summary>
-		/// CodeContracts Class for IDataRepository&lt;,>
+		///   CodeContracts Class for IDataRepository&lt;,>
 		/// </summary>
 		[ContractClassFor(typeof(IDataRepository<,>))]
 		internal abstract class ContractForIDataRepository<M, I> : IDataRepository<M, I>
-		{									 
+		{
 			public I GetIdentity(M model)
 			{
 				Contract.Requires<ArgumentNullException>(model != null);
@@ -91,7 +96,8 @@ namespace FlitBit.Data
 				throw new NotImplementedException();
 			}
 
-			public IEnumerable<M> ReadMatch<TMatch>(IDbContext context, QueryBehavior behavior, TMatch match)	where TMatch : class	
+			public IEnumerable<M> ReadMatch<TMatch>(IDbContext context, QueryBehavior behavior, TMatch match)
+				where TMatch : class
 			{
 				Contract.Requires<ArgumentNullException>(context != null);
 				Contract.Requires<ArgumentNullException>(context != null);
@@ -114,7 +120,7 @@ namespace FlitBit.Data
 				Contract.Requires<ArgumentNullException>(match != null);
 				throw new NotImplementedException();
 			}
-			
+
 			public IQueryable<M> Query()
 			{
 				Contract.Ensures(Contract.Result<IQueryable<M>>() != null);
@@ -123,5 +129,4 @@ namespace FlitBit.Data
 			}
 		}
 	}
-		
 }
