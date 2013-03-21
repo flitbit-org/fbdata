@@ -44,7 +44,10 @@ namespace FlitBit.Data
 		///   Creates a new context.
 		/// </summary>
 		/// <returns>a db context</returns>
-		public static IDbContext NewContext() { return new DbContext(Current, DbContextBehaviors.Default); }
+		public static IDbContext NewContext()
+		{
+			return new DbContext(Current, DbContextBehaviors.Default);
+		}
 
 		/// <summary>
 		///   Shares the ambient context if it exists; otherwise, creates a new context.

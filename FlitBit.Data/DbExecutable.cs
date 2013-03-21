@@ -31,8 +31,13 @@ namespace FlitBit.Data
 		IDbExecutable _definition;
 		bool _ourConnection;
 
-		public DbExecutable() { }
-		public DbExecutable(string cmdText) { this.CommandText = cmdText; }
+		public DbExecutable()
+		{}
+
+		public DbExecutable(string cmdText)
+		{
+			this.CommandText = cmdText;
+		}
 
 		public DbExecutable(string cmdText, CommandType cmdType)
 		{
@@ -113,10 +118,105 @@ namespace FlitBit.Data
 		}
 
 		public DbExecutable(TConnection connection, string cmdText, CommandType cmdType)
-			: this(connection, cmdText) { this.CommandType = cmdType; }
+			: this(connection, cmdText)
+		{
+			this.CommandType = cmdType;
+		}
 
 		public DbExecutable(TConnection connection, string cmdText, CommandType cmdType, int cmdTimeout)
-			: this(connection, cmdText, cmdType) { this.CommandTimeout = cmdTimeout; }
+			: this(connection, cmdText, cmdType)
+		{
+			this.CommandTimeout = cmdTimeout;
+		}
+
+		public void PostProcessDbCommand(DbCommand command)
+		{}
+
+		public bool PrepareDbCommandForExecute(DbCommand command)
+		{
+			Contract.Requires<ArgumentNullException>(command != null);
+
+			if (_binder != null)
+			{
+				return _binder.PrepareDbCommand(command);
+			}
+			return false;
+		}
+
+		protected override bool PerformDispose(bool disposing)
+		{
+			if (disposing)
+			{
+				Util.Dispose(ref _command);
+				if (_ourConnection)
+				{
+					_connection.Close();
+				}
+			}
+			if (_connection != null)
+			{
+				_connection.Disposed -= connection_Disposed;
+			}
+			return true;
+		}
+
+		protected TCommand MakeDbCommand()
+		{
+			Contract.Ensures(Contract.Result<TCommand>() != null);
+			if (_command != null)
+			{
+				throw new InvalidOperationException(Resources.Err_OverlappingUseOfExecutable);
+			}
+
+			_command = new TCommand();
+			_command.Connection = MakeDbConnection()
+				.EnsureConnectionIsOpen();
+			_command.CommandText = CommandText;
+			_command.CommandType = CommandType;
+			if (this.CommandTimeout > 0)
+			{
+				_command.CommandTimeout = this.CommandTimeout;
+			}
+			_command.Disposed += (sender, e) => { _command = null; };
+			return _command;
+		}
+
+		protected TConnection MakeDbConnection()
+		{
+			Contract.Ensures(Contract.Result<TConnection>() != null);
+
+			if (_connection == null)
+			{
+				var context = DbContext.Current;
+				if (context != null)
+				{
+					if ((_behavior & CommandBehaviors.ShareConnectionIfAvailable) == CommandBehaviors.ShareConnectionIfAvailable)
+					{
+						_connection = context.SharedOrNewConnection<TConnection>(this.ConnectionName);
+					}
+					else
+					{
+						_ourConnection = true;
+						_connection = context.NewConnection<TConnection>(this.ConnectionName);
+						_connection.Disposed += connection_Disposed;
+					}
+				}
+				else
+				{
+					_ourConnection = true;
+					_connection = DbExtensions.CreateConnection<TConnection>(this.ConnectionName);
+				}
+			}
+			return _connection;
+		}
+
+		void connection_Disposed(object sender, EventArgs e)
+		{
+			Util.Dispose(ref _command);
+			_connection = null;
+		}
+
+		#region IDbExecutable Members
 
 		/// <summary>
 		///   Name of the connection string used by this command.
@@ -146,26 +246,17 @@ namespace FlitBit.Data
 		/// <summary>
 		///   Indicates whether the command is executable.
 		/// </summary>
-		public bool IsExecutableCommand
-		{
-			get { return _definition != null || _connection != null; }
-		}
+		public bool IsExecutableCommand { get { return _definition != null || _connection != null; } }
 
 		/// <summary>
 		///   Indicates the command's behaviors.
 		/// </summary>
-		public CommandBehaviors Behaviors
-		{
-			get { return _behavior; }
-		}
+		public CommandBehaviors Behaviors { get { return _behavior; } }
 
 		/// <summary>
 		///   Gets the command's parameter bindings.
 		/// </summary>
-		public IDataParameterBinder ParameterBinder
-		{
-			get { return Util.NonBlockingLazyInitializeVolatile(ref _binder); }
-		}
+		public IDataParameterBinder ParameterBinder { get { return Util.NonBlockingLazyInitializeVolatile(ref _binder); } }
 
 		/// <summary>
 		///   Gets the command's parameter bindings.
@@ -206,7 +297,10 @@ namespace FlitBit.Data
 		/// </summary>
 		/// <param name="connectionName"></param>
 		/// <returns></returns>
-		public IDbExecutable CreateOnConnection(string connectionName) { return new DbExecutable<THelper, TConnection, TCommand, TDbDataReader, TDataBinder>(connectionName, this); }
+		public IDbExecutable CreateOnConnection(string connectionName)
+		{
+			return new DbExecutable<THelper, TConnection, TCommand, TDbDataReader, TDataBinder>(connectionName, this);
+		}
 
 		/// <summary>
 		///   Creates an executable command, current command is used as a command definition).
@@ -218,7 +312,8 @@ namespace FlitBit.Data
 			if (!typeof(TConnection).IsInstanceOfType(connection))
 			{
 				throw new InvalidOperationException(String.Concat(Resources.Err_TypeNotSupported,
-																													connection.GetType().GetReadableSimpleName()));
+																													connection.GetType()
+																																		.GetReadableSimpleName()));
 			}
 
 			return new DbExecutable<THelper, TConnection, TCommand, TDbDataReader, TDataBinder>((TConnection) connection, this);
@@ -319,15 +414,15 @@ namespace FlitBit.Data
 				var cmd = MakeDbCommand();
 				var needsPostProcessing = PrepareDbCommandForExecute(cmd);
 				var ar = helper.BeginExecuteReader(cmd, res =>
+				{
+					if (!res.CompletedSynchronously)
 					{
-						if (!res.CompletedSynchronously)
+						using (var reader = helper.EndExecuteReader(cmd, res))
 						{
-							using (var reader = helper.EndExecuteReader(cmd, res))
-							{
-								continuation(null, new DbResult<DbDataReader>(this, reader));
-							}
+							continuation(null, new DbResult<DbDataReader>(this, reader));
 						}
-					}, null);
+					}
+				}, null);
 				if (ar.CompletedSynchronously)
 				{
 					using (var reader = helper.EndExecuteReader(cmd, ar))
@@ -341,16 +436,16 @@ namespace FlitBit.Data
 				try
 				{
 					ExecuteReader(res =>
+					{
+						try
 						{
-							try
-							{
-								continuation(null, res);
-							}
-							catch (Exception ee)
-							{
-								Go.NotifyUncaughtException(continuation.Target, ee);
-							}
-						});
+							continuation(null, res);
+						}
+						catch (Exception ee)
+						{
+							Go.NotifyUncaughtException(continuation.Target, ee);
+						}
+					});
 				}
 				catch (Exception e)
 				{
@@ -359,91 +454,11 @@ namespace FlitBit.Data
 			}
 		}
 
-		public void ExecuteScalar<T>(Continuation<DbResult<T>> continuation) { Go.Parallel(() => new DbResult<T>(this, ExecuteScalar<T>()), continuation); }
-
-		public void PostProcessDbCommand(DbCommand command) { }
-
-		public bool PrepareDbCommandForExecute(DbCommand command)
+		public void ExecuteScalar<T>(Continuation<DbResult<T>> continuation)
 		{
-			Contract.Requires<ArgumentNullException>(command != null);
-
-			if (_binder != null)
-			{
-				return _binder.PrepareDbCommand(command);
-			}
-			return false;
+			Go.Parallel(() => new DbResult<T>(this, ExecuteScalar<T>()), continuation);
 		}
 
-		protected TCommand MakeDbCommand()
-		{
-			Contract.Ensures(Contract.Result<TCommand>() != null);
-			if (_command != null)
-			{
-				throw new InvalidOperationException(Resources.Err_OverlappingUseOfExecutable);
-			}
-
-			_command = new TCommand();
-			_command.Connection = MakeDbConnection().EnsureConnectionIsOpen();
-			_command.CommandText = CommandText;
-			_command.CommandType = CommandType;
-			if (this.CommandTimeout > 0)
-			{
-				_command.CommandTimeout = this.CommandTimeout;
-			}
-			_command.Disposed += (sender, e) => { _command = null; };
-			return _command;
-		}
-
-		protected TConnection MakeDbConnection()
-		{
-			Contract.Ensures(Contract.Result<TConnection>() != null);
-
-			if (_connection == null)
-			{
-				var context = DbContext.Current;
-				if (context != null)
-				{
-					if ((_behavior & CommandBehaviors.ShareConnectionIfAvailable) == CommandBehaviors.ShareConnectionIfAvailable)
-					{
-						_connection = context.SharedOrNewConnection<TConnection>(this.ConnectionName);
-					}
-					else
-					{
-						_ourConnection = true;
-						_connection = context.NewConnection<TConnection>(this.ConnectionName);
-						_connection.Disposed += connection_Disposed;
-					}
-				}
-				else
-				{
-					_ourConnection = true;
-					_connection = DbExtensions.CreateConnection<TConnection>(this.ConnectionName);
-				}
-			}
-			return _connection;
-		}
-
-		protected override bool PerformDispose(bool disposing)
-		{
-			if (disposing)
-			{
-				Util.Dispose(ref _command);
-				if (_ourConnection)
-				{
-					_connection.Close();
-				}
-			}
-			if (_connection != null)
-			{
-				_connection.Disposed -= connection_Disposed;
-			}
-			return true;
-		}
-
-		void connection_Disposed(object sender, EventArgs e)
-		{
-			Util.Dispose(ref _command);
-			_connection = null;
-		}
+		#endregion
 	}
 }

@@ -21,6 +21,8 @@ namespace FlitBit.Data
 		Lazy<ConcurrentDictionary<object, object>> _localCaches =
 			new Lazy<ConcurrentDictionary<object, object>>(LazyThreadSafetyMode.PublicationOnly);
 
+		#region IDbContext Members
+
 		public void PutCacheItem<TCacheKey, TItemKey, TItem>(TCacheKey cacheKey, TItem item, TItemKey key,
 			Func<TItemKey, TItem, TItem> updateCachedItem)
 		{
@@ -74,24 +76,14 @@ namespace FlitBit.Data
 			}
 		}
 
-		public int CachePuts
-		{
-			get { return Thread.VolatileRead(ref _cachePuts); }
-		}
+		public int CachePuts { get { return Thread.VolatileRead(ref _cachePuts); } }
 
-		public int CacheAttempts
-		{
-			get { return Thread.VolatileRead(ref _cacheAttempts); }
-		}
+		public int CacheAttempts { get { return Thread.VolatileRead(ref _cacheAttempts); } }
 
-		public int CacheHits
-		{
-			get { return Thread.VolatileRead(ref _cacheHits); }
-		}
+		public int CacheHits { get { return Thread.VolatileRead(ref _cacheHits); } }
 
-		public int CacheRemoves
-		{
-			get { return Thread.VolatileRead(ref _cacheRemoves); }
-		}
+		public int CacheRemoves { get { return Thread.VolatileRead(ref _cacheRemoves); } }
+
+		#endregion
 	}
 }

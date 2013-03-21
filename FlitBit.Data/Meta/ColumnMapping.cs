@@ -24,61 +24,30 @@ namespace FlitBit.Data.Meta
 			this.Mapping = mapping;
 		}
 
+		public ColumnBehaviors Behaviors { get; internal set; }
+		public string DbObjectReference { get { return String.Concat(Mapping.DbObjectReference, '.', Mapping.QuoteObjectNameForSQL(TargetName)); } }
+
+		public bool IsAlternateKey { get { return Behaviors.HasFlag(ColumnBehaviors.AlternateKey); } }
+
+		public bool IsCalculated { get { return Behaviors.HasFlag(ColumnBehaviors.Calculated); } }
+		public bool IsIdentity { get { return Behaviors.HasFlag(ColumnBehaviors.Identity); } }
+
+		public bool IsImmutable { get { return Behaviors.HasFlag(ColumnBehaviors.Immutable); } }
+
+		public bool IsNullable { get { return Behaviors.HasFlag(ColumnBehaviors.Nullable); } }
+		public bool IsReference { get; internal set; }
+		public bool IsRevisionTracking { get { return Behaviors.HasFlag(ColumnBehaviors.RevisionConcurrency); } }
+		public bool IsSynthetic { get { return Behaviors.HasFlag(ColumnBehaviors.Synthetic); } }
+
+		public bool IsTimestampOnInsert { get { return Behaviors.HasFlag(ColumnBehaviors.TimestampOnInsert); } }
+
+		public bool IsTimestampOnUpdate { get { return Behaviors.HasFlag(ColumnBehaviors.TimestampOnUpdate); } }
 		public IMapping Mapping { get; private set; }
-		public string TargetName { get; set; }
 		public MemberInfo Member { get; private set; }
 		public int Ordinal { get; internal set; }
-		public ColumnBehaviors Behaviors { get; internal set; }
-		public int VariableLength { get; internal set; }
-		public bool IsReference { get; internal set; }
 
-		public bool IsAlternateKey
-		{
-			get { return Behaviors.HasFlag(ColumnBehaviors.AlternateKey); }
-		}
-
-		public bool IsCalculated
-		{
-			get { return Behaviors.HasFlag(ColumnBehaviors.Calculated); }
-		}
-
-		public bool IsSynthetic
-		{
-			get { return Behaviors.HasFlag(ColumnBehaviors.Synthetic); }
-		}
-
-		public bool IsImmutable
-		{
-			get { return Behaviors.HasFlag(ColumnBehaviors.Immutable); }
-		}
-
-		public bool IsNullable
-		{
-			get { return Behaviors.HasFlag(ColumnBehaviors.Nullable); }
-		}
-
-		public bool IsIdentity
-		{
-			get { return Behaviors.HasFlag(ColumnBehaviors.Identity); }
-		}
-
-		public bool IsTimestampOnInsert
-		{
-			get { return Behaviors.HasFlag(ColumnBehaviors.TimestampOnInsert); }
-		}
-
-		public bool IsTimestampOnUpdate
-		{
-			get { return Behaviors.HasFlag(ColumnBehaviors.TimestampOnUpdate); }
-		}
-
-		public bool IsRevisionTracking
-		{
-			get { return Behaviors.HasFlag(ColumnBehaviors.RevisionConcurrency); }
-		}
-
-		public MemberInfo ReferenceTargetMember { get; internal set; }
 		public ReferenceBehaviors ReferenceBehaviors { get; internal set; }
+		public MemberInfo ReferenceTargetMember { get; internal set; }
 
 		/// <summary>
 		///   Gets the runtime type of the column's value, as seen from the database mapping's perspective.
@@ -94,6 +63,9 @@ namespace FlitBit.Data.Meta
 			}
 		}
 
+		public string TargetName { get; set; }
+		public int VariableLength { get; internal set; }
+
 		internal Type ReferenceTargetType
 		{
 			get
@@ -102,11 +74,6 @@ namespace FlitBit.Data.Meta
 					? ReferenceTargetMember.DeclaringType
 					: null;
 			}
-		}
-
-		public string DbObjectReference
-		{
-			get { return String.Concat(Mapping.DbObjectReference, '.', Mapping.QuoteObjectNameForSQL(TargetName)); }
 		}
 
 		internal static ColumnMapping FromMember<T>(IMapping mapping, MemberInfo member, int ordinal)

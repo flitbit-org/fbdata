@@ -54,8 +54,15 @@ namespace FlitBit.Data
 			__registry.TryRegister(KeyFor<Cm>(), typeof(H), out registration);
 		}
 
-		static string KeyFor<T>() { return typeof(T).AssemblyQualifiedName; }
+		static string KeyFor<T>()
+		{
+			return typeof(T).AssemblyQualifiedName;
+		}
 
-		static string KeyFor(object instance) { return instance.GetType().AssemblyQualifiedName; }
+		static string KeyFor(object instance)
+		{
+			return instance.GetType()
+										.AssemblyQualifiedName;
+		}
 	}
 }

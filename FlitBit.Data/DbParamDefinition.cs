@@ -13,8 +13,8 @@ namespace FlitBit.Data
 {
 	public struct DbParamDefinition
 	{
-		static readonly int CHashCodeSeed = typeof(DbParamDefinition).AssemblyQualifiedName.GetHashCode();
 		public static readonly DbType CInvalidDbType = (DbType) 0x7FFF;
+		static readonly int CHashCodeSeed = typeof(DbParamDefinition).AssemblyQualifiedName.GetHashCode();
 
 		string _bindName;
 		DbType _dbType;
@@ -119,59 +119,16 @@ namespace FlitBit.Data
 			this._runtimeType = type;
 		}
 
-		public string Name
-		{
-			get { return _name; }
-		}
+		public string BindName { get { return _bindName; } }
 
-		public string BindName
-		{
-			get { return _bindName; }
-		}
+		public DbType DbType { get { return _dbType; } }
+		public ParameterDirection Direction { get { return _direction; } }
+		public string Name { get { return _name; } }
 
-		public ParameterDirection Direction
-		{
-			get { return _direction; }
-		}
-
-		public DbType DbType
-		{
-			get { return _dbType; }
-		}
-
-		public int SpecializedDbType
-		{
-			get { return _specializedDbType; }
-		}
-
-		public int Size
-		{
-			get { return _size; }
-		}
-
-		public byte Scale
-		{
-			get { return _scale; }
-		}
-
-		public Type RuntimeType
-		{
-			get { return _runtimeType; }
-		}
-
-		#region Object overrides
-
-		public bool Equals(DbParamDefinition other)
-		{
-			return String.Equals(this._name, other._name)
-				&& String.Equals(this._bindName, other._bindName)
-				&& this._dbType == other._dbType
-				&& this._direction == other._direction
-				&& Equals(this._runtimeType, other._runtimeType)
-				&& this._scale == other._scale
-				&& this._size == other._size
-				&& this._specializedDbType == other._specializedDbType;
-		}
+		public Type RuntimeType { get { return _runtimeType; } }
+		public byte Scale { get { return _scale; } }
+		public int Size { get { return _size; } }
+		public int SpecializedDbType { get { return _specializedDbType; } }
 
 		public override bool Equals(object obj)
 		{
@@ -182,24 +139,24 @@ namespace FlitBit.Data
 		public override int GetHashCode()
 		{
 			var prime = Constants.NotSoRandomPrime; // a random prime
-			var code = CHashCodeSeed*prime;
+			var code = CHashCodeSeed * prime;
 			if (_name != null)
 			{
-				code ^= _name.GetHashCode()*prime;
+				code ^= _name.GetHashCode() * prime;
 			}
 			if (_bindName != null)
 			{
-				code ^= _bindName.GetHashCode()*prime;
+				code ^= _bindName.GetHashCode() * prime;
 			}
 
-			code ^= (int) _direction*prime;
-			code ^= (int) _dbType*prime;
-			code ^= _specializedDbType*prime;
-			code ^= _size*prime;
-			code ^= _scale*prime;
+			code ^= (int) _direction * prime;
+			code ^= (int) _dbType * prime;
+			code ^= _specializedDbType * prime;
+			code ^= _size * prime;
+			code ^= _scale * prime;
 			if (_runtimeType != null)
 			{
-				code ^= _runtimeType.AssemblyQualifiedName.GetHashCode()*prime;
+				code ^= _runtimeType.AssemblyQualifiedName.GetHashCode() * prime;
 			}
 			return code;
 		}
@@ -217,10 +174,26 @@ namespace FlitBit.Data
 													" }");
 		}
 
-		public static bool operator ==(DbParamDefinition lhs, DbParamDefinition rhs) { return lhs.Equals(rhs); }
+		public bool Equals(DbParamDefinition other)
+		{
+			return String.Equals(this._name, other._name)
+				&& String.Equals(this._bindName, other._bindName)
+				&& this._dbType == other._dbType
+				&& this._direction == other._direction
+				&& Equals(this._runtimeType, other._runtimeType)
+				&& this._scale == other._scale
+				&& this._size == other._size
+				&& this._specializedDbType == other._specializedDbType;
+		}
 
-		public static bool operator !=(DbParamDefinition lhs, DbParamDefinition rhs) { return !lhs.Equals(rhs); }
+		public static bool operator ==(DbParamDefinition lhs, DbParamDefinition rhs)
+		{
+			return lhs.Equals(rhs);
+		}
 
-		#endregion
+		public static bool operator !=(DbParamDefinition lhs, DbParamDefinition rhs)
+		{
+			return !lhs.Equals(rhs);
+		}
 	}
 }

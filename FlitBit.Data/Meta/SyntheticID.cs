@@ -15,17 +15,18 @@ namespace FlitBit.Data.Meta
 	public struct SyntheticID : IEquatable<SyntheticID>
 	{
 		const int AsciiOffsetToDigitZero = 48;
-		const int OffsetToUpperCaseA = 17;
-		const int OffsetToUpperCaseG = 24;
 		const int OffsetToLowerCaseA = 49;
 		const int OffsetToLowerCaseG = 56;
-		static readonly char[] HexDigits = "0123456789ABCDEF".ToCharArray();
-		static readonly int CHashCodeSeed = typeof(SyntheticID).AssemblyQualifiedName.GetHashCode();
+		const int OffsetToUpperCaseA = 17;
+		const int OffsetToUpperCaseG = 24;
 
 		/// <summary>
 		///   Empty synthetic ID.
 		/// </summary>
 		public static readonly SyntheticID Empty = new SyntheticID();
+
+		static readonly int CHashCodeSeed = typeof(SyntheticID).AssemblyQualifiedName.GetHashCode();
+		static readonly char[] HexDigits = "0123456789ABCDEF".ToCharArray();
 
 		readonly int _hashcode;
 		readonly char[] _value;
@@ -55,20 +56,56 @@ namespace FlitBit.Data.Meta
 		}
 
 		/// <summary>
+		///   Indicates whether the ID is empty.
+		/// </summary>
+		public bool IsEmpty { get { return _hashcode == 0; } }
+
+		/// <summary>
 		///   Indicates whether the ID is valid.
 		/// </summary>
-		public bool IsValid
+		public bool IsValid { get { return IsValidID(_value); } }
+
+		/// <summary>
+		///   Determins if the ID is equal to another.
+		/// </summary>
+		/// <param name="other">the other ID</param>
+		/// <returns>
+		///   <em>true</em> if this and the other are equal; otherwise <em>false</em>
+		/// </returns>
+		public override bool Equals(object obj)
 		{
-			get { return IsValidID(_value); }
+			return obj is SyntheticID && Equals((SyntheticID) obj);
 		}
 
 		/// <summary>
-		///   Indicates whether the ID is empty.
+		///   Gets the ID's hashcode.
 		/// </summary>
-		public bool IsEmpty
+		/// <returns>the ID's hashcode</returns>
+		public override int GetHashCode()
 		{
-			get { return _hashcode == 0; }
+			return _hashcode;
 		}
+
+		/// <summary>
+		///   Gets the string representation of the ID.
+		/// </summary>
+		/// <returns>string representation of the ID</returns>
+		public override string ToString()
+		{
+			return (IsEmpty) ? String.Empty : new String(_value);
+		}
+
+		public static bool operator ==(SyntheticID lhs, SyntheticID rhs)
+		{
+			return lhs.Equals(rhs);
+		}
+
+		public static bool operator !=(SyntheticID lhs, SyntheticID rhs)
+		{
+			return !lhs.Equals(rhs);
+		}
+
+		#region IEquatable<SyntheticID> Members
 
 		/// <summary>
 		///   Determins if the ID is equal to another.
@@ -82,6 +119,8 @@ namespace FlitBit.Data.Meta
 			return _hashcode == other._hashcode
 				&& _value.EqualsOrItemsEqual(other._value);
 		}
+
+		#endregion
 
 		/// <summary>
 		///   Calculates a check digit for a string of hexidecimal characters.
@@ -117,36 +156,21 @@ namespace FlitBit.Data.Meta
 
 				if (digit < 10)
 				{
-					sum += (i%2 == 0) ? (digit << 1)%0xf : digit;
+					sum += (i % 2 == 0) ? (digit << 1) % 0xf : digit;
 				}
 				else if ((digit >= OffsetToUpperCaseA && digit < OffsetToUpperCaseG)
 					|| (digit >= OffsetToLowerCaseA && digit < OffsetToLowerCaseG))
 				{
 					digit = 9 + (0x0F & digit);
-					sum += (i%2 == 0) ? (digit << 1)%0xf : digit;
+					sum += (i % 2 == 0) ? (digit << 1) % 0xf : digit;
 				}
 				else
 				{
 					throw new ArgumentException();
 				}
 			}
-			return HexDigits[0xF - (sum%0xF)];
+			return HexDigits[0xF - (sum % 0xF)];
 		}
-
-		/// <summary>
-		///   Determins if the ID is equal to another.
-		/// </summary>
-		/// <param name="other">the other ID</param>
-		/// <returns>
-		///   <em>true</em> if this and the other are equal; otherwise <em>false</em>
-		/// </returns>
-		public override bool Equals(object obj) { return obj is SyntheticID && Equals((SyntheticID) obj); }
-
-		/// <summary>
-		///   Gets the ID's hashcode.
-		/// </summary>
-		/// <returns>the ID's hashcode</returns>
-		public override int GetHashCode() { return _hashcode; }
 
 		/// <summary>
 		///   Determines if a value is a valid identity.
@@ -191,30 +215,20 @@ namespace FlitBit.Data.Meta
 
 				if (digit < 10)
 				{
-					sum += (i%2 == 1) ? (digit << 1)%0xf : digit;
+					sum += (i % 2 == 1) ? (digit << 1) % 0xf : digit;
 				}
 				else if ((digit >= OffsetToUpperCaseA && digit < OffsetToUpperCaseG)
 					|| (digit >= OffsetToLowerCaseA && digit < OffsetToLowerCaseG))
 				{
 					digit = 9 + (0x0F & digit);
-					sum += (i%2 == 1) ? (digit << 1)%0xf : digit;
+					sum += (i % 2 == 1) ? (digit << 1) % 0xf : digit;
 				}
 				else
 				{
 					return false; // input contains a non-digit character
 				}
 			}
-			return (sum%0xF == 0);
+			return (sum % 0xF == 0);
 		}
-
-		/// <summary>
-		///   Gets the string representation of the ID.
-		/// </summary>
-		/// <returns>string representation of the ID</returns>
-		public override string ToString() { return (IsEmpty) ? String.Empty : new String(_value); }
-
-		public static bool operator ==(SyntheticID lhs, SyntheticID rhs) { return lhs.Equals(rhs); }
-
-		public static bool operator !=(SyntheticID lhs, SyntheticID rhs) { return !lhs.Equals(rhs); }
 	}
 }

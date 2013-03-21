@@ -121,14 +121,14 @@ namespace FlitBit.Data
 			}
 			var result = default(T);
 			command.ExecuteReader(res =>
+			{
+				var reader = res.Result;
+				if (!reader.Read())
 				{
-					var reader = res.Result;
-					if (!reader.Read())
-					{
-						throw new InvalidOperationException(Resources.Err_EmptyDbResult);
-					}
-					result = transform(reader);
-				});
+					throw new InvalidOperationException(Resources.Err_EmptyDbResult);
+				}
+				result = transform(reader);
+			});
 			return result;
 		}
 
@@ -152,13 +152,13 @@ namespace FlitBit.Data
 			}
 			var result = default(T);
 			command.ExecuteReader(res =>
+			{
+				var reader = res.Result;
+				if (reader.Read())
 				{
-					var reader = res.Result;
-					if (reader.Read())
-					{
-						result = transform(reader);
-					}
-				});
+					result = transform(reader);
+				}
+			});
 			return result;
 		}
 
@@ -177,16 +177,16 @@ namespace FlitBit.Data
 
 			var result = new Completion<DbResult<int>>(exe);
 			exe.ExecuteNonQuery((e, res) =>
+			{
+				if (e != null)
 				{
-					if (e != null)
-					{
-						result.MarkFaulted(e);
-					}
-					else
-					{
-						result.MarkCompleted(res);
-					}
-				});
+					result.MarkFaulted(e);
+				}
+				else
+				{
+					result.MarkCompleted(res);
+				}
+			});
 			if (continuation != null)
 			{
 				result.Continue(continuation);
@@ -201,16 +201,16 @@ namespace FlitBit.Data
 
 			var result = new Completion<DbResult<DbDataReader>>(exe);
 			exe.ExecuteReader((e, res) =>
+			{
+				if (e != null)
 				{
-					if (e != null)
-					{
-						result.MarkFaulted(e);
-					}
-					else
-					{
-						result.MarkCompleted(res);
-					}
-				});
+					result.MarkFaulted(e);
+				}
+				else
+				{
+					result.MarkCompleted(res);
+				}
+			});
 			if (continuation != null)
 			{
 				result.Continue(continuation);
@@ -233,16 +233,16 @@ namespace FlitBit.Data
 
 			var result = new Completion<DbResult<T>>(exe);
 			exe.ExecuteScalar<T>((e, res) =>
+			{
+				if (e != null)
 				{
-					if (e != null)
-					{
-						result.MarkFaulted(e);
-					}
-					else
-					{
-						result.MarkCompleted(res);
-					}
-				});
+					result.MarkFaulted(e);
+				}
+				else
+				{
+					result.MarkCompleted(res);
+				}
+			});
 			if (continuation != null)
 			{
 				result.Continue(continuation);
@@ -269,18 +269,18 @@ namespace FlitBit.Data
 
 			var result = default(T);
 			command.ExecuteReader(res =>
+			{
+				var reader = res.Result;
+				if (!reader.Read())
 				{
-					var reader = res.Result;
-					if (!reader.Read())
-					{
-						throw new InvalidOperationException(Resources.Err_EmptyDbResult);
-					}
-					result = transform(reader);
-					if (reader.Read())
-					{
-						throw new InvalidOperationException(Resources.Err_DuplicateDbResult);
-					}
-				});
+					throw new InvalidOperationException(Resources.Err_EmptyDbResult);
+				}
+				result = transform(reader);
+				if (reader.Read())
+				{
+					throw new InvalidOperationException(Resources.Err_DuplicateDbResult);
+				}
+			});
 			return result;
 		}
 
@@ -302,17 +302,17 @@ namespace FlitBit.Data
 			}
 			var result = default(T);
 			command.ExecuteReader(res =>
+			{
+				var reader = res.Result;
+				if (reader.Read())
 				{
-					var reader = res.Result;
+					result = transform(reader);
 					if (reader.Read())
 					{
-						result = transform(reader);
-						if (reader.Read())
-						{
-							throw new InvalidOperationException(Resources.Err_DuplicateDbResult);
-						}
+						throw new InvalidOperationException(Resources.Err_DuplicateDbResult);
 					}
-				});
+				}
+			});
 			return result;
 		}
 
@@ -324,11 +324,13 @@ namespace FlitBit.Data
 			Contract.Ensures(Contract.Result<IEnumerable<IDataRecord>>() != null);
 
 			using (var context = DbContext.SharedOrNewContext())
-			using (var instance = command.CreateOnConnection(connection))
 			{
-				foreach (var record in instance.ExecuteEnumerable())
+				using (var instance = command.CreateOnConnection(connection))
 				{
-					yield return record;
+					foreach (var record in instance.ExecuteEnumerable())
+					{
+						yield return record;
+					}
 				}
 			}
 		}
@@ -413,9 +415,11 @@ namespace FlitBit.Data
 			Contract.Requires<ArgumentNullException>(completion != null);
 
 			using (var context = DbContext.SharedOrNewContext())
-			using (var instance = command.CreateOnConnection(connection))
 			{
-				instance.ExecuteNonQuery(completion);
+				using (var instance = command.CreateOnConnection(connection))
+				{
+					instance.ExecuteNonQuery(completion);
+				}
 			}
 		}
 
@@ -431,9 +435,11 @@ namespace FlitBit.Data
 			}
 
 			using (var context = DbContext.SharedOrNewContext())
-			using (var instance = command.CreateOnConnection(connection))
 			{
-				instance.ExecuteScalar<T>(completion);
+				using (var instance = command.CreateOnConnection(connection))
+				{
+					instance.ExecuteScalar<T>(completion);
+				}
 			}
 		}
 

@@ -17,7 +17,8 @@ namespace FlitBit.Data.Meta
 	[AttributeUsage(AttributeTargets.Interface | AttributeTargets.Class)]
 	public sealed class MapOwnershipAttribute : Attribute
 	{
-		public MapOwnershipAttribute() { }
+		public MapOwnershipAttribute()
+		{}
 
 		public MapOwnershipAttribute(EntityOwnershipBehaviors behaviors, params Type[] types)
 		{

@@ -25,6 +25,8 @@ namespace FlitBit.Data.SqlServer
 			_command = cmd;
 		}
 
+		#region IDataParameterBinder Members
+
 		public string PrepareParameterName(string name)
 		{
 			Contract.Assert(name != null);
@@ -32,7 +34,10 @@ namespace FlitBit.Data.SqlServer
 			return (name[0] != '@') ? String.Concat('@', name) : name;
 		}
 
-		public DbTypeTranslation TranslateRuntimeType(Type type) { return SqlDbTypeTranslations.TranslateRuntimeType(type); }
+		public DbTypeTranslation TranslateRuntimeType(Type type)
+		{
+			return SqlDbTypeTranslations.TranslateRuntimeType(type);
+		}
 
 		public bool ContainsParameter(string name)
 		{
@@ -46,10 +51,7 @@ namespace FlitBit.Data.SqlServer
 			return _command.Parameters.IndexOf(bindName);
 		}
 
-		public IEnumerable<ParameterBinding> Bindings
-		{
-			get { throw new NotImplementedException(); }
-		}
+		public IEnumerable<ParameterBinding> Bindings { get { throw new NotImplementedException(); } }
 
 		public IDataParameterBinder DefineParameter(string name, Type runtimeType)
 		{
@@ -134,7 +136,10 @@ namespace FlitBit.Data.SqlServer
 			return this;
 		}
 
-		public IDataParameterBinder DefineParameter(Func<DbParamDefinition> specializeParam) { throw new NotImplementedException(); }
+		public IDataParameterBinder DefineParameter(Func<DbParamDefinition> specializeParam)
+		{
+			throw new NotImplementedException();
+		}
 
 		public IDataParameterBinder SetParameterValue(string name, bool value)
 		{
@@ -383,8 +388,16 @@ namespace FlitBit.Data.SqlServer
 			return this;
 		}
 
-		public bool PrepareDbCommand(DbCommand command) { throw new NotImplementedException(); }
+		public bool PrepareDbCommand(DbCommand command)
+		{
+			throw new NotImplementedException();
+		}
 
-		public void Initialize(IEnumerable<ParameterBinding> bindings) { throw new NotImplementedException(); }
+		public void Initialize(IEnumerable<ParameterBinding> bindings)
+		{
+			throw new NotImplementedException();
+		}
+
+		#endregion
 	}
 }

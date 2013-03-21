@@ -13,7 +13,8 @@ namespace FlitBit.Data.Meta
 	[AttributeUsage(AttributeTargets.Interface | AttributeTargets.Class, AllowMultiple = true)]
 	public class MapOrderByAttribute : Attribute
 	{
-		public MapOrderByAttribute() { }
+		public MapOrderByAttribute()
+		{}
 
 		public MapOrderByAttribute(string columns)
 		{
@@ -36,18 +37,22 @@ namespace FlitBit.Data.Meta
 			var cols = Columns.Split(',');
 			foreach (var def in cols)
 			{
-				var name_order = def.Trim().Split(' ');
+				var name_order = def.Trim()
+														.Split(' ');
 				if (name_order.Length == 1)
 				{
-					result.Add(new IndexColumnSpec {Column = name_order[0]});
+					result.Add(new IndexColumnSpec
+					{
+						Column = name_order[0]
+					});
 				}
 				else
 				{
 					result.Add(new IndexColumnSpec
-						{
-							Column = name_order[0],
-							Order = (IndexOrder) Enum.Parse(typeof(IndexOrder), name_order[1], true)
-						});
+					{
+						Column = name_order[0],
+						Order = (IndexOrder) Enum.Parse(typeof(IndexOrder), name_order[1], true)
+					});
 				}
 			}
 			return result;

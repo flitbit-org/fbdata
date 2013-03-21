@@ -25,10 +25,134 @@ namespace FlitBit.Data
 
 		protected string ConnectionName { get; private set; }
 
-		protected DbProviderHelper Helper
+		protected DbProviderHelper Helper { get { return _helper; } }
+
+		protected abstract IEnumerable<M> PerformAll(IDbContext context, QueryBehavior behavior);
+
+		protected abstract M PerformCreate(IDbContext context, M model);
+		protected abstract bool PerformDelete(IDbContext context, IK id);
+
+		protected abstract IEnumerable<M> PerformDirectQueryBy<TItemKey>(IDbContext context, string command,
+			Action<TItemKey, IDataParameterBinder> binder, TItemKey key);
+
+		protected abstract M PerformDirectReadBy<TItemKey>(IDbContext context, string command,
+			Action<TItemKey, IDataParameterBinder> binder, TItemKey key);
+
+		protected abstract M PerformRead(IDbContext context, IK id);
+
+		protected abstract M PerformUpdate(IDbContext context, M model);
+
+		protected IEnumerable<M> GetCacheCollection<TCacheKey, TItemKey>(IDbContext context, TCacheKey cacheKey, TItemKey key,
+			Func<IDbContext, TItemKey, IEnumerable<M>> resolver)
+			where TCacheKey : class
 		{
-			get { return _helper; }
+			IEnumerable<M> res;
+			if (cacheKey != null)
+			{
+				if (context.TryGetCacheItem(cacheKey, key, out res))
+				{
+					return res;
+				}
+			}
+			res = resolver(context, key);
+			if (res != null)
+			{
+				ThreadPool.QueueUserWorkItem(unused => PerformUpdateCacheItems(context, res));
+			}
+			return res;
 		}
+
+		protected M GetCacheItem<TCacheKey, TItemKey>(IDbContext context, TCacheKey cacheKey, TItemKey key,
+			Func<IDbContext, TItemKey, M> resolver)
+			where TCacheKey : class
+		{
+			M res;
+			if (cacheKey != null)
+			{
+				if (context.TryGetCacheItem(cacheKey, key, out res))
+				{
+					return res;
+				}
+			}
+			res = resolver(context, key);
+			if (res != null)
+			{
+				ThreadPool.QueueUserWorkItem(unused => PerformUpdateCacheItem(context, res));
+			}
+			return res;
+		}
+
+		protected void PerformRemoveCacheItem(IDbContext context, M item)
+		{
+			foreach (var handler in _cacheHandlers)
+			{
+				handler.PerformUpdateCacheItem(context, item);
+			}
+		}
+
+		protected void PerformUpdateCacheItem(IDbContext context, M item)
+		{
+			foreach (var handler in _cacheHandlers)
+			{
+				handler.PerformUpdateCacheItem(context, item);
+			}
+		}
+
+		protected void PerformUpdateCacheItems(IDbContext context, IEnumerable<M> items)
+		{
+			foreach (var item in items)
+			{
+				foreach (var handler in _cacheHandlers)
+				{
+					handler.PerformUpdateCacheItem(context, item);
+				}
+			}
+		}
+
+		protected IEnumerable<M> QueryBy<TCacheKey, TQueryKey>(IDbContext context, string command,
+			Action<TQueryKey, IDataParameterBinder> binder, TCacheKey cacheKey, TQueryKey key)
+			where TCacheKey : class
+		{
+			Contract.Requires<ArgumentNullException>(context != null);
+			Contract.Requires<ArgumentNullException>(command != null);
+			Contract.Requires<ArgumentException>(command.Length > 0);
+
+			var disableCaching = context.Behaviors.HasFlag(DbContextBehaviors.DisableCaching);
+			if (cacheKey != null && !disableCaching)
+			{
+				return GetCacheCollection(context, cacheKey, key, (ctx, k) => PerformDirectQueryBy(context, command, binder, key));
+			}
+			else
+			{
+				return PerformDirectQueryBy(context, command, binder, key);
+			}
+		}
+
+		protected M ReadBy<TCacheKey, TItemKey>(IDbContext context, string command,
+			Action<TItemKey, IDataParameterBinder> binder, TCacheKey cacheKey, TItemKey key)
+			where TCacheKey : class
+		{
+			Contract.Requires<ArgumentNullException>(context != null);
+			Contract.Requires<ArgumentNullException>(command != null);
+			Contract.Requires<ArgumentException>(command.Length > 0);
+
+			var disableCaching = context.Behaviors.HasFlag(DbContextBehaviors.DisableCaching);
+			if (cacheKey != null && !disableCaching)
+			{
+				return GetCacheItem(context, cacheKey, key, (ctx, k) => PerformDirectReadBy(context, command, binder, key));
+			}
+			else
+			{
+				return PerformDirectReadBy(context, command, binder, key);
+			}
+		}
+
+		protected void RegisterCacheHandler<TCacheKey, TKey>(TCacheKey cacheKey, Func<M, TKey> calculateKey)
+		{
+			_cacheHandlers.Add(new CacheHandler<TCacheKey, TKey>(cacheKey, calculateKey));
+		}
+
+		#region IDataRepository<M,IK> Members
 
 		public abstract IK GetIdentity(M model);
 
@@ -105,127 +229,7 @@ namespace FlitBit.Data
 
 		public abstract IQueryable<M> Query();
 
-		protected IEnumerable<M> GetCacheCollection<TCacheKey, TItemKey>(IDbContext context, TCacheKey cacheKey, TItemKey key,
-			Func<IDbContext, TItemKey, IEnumerable<M>> resolver)
-			where TCacheKey : class
-		{
-			IEnumerable<M> res;
-			if (cacheKey != null)
-			{
-				if (context.TryGetCacheItem(cacheKey, key, out res))
-				{
-					return res;
-				}
-			}
-			res = resolver(context, key);
-			if (res != null)
-			{
-				ThreadPool.QueueUserWorkItem(unused => PerformUpdateCacheItems(context, res));
-			}
-			return res;
-		}
-
-		protected M GetCacheItem<TCacheKey, TItemKey>(IDbContext context, TCacheKey cacheKey, TItemKey key,
-			Func<IDbContext, TItemKey, M> resolver)
-			where TCacheKey : class
-		{
-			M res;
-			if (cacheKey != null)
-			{
-				if (context.TryGetCacheItem(cacheKey, key, out res))
-				{
-					return res;
-				}
-			}
-			res = resolver(context, key);
-			if (res != null)
-			{
-				ThreadPool.QueueUserWorkItem(unused => PerformUpdateCacheItem(context, res));
-			}
-			return res;
-		}
-
-		protected abstract IEnumerable<M> PerformAll(IDbContext context, QueryBehavior behavior);
-
-		protected abstract M PerformCreate(IDbContext context, M model);
-		protected abstract bool PerformDelete(IDbContext context, IK id);
-
-		protected abstract IEnumerable<M> PerformDirectQueryBy<TItemKey>(IDbContext context, string command,
-			Action<TItemKey, IDataParameterBinder> binder, TItemKey key);
-
-		protected abstract M PerformDirectReadBy<TItemKey>(IDbContext context, string command,
-			Action<TItemKey, IDataParameterBinder> binder, TItemKey key);
-
-		protected abstract M PerformRead(IDbContext context, IK id);
-
-		protected void PerformRemoveCacheItem(IDbContext context, M item)
-		{
-			foreach (var handler in _cacheHandlers)
-			{
-				handler.PerformUpdateCacheItem(context, item);
-			}
-		}
-
-		protected abstract M PerformUpdate(IDbContext context, M model);
-
-		protected void PerformUpdateCacheItem(IDbContext context, M item)
-		{
-			foreach (var handler in _cacheHandlers)
-			{
-				handler.PerformUpdateCacheItem(context, item);
-			}
-		}
-
-		protected void PerformUpdateCacheItems(IDbContext context, IEnumerable<M> items)
-		{
-			foreach (var item in items)
-			{
-				foreach (var handler in _cacheHandlers)
-				{
-					handler.PerformUpdateCacheItem(context, item);
-				}
-			}
-		}
-
-		protected IEnumerable<M> QueryBy<TCacheKey, TQueryKey>(IDbContext context, string command,
-			Action<TQueryKey, IDataParameterBinder> binder, TCacheKey cacheKey, TQueryKey key)
-			where TCacheKey : class
-		{
-			Contract.Requires<ArgumentNullException>(context != null);
-			Contract.Requires<ArgumentNullException>(command != null);
-			Contract.Requires<ArgumentException>(command.Length > 0);
-
-			var disableCaching = context.Behaviors.HasFlag(DbContextBehaviors.DisableCaching);
-			if (cacheKey != null && !disableCaching)
-			{
-				return GetCacheCollection(context, cacheKey, key, (ctx, k) => PerformDirectQueryBy(context, command, binder, key));
-			}
-			else
-			{
-				return PerformDirectQueryBy(context, command, binder, key);
-			}
-		}
-
-		protected M ReadBy<TCacheKey, TItemKey>(IDbContext context, string command,
-			Action<TItemKey, IDataParameterBinder> binder, TCacheKey cacheKey, TItemKey key)
-			where TCacheKey : class
-		{
-			Contract.Requires<ArgumentNullException>(context != null);
-			Contract.Requires<ArgumentNullException>(command != null);
-			Contract.Requires<ArgumentException>(command.Length > 0);
-
-			var disableCaching = context.Behaviors.HasFlag(DbContextBehaviors.DisableCaching);
-			if (cacheKey != null && !disableCaching)
-			{
-				return GetCacheItem(context, cacheKey, key, (ctx, k) => PerformDirectReadBy(context, command, binder, key));
-			}
-			else
-			{
-				return PerformDirectReadBy(context, command, binder, key);
-			}
-		}
-
-		protected void RegisterCacheHandler<TCacheKey, TKey>(TCacheKey cacheKey, Func<M, TKey> calculateKey) { _cacheHandlers.Add(new CacheHandler<TCacheKey, TKey>(cacheKey, calculateKey)); }
+		#endregion
 
 		abstract class AbstractCacheHandler
 		{
@@ -244,8 +248,15 @@ namespace FlitBit.Data
 				this._calculateKey = calculateKey;
 			}
 
-			internal override void PerformUpdateCacheItem(IDbContext context, M item) { context.PutCacheItem(_cacheKey, item, _calculateKey(item), (k, v) => item); }
-			internal override void RemoveCacheItem(IDbContext context, M item) { context.RemoveCacheItem(_cacheKey, item, _calculateKey(item)); }
+			internal override void PerformUpdateCacheItem(IDbContext context, M item)
+			{
+				context.PutCacheItem(_cacheKey, item, _calculateKey(item), (k, v) => item);
+			}
+
+			internal override void RemoveCacheItem(IDbContext context, M item)
+			{
+				context.RemoveCacheItem(_cacheKey, item, _calculateKey(item));
+			}
 		}
 	}
 }

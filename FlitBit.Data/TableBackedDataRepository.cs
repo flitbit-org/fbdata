@@ -16,17 +16,31 @@ namespace FlitBit.Data
 			Contract.Requires<ArgumentException>(connectionName.Length > 0);
 		}
 
-		protected string InsertCommand { get; set; }
-		protected string ReadCommand { get; set; }
 		protected string AllCommand { get; set; }
 		protected string DeleteCommand { get; set; }
+		protected string InsertCommand { get; set; }
+		protected string ReadCommand { get; set; }
 
-		public override int DeleteMatch<TMatch>(IDbContext context, TMatch match) { throw new NotImplementedException(); }
+		public override int DeleteMatch<TMatch>(IDbContext context, TMatch match)
+		{
+			throw new NotImplementedException();
+		}
 
-		public override IQueryable<TModel> Query() { throw new NotImplementedException(); }
-		public override IEnumerable<TModel> ReadMatch<TMatch>(IDbContext context, QueryBehavior behavior, TMatch match) { throw new NotImplementedException(); }
+		public override IQueryable<TModel> Query()
+		{
+			throw new NotImplementedException();
+		}
 
-		public override int UpdateMatch<TMatch, TUpdate>(IDbContext context, TMatch match, TUpdate update) { throw new NotImplementedException(); }
+		public override IEnumerable<TModel> ReadMatch<TMatch>(IDbContext context, QueryBehavior behavior, TMatch match)
+		{
+			throw new NotImplementedException();
+		}
+
+		public override int UpdateMatch<TMatch, TUpdate>(IDbContext context, TMatch match, TUpdate update)
+		{
+			throw new NotImplementedException();
+		}
+
 		protected abstract void BindDeleteCommand(IDataParameterBinder binder, Id id);
 
 		protected abstract void BindInsertCommand(IDataParameterBinder binder, TModel model);
@@ -34,6 +48,57 @@ namespace FlitBit.Data
 		protected abstract void BindUpdateCommand(IDataParameterBinder binder, TModel model);
 		protected abstract TModel CreateInstance();
 		protected abstract string MakeUpdateCommand(TModel model);
+
+		protected abstract void PopulateInstance(IDbContext context, TModel model, IDataRecord reader, object state);
+
+		protected virtual object PrepareAllCommand(IDbContext context, DbConnection cn, DbCommand cmd)
+		{
+			cmd.CommandText = AllCommand;
+			return null;
+		}
+
+		protected virtual object PrepareInsertCommand(IDbContext context, DbConnection cn, DbCommand cmd, TModel model)
+		{
+			cmd.CommandText = InsertCommand;
+			BindInsertCommand(Helper.MakeParameterBinder(cmd), model);
+			return null;
+		}
+
+		protected virtual object PrepareQueryByCommand<TItemKey>(IDbContext context, DbConnection cn, DbCommand cmd,
+			string command, Action<TItemKey, IDataParameterBinder> binder, TItemKey key)
+		{
+			cmd.CommandText = command;
+			if (binder != null)
+			{
+				binder(key, Helper.MakeParameterBinder(cmd));
+			}
+			return null;
+		}
+
+		protected virtual object PrepareReadByCommand<TItemKey>(IDbContext context, DbConnection cn, DbCommand cmd,
+			string command, Action<TItemKey, IDataParameterBinder> binder, TItemKey key)
+		{
+			cmd.CommandText = command;
+			if (binder != null)
+			{
+				binder(key, Helper.MakeParameterBinder(cmd));
+			}
+			return null;
+		}
+
+		protected virtual object PrepareReadCommand(IDbContext context, DbConnection cn, DbCommand cmd, Id id)
+		{
+			cmd.CommandText = ReadCommand;
+			BindReadCommand(Helper.MakeParameterBinder(cmd), id);
+			return null;
+		}
+
+		protected virtual object PrepareUpdateCommand(IDbContext context, DbConnection cn, DbCommand cmd, TModel model)
+		{
+			cmd.CommandText = MakeUpdateCommand(model);
+			BindUpdateCommand(Helper.MakeParameterBinder(cmd), model);
+			return null;
+		}
 
 		protected override IEnumerable<TModel> PerformAll(IDbContext context, QueryBehavior behavior)
 		{
@@ -198,57 +263,6 @@ namespace FlitBit.Data
 				}
 			}
 			return res;
-		}
-
-		protected abstract void PopulateInstance(IDbContext context, TModel model, IDataRecord reader, object state);
-
-		protected virtual object PrepareAllCommand(IDbContext context, DbConnection cn, DbCommand cmd)
-		{
-			cmd.CommandText = AllCommand;
-			return null;
-		}
-
-		protected virtual object PrepareInsertCommand(IDbContext context, DbConnection cn, DbCommand cmd, TModel model)
-		{
-			cmd.CommandText = InsertCommand;
-			BindInsertCommand(Helper.MakeParameterBinder(cmd), model);
-			return null;
-		}
-
-		protected virtual object PrepareQueryByCommand<TItemKey>(IDbContext context, DbConnection cn, DbCommand cmd,
-			string command, Action<TItemKey, IDataParameterBinder> binder, TItemKey key)
-		{
-			cmd.CommandText = command;
-			if (binder != null)
-			{
-				binder(key, Helper.MakeParameterBinder(cmd));
-			}
-			return null;
-		}
-
-		protected virtual object PrepareReadByCommand<TItemKey>(IDbContext context, DbConnection cn, DbCommand cmd,
-			string command, Action<TItemKey, IDataParameterBinder> binder, TItemKey key)
-		{
-			cmd.CommandText = command;
-			if (binder != null)
-			{
-				binder(key, Helper.MakeParameterBinder(cmd));
-			}
-			return null;
-		}
-
-		protected virtual object PrepareReadCommand(IDbContext context, DbConnection cn, DbCommand cmd, Id id)
-		{
-			cmd.CommandText = ReadCommand;
-			BindReadCommand(Helper.MakeParameterBinder(cmd), id);
-			return null;
-		}
-
-		protected virtual object PrepareUpdateCommand(IDbContext context, DbConnection cn, DbCommand cmd, TModel model)
-		{
-			cmd.CommandText = MakeUpdateCommand(model);
-			BindUpdateCommand(Helper.MakeParameterBinder(cmd), model);
-			return null;
 		}
 
 		void PrepareDeleteCommand(IDbContext context, DbConnection cn, DbCommand cmd, Id id)

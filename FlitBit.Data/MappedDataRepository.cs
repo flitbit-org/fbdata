@@ -31,10 +31,14 @@ namespace FlitBit.Data
 			{
 				cn.Open();
 			}
-			return _binder.MakeDeleteMatchCommand(match).Execute(context, cn, match);
+			return _binder.MakeDeleteMatchCommand(match)
+										.Execute(context, cn, match);
 		}
 
-		public override IQueryable<TModel> Query() { throw new NotImplementedException(); }
+		public override IQueryable<TModel> Query()
+		{
+			throw new NotImplementedException();
+		}
 
 		public override IEnumerable<TModel> ReadMatch<TMatch>(IDbContext context, QueryBehavior behavior, TMatch match)
 		{
@@ -43,7 +47,8 @@ namespace FlitBit.Data
 			{
 				cn.Open();
 			}
-			return _binder.MakeReadMatchCommand(match).ExecuteMany(context, cn, behavior, match);
+			return _binder.MakeReadMatchCommand(match)
+										.ExecuteMany(context, cn, behavior, match);
 		}
 
 		public override int UpdateMatch<TMatch, TUpdate>(IDbContext context, TMatch match, TUpdate update)
@@ -53,7 +58,8 @@ namespace FlitBit.Data
 			{
 				cn.Open();
 			}
-			return _binder.MakeUpdateMatchCommand(match).Execute(context, cn, match);
+			return _binder.MakeUpdateMatchCommand(match)
+										.Execute(context, cn, match);
 		}
 
 		protected override IEnumerable<TModel> PerformAll(IDbContext context, QueryBehavior behavior)
@@ -63,7 +69,8 @@ namespace FlitBit.Data
 			{
 				cn.Open();
 			}
-			return _binder.GetAllCommand().ExecuteMany(context, cn, behavior);
+			return _binder.GetAllCommand()
+										.ExecuteMany(context, cn, behavior);
 		}
 
 		protected override TModel PerformCreate(IDbContext context, TModel model)
@@ -74,7 +81,8 @@ namespace FlitBit.Data
 				cn.Open();
 			}
 
-			return _binder.GetCreateCommand().ExecuteSingle(context, cn, (TModelImpl) model);
+			return _binder.GetCreateCommand()
+										.ExecuteSingle(context, cn, (TModelImpl) model);
 		}
 
 		protected override bool PerformDelete(IDbContext context, Id id)
@@ -84,7 +92,8 @@ namespace FlitBit.Data
 			{
 				cn.Open();
 			}
-			return _binder.GetDeleteCommand().Execute(context, cn, id) == 1;
+			return _binder.GetDeleteCommand()
+										.Execute(context, cn, id) == 1;
 		}
 
 		protected override TModel PerformRead(IDbContext context, Id id)
@@ -94,7 +103,8 @@ namespace FlitBit.Data
 			{
 				cn.Open();
 			}
-			return _binder.GetReadCommand().ExecuteSingle(context, cn, id);
+			return _binder.GetReadCommand()
+										.ExecuteSingle(context, cn, id);
 		}
 
 		protected override TModel PerformUpdate(IDbContext context, TModel model)
@@ -104,7 +114,8 @@ namespace FlitBit.Data
 			{
 				cn.Open();
 			}
-			return _binder.GetUpdateCommand().ExecuteSingle(context, cn, (TModelImpl) model);
+			return _binder.GetUpdateCommand()
+										.ExecuteSingle(context, cn, (TModelImpl) model);
 		}
 	}
 }

@@ -5,53 +5,56 @@
 #endregion
 
 using System;
+using System.Collections.Concurrent;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics.Contracts;
 using System.Linq;
+using System.Reflection;
+using System.Reflection.Emit;
 using FlitBit.Data.Meta;
+using FlitBit.Emit;
 
 namespace FlitBit.Data
 {
 	public abstract class DbProviderHelper
 	{
+		readonly ConcurrentDictionary<Type, MappedDbTypeEmitter> _emitters =
+			new ConcurrentDictionary<Type, MappedDbTypeEmitter>();
+
+		protected DbProviderHelper()
+		{
+			Initialize();
+		}
+		
+		protected virtual void Initialize()
+		{
+			MapRuntimeType<bool>(new MappedBooleanEmitter());
+			MapRuntimeType<byte>(new MappedByteEmitter());
+			MapRuntimeType<byte[]>(new MappedBinaryEmitter());
+			MapRuntimeType<char>(new MappedCharEmitter(DbType.String));
+			MapRuntimeType<short>(new MappedInt16Emitter());
+			MapRuntimeType<string>(new MappedStringEmitter(DbType.String)); 
+			MapRuntimeType<int>(new MappedInt32Emitter());
+			MapRuntimeType<long>(new MappedInt16Emitter());
+			MapRuntimeType<sbyte>(new MappedSByteEmitter());
+			MapRuntimeType<UInt16>(new MappedUInt16Emitter());
+			MapRuntimeType<UInt32>(new MappedUInt32Emitter());
+			MapRuntimeType<UInt64>(new MappedUInt64Emitter());
+			MapRuntimeType<decimal>(new MappedDecimalEmitter());
+			MapRuntimeType<double>(new MappedDoubleEmitter());
+			MapRuntimeType<float>(new MappedSingleEmitter());
+			MapRuntimeType<DateTime>(new MappedDateTimeEmitter());
+			MapRuntimeType<DateTimeOffset>(new MappedDateTimeOffsetEmitter()); 
+		}
+
+		void MapRuntimeType<T>(MappedDbTypeEmitter map)
+		{
+			var key = typeof(T);
+			_emitters.AddOrUpdate(key, map, (k, it) => map);
+		}
+
 		public DbProviderFactory Factory { get; protected set; }
-
-		public virtual IAsyncResult BeginExecuteNonQuery(DbCommand command, AsyncCallback callback, Object stateObject)
-		{
-			Contract.Requires<ArgumentNullException>(command != null);
-			Contract.Ensures(Contract.Result<IAsyncResult>() != null);
-
-			throw new NotImplementedException();
-		}
-
-		public virtual IAsyncResult BeginExecuteReader(DbCommand command, AsyncCallback callback, Object stateObject)
-		{
-			Contract.Requires<ArgumentNullException>(command != null);
-			Contract.Ensures(Contract.Result<IAsyncResult>() != null);
-
-			throw new NotImplementedException();
-		}
-
-		public virtual bool CanRetryTransaction(Exception ex) { return false; }
-
-		/// <summary>
-		///   Determines if a catalog (database) exists on the connection.
-		/// </summary>
-		/// <param name="connection"></param>
-		/// <param name="catalog"></param>
-		public virtual bool CatalogExists(DbConnection connection, string catalog) { throw new NotImplementedException(); }
-
-		public void CreateSchema(DbConnection connection, string catalog, string schema)
-		{
-			Contract.Requires<ArgumentNullException>(connection != null);
-			Contract.Requires<ArgumentNullException>(catalog != null);
-			Contract.Requires(catalog.Length > 0);
-			Contract.Requires<ArgumentNullException>(schema != null);
-			Contract.Requires(schema.Length > 0);
-
-			connection.ImmediateExecuteNonQuery(FormatCreateSchemaCommandText(catalog, schema));
-		}
 
 		public abstract IDbExecutable DefineExecutableOnConnection(string connectionName);
 
@@ -74,6 +77,47 @@ namespace FlitBit.Data
 		public abstract IDbExecutable DefineExecutableOnConnection(DbConnection connection, string cmdText,
 			CommandType cmdType, int cmdTimeout);
 
+		public abstract string FormatParameterName(string rawParameterName);
+
+		public abstract IModelBinder<TModel, Id> GetModelBinder<TModel, Id>(Mapping<TModel> mapping);
+		public abstract string GetServerName(DbConnection connection);
+
+		public abstract IDataParameterBinder MakeParameterBinder();
+
+		public abstract IDataParameterBinder MakeParameterBinder(DbCommand cmd);
+		public abstract DbTypeTranslation TranslateRuntimeType(Type type);
+
+		public virtual IAsyncResult BeginExecuteNonQuery(DbCommand command, AsyncCallback callback, Object stateObject)
+		{
+			Contract.Requires<ArgumentNullException>(command != null);
+			Contract.Ensures(Contract.Result<IAsyncResult>() != null);
+
+			throw new NotImplementedException();
+		}
+
+		public virtual IAsyncResult BeginExecuteReader(DbCommand command, AsyncCallback callback, Object stateObject)
+		{
+			Contract.Requires<ArgumentNullException>(command != null);
+			Contract.Ensures(Contract.Result<IAsyncResult>() != null);
+
+			throw new NotImplementedException();
+		}
+
+		public virtual bool CanRetryTransaction(Exception ex)
+		{
+			return false;
+		}
+
+		/// <summary>
+		///   Determines if a catalog (database) exists on the connection.
+		/// </summary>
+		/// <param name="connection"></param>
+		/// <param name="catalog"></param>
+		public virtual bool CatalogExists(DbConnection connection, string catalog)
+		{
+			throw new NotImplementedException();
+		}
+
 		public virtual int EndExecuteNonQuery(DbCommand command, IAsyncResult ar)
 		{
 			Contract.Requires<ArgumentNullException>(command != null);
@@ -91,30 +135,6 @@ namespace FlitBit.Data
 			throw new NotImplementedException();
 		}
 
-		public abstract string FormatParameterName(string rawParameterName);
-
-		public bool FunctionExists(DbConnection connection, string catalog, string schema, string fun)
-		{
-			Contract.Requires<ArgumentNullException>(connection != null);
-			Contract.Requires<ArgumentNullException>(catalog != null);
-			Contract.Requires(catalog.Length > 0);
-			Contract.Requires<ArgumentNullException>(schema != null);
-			Contract.Requires(schema.Length > 0);
-			Contract.Requires<ArgumentNullException>(fun != null);
-			Contract.Requires(fun.Length > 0);
-
-			return connection
-				.ImmediateExecuteEnumerable(FormatFunctionExistsQuery(catalog, schema, fun))
-				.Any();
-		}
-
-		public abstract IModelBinder<TModel, Id> GetModelBinder<TModel, Id>(Mapping<TModel> mapping);
-		public abstract string GetServerName(DbConnection connection);
-
-		public abstract IDataParameterBinder MakeParameterBinder();
-
-		public abstract IDataParameterBinder MakeParameterBinder(DbCommand cmd);
-
 		public virtual string QuoteObjectName(string name)
 		{
 			Contract.Requires<ArgumentNullException>(name != null);
@@ -128,34 +148,68 @@ namespace FlitBit.Data
 		{
 			Contract.Requires<ArgumentNullException>(connection != null);
 			Contract.Requires<ArgumentNullException>(catalog != null);
-			Contract.Requires(catalog.Length > 0);
+			Contract.Requires<ArgumentException>(catalog.Length > 0);
 			Contract.Requires<ArgumentNullException>(schema != null);
-			Contract.Requires(schema.Length > 0);
+			Contract.Requires<ArgumentException>(schema.Length > 0);
 
 			var sql =
 				String.Format(
 										 "SELECT SCHEMA_NAME FROM INFORMATION_SCHEMA.SCHEMATA WHERE CATALOG_NAME = '{0}' AND SCHEMA_NAME = '{1}'",
 										catalog, schema);
-			return connection.ImmediateExecuteEnumerable(sql).Any();
+			return connection.ImmediateExecuteEnumerable(sql)
+											.Any();
+		}
+
+		public virtual bool SupportsAsynchronousProcessing(DbConnection connection)
+		{
+			return false;
+		}
+
+		public virtual bool SupportsMultipleActiveResultSets(DbConnection connection)
+		{
+			return false;
+		}
+
+		public void CreateSchema(DbConnection connection, string catalog, string schema)
+		{
+			Contract.Requires<ArgumentNullException>(connection != null);
+			Contract.Requires<ArgumentNullException>(catalog != null);
+			Contract.Requires<ArgumentException>(catalog.Length > 0);
+			Contract.Requires<ArgumentNullException>(schema != null);
+			Contract.Requires<ArgumentException>(schema.Length > 0);
+
+			connection.ImmediateExecuteNonQuery(FormatCreateSchemaCommandText(catalog, schema));
+		}
+
+		public bool FunctionExists(DbConnection connection, string catalog, string schema, string fun)
+		{
+			Contract.Requires<ArgumentNullException>(connection != null);
+			Contract.Requires<ArgumentNullException>(catalog != null);
+			Contract.Requires<ArgumentException>(catalog.Length > 0);
+			Contract.Requires<ArgumentNullException>(schema != null);
+			Contract.Requires<ArgumentException>(schema.Length > 0);
+			Contract.Requires<ArgumentNullException>(fun != null);
+			Contract.Requires<ArgumentException>(fun.Length > 0);
+
+			return connection
+				.ImmediateExecuteEnumerable(FormatFunctionExistsQuery(catalog, schema, fun))
+				.Any();
 		}
 
 		public bool StoredProcedureExists(DbConnection connection, string catalog, string schema, string storedProcedure)
 		{
 			Contract.Requires<ArgumentNullException>(connection != null);
 			Contract.Requires<ArgumentNullException>(catalog != null);
-			Contract.Requires(catalog.Length > 0);
+			Contract.Requires<ArgumentException>(catalog.Length > 0);
 			Contract.Requires<ArgumentNullException>(schema != null);
-			Contract.Requires(schema.Length > 0);
+			Contract.Requires<ArgumentException>(schema.Length > 0);
 			Contract.Requires<ArgumentNullException>(storedProcedure != null);
-			Contract.Requires(storedProcedure.Length > 0);
+			Contract.Requires<ArgumentException>(storedProcedure.Length > 0);
 
 			return connection
 				.ImmediateExecuteEnumerable(FormatProcedureExistsQuery(catalog, schema, storedProcedure))
 				.Any();
 		}
-
-		public virtual bool SupportsAsynchronousProcessing(DbConnection connection) { return false; }
-		public virtual bool SupportsMultipleActiveResultSets(DbConnection connection) { return false; }
 
 		public bool TableExists(DbConnection connection, string catalog, string schema, string table)
 		{
@@ -163,26 +217,24 @@ namespace FlitBit.Data
 			Contract.Requires<ArgumentNullException>(catalog != null);
 			Contract.Requires<ArgumentException>(catalog.Length > 0);
 			Contract.Requires<ArgumentNullException>(schema != null);
-			Contract.Requires(schema.Length > 0);
+			Contract.Requires<ArgumentException>(schema.Length > 0);
 			Contract.Requires<ArgumentNullException>(table != null);
-			Contract.Requires(table.Length > 0);
+			Contract.Requires<ArgumentException>(table.Length > 0);
 
 			return connection
 				.ImmediateExecuteEnumerable(FormatTableExistsQuery(catalog, schema, table))
 				.Any();
 		}
 
-		public abstract DbTypeTranslation TranslateRuntimeType(Type type);
-
 		public bool ViewExists(DbConnection connection, string catalog, string schema, string view)
 		{
 			Contract.Requires<ArgumentNullException>(connection != null);
 			Contract.Requires<ArgumentNullException>(catalog != null);
-			Contract.Requires(catalog.Length > 0);
+			Contract.Requires<ArgumentException>(catalog.Length > 0);
 			Contract.Requires<ArgumentNullException>(schema != null);
-			Contract.Requires(schema.Length > 0);
+			Contract.Requires<ArgumentException>(schema.Length > 0);
 			Contract.Requires<ArgumentNullException>(view != null);
-			Contract.Requires(view.Length > 0);
+			Contract.Requires<ArgumentException>(view.Length > 0);
 
 			return connection
 				.ImmediateExecuteEnumerable(FormatViewExistsQuery(catalog, schema, view))
@@ -190,28 +242,180 @@ namespace FlitBit.Data
 		}
 
 		protected abstract string FormatCreateSchemaCommandText(string catalogName, string schemaName);
-		protected virtual string FormatFunctionExistsQuery(string catalog, string schema, string fun) { return String.Format(@"SELECT ROUTINE_NAME
+
+		protected virtual string FormatFunctionExistsQuery(string catalog, string schema, string fun)
+		{
+			return String.Format(@"SELECT ROUTINE_NAME
 FROM INFORMATION_SCHEMA.ROUTINES
 WHERE ROUTINE_CATALOG = '{0}'
 	AND ROUTINE_SCHEMA = '{1}'
 	AND ROUTINE_NAME = '{2}'
-	AND ROUTINE_TYPE = 'FUNCTION'", catalog, schema, fun); }
-		protected virtual string FormatProcedureExistsQuery(string catalog, string schema, string storedProcedure) { return String.Format(@"SELECT ROUTINE_NAME
+	AND ROUTINE_TYPE = 'FUNCTION'", catalog, schema, fun);
+		}
+
+		protected virtual string FormatProcedureExistsQuery(string catalog, string schema, string storedProcedure)
+		{
+			return String.Format(@"SELECT ROUTINE_NAME
 FROM INFORMATION_SCHEMA.ROUTINES
 WHERE ROUTINE_CATALOG = '{0}'
 	AND ROUTINE_SCHEMA = '{1}'
 	AND ROUTINE_NAME = '{2}'
-	AND ROUTINE_TYPE = 'PROCEDURE'", catalog, schema, storedProcedure); }
-		protected virtual string FormatTableExistsQuery(string catalogName, string schemaName, string tableName) { return String.Format(@"SELECT TABLE_NAME
+	AND ROUTINE_TYPE = 'PROCEDURE'", catalog, schema, storedProcedure);
+		}
+
+		protected virtual string FormatTableExistsQuery(string catalogName, string schemaName, string tableName)
+		{
+			return String.Format(@"SELECT TABLE_NAME
 FROM INFORMATION_SCHEMA.TABLES
 WHERE TABLE_CATALOG = '{0}'
 	AND TABLE_SCHEMA = '{1}'
 	AND TABLE_NAME = '{2}'
-	AND TABLE_TYPE = 'BASE TABLE'", catalogName, schemaName, tableName); }
-		protected virtual string FormatViewExistsQuery(string catalogName, string schemaName, string viewName) { return String.Format(@"SELECT TABLE_NAME
+	AND TABLE_TYPE = 'BASE TABLE'", catalogName, schemaName, tableName);
+		}
+
+		protected virtual string FormatViewExistsQuery(string catalogName, string schemaName, string viewName)
+		{
+			return String.Format(@"SELECT TABLE_NAME
 FROM INFORMATION_SCHEMA.VIEWS
 WHERE TABLE_CATALOG = '{0}'
 	AND TABLE_SCHEMA = '{1}'
-	AND TABLE_NAME = '{2}'", catalogName, schemaName, viewName); }
+	AND TABLE_NAME = '{2}'", catalogName, schemaName, viewName);
+		}
+
+		protected internal virtual void EmitLoadValueFromDataReader(MethodBuilder method, ILGenerator il, PropertyInfo source, ParameterBuilder reader, LocalBuilder columnIndex, Type fieldType)
+		{
+			var translated = this.TranslateRuntimeType(fieldType);
+			switch (translated.DbType)
+			{
+				case DbType.AnsiString:
+					il.LoadArg(reader.Position);
+					il.LoadLocal(columnIndex);
+					il.CallVirtual<DbDataReader>("GetString", typeof(int));
+					break;
+				case DbType.Binary:
+					break;
+				case DbType.Byte:
+					il.LoadArg(reader.Position);
+					il.LoadLocal(columnIndex);
+					il.CallVirtual<DbDataReader>("GetByte", typeof(int));
+					break;
+				case DbType.Boolean:
+					il.LoadArg(reader.Position);
+					il.LoadLocal(columnIndex);
+					il.CallVirtual<DbDataReader>("GetBoolean", typeof(int));
+					break;
+				case DbType.Currency:
+					il.LoadArg(reader.Position);
+					il.LoadLocal(columnIndex);
+					il.CallVirtual<DbDataReader>("GetDecimal", typeof(int));
+					break;
+				case DbType.Date:
+					il.LoadArg(reader.Position);
+					il.LoadLocal(columnIndex);
+					il.CallVirtual<DbDataReader>("GetDateTime", typeof(int));
+					break;
+				case DbType.DateTime:
+					il.LoadArg(reader.Position);
+					il.LoadLocal(columnIndex);
+					il.CallVirtual<DbDataReader>("GetDateTime", typeof(int));
+					break;
+				case DbType.Decimal:
+					il.LoadArg(reader.Position);
+					il.LoadLocal(columnIndex);
+					il.CallVirtual<DbDataReader>("GetDecimal", typeof(int));
+					break;
+				case DbType.Double:
+					il.LoadArg(reader.Position);
+					il.LoadLocal(columnIndex);
+					il.CallVirtual<DbDataReader>("GetDouble", typeof(int));
+					break;
+				case DbType.Guid:
+					il.LoadArg(reader.Position);
+					il.LoadLocal(columnIndex);
+					il.CallVirtual<DbDataReader>("GetGuid", typeof(int));
+					break;
+				case DbType.Int16:
+					il.LoadArg(reader.Position);
+					il.LoadLocal(columnIndex);
+					il.CallVirtual<DbDataReader>("GetInt16", typeof(int));
+					break;
+				case DbType.Int32:
+					il.LoadArg(reader.Position);
+					il.LoadLocal(columnIndex);
+					il.CallVirtual<DbDataReader>("GetInt32", typeof(int));
+					break;
+				case DbType.Int64:
+					il.LoadArg(reader.Position);
+					il.LoadLocal(columnIndex);
+					il.CallVirtual<DbDataReader>("GetInt64", typeof(int));
+					break;
+				case DbType.Object:
+					break;
+				case DbType.SByte:
+					il.LoadArg(reader.Position);
+					il.LoadLocal(columnIndex);
+					il.CallVirtual<DbDataReader>("GetDecimal", typeof(int));
+					break;
+				case DbType.Single:
+					il.LoadArg(reader.Position);
+					il.LoadLocal(columnIndex);
+					il.CallVirtual<DbDataReader>("GetDecimal", typeof(int));
+					break;
+				case DbType.String:
+					il.LoadArg(reader.Position);
+					il.LoadLocal(columnIndex);
+					il.CallVirtual<DbDataReader>("GetString", typeof(int));
+					break;
+				case DbType.Time:
+					il.LoadArg(reader.Position);
+					il.LoadLocal(columnIndex);
+					il.CallVirtual<DbDataReader>("GetDateTime", typeof(int));
+					break;
+				case DbType.UInt16:
+					il.LoadArg(reader.Position);
+					il.LoadLocal(columnIndex);
+					il.CallVirtual<DbDataReader>("GetInt16", typeof(int));
+					break;
+				case DbType.UInt32:
+					il.LoadArg(reader.Position);
+					il.LoadLocal(columnIndex);
+					il.CallVirtual<DbDataReader>("GetInt32", typeof(int));
+					break;
+				case DbType.UInt64:
+					il.LoadArg(reader.Position);
+					il.LoadLocal(columnIndex);
+					il.CallVirtual<DbDataReader>("GetInt64", typeof(int));
+					break;
+				case DbType.VarNumeric:
+					il.LoadArg(reader.Position);
+					il.LoadLocal(columnIndex);
+					il.CallVirtual<DbDataReader>("GetDecimal", typeof(int));
+					break;
+				case DbType.AnsiStringFixedLength:
+					il.LoadArg(reader.Position);
+					il.LoadLocal(columnIndex);
+					il.CallVirtual<DbDataReader>("GetString", typeof(int));
+					break;
+				case DbType.StringFixedLength:
+					il.LoadArg(reader.Position);
+					il.LoadLocal(columnIndex);
+					il.CallVirtual<DbDataReader>("GetString", typeof(int));
+					break;
+				case DbType.Xml:
+					throw new NotImplementedException();
+				case DbType.DateTime2:
+					il.LoadArg(reader.Position);
+					il.LoadLocal(columnIndex);
+					il.CallVirtual<DbDataReader>("GetDateTime", typeof(int));
+					break;
+				case DbType.DateTimeOffset:
+					il.LoadArg(reader.Position);
+					il.LoadLocal(columnIndex);
+					il.CallVirtual<DbDataReader>("GetDateTimeOffset", typeof(int));
+					break;
+				default:
+					throw new ArgumentOutOfRangeException();
+			}
+		}
 	}
 }

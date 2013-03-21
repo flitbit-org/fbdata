@@ -13,9 +13,40 @@ namespace FlitBit.Data
 {
 	public interface IMapping
 	{
+		IEnumerable<CollectionMapping> Collections { get; }
+		IEnumerable<ColumnMapping> Columns { get; }
+
+		/// <summary>
+		///   The connection name where the type's data resides.
+		/// </summary>
+		string ConnectionName { get; }
+
+		string DbObjectReference { get; }
+
+		IEnumerable<CollectionMapping> DeclaredCollections { get; }
+		IEnumerable<ColumnMapping> DeclaredColumns { get; }
+
+		IEnumerable<Dependency> DeclaredDependencies { get; }
+		IEnumerable<Dependency> Dependencies { get; }
 		bool IsComplete { get; }
+		bool IsEnum { get; }
+
+		/// <summary>
+		///   All members on the RuntimeType participating in the mapping.
+		/// </summary>
+		IEnumerable<MemberInfo> ParticipatingMembers { get; }
 
 		Type RuntimeType { get; }
+
+		/// <summary>
+		///   The ORM strategy.
+		/// </summary>
+		MappingStrategy Strategy { get; }
+
+		/// <summary>
+		///   The Db catalog (database) where the target object resides.
+		/// </summary>
+		string TargetCatalog { get; }
 
 		/// <summary>
 		///   The Db object to which type T maps; either a table or view.
@@ -27,47 +58,15 @@ namespace FlitBit.Data
 		/// </summary>
 		string TargetSchema { get; }
 
-		/// <summary>
-		///   The Db catalog (database) where the target object resides.
-		/// </summary>
-		string TargetCatalog { get; }
-
-		/// <summary>
-		///   The connection name where the type's data resides.
-		/// </summary>
-		string ConnectionName { get; }
-
-		/// <summary>
-		///   The ORM strategy.
-		/// </summary>
-		MappingStrategy Strategy { get; }
-
-		bool IsEnum { get; }
-
-		string DbObjectReference { get; }
-
-		IEnumerable<ColumnMapping> Columns { get; }
-		IEnumerable<ColumnMapping> DeclaredColumns { get; }
-
-		IEnumerable<CollectionMapping> Collections { get; }
-		IEnumerable<CollectionMapping> DeclaredCollections { get; }
-
-		IEnumerable<Dependency> Dependencies { get; }
-		IEnumerable<Dependency> DeclaredDependencies { get; }
-
-		/// <summary>
-		///   All members on the RuntimeType participating in the mapping.
-		/// </summary>
-		IEnumerable<MemberInfo> ParticipatingMembers { get; }
-
 		IMapping Completed(Action action);
 		IModelBinder GetBinder();
 
 		void NotifySubtype(IMapping mapping);
 		string QuoteObjectNameForSQL(string name);
+
+		Type IdentityKeyType { get; }
 	}
 
 	public interface IMapping<out M> : IMapping
-	{
-	}
+	{}
 }

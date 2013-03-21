@@ -15,7 +15,10 @@ namespace FlitBit.Data.Meta.DDL
 		int _index;
 
 		public DDLTableColumn(DDLTable table, string name, int index, DDLBehaviors behaviors)
-			: base(DDLNodeKind.Column, table, name, behaviors) { _index = index; }
+			: base(DDLNodeKind.Column, table, name, behaviors)
+		{
+			_index = index;
+		}
 
 		public DDLTableColumn(DDLTable table, ColumnMapping col, int index, DDLBehaviors behaviors)
 			: base(DDLNodeKind.Column, table, col.TargetName, behaviors)
@@ -25,9 +28,6 @@ namespace FlitBit.Data.Meta.DDL
 			this._index = index;
 		}
 
-		public DDLTable Table
-		{
-			get { return (DDLTable) Parent; }
-		}
+		public DDLTable Table { get { return (DDLTable) Parent; } }
 	}
 }

@@ -24,7 +24,10 @@ namespace FlitBit.Data.SqlServer
 			return (name[0] != '@') ? String.Concat('@', name) : name;
 		}
 
-		public override DbTypeTranslation TranslateRuntimeType(Type type) { return SqlDbTypeTranslations.TranslateRuntimeType(type); }
+		public override DbTypeTranslation TranslateRuntimeType(Type type)
+		{
+			return SqlDbTypeTranslations.TranslateRuntimeType(type);
+		}
 
 		protected override IDataParameter MakeParameter(DbCommand command, string name, DbType dbType, int specializedDbType,
 			int length, ParameterDirection direction)
@@ -54,18 +57,65 @@ namespace FlitBit.Data.SqlServer
 			return parm;
 		}
 
-		protected override void PerformSetParameterValue(ParameterBinding[] parameters, int p, string name, bool value) { parameters[p].SpecializedValue = new SqlBoolean(value); }
-		protected override void PerformSetParameterValue(ParameterBinding[] parameters, int p, string name, byte value) { parameters[p].SpecializedValue = new SqlByte(value); }
-		protected override void PerformSetParameterValue(ParameterBinding[] parameters, int p, string name, byte[] value) { parameters[p].SpecializedValue = new SqlBytes(value); }
-		protected override void PerformSetParameterValue(ParameterBinding[] parameters, int p, string name, decimal value) { parameters[p].SpecializedValue = new SqlDecimal(value); }
-		protected override void PerformSetParameterValue(ParameterBinding[] parameters, int p, string name, double value) { parameters[p].SpecializedValue = new SqlDouble(value); }
-		protected override void PerformSetParameterValue(ParameterBinding[] parameters, int p, string name, DateTime value) { parameters[p].SpecializedValue = new SqlDateTime(value); }
-		protected override void PerformSetParameterValue(ParameterBinding[] parameters, int p, string name, float value) { parameters[p].SpecializedValue = new SqlSingle(value); }
-		protected override void PerformSetParameterValue(ParameterBinding[] parameters, int p, string name, Guid value) { parameters[p].SpecializedValue = new SqlGuid(value); }
-		protected override void PerformSetParameterValue(ParameterBinding[] parameters, int p, string name, int value) { parameters[p].SpecializedValue = new SqlInt32(value); }
-		protected override void PerformSetParameterValue(ParameterBinding[] parameters, int p, string name, long value) { parameters[p].SpecializedValue = new SqlInt64(value); }
-		protected override void PerformSetParameterValue(ParameterBinding[] parameters, int p, string name, short value) { parameters[p].SpecializedValue = new SqlInt16(value); }
-		protected override void PerformSetParameterValue(ParameterBinding[] parameters, int p, string name, string value) { parameters[p].SpecializedValue = new SqlString(value); }
+		protected override void PerformSetParameterValue(ParameterBinding[] parameters, int p, string name, bool value)
+		{
+			parameters[p].SpecializedValue = new SqlBoolean(value);
+		}
+
+		protected override void PerformSetParameterValue(ParameterBinding[] parameters, int p, string name, byte value)
+		{
+			parameters[p].SpecializedValue = new SqlByte(value);
+		}
+
+		protected override void PerformSetParameterValue(ParameterBinding[] parameters, int p, string name, byte[] value)
+		{
+			parameters[p].SpecializedValue = new SqlBytes(value);
+		}
+
+		protected override void PerformSetParameterValue(ParameterBinding[] parameters, int p, string name, decimal value)
+		{
+			parameters[p].SpecializedValue = new SqlDecimal(value);
+		}
+
+		protected override void PerformSetParameterValue(ParameterBinding[] parameters, int p, string name, double value)
+		{
+			parameters[p].SpecializedValue = new SqlDouble(value);
+		}
+
+		protected override void PerformSetParameterValue(ParameterBinding[] parameters, int p, string name, DateTime value)
+		{
+			parameters[p].SpecializedValue = new SqlDateTime(value);
+		}
+
+		protected override void PerformSetParameterValue(ParameterBinding[] parameters, int p, string name, float value)
+		{
+			parameters[p].SpecializedValue = new SqlSingle(value);
+		}
+
+		protected override void PerformSetParameterValue(ParameterBinding[] parameters, int p, string name, Guid value)
+		{
+			parameters[p].SpecializedValue = new SqlGuid(value);
+		}
+
+		protected override void PerformSetParameterValue(ParameterBinding[] parameters, int p, string name, int value)
+		{
+			parameters[p].SpecializedValue = new SqlInt32(value);
+		}
+
+		protected override void PerformSetParameterValue(ParameterBinding[] parameters, int p, string name, long value)
+		{
+			parameters[p].SpecializedValue = new SqlInt64(value);
+		}
+
+		protected override void PerformSetParameterValue(ParameterBinding[] parameters, int p, string name, short value)
+		{
+			parameters[p].SpecializedValue = new SqlInt16(value);
+		}
+
+		protected override void PerformSetParameterValue(ParameterBinding[] parameters, int p, string name, string value)
+		{
+			parameters[p].SpecializedValue = new SqlString(value);
+		}
 
 		protected internal override IEnumerable<ParameterBinding> PrepareParametersFromSource(
 			IEnumerable<ParameterBinding> parameters)
@@ -88,7 +138,8 @@ namespace FlitBit.Data.SqlServer
 				}
 				if (translation == null)
 				{
-					throw new InvalidOperationException(String.Concat(this.GetType().FullName,
+					throw new InvalidOperationException(String.Concat(this.GetType()
+																																.FullName,
 																														" could not translate parameter definition ", binding.Definition.Name));
 				}
 				var bindingName = binding.Definition.BindName;
@@ -104,10 +155,10 @@ namespace FlitBit.Data.SqlServer
 																								binding.Definition.Scale,
 																								binding.Definition.Direction);
 				bindings.Add(new ParameterBinding
-					{
-						Definition = specialized,
-						SpecializedValue = binding.SpecializedValue
-					});
+				{
+					Definition = specialized,
+					SpecializedValue = binding.SpecializedValue
+				});
 			}
 			return bindings.ToArray();
 		}

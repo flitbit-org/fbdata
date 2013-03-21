@@ -49,6 +49,8 @@ namespace FlitBit.Data
 		[ContractClassFor(typeof(IDataRepository<,>))]
 		internal abstract class ContractForIDataRepository<M, I> : IDataRepository<M, I>
 		{
+			#region IDataRepository<M,I> Members
+
 			public I GetIdentity(M model)
 			{
 				Contract.Requires<ArgumentNullException>(model != null);
@@ -127,6 +129,8 @@ namespace FlitBit.Data
 
 				throw new NotImplementedException();
 			}
+
+			#endregion
 		}
 	}
 }

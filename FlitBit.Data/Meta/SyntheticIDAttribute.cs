@@ -34,7 +34,8 @@ namespace FlitBit.Data.Meta
 	public sealed class SyntheticIDAttribute : Attribute
 	{
 		public SyntheticIDAttribute(SyntheticIDBehaviors behaviors)
-			: this(behaviors, SyntheticIDSize.Bits_31) { }
+			: this(behaviors, SyntheticIDSize.Bits_31)
+		{}
 
 		public SyntheticIDAttribute(SyntheticIDBehaviors behaviors, SyntheticIDSize size)
 		{

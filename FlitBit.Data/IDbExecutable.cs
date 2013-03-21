@@ -20,14 +20,14 @@ namespace FlitBit.Data
 	public interface IDbExecutable : IInterrogateDisposable
 	{
 		CommandBehaviors Behaviors { get; }
-		string CommandText { get; }
-		CommandType CommandType { get; }
-		int CommandTimeout { get; }
-		string ConnectionName { get; }
-		bool IsExecutableCommand { get; }
-		IDbContext Context { get; }
-		IDataParameterBinder ParameterBinder { get; }
 		IEnumerable<ParameterBinding> Bindings { get; }
+		string CommandText { get; }
+		int CommandTimeout { get; }
+		CommandType CommandType { get; }
+		string ConnectionName { get; }
+		IDbContext Context { get; }
+		bool IsExecutableCommand { get; }
+		IDataParameterBinder ParameterBinder { get; }
 
 		/// <summary>
 		///   Creates an instance of the executable on the connection given.
@@ -58,39 +58,29 @@ namespace FlitBit.Data
 		[ContractClassFor(typeof(IDbExecutable))]
 		internal abstract class ContractForIDbExecutable : IDbExecutable
 		{
-			public CommandBehaviors Behaviors
+			#region IDbExecutable Members
+
+			public CommandBehaviors Behaviors { get { throw new NotImplementedException(); } }
+
+			public string CommandText { get { throw new NotImplementedException(); } }
+
+			public CommandType CommandType { get { throw new NotImplementedException(); } }
+
+			public string ConnectionName { get { throw new NotImplementedException(); } }
+
+			public bool IsExecutableCommand { get { throw new NotImplementedException(); } }
+
+			public IDbContext Context { get { throw new NotImplementedException(); } }
+
+			public IDbExecutable ExcludeBehaviors(CommandBehaviors behaviors)
 			{
-				get { throw new NotImplementedException(); }
+				throw new NotImplementedException();
 			}
 
-			public string CommandText
+			public IDbExecutable IncludeBehaviors(CommandBehaviors behaviors)
 			{
-				get { throw new NotImplementedException(); }
+				throw new NotImplementedException();
 			}
-
-			public CommandType CommandType
-			{
-				get { throw new NotImplementedException(); }
-			}
-
-			public string ConnectionName
-			{
-				get { throw new NotImplementedException(); }
-			}
-
-			public bool IsExecutableCommand
-			{
-				get { throw new NotImplementedException(); }
-			}
-
-			public IDbContext Context
-			{
-				get { throw new NotImplementedException(); }
-			}
-
-			public IDbExecutable ExcludeBehaviors(CommandBehaviors behaviors) { throw new NotImplementedException(); }
-
-			public IDbExecutable IncludeBehaviors(CommandBehaviors behaviors) { throw new NotImplementedException(); }
 
 			public int ExecuteNonQuery()
 			{
@@ -160,12 +150,12 @@ namespace FlitBit.Data
 				throw new NotImplementedException();
 			}
 
-			public bool IsDisposed
-			{
-				get { throw new NotImplementedException(); }
-			}
+			public bool IsDisposed { get { throw new NotImplementedException(); } }
 
-			public void Dispose() { throw new NotImplementedException(); }
+			public void Dispose()
+			{
+				throw new NotImplementedException();
+			}
 
 			public IDataParameterBinder ParameterBinder
 			{
@@ -177,10 +167,7 @@ namespace FlitBit.Data
 				}
 			}
 
-			public int CommandTimeout
-			{
-				get { throw new NotImplementedException(); }
-			}
+			public int CommandTimeout { get { throw new NotImplementedException(); } }
 
 			public IEnumerable<ParameterBinding> Bindings
 			{
@@ -191,6 +178,8 @@ namespace FlitBit.Data
 					throw new NotImplementedException();
 				}
 			}
+
+			#endregion
 		}
 	}
 }

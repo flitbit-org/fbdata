@@ -12,7 +12,7 @@ namespace FlitBit.Data.Meta.Tests
 	{
 		[TestMethod]
 		public void Monkey()
-		{
+		{	
 			Mappings.Instance
 				//.UseDefaultConnection("test-data")
 							.ForType<TestPerson>()

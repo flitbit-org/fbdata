@@ -2,6 +2,7 @@
 using System.Text;
 using FlitBit.Data.Tests.Meta.Models;
 using FlitBit.Emit;
+using FlitBit.Wireup;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace FlitBit.Data.Tests.Meta
@@ -11,7 +12,7 @@ namespace FlitBit.Data.Tests.Meta
 	{
 		[TestInitialize]
 		public void Initialize()
-		{
+		{	
 			// force the dynamic assembly to disk so we can put eyeballs on the code...
 			RuntimeAssemblies.WriteDynamicAssemblyOnExit = true;
 		}
@@ -23,7 +24,7 @@ namespace FlitBit.Data.Tests.Meta
 			var idk = DataModel<IParty>.IdentityKey;
 			Assert.IsNotNull(party);
 			Assert.IsNotNull(party.Columns);
-			Assert.AreEqual(5, party.Columns.Count());
+			Assert.AreEqual(4, party.Columns.Count());
 
 			var binder = party.GetBinder();
 
@@ -40,8 +41,8 @@ namespace FlitBit.Data.Tests.Meta
 
 			Assert.IsNotNull(people.Columns);
 
-			// IParty: 5, IPerson: 4, IEmailAddress: 2
-			Assert.AreEqual(11, people.Columns.Count());
+			// IParty: 4, IPerson: 4 , IEmailAddress: 2
+			Assert.AreEqual(10, people.Columns.Count());
 
 			var peepsBinder = people.GetBinder();
 

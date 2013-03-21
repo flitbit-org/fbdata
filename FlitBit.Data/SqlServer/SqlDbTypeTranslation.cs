@@ -15,31 +15,42 @@ namespace FlitBit.Data.SqlServer
 		public SqlDbTypeTranslation(DbType dbType, SqlDbType specializedDbType, Type runtimeType,
 			bool isDefaultForRuntimeType)
 			: base(dbType, (int) specializedDbType, runtimeType, isDefaultForRuntimeType,
-						specializedDbType.ToString().ToUpper(), DbTypeLengthRequirements.None) { }
+						specializedDbType.ToString()
+														.ToUpper(), DbTypeLengthRequirements.None)
+		{}
 
 		public SqlDbTypeTranslation(DbType dbType, SqlDbType specializedDbType, Type runtimeType,
 			bool isDefaultForRuntimeType, DbTypeLengthRequirements lengthRequirements)
 			: base(dbType, (int) specializedDbType, runtimeType, isDefaultForRuntimeType,
-						specializedDbType.ToString().ToUpper(), lengthRequirements) { }
+						specializedDbType.ToString()
+														.ToUpper(), lengthRequirements)
+		{}
 
 		public SqlDbTypeTranslation(DbType dbType, SqlDbType specializedDbType, Type runtimeType,
 			bool isDefaultForRuntimeType, string providerSqlTypeName, DbTypeLengthRequirements lengthRequirements)
 			: base(dbType, (int) specializedDbType, runtimeType, isDefaultForRuntimeType,
-						providerSqlTypeName, lengthRequirements) { }
+						providerSqlTypeName, lengthRequirements)
+		{}
 
 		public SqlDbTypeTranslation(DbType dbType, SqlDbType specializedDbType, Type runtimeType,
 			bool isDefaultForRuntimeType, DbTypeLengthRequirements lengthRequirements,
 			string defaultLength)
 			: base(dbType, (int) specializedDbType, runtimeType, isDefaultForRuntimeType,
-						specializedDbType.ToString().ToUpper(), lengthRequirements, defaultLength) { }
+						specializedDbType.ToString()
+														.ToUpper(), lengthRequirements, defaultLength)
+		{}
 
 		public SqlDbTypeTranslation(DbType dbType, SqlDbType specializedDbType, Type runtimeType,
 			bool isDefaultForRuntimeType, string providerSqlTypeName, DbTypeLengthRequirements lengthRequirements,
 			string defaultLength)
 			: base(dbType, (int) specializedDbType, runtimeType, isDefaultForRuntimeType,
-						providerSqlTypeName, lengthRequirements, defaultLength) { }
+						providerSqlTypeName, lengthRequirements, defaultLength)
+		{}
 
-		public override bool MustWriteLength(int declaredLength, int declaredScale) { return (this.LengthRequirements & (DbTypeLengthRequirements.LengthSpecifierMask)) != DbTypeLengthRequirements.None; }
+		public override bool MustWriteLength(int declaredLength, int declaredScale)
+		{
+			return (this.LengthRequirements & (DbTypeLengthRequirements.LengthSpecifierMask)) != DbTypeLengthRequirements.None;
+		}
 
 		public override void WriteLength(int declaredLength, int declaredScale, StringBuilder sql)
 		{

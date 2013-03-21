@@ -9,9 +9,13 @@ namespace FlitBit.Data.Meta
 	public sealed class ColumnMapping<T> : ColumnMapping
 	{
 		internal ColumnMapping(IMapping mapping, MemberInfo member, int ordinal)
-			: base(mapping, member, ordinal) { }
+			: base(mapping, member, ordinal)
+		{}
 
-		public Mapping<T> End() { return (Mapping<T>) Mapping; }
+		public Mapping<T> End()
+		{
+			return (Mapping<T>) Mapping;
+		}
 
 		public ColumnMapping<T> WithBehaviors(ColumnBehaviors behaviors)
 		{

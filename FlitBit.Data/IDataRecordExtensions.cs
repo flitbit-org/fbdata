@@ -50,8 +50,15 @@ namespace FlitBit.Data
 			return result;
 		}
 
-		public static T GetValueOrDefault<T>(this IDataRecord record, int ordinal) { return (T) ((record.IsDBNull(ordinal)) ? default(T) : record.GetValue(ordinal)); }
-		public static T GetValueOrDefault<T>(this IDataRecord record, int ordinal, T defa) { return (T) ((record.IsDBNull(ordinal)) ? defa : record.GetValue(ordinal)); }
+		public static T GetValueOrDefault<T>(this IDataRecord record, int ordinal)
+		{
+			return (T) ((record.IsDBNull(ordinal)) ? default(T) : record.GetValue(ordinal));
+		}
+
+		public static T GetValueOrDefault<T>(this IDataRecord record, int ordinal, T defa)
+		{
+			return (T) ((record.IsDBNull(ordinal)) ? defa : record.GetValue(ordinal));
+		}
 
 		public static JArray RecordAsJArray(this IDataRecord record)
 		{
@@ -81,6 +88,10 @@ namespace FlitBit.Data
 			return result;
 		}
 
-		public static string RecordAsJson(this IDataRecord record) { return RecordAsJObject(record).ToString(); }
+		public static string RecordAsJson(this IDataRecord record)
+		{
+			return RecordAsJObject(record)
+				.ToString();
+		}
 	}
 }

@@ -59,8 +59,10 @@ namespace FlitBit.Data
 					LogSink.OnTraceEvent(TraceEventType.Warning,
 															String.Concat(
 																					 "GetDdlBatch encountered an error in the stack while generating DDL; stack contained {0} instead of {1} on exit.",
-																					bottom.GetType().GetReadableFullName(),
-																					mapping.GetType().GetReadableFullName())
+																					bottom.GetType()
+																								.GetReadableFullName(),
+																					mapping.GetType()
+																								.GetReadableFullName())
 						);
 				}
 			}
@@ -81,20 +83,23 @@ namespace FlitBit.Data
 		{
 			if (mapping.IsEnum)
 			{
-				var idcol = mapping.Columns.Where(c => c.RuntimeType.IsEnum && c.IsIdentity).FirstOrDefault();
+				var idcol = mapping.Columns.Where(c => c.RuntimeType.IsEnum && c.IsIdentity)
+													.FirstOrDefault();
 				if (idcol == null)
 				{
 					throw new MappingException(String.Concat("Entity type '", mapping.RuntimeType.GetReadableFullName(),
 																									"' declares behavior EntityBehaviors.MapEnum but the enum type cannot be determined. Specify an identity column of enum type."));
 				}
-				var namecol = mapping.Columns.Where(c => c.RuntimeType == typeof(String) && c.IsAlternateKey).FirstOrDefault();
+				var namecol = mapping.Columns.Where(c => c.RuntimeType == typeof(String) && c.IsAlternateKey)
+														.FirstOrDefault();
 				if (namecol == null)
 				{
 					throw new MappingException(String.Concat("Entity type '", mapping.RuntimeType.GetReadableFullName(),
 																									"' declares behavior EntityBehaviors.MapEnum but a column to hold the enum name cannot be determined. Specify a string column with alternate key behavior."));
 				}
 				var mapEnum =
-					(MapEnumAttribute) idcol.RuntimeType.GetCustomAttributes(typeof(MapEnumAttribute), false).SingleOrDefault();
+					(MapEnumAttribute) idcol.RuntimeType.GetCustomAttributes(typeof(MapEnumAttribute), false)
+																	.SingleOrDefault();
 				return (mapEnum == null || mapEnum.Behavior == EnumBehavior.ReferenceValue)
 					? idcol
 					: namecol;

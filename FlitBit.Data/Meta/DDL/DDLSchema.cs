@@ -9,6 +9,7 @@ namespace FlitBit.Data.Meta.DDL
 	public class DDLSchema : DDLNode
 	{
 		public DDLSchema(DDLNode parent, string name, DDLBehaviors behaviors)
-			: base(DDLNodeKind.Schema, parent, name, behaviors) { }
+			: base(DDLNodeKind.Schema, parent, name, behaviors)
+		{}
 	}
 }

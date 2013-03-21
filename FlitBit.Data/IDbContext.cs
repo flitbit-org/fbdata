@@ -14,11 +14,11 @@ namespace FlitBit.Data
 	public interface IDbContext : IInterrogateDisposable, IParallelShared
 	{
 		DbContextBehaviors Behaviors { get; }
-		int QueryCount { get; }
-		int CachePuts { get; }
 		int CacheAttempts { get; }
 		int CacheHits { get; }
+		int CachePuts { get; }
 		int CacheRemoves { get; }
+		int QueryCount { get; }
 
 		T Add<T>(T item)
 			where T : IDisposable;

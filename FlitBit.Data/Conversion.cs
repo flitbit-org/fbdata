@@ -30,7 +30,8 @@ namespace FlitBit.Data
 			}
 			throw new ArgumentException(
 				String.Concat("Cannot convert type to Guid: ",
-											source.GetType().GetReadableFullName())
+											source.GetType()
+														.GetReadableFullName())
 				);
 		}
 	}

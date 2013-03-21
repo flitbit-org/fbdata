@@ -13,7 +13,8 @@ namespace FlitBit.Data.Meta.DDL
 		Dictionary<string, DDLTableColumn> _columns = new Dictionary<string, DDLTableColumn>();
 
 		public DDLTable(DDLNode parent, string name, DDLBehaviors behaviors)
-			: base(DDLNodeKind.Table, parent, name, behaviors) { }
+			: base(DDLNodeKind.Table, parent, name, behaviors)
+		{}
 
 		public DDLTableColumn DefineColumn(ColumnMapping col, DDLBehaviors behaviors)
 		{

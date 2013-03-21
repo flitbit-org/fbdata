@@ -104,15 +104,17 @@
     <Reference Include="FlitBit.Cache">
       <HintPath>..\packages\FlitBit.Cache.1.7.0\lib\net40\FlitBit.Cache.dll</HintPath>
     </Reference>
-    <Reference Include="FlitBit.Copy">
-      <HintPath>..\packages\FlitBit.Copy.2.6.3\lib\net40\FlitBit.Copy.dll</HintPath>
-    </Reference>
-    <Reference Include="FlitBit.Core, Version=2.8.15.0, Culture=neutral, PublicKeyToken=38f03d0878531ff3, processorArchitecture=MSIL">
-      <HintPath>..\packages\FlitBit.Core.2.8.15\lib\net40\FlitBit.Core.dll</HintPath>
-    </Reference>
-    <Reference Include="FlitBit.Emit, Version=2.7.2.0, Culture=neutral, PublicKeyToken=38f03d0878531ff3, processorArchitecture=MSIL">
+    <Reference Include="FlitBit.Copy, Version=2.7.2.0, Culture=neutral, PublicKeyToken=38f03d0878531ff3, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\FlitBit.Emit.2.7.2\lib\net40\FlitBit.Emit.dll</HintPath>
+      <HintPath>..\packages\FlitBit.Copy.2.7.2\lib\net40\FlitBit.Copy.dll</HintPath>
+    </Reference>
+    <Reference Include="FlitBit.Core, Version=2.10.0.0, Culture=neutral, PublicKeyToken=38f03d0878531ff3, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\FlitBit.Core.2.10.0\lib\net40\FlitBit.Core.dll</HintPath>
+    </Reference>
+    <Reference Include="FlitBit.Emit, Version=2.8.3.0, Culture=neutral, PublicKeyToken=38f03d0878531ff3, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\FlitBit.Emit.2.8.3\lib\net40\FlitBit.Emit.dll</HintPath>
     </Reference>
     <Reference Include="FlitBit.ObjectIdentity">
       <HintPath>..\packages\FlitBit.ObjectIdentity.1.2.1\lib\net40\FlitBit.ObjectIdentity.dll</HintPath>
@@ -126,8 +128,9 @@
     <Reference Include="FlitBit.Represent">
       <HintPath>..\packages\FlitBit.Represent.0.2.1\lib\net40\FlitBit.Represent.dll</HintPath>
     </Reference>
-    <Reference Include="FlitBit.Wireup">
-      <HintPath>..\packages\FlitBit.Wireup.2.5.3\lib\net40\FlitBit.Wireup.dll</HintPath>
+    <Reference Include="FlitBit.Wireup, Version=2.5.4.0, Culture=neutral, PublicKeyToken=38f03d0878531ff3, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\packages\FlitBit.Wireup.2.5.4\lib\net40\FlitBit.Wireup.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\packages\Newtonsoft.Json.4.5.11\lib\net40\Newtonsoft.Json.dll</HintPath>
@@ -150,15 +153,84 @@
       <DependentUpon>IDataRepository.cs</DependentUpon>
     </Compile>
     <Compile Include="Catalog\IMappedType.cs" />
-    <Compile Include="DataModelReferenceFactory.M.IK.cs" />
-    <Compile Include="DataModel.M.cs" />
+    <Compile Include="Catalog\StaticCatalog.cs" />
+    <Compile Include="IHierarchyMapping.cs" />
+    <Compile Include="IHierarchyMappings.cs" />
+		<Compile Include="MappedDbTypeEmitter.cs" />
+		<Compile Include="MappedBinaryEmitter.cs">
+			<DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
+		</Compile>
+		<Compile Include="MappedBooleanEmitter.cs">
+			<DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
+		</Compile>
+    <Compile Include="MappedByteEmitter.cs">
+			<DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
+		</Compile>
+    <Compile Include="MappedCharEmitter.cs">
+			<DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
+		</Compile>
+    <Compile Include="MappedDateTimeEmitter.cs">
+			<DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
+		</Compile>
+    <Compile Include="MappedDateTimeOffsetEmitter.cs">
+		<DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
+		</Compile>
+    <Compile Include="MappedDecimalEmitter.cs">
+			<DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
+		</Compile>
+    <Compile Include="MappedDoubleEmitter.cs">
+			<DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
+		</Compile>
+    <Compile Include="MappedEmumAsInt16Emitter.cs">
+			<DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
+		</Compile>
+    <Compile Include="MappedEmumAsInt32Emitter.cs">
+			<DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
+		</Compile>
+    <Compile Include="MappedGuidEmitter.cs">
+			<DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
+		</Compile>
+    <Compile Include="MappedSByteEmitter.cs">
+			<DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
+		</Compile>
+    <Compile Include="MappedSingleEmitter.cs">
+			<DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
+		</Compile>
+    <Compile Include="MappedStringEmitter.cs">
+			<DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
+		</Compile>
+    <Compile Include="MappedInt64Emitter.cs">
+			<DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
+		</Compile>
+    <Compile Include="MappedInt16Emitter.cs">
+			<DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
+		</Compile>
+		<Compile Include="MappedInt32Emitter.cs">
+			<DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
+		</Compile>
+		<Compile Include="MappedAnyToStringEmitter.cs">
+			<DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
+		</Compile>
+		<Compile Include="MappedTypeToStringEmitter.cs">
+			<DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
+		</Compile>
+		<Compile Include="MappedUInt16Emitter.cs">
+			<DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
+		</Compile>
+		<Compile Include="MappedUInt32Emitter.cs">
+			<DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
+		</Compile>
+		<Compile Include="MappedUInt64Emitter.cs">
+			<DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
+		</Compile>
+		<Compile Include="DataModel.TModel.cs" />
     <Compile Include="DataModelReference.M.IK.cs" />
     <Compile Include="HierarchyMapping.cs" />
-    <Compile Include="IDataModelReference.M.IK.cs" />
-    <Compile Include="IDataModelReferenceFactory.M.cs" />
-    <Compile Include="IDataModelResolver.M.IK.cs" />
+    <Compile Include="IDataModelReference.cs" />
+    <Compile Include="DataModelReferenceExtensions.cs" />
+    <Compile Include="IDataModelReferent.cs" />
+    <Compile Include="IDataModelResolver.cs" />
     <Compile Include="IModelBinderExtensions.cs" />
-    <Compile Include="IDataModel.cs" />
     <Compile Include="DataModels.cs" />
     <Compile Include="DbTypeLengthRequirements.cs" />
     <Compile Include="Meta\ColumnMapping.T.cs" />
@@ -222,6 +294,7 @@
     <Compile Include="Meta\CollectionMapping.cs" />
     <Compile Include="Meta\ColumnMapping.cs" />
     <Compile Include="Meta\CollectionMapping.T.cs" />
+    <Compile Include="Meta\DataModelAttribute.cs" />
     <Compile Include="Meta\DDL\DDLBatch.cs" />
     <Compile Include="Meta\DDL\DDLBehaviors.cs" />
     <Compile Include="Meta\DDL\DDLCatalog.cs" />
@@ -234,7 +307,6 @@
     <Compile Include="Meta\Dependency.cs" />
     <Compile Include="Meta\Enum.cs" />
     <Compile Include="Meta\Exceptions.cs" />
-    <Compile Include="IDbTypeTranslator.cs" />
     <Compile Include="Meta\IdentityMapping.cs" />
     <Compile Include="IMapping.cs" />
     <Compile Include="IMappingExtensions.cs">
@@ -271,6 +343,7 @@
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
     <Compile Include="QueryBehavior.cs" />
+    <Compile Include="SPI\IDataModel.cs" />
     <Compile Include="SqlServer\DirectSqlParameterBinder.cs" />
     <Compile Include="SqlServer\DynamicHybridInheritanceTreeBinder.cs" />
     <Compile Include="SqlServer\SqlDbExecutable.cs" />

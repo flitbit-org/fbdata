@@ -7,6 +7,7 @@
 using System;
 using System.Data.Common;
 using System.Diagnostics.Contracts;
+using System.IO;
 using System.Xml.Linq;
 using Newtonsoft.Json.Linq;
 
@@ -108,8 +109,36 @@ namespace FlitBit.Data
 			return new JObject(new JProperty(collectioName, ResultToJArray(reader)));
 		}
 
-		public static string ToJson(this DbDataReader reader) { return MultiResultToJArray(reader).ToString(); }
+		public static string ToJson(this DbDataReader reader)
+		{
+			return MultiResultToJArray(reader)
+				.ToString();
+		}
 
-		public static string ToJson(this DbDataReader reader, string rootName) { return MultiResultToJObject(reader, rootName).ToString(); }
+		public static string ToJson(this DbDataReader reader, string rootName)
+		{
+			return MultiResultToJObject(reader, rootName)
+				.ToString();
+		}
+
+		public static byte[] StreamBinaryDataFromDbDataReader(this DbDataReader reader, int columnIndex)
+		{
+			const int bufferSize = 200;
+			var buffer = new byte[bufferSize];
+
+			using(var stream = new MemoryStream()) 
+			{
+				long startIndex = 0;
+				long bytesRead;
+				do
+				{
+					bytesRead = reader.GetBytes(1, startIndex, buffer, 0, bufferSize);
+					stream.Write(buffer, 0, (int)bytesRead);
+					startIndex += bytesRead;
+				} while (bytesRead == bufferSize);
+				return stream.GetBuffer();
+			}
+		}
 	}
+
 }

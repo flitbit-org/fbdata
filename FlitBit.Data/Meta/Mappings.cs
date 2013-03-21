@@ -18,20 +18,16 @@ namespace FlitBit.Data.Meta
 	{
 		public const int CInvalidOrdinal = -1;
 
-		static readonly ConcurrentDictionary<object, IMapping> __mappings = new ConcurrentDictionary<object, IMapping>();
-
 		static Lazy<Mappings> __instance = new Lazy<Mappings>(() => { return new Mappings(); },
 																													LazyThreadSafetyMode.PublicationOnly);
 
-		internal Mappings() { }
+		static readonly ConcurrentDictionary<object, IMapping> __mappings = new ConcurrentDictionary<object, IMapping>();
 
-		public static Mappings Instance
-		{
-			get { return __instance.Value; }
-		}
+		internal Mappings()
+		{}
 
-		public string DefaultSchema { get; private set; }
 		public string DefaultConnection { get; private set; }
+		public string DefaultSchema { get; private set; }
 
 		public Mapping<T> ForType<T>()
 		{
@@ -42,7 +38,8 @@ namespace FlitBit.Data.Meta
 				var mm = new Mapping<T>();
 				if (__mappings.TryAdd(key, mm))
 				{
-					mm.InitFromMetadata().End();
+					mm.InitFromMetadata()
+						.End();
 					return mm;
 				}
 				__mappings.TryGetValue(key, out m);
@@ -66,10 +63,14 @@ namespace FlitBit.Data.Meta
 			return this;
 		}
 
+		public static Mappings Instance { get { return __instance.Value; } }
+
 		internal static IMapping AccessMappingFor(Type type)
 		{
 			// Admittedly this is slow, but it is only called at wireup time while generating mappings and IL.
-			return (IMapping) typeof(Mappings).GetMethod("ForType").MakeGenericMethod(type).Invoke(__instance.Value, null);
+			return (IMapping) typeof(Mappings).GetMethod("ForType")
+																				.MakeGenericMethod(type)
+																				.Invoke(__instance.Value, null);
 		}
 
 		internal static bool ExistsFor(Type type)
@@ -77,9 +78,13 @@ namespace FlitBit.Data.Meta
 			if (Type.GetTypeCode(type) == TypeCode.Object && !type.IsValueType)
 			{
 				// The type either comes from this assembly or an assembly that references this one.
-				var thisAssemblyName = Assembly.GetExecutingAssembly().GetName().FullName;
-				if (type.Assembly.GetName().FullName == thisAssemblyName
-					|| type.Assembly.GetReferencedAssemblies().Any(n => n.FullName == thisAssemblyName))
+				var thisAssemblyName = Assembly.GetExecutingAssembly()
+																			.GetName()
+																			.FullName;
+				if (type.Assembly.GetName()
+								.FullName == thisAssemblyName
+					|| type.Assembly.GetReferencedAssemblies()
+								.Any(n => n.FullName == thisAssemblyName))
 				{
 					var m = AccessMappingFor(type);
 					return m != null;

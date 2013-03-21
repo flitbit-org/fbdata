@@ -25,15 +25,19 @@ namespace FlitBit.Data.Meta
 			_owner = owner;
 		}
 
-		public string TargetName { get; protected set; }
-
 		/// <summary>
 		///   The columns that are mapped to the identity.
 		/// </summary>
 		public IEnumerable<ColumnMapping> Columns
 		{
-			get { return _columns.Values.OrderBy(c => c.Ordinal).ToReadOnly(); }
+			get
+			{
+				return _columns.Values.OrderBy(c => c.Ordinal)
+											.ToReadOnly();
+			}
 		}
+
+		public string TargetName { get; protected set; }
 
 		public IdentityMapping<T> Column(Expression<Func<T, object>> expression)
 		{
@@ -48,7 +52,8 @@ namespace FlitBit.Data.Meta
 				);
 
 			var name = member.Name;
-			var col = _owner.Columns.Where(c => c.Member == member).SingleOrDefault();
+			var col = _owner.Columns.Where(c => c.Member == member)
+											.SingleOrDefault();
 
 			Contract.Assert(col != null, "A column must be defined on the member before it can be used as an identity");
 			Contract.Assert(col.Behaviors.HasFlag(ColumnBehaviors.Identity),
@@ -62,7 +67,10 @@ namespace FlitBit.Data.Meta
 			return this;
 		}
 
-		public Mapping<T> End() { return _owner; }
+		public Mapping<T> End()
+		{
+			return _owner;
+		}
 
 		internal void AddColumn(ColumnMapping column)
 		{

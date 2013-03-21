@@ -17,7 +17,8 @@ namespace FlitBit.Data.Meta
 	{
 		int _size;
 
-		public MapColumnAttribute() { }
+		public MapColumnAttribute()
+		{}
 
 		public MapColumnAttribute(string name, ReferenceBehaviors behaviors, params string[] referencePropertyNames)
 		{
@@ -33,19 +34,24 @@ namespace FlitBit.Data.Meta
 		}
 
 		public MapColumnAttribute(string name)
-			: this(name, default(ColumnBehaviors), default(int), default(byte)) { }
+			: this(name, default(ColumnBehaviors), default(int), default(byte))
+		{}
 
 		public MapColumnAttribute(string name, ColumnBehaviors behaviors)
-			: this(name, behaviors, default(int), default(byte)) { }
+			: this(name, behaviors, default(int), default(byte))
+		{}
 
 		public MapColumnAttribute(int length)
-			: this(default(String), default(ColumnBehaviors), length, default(byte)) { }
+			: this(default(String), default(ColumnBehaviors), length, default(byte))
+		{}
 
 		public MapColumnAttribute(string name, int length)
-			: this(name, default(ColumnBehaviors), length, default(byte)) { }
+			: this(name, default(ColumnBehaviors), length, default(byte))
+		{}
 
 		public MapColumnAttribute(string name, ColumnBehaviors behaviors, int length)
-			: this(name, behaviors, length, default(byte)) { }
+			: this(name, behaviors, length, default(byte))
+		{}
 
 		public MapColumnAttribute(string name, ColumnBehaviors behaviors, int size, byte scale)
 		{
@@ -56,10 +62,12 @@ namespace FlitBit.Data.Meta
 		}
 
 		public MapColumnAttribute(ColumnBehaviors behaviors)
-			: this(behaviors, default(int), default(byte)) { }
+			: this(behaviors, default(int), default(byte))
+		{}
 
 		public MapColumnAttribute(ColumnBehaviors behaviors, int length)
-			: this(behaviors, length, default(byte)) { }
+			: this(behaviors, length, default(byte))
+		{}
 
 		public MapColumnAttribute(ColumnBehaviors behaviors, int size, byte scale)
 		{
@@ -68,22 +76,12 @@ namespace FlitBit.Data.Meta
 			this.Scale = scale;
 		}
 
-		public string TargetName { get; set; }
 		public ColumnBehaviors Behaviors { get; set; }
+		public Type DbTypeTranslator { get; set; }
 
-		public int Length
-		{
-			get { return _size; }
-			set { _size = value; }
-		}
+		public int Length { get { return _size; } set { _size = value; } }
 
-		public int Size
-		{
-			get { return _size; }
-			set { _size = value; }
-		}
-
-		public byte Scale { get; set; }
+		public ReferenceBehaviors ReferenceBehaviors { get; set; }
 
 		/// <summary>
 		///   Name of property or properties on the target object
@@ -91,17 +89,9 @@ namespace FlitBit.Data.Meta
 		/// </summary>
 		public IEnumerable<string> References { get; set; }
 
-		public ReferenceBehaviors ReferenceBehaviors { get; set; }
-
-		public Type DbTypeTranslator { get; set; }
-
-		internal static MapColumnAttribute DefineOnProperty<T>(PropertyInfo property)
-		{
-			Contract.Requires(property != null);
-
-			var attr = new MapColumnAttribute(property.Name);
-			return attr;
-		}
+		public byte Scale { get; set; }
+		public int Size { get { return _size; } set { _size = value; } }
+		public string TargetName { get; set; }
 
 		internal void PrepareMapping<T>(Mapping<T> mapping, PropertyInfo p)
 		{
@@ -123,7 +113,8 @@ namespace FlitBit.Data.Meta
 			else if (p.PropertyType.IsEnum)
 			{
 				var mapEnum =
-					(MapEnumAttribute) p.PropertyType.GetCustomAttributes(typeof(MapEnumAttribute), false).FirstOrDefault();
+					(MapEnumAttribute) p.PropertyType.GetCustomAttributes(typeof(MapEnumAttribute), false)
+															.FirstOrDefault();
 				if (mapEnum != null)
 				{
 					column.WithVariableLength(mapEnum.MaxAnticipatedNameLength);
@@ -152,7 +143,8 @@ namespace FlitBit.Data.Meta
 				else
 				{
 					// Only 1 reference column for now.
-					foreignColumn = foreignMapping.Columns.Where(c => c.Member.Name == this.References.First()).FirstOrDefault();
+					foreignColumn = foreignMapping.Columns.Where(c => c.Member.Name == this.References.First())
+																				.FirstOrDefault();
 				}
 
 				if (foreignColumn == null)
@@ -163,6 +155,14 @@ namespace FlitBit.Data.Meta
 				column.DefineReference(foreignColumn, this.ReferenceBehaviors);
 				mapping.AddDependency(foreignMapping, DependencyKind.Direct, p);
 			}
+		}
+
+		internal static MapColumnAttribute DefineOnProperty<T>(PropertyInfo property)
+		{
+			Contract.Requires(property != null);
+
+			var attr = new MapColumnAttribute(property.Name);
+			return attr;
 		}
 	}
 }

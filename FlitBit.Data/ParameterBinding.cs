@@ -17,23 +17,9 @@ namespace FlitBit.Data
 		DbParamDefinition _definition;
 		object _specializedValue;
 
-		public DbParamDefinition Definition
-		{
-			get { return _definition; }
-			set { _definition = value; }
-		}
+		public DbParamDefinition Definition { get { return _definition; } set { _definition = value; } }
 
-		public object SpecializedValue
-		{
-			get { return _specializedValue; }
-			set { _specializedValue = value; }
-		}
-
-		public bool Equals(ParameterBinding other)
-		{
-			return EqualityComparer<DbParamDefinition>.Default.Equals(Definition, other.Definition)
-				&& Equals(SpecializedValue, other.SpecializedValue);
-		}
+		public object SpecializedValue { get { return _specializedValue; } set { _specializedValue = value; } }
 
 		public override bool Equals(object obj)
 		{
@@ -44,17 +30,33 @@ namespace FlitBit.Data
 		public override int GetHashCode()
 		{
 			var prime = Constants.NotSoRandomPrime;
-			var result = CHashCodeSeed*prime;
-			result ^= _definition.GetHashCode()*prime;
+			var result = CHashCodeSeed * prime;
+			result ^= _definition.GetHashCode() * prime;
 			if (_specializedValue != null)
 			{
-				result ^= _specializedValue.GetHashCode()*prime;
+				result ^= _specializedValue.GetHashCode() * prime;
 			}
 			return result;
 		}
 
-		public static bool operator ==(ParameterBinding lhs, ParameterBinding rhs) { return lhs.Equals(rhs); }
+		public static bool operator ==(ParameterBinding lhs, ParameterBinding rhs)
+		{
+			return lhs.Equals(rhs);
+		}
 
-		public static bool operator !=(ParameterBinding lhs, ParameterBinding rhs) { return !lhs.Equals(rhs); }
+		public static bool operator !=(ParameterBinding lhs, ParameterBinding rhs)
+		{
+			return !lhs.Equals(rhs);
+		}
+
+		#region IEquatable<ParameterBinding> Members
+
+		public bool Equals(ParameterBinding other)
+		{
+			return EqualityComparer<DbParamDefinition>.Default.Equals(Definition, other.Definition)
+				&& Equals(SpecializedValue, other.SpecializedValue);
+		}
+
+		#endregion
 	}
 }

@@ -15,9 +15,13 @@ namespace FlitBit.Data.Meta
 	public class CollectionMapping<T> : CollectionMapping
 	{
 		internal CollectionMapping(Mapping<T> mapping, MemberInfo member)
-			: base(mapping, member) { }
+			: base(mapping, member)
+		{}
 
-		public Mapping<T> End() { return (Mapping<T>) Mapping; }
+		public Mapping<T> End()
+		{
+			return (Mapping<T>) Mapping;
+		}
 
 		public CollectionMapping<T> JoinReference<U>(Expression<Func<U, object>> expression)
 		{

@@ -11,24 +11,27 @@ using System.Text;
 namespace FlitBit.Data
 {
 	public class DbTypeTranslation
-	{
+	{																																		
 		public DbTypeTranslation(DbType dbType, int specializedDbType, Type runtimeType, bool isDefaultForRuntimeType,
 			string providerSqlTypeName)
 			: this(
 				dbType, specializedDbType, runtimeType, isDefaultForRuntimeType, providerSqlTypeName, DbTypeLengthRequirements.None,
-				null, null) { }
+				null, null)
+		{}
 
 		public DbTypeTranslation(DbType dbType, int specializedDbType, Type runtimeType, bool isDefaultForRuntimeType,
 			string providerSqlTypeName, DbTypeLengthRequirements lengthRequirements)
 			: this(
 				dbType, specializedDbType, runtimeType, isDefaultForRuntimeType, providerSqlTypeName, lengthRequirements, null, null
-				) { }
+				)
+		{}
 
 		public DbTypeTranslation(DbType dbType, int specializedDbType, Type runtimeType, bool isDefaultForRuntimeType,
 			string providerSqlTypeName, DbTypeLengthRequirements lengthRequirements, string defaultLength)
 			: this(
 				dbType, specializedDbType, runtimeType, isDefaultForRuntimeType, providerSqlTypeName, lengthRequirements,
-				defaultLength, null) { }
+				defaultLength, null)
+		{}
 
 		public DbTypeTranslation(DbType dbType,
 			int specializedDbType,
@@ -55,33 +58,6 @@ namespace FlitBit.Data
 		public DbType DbType { get; internal set; }
 
 		/// <summary>
-		///   Gets the specialized type. This is the int equivalent of a provider's
-		///   db type (such as SqlDbType).
-		/// </summary>
-		public int SpecializedDbType { get; internal set; }
-
-		/// <summary>
-		///   Gets the runtime type corresponding to the DbType.
-		/// </summary>
-		public Type RuntimeType { get; internal set; }
-
-		/// <summary>
-		///   Gets the name of the type as known by the provider (SQL type name).
-		/// </summary>
-		public string ProviderSqlTypeName { get; internal set; }
-
-		/// <summary>
-		///   Indicates any length requirements.
-		/// </summary>
-		public DbTypeLengthRequirements LengthRequirements { get; internal set; }
-
-		/// <summary>
-		///   Indicates whether this translation is used by default for the
-		///   indicated runtime type.
-		/// </summary>
-		public bool IsDefaultForRuntimeType { get; internal set; }
-
-		/// <summary>
 		///   Length to be used when no length is given for a column that requires
 		///   a length.
 		/// </summary>
@@ -93,7 +69,37 @@ namespace FlitBit.Data
 		/// </summary>
 		public string DefaultScale { get; internal set; }
 
-		public virtual bool MustWriteLength(int declaredLength, int declaredScale) { return (this.LengthRequirements & (DbTypeLengthRequirements.LengthSpecifierMask)) != DbTypeLengthRequirements.None; }
+		/// <summary>
+		///   Indicates whether this translation is used by default for the
+		///   indicated runtime type.
+		/// </summary>
+		public bool IsDefaultForRuntimeType { get; internal set; }
+
+		/// <summary>
+		///   Indicates any length requirements.
+		/// </summary>
+		public DbTypeLengthRequirements LengthRequirements { get; internal set; }
+
+		/// <summary>
+		///   Gets the name of the type as known by the provider (SQL type name).
+		/// </summary>
+		public string ProviderSqlTypeName { get; internal set; }
+
+		/// <summary>
+		///   Gets the runtime type corresponding to the DbType.
+		/// </summary>
+		public Type RuntimeType { get; internal set; }
+
+		/// <summary>
+		///   Gets the specialized type. This is the int equivalent of a provider's
+		///   db type (such as SqlDbType).
+		/// </summary>
+		public int SpecializedDbType { get; internal set; }
+
+		public virtual bool MustWriteLength(int declaredLength, int declaredScale)
+		{
+			return (this.LengthRequirements & (DbTypeLengthRequirements.LengthSpecifierMask)) != DbTypeLengthRequirements.None;
+		}
 
 		public virtual void WriteLength(int declaredLength, int declaredScale, StringBuilder sql)
 		{
@@ -118,12 +124,14 @@ namespace FlitBit.Data
 				{
 					if (!this.LengthRequirements.HasFlag(DbTypeLengthRequirements.OptionalScale))
 					{
-						sql.Append(',').Append(this.DefaultLength);
+						sql.Append(',')
+							.Append(this.DefaultLength);
 					}
 				}
 				else
 				{
-					sql.Append(',').Append(declaredLength);
+					sql.Append(',')
+						.Append(declaredLength);
 				}
 			}
 			sql.Append(rbracket);

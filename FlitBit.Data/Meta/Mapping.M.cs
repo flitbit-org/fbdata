@@ -19,13 +19,18 @@ using FlitBit.Wireup;
 
 namespace FlitBit.Data.Meta
 {
-	public partial class Mapping<M> : IMapping<M>
+	/// <summary>
+	///   Default mapping implementation for type TModel.
+	/// </summary>
+	/// <typeparam name="TModel"></typeparam>
+	public class Mapping<TModel> : IMapping<TModel>
 	{
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 		readonly List<IMapping> _baseTypes = new List<IMapping>();
 
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
-		readonly Dictionary<string, CollectionMapping<M>> _collections = new Dictionary<string, CollectionMapping<M>>();
+		readonly Dictionary<string, CollectionMapping<TModel>> _collections =
+			new Dictionary<string, CollectionMapping<TModel>>();
 
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 		readonly List<ColumnMapping> _columns = new List<ColumnMapping>();
@@ -35,6 +40,12 @@ namespace FlitBit.Data.Meta
 
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 		readonly List<Dependency> _dependencies = new List<Dependency>();
+
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
+		readonly IdentityMapping<TModel> _identity;
+
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
+		readonly NaturalKeyMapping<TModel> _naturalKey;
 
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 		readonly Object _sync = new Object();
@@ -51,20 +62,16 @@ namespace FlitBit.Data.Meta
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 		List<string> _errors;
 
-		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
-		IdentityMapping<M> _identity;
-
-		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
-		NaturalKeyMapping<M> _naturalKey;
+		DbProviderHelper _helper;
 
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 		string _targetSchema;
 
 		internal Mapping()
 		{
-			_identity = new IdentityMapping<M>(this);
-			_naturalKey = new NaturalKeyMapping<M>(this);
-			var name = typeof(M).Name;
+			_identity = new IdentityMapping<TModel>(this);
+			_naturalKey = new NaturalKeyMapping<TModel>(this);
+			var name = typeof(TModel).Name;
 			if (name.Length > 1 && name[0] == 'I' && Char.IsUpper(name[1]))
 			{
 				name = name.Substring(1);
@@ -72,235 +79,34 @@ namespace FlitBit.Data.Meta
 			this.TargetObject = name;
 		}
 
-		public bool HasIdentity
-		{
-			get { return _identity.Columns.Count() > 0; }
-		}
+		/// <summary>
+		///   Indicates the entity's behaviors.
+		/// </summary>
+		public EntityBehaviors Behaviors { get; internal set; }
 
 		public object Discriminator { get; private set; }
 
-		/// <summary>
-		///   Gets the mapped type's identity mapping.
-		/// </summary>
-		public IdentityMapping<M> Identity
-		{
-			get { return _identity; }
-		}
-
-		public NaturalKeyMapping<M> NaturalKey
-		{
-			get { return _naturalKey; }
-		}
-
-		public IEnumerable<string> Errors
-		{
-			get { return (_errors == null) ? new String[0] : _errors.ToArray(); }
-		}
-
-		public EntityBehaviors Behaviors { get; internal set; }
+		public IEnumerable<string> Errors { get { return (_errors == null) ? new String[0] : _errors.ToArray(); } }
 
 		public bool HasBinder
 		{
 			get
 			{
 				return (!String.IsNullOrEmpty(ConnectionName))
-					&& DbProviderHelpers.GetDbProviderHelperForDbConnection(ConnectionName) != null;
+					&& GetDbProviderHelper() != null;
 			}
 		}
 
-		public Type RuntimeType
-		{
-			get { return typeof(M); }
-		}
+		public bool HasIdentity { get { return this._identity.Columns.Any(); } }
 
 		/// <summary>
-		///   Indicates whether the mapping has been completed.
+		///   Gets the mapped type's identity mapping.
 		/// </summary>
-		public bool IsComplete { get; private set; }
+		public IdentityMapping<TModel> Identity { get { return _identity; } }
 
-		/// <summary>
-		///   Indicates whether the entity is an enum type.
-		/// </summary>
-		public bool IsEnum
-		{
-			get { return Behaviors.HasFlag(EntityBehaviors.MapEnum); }
-		}
+		public NaturalKeyMapping<TModel> NaturalKey { get { return _naturalKey; } }
 
-		/// <summary>
-		///   The Db object to which type T maps; either a table or view.
-		/// </summary>
-		public string TargetObject { get; set; }
-
-		/// <summary>
-		///   The Db schema where the target object resides.
-		/// </summary>
-		public string TargetSchema
-		{
-			get { return String.IsNullOrEmpty(_targetSchema) ? Mappings.Instance.DefaultSchema : _targetSchema; }
-			set { _targetSchema = value; }
-		}
-
-		/// <summary>
-		///   The Db catalog (database) where the target object resides.
-		/// </summary>
-		public string TargetCatalog { get; set; }
-
-		/// <summary>
-		///   The connection name where the type's data resides.
-		/// </summary>
-		public string ConnectionName
-		{
-			get { return String.IsNullOrEmpty(_connectionName) ? Mappings.Instance.DefaultConnection : _connectionName; }
-			set { _connectionName = value; }
-		}
-
-		/// <summary>
-		///   The ORM strategy.
-		/// </summary>
-		public MappingStrategy Strategy { get; private set; }
-
-		public string DbObjectReference
-		{
-			get
-			{
-				return String.IsNullOrEmpty(TargetSchema)
-					? QuoteObjectNameForSQL(TargetObject)
-					: String.Concat(QuoteObjectNameForSQL(TargetSchema), '.', QuoteObjectNameForSQL(TargetObject));
-			}
-		}
-
-		/// <summary>
-		///   The columns that are mapped to the object.
-		/// </summary>
-		public IEnumerable<ColumnMapping> Columns
-		{
-			get { return _columns.AsReadOnly(); }
-		}
-
-		/// <summary>
-		///   The columns that are mapped to the object.
-		/// </summary>
-		public IEnumerable<ColumnMapping> DeclaredColumns
-		{
-			get { return _declaredColumns.AsReadOnly(); }
-		}
-
-		public IEnumerable<MemberInfo> ParticipatingMembers
-		{
-			get
-			{
-				return Columns.Select(c => c.Member)
-											.Concat(_collections.Select(kvp => kvp.Value.Member))
-											.ToReadOnly();
-			}
-		}
-
-		/// <summary>
-		///   The collections that are mapped to the object.
-		/// </summary>
-		public IEnumerable<CollectionMapping> Collections
-		{
-			get
-			{
-				var res = new List<CollectionMapping>();
-				foreach (var it in _baseTypes)
-				{
-					res.AddRange(it.DeclaredCollections);
-				}
-				res.AddRange(_collections.Values);
-				return res.AsReadOnly();
-			}
-		}
-
-		/// <summary>
-		///   The collections that are mapped to the object.
-		/// </summary>
-		public IEnumerable<CollectionMapping> DeclaredCollections
-		{
-			get { return _collections.Values.ToReadOnly(); }
-		}
-
-		public string QuoteObjectNameForSQL(string name)
-		{
-			Contract.Assert(name != null);
-			Contract.Assert(name.Length > 0);
-
-			if (String.IsNullOrEmpty(ConnectionName))
-			{
-				return name;
-			}
-			else
-			{
-				var helper = DbProviderHelpers.GetDbProviderHelperForDbConnection(ConnectionName);
-
-				return (helper != null) ? helper.QuoteObjectName(name) : name;
-			}
-		}
-
-		public IEnumerable<Dependency> Dependencies
-		{
-			get
-			{
-				var res = new List<Dependency>();
-				foreach (var it in _baseTypes)
-				{
-					res.AddRange(it.DeclaredDependencies);
-				}
-				res.AddRange(_dependencies);
-				return res.AsReadOnly();
-			}
-		}
-
-		public IEnumerable<Dependency> DeclaredDependencies
-		{
-			get { return _dependencies.ToArray(); }
-		}
-
-		public IMapping Completed(Action action)
-		{
-			if (IsComplete)
-			{
-				action();
-			}
-			else
-			{
-				_whenCompleted.Enqueue(action);
-				if (IsComplete)
-				{
-					Action a;
-					while (_whenCompleted.TryDequeue(out a))
-					{
-						a();
-					}
-				}
-			}
-			return this;
-		}
-
-		public IModelBinder GetBinder()
-		{
-			if (_binder == null)
-			{
-				if (!String.IsNullOrEmpty(ConnectionName))
-				{
-					var helper = DbProviderHelpers.GetDbProviderHelperForDbConnection(ConnectionName);
-					if (HasBinder)
-					{
-						var get = typeof(DbProviderHelper).GetGenericMethod("GetModelBinder", 1, 2).MakeGenericMethod(typeof(M), DataModel<M>.IdentityKey.KeyType);
-						_binder = (IModelBinder) get.Invoke(helper, new object[] {this});
-					}
-				}
-			}
-			return _binder;
-		}
-
-		public void NotifySubtype(IMapping mapping)
-		{
-			var ht = typeof(IHierarchyMapping<M>).GetGenericMethod("NotifySubtype", 1, 1).MakeGenericMethod(mapping.RuntimeType);
-			ht.Invoke(DataModel<M>.Hierarchy, new object[] {mapping});
-		}
-
-		public CollectionMapping<M> Collection(Expression<Func<M, object>> expression)
+		public CollectionMapping<TModel> Collection(Expression<Func<TModel, object>> expression)
 		{
 			Contract.Requires(expression != null);
 
@@ -313,15 +119,15 @@ namespace FlitBit.Data.Meta
 
 			var name = member.Name;
 
-			CollectionMapping<M> col;
+			CollectionMapping<TModel> col;
 			lock (_sync)
 			{
 				if (!_collections.TryGetValue(name, out col))
 				{
-					_collections.Add(name, col = new CollectionMapping<M>(this, member));
+					_collections.Add(name, col = new CollectionMapping<TModel>(this, member));
 				}
 			}
-			return (CollectionMapping<M>) col;
+			return col;
 		}
 
 		/// <summary>
@@ -336,7 +142,7 @@ namespace FlitBit.Data.Meta
 		///   A ColumnMapping object for further refinement of the column's
 		///   definition.
 		/// </returns>
-		public ColumnMapping<M> Column(Expression<Func<M, object>> expression)
+		public ColumnMapping<TModel> Column(Expression<Func<TModel, object>> expression)
 		{
 			Contract.Requires(expression != null);
 
@@ -368,7 +174,23 @@ namespace FlitBit.Data.Meta
 			return Mappings.Instance;
 		}
 
-		public Mapping<M> InSchema(string schema)
+		/// <summary>
+		///   Gets the DbProviderHelper associated with the mapping's connection.
+		/// </summary>
+		/// <returns></returns>
+		public DbProviderHelper GetDbProviderHelper()
+		{
+			if (_helper == null)
+			{
+				if (!String.IsNullOrEmpty(ConnectionName))
+				{
+					_helper = DbProviderHelpers.GetDbProviderHelperForDbConnection(ConnectionName);
+				}
+			}
+			return _helper;
+		}
+
+		public Mapping<TModel> InSchema(string schema)
 		{
 			Contract.Requires(schema != null);
 			Contract.Requires(schema.Length > 0);
@@ -382,19 +204,22 @@ namespace FlitBit.Data.Meta
 			var elmMapping = Mappings.AccessMappingFor(elementType);
 			AddDependency(elmMapping, DependencyKind.Soft, member);
 
-			var foreign_object_id = elmMapping.GetPreferredReferenceColumn();
-			if (foreign_object_id == null)
+			var foreignObjectID = elmMapping.GetPreferredReferenceColumn();
+			if (foreignObjectID == null)
 			{
-				throw new MappingException(String.Concat("Relationship not defined between ", typeof(M).Name, ".", member.Name,
+				throw new MappingException(String.Concat("Relationship not defined between ", typeof(TModel).Name, ".", member.Name,
 																								" and the referenced type: ", elementType.Name));
 			}
 
-			return foreign_object_id.Member;
+			return foreignObjectID.Member;
 		}
 
-		public Mapping<M> MapAllOperations() { return MapAllOperations(this.Strategy); }
+		public Mapping<TModel> MapAllOperations()
+		{
+			return MapAllOperations(this.Strategy);
+		}
 
-		public Mapping<M> MapAllOperations(MappingStrategy strategy)
+		public Mapping<TModel> MapAllOperations(MappingStrategy strategy)
 		{
 			this.Strategy = strategy;
 			var errors = new List<string>();
@@ -415,7 +240,7 @@ namespace FlitBit.Data.Meta
 			}
 			if (String.IsNullOrEmpty(this.TargetObject))
 			{
-				warnings.Add(String.Concat("TargetObject has not been configured; the type name will be used: ", typeof(M).Name));
+				warnings.Add(String.Concat("TargetObject has not been configured; the type name will be used: ", typeof(TModel).Name));
 			}
 
 			//using (var container = Create.NewContainer())
@@ -437,9 +262,12 @@ namespace FlitBit.Data.Meta
 			return this;
 		}
 
-		public Mapping<M> ReferencesType<U>(Expression<Func<M, U, bool>> expression) { return this; }
+		public Mapping<TModel> ReferencesType<TOther>(Expression<Func<TModel, TOther, bool>> expression)
+		{
+			return this;
+		}
 
-		public Mapping<M> UsesConnection(string connection)
+		public Mapping<TModel> UsesConnection(string connection)
 		{
 			Contract.Requires(connection != null);
 			Contract.Requires(connection.Length > 0);
@@ -456,7 +284,7 @@ namespace FlitBit.Data.Meta
 		///   the type.
 		/// </param>
 		/// <returns></returns>
-		public Mapping<M> WithName(string name)
+		public Mapping<TModel> WithName(string name)
 		{
 			Contract.Requires(name != null);
 			Contract.Requires(name.Length > 0);
@@ -470,7 +298,7 @@ namespace FlitBit.Data.Meta
 			var name = contributed.TargetName;
 			lock (_sync)
 			{
-				if (_columns.Where(c => c.TargetName == name).SingleOrDefault() != null)
+				if (this._columns.SingleOrDefault(c => c.TargetName == name) != null)
 				{
 					throw new MappingException(String.Concat("Duplicate column definition: ", name));
 				}
@@ -492,43 +320,43 @@ namespace FlitBit.Data.Meta
 			}
 		}
 
-		internal CollectionMapping<M> DefineCollection(PropertyInfo property)
+		internal CollectionMapping<TModel> DefineCollection(PropertyInfo property)
 		{
 			var name = property.Name;
 
-			CollectionMapping<M> col;
+			CollectionMapping<TModel> col;
 			lock (_sync)
 			{
 				if (!_collections.TryGetValue(name, out col))
 				{
-					_collections.Add(name, col = new CollectionMapping<M>(this, property));
+					_collections.Add(name, col = new CollectionMapping<TModel>(this, property));
 				}
 			}
-			return (CollectionMapping<M>) col;
+			return col;
 		}
 
-		internal ColumnMapping<M> DefineColumn(MemberInfo member)
+		internal ColumnMapping<TModel> DefineColumn(MemberInfo member)
 		{
 			var name = member.Name;
 
 			ColumnMapping col;
 			lock (_sync)
 			{
-				if (_columns.Where(c => c.TargetName == name).SingleOrDefault() != null)
+				if (this._columns.SingleOrDefault(c => c.TargetName == name) != null)
 				{
 					throw new MappingException(String.Concat("Duplicate column definition: ", name));
 				}
 
-				col = ColumnMapping.FromMember<M>(this, member, _columns.Count);
+				col = ColumnMapping.FromMember<TModel>(this, member, _columns.Count);
 				_declaredColumns.Add(col);
 				_columns.Add(col);
 			}
-			return (ColumnMapping<M>) col;
+			return (ColumnMapping<TModel>) col;
 		}
 
-		internal Mapping<M> InitFromMetadata()
+		internal Mapping<TModel> InitFromMetadata()
 		{
-			var typ = typeof(M);
+			var typ = typeof(TModel);
 			var mod = typ.Module;
 			var asm = typ.Assembly;
 			WireupCoordinator.Instance.WireupDependencies(asm);
@@ -536,37 +364,41 @@ namespace FlitBit.Data.Meta
 			if (mod.IsDefined(typeof(MapConnectionAttribute), false))
 			{
 				var conn = (MapConnectionAttribute) mod
-					.GetCustomAttributes(typeof(MapConnectionAttribute), false).First();
+					.GetCustomAttributes(typeof(MapConnectionAttribute), false)
+					.First();
 				conn.PrepareMapping(this);
 			}
 			else if (asm.IsDefined(typeof(MapConnectionAttribute), false))
 			{
 				var conn = (MapConnectionAttribute) asm
-					.GetCustomAttributes(typeof(MapConnectionAttribute), false).First();
+					.GetCustomAttributes(typeof(MapConnectionAttribute), false)
+					.First();
 				conn.PrepareMapping(this);
 			}
 			if (mod.IsDefined(typeof(MapSchemaAttribute), false))
 			{
 				var schema = (MapSchemaAttribute) mod
-					.GetCustomAttributes(typeof(MapSchemaAttribute), false).First();
+					.GetCustomAttributes(typeof(MapSchemaAttribute), false)
+					.First();
 				schema.PrepareMapping(this);
 			}
 			else if (asm.IsDefined(typeof(MapSchemaAttribute), false))
 			{
 				var schema = (MapSchemaAttribute) asm
-					.GetCustomAttributes(typeof(MapSchemaAttribute), false).First();
+					.GetCustomAttributes(typeof(MapSchemaAttribute), false)
+					.First();
 				schema.PrepareMapping(this);
 			}
-			foreach (var it in typeof(M).GetTypeHierarchyInDeclarationOrder()
-																	.Except(new Type[]
-																		{
-																			typeof(Object),
-																			typeof(INotifyPropertyChanged)
-																		}))
+			foreach (var it in typeof(TModel).GetTypeHierarchyInDeclarationOrder()
+																			.Except(new[]
+																			{
+																				typeof(Object),
+																				typeof(INotifyPropertyChanged)
+																			}))
 			{
 				if (it.IsDefined(typeof(MapEntityAttribute), false))
 				{
-					if (it != typeof(M))
+					if (it != typeof(TModel))
 					{
 						var baseMapping = Mappings.AccessMappingFor(it);
 						baseMapping.NotifySubtype(this);
@@ -577,23 +409,24 @@ namespace FlitBit.Data.Meta
 					else
 					{
 						var entity = (MapEntityAttribute) it
-							.GetCustomAttributes(typeof(MapEntityAttribute), false).Single();
+							.GetCustomAttributes(typeof(MapEntityAttribute), false)
+							.Single();
 						entity.PrepareMapping(this, it);
 					}
 				}
 			}
 			if (Behaviors.HasFlag(EntityBehaviors.MapEnum))
 			{
-				var idcol = Identity.Columns.Where(c => c.RuntimeType.IsEnum).SingleOrDefault();
+				var idcol = this.Identity.Columns.SingleOrDefault(c => c.RuntimeType.IsEnum);
 				if (idcol == null)
 				{
-					throw new MappingException(String.Concat("Entity type ", typeof(M).Name,
+					throw new MappingException(String.Concat("Entity type ", typeof(TModel).Name,
 																									" declares behavior EntityBehaviors.MapEnum but the enum type cannot be determined. Specify an identity column of enum type."));
 				}
-				var namecol = Columns.Where(c => c.RuntimeType == typeof(String) && c.IsAlternateKey).FirstOrDefault();
+				var namecol = this.Columns.FirstOrDefault(c => c.RuntimeType == typeof(String) && c.IsAlternateKey);
 				if (namecol == null)
 				{
-					throw new MappingException(String.Concat("Entity type ", typeof(M).Name,
+					throw new MappingException(String.Concat("Entity type ", typeof(TModel).Name,
 																									" declares behavior EntityBehaviors.MapEnum but a column to hold the enum name cannot be determined. Specify a string column with alternate key behavior."));
 				}
 				var names = Enum.GetNames(idcol.Member.GetTypeOfValue());
@@ -607,22 +440,24 @@ namespace FlitBit.Data.Meta
 			var elmType = p.PropertyType.FindElementType();
 			if (!Mappings.ExistsFor(elmType))
 			{
-				new MappingException(String.Concat(typeof(M).Name, ": reference collection must be mapped over other mapped types: ",
-																					p.Name));
+				throw new MappingException(String.Concat(typeof(TModel).Name,
+																								": reference collection must be mapped over other mapped types: ",
+																								p.Name));
 			}
 
-			MemberInfo refColumn = null;
-			if (mapColl.References == null || mapColl.References.Count() == 0)
+			MemberInfo refColumn;
+			if (mapColl.References == null || !mapColl.References.Any())
 			{
 				refColumn = InferCollectionReferenceTargetMember(p, elmType);
 			}
 			else
 			{
-				var refColumnName = mapColl.References.Select(s => s.Trim()).Where(s => !String.IsNullOrEmpty(s)).First();
+				var refColumnName = mapColl.References.Select(s => s.Trim())
+																	.First(s => !String.IsNullOrEmpty(s));
 				refColumn = elmType.GetProperty(refColumnName);
 				if (refColumn == null)
 				{
-					throw new InvalidOperationException(String.Concat(typeof(M).Name,
+					throw new InvalidOperationException(String.Concat(typeof(TModel).Name,
 																														": relationship property doesn't exist on the target type: ", refColumnName));
 				}
 			}
@@ -657,24 +492,24 @@ namespace FlitBit.Data.Meta
 			if (Mappings.ExistsFor(p.PropertyType))
 			{
 				var foreignMapping = Mappings.AccessMappingFor(p.PropertyType);
-				var foreignColumn = default(ColumnMapping);
+				ColumnMapping foreignColumn;
 				AddDependency(foreignMapping, DependencyKind.Direct, column.Member);
 
-				if (mapColumn.References == null || mapColumn.References.Count() == 0)
+				if (mapColumn.References == null || !mapColumn.References.Any())
 				{
 					foreignColumn = foreignMapping.GetPreferredReferenceColumn();
 					if (foreignColumn == null)
 					{
-						throw new MappingException(String.Concat("Relationship not defined between ", typeof(M).Name, ".", p.Name,
+						throw new MappingException(String.Concat("Relationship not defined between ", typeof(TModel).Name, ".", p.Name,
 																										" and the referenced type: ", p.PropertyType.Name));
 					}
 
-					mapColumn.References = new string[] {foreignColumn.Member.Name};
+					mapColumn.References = new[] {foreignColumn.Member.Name};
 				}
 				else
 				{
 					// Only 1 reference column for now.
-					foreignColumn = foreignMapping.Columns.Where(c => c.Member.Name == mapColumn.References.First()).FirstOrDefault();
+					foreignColumn = foreignMapping.Columns.FirstOrDefault(c => c.Member.Name == mapColumn.References.First());
 				}
 
 				if (foreignColumn == null)
@@ -686,7 +521,10 @@ namespace FlitBit.Data.Meta
 			}
 		}
 
-		internal void SetDiscriminator(object discriminator) { this.Discriminator = discriminator; }
+		internal void SetDiscriminator(object discriminator)
+		{
+			this.Discriminator = discriminator;
+		}
 
 		void MarkComplete()
 		{
@@ -697,5 +535,204 @@ namespace FlitBit.Data.Meta
 				a();
 			}
 		}
+
+		#region IMapping<TModel> Members
+
+		/// <summary>
+		///   Indicates the data model's runtime type.
+		/// </summary>
+		public Type RuntimeType { get { return typeof(TModel); } }
+
+		/// <summary>
+		///   Indicates whether the mapping has been completed.
+		/// </summary>
+		public bool IsComplete { get; private set; }
+
+		/// <summary>
+		///   Indicates whether the entity is an enum type.
+		/// </summary>
+		public bool IsEnum { get { return Behaviors.HasFlag(EntityBehaviors.MapEnum); } }
+
+		/// <summary>
+		///   The Db object to which type T maps; either a table or view.
+		/// </summary>
+		public string TargetObject { get; set; }
+
+		/// <summary>
+		///   The Db schema where the target object resides.
+		/// </summary>
+		public string TargetSchema { get { return String.IsNullOrEmpty(_targetSchema) ? Mappings.Instance.DefaultSchema : _targetSchema; } set { _targetSchema = value; } }
+
+		/// <summary>
+		///   The Db catalog (database) where the target object resides.
+		/// </summary>
+		public string TargetCatalog { get; set; }
+
+		/// <summary>
+		///   The connection name where the type's data resides.
+		/// </summary>
+		public string ConnectionName { get { return String.IsNullOrEmpty(_connectionName) ? Mappings.Instance.DefaultConnection : _connectionName; } set { _connectionName = value; } }
+
+		/// <summary>
+		///   The ORM strategy.
+		/// </summary>
+		public MappingStrategy Strategy { get; private set; }
+
+		/// <summary>
+		///   The full name of the primary underlying database object.
+		/// </summary>
+		public string DbObjectReference
+		{
+			get
+			{
+				return String.IsNullOrEmpty(TargetSchema)
+					? QuoteObjectNameForSQL(TargetObject)
+					: String.Concat(QuoteObjectNameForSQL(TargetSchema), '.', QuoteObjectNameForSQL(TargetObject));
+			}
+		}
+
+		/// <summary>
+		///   The columns that are mapped to the object.
+		/// </summary>
+		public IEnumerable<ColumnMapping> Columns { get { return _columns.AsReadOnly(); } }
+
+		/// <summary>
+		///   The columns that are mapped to the object.
+		/// </summary>
+		public IEnumerable<ColumnMapping> DeclaredColumns { get { return _declaredColumns.AsReadOnly(); } }
+
+		public IEnumerable<MemberInfo> ParticipatingMembers
+		{
+			get
+			{
+				return Columns.Select(c => c.Member)
+											.Concat(_collections.Select(kvp => kvp.Value.Member))
+											.ToReadOnly();
+			}
+		}
+
+		/// <summary>
+		///   The collections that are mapped to the object.
+		/// </summary>
+		public IEnumerable<CollectionMapping> Collections
+		{
+			get
+			{
+				var res = new List<CollectionMapping>();
+				foreach (var it in _baseTypes)
+				{
+					res.AddRange(it.DeclaredCollections);
+				}
+				res.AddRange(_collections.Values);
+				return res.AsReadOnly();
+			}
+		}
+
+		/// <summary>
+		///   The collections that are mapped to the object.
+		/// </summary>
+		public IEnumerable<CollectionMapping> DeclaredCollections { get { return _collections.Values.ToReadOnly(); } }
+
+		public string QuoteObjectNameForSQL(string name)
+		{
+			Contract.Assert(name != null);
+			Contract.Assert(name.Length > 0);
+
+			if (String.IsNullOrEmpty(ConnectionName))
+			{
+				return name;
+			}
+			else
+			{
+				var helper = GetDbProviderHelper();
+				return (helper != null) ? helper.QuoteObjectName(name) : name;
+			}
+		}
+
+		/// <summary>
+		///   The data model's dependencies.
+		/// </summary>
+		public IEnumerable<Dependency> Dependencies
+		{
+			get
+			{
+				var res = new List<Dependency>();
+				foreach (var it in _baseTypes)
+				{
+					res.AddRange(it.DeclaredDependencies);
+				}
+				res.AddRange(_dependencies);
+				return res.AsReadOnly();
+			}
+		}
+
+		/// <summary>
+		///   The data model's declared dependencies.
+		/// </summary>
+		public IEnumerable<Dependency> DeclaredDependencies { get { return _dependencies.ToArray(); } }
+
+		/// <summary>
+		///   Indicates whether the mapping is complete.
+		/// </summary>
+		/// <param name="action"></param>
+		/// <returns></returns>
+		public IMapping Completed(Action action)
+		{
+			if (IsComplete)
+			{
+				action();
+			}
+			else
+			{
+				_whenCompleted.Enqueue(action);
+				if (IsComplete)
+				{
+					Action a;
+					while (_whenCompleted.TryDequeue(out a))
+					{
+						a();
+					}
+				}
+			}
+			return this;
+		}
+
+		/// <summary>
+		///   Gets the mapping's model binder.
+		/// </summary>
+		/// <returns></returns>
+		public IModelBinder GetBinder()
+		{
+			if (_binder == null)
+			{
+				if (!String.IsNullOrEmpty(ConnectionName))
+				{
+					var helper = GetDbProviderHelper();
+					if (HasBinder)
+					{
+						var get = typeof(DbProviderHelper).MatchGenericMethod("GetModelBinder", 2, typeof(IModelBinder<,>),
+																																	typeof(Mapping<>))
+																							.MakeGenericMethod(typeof(TModel), IdentityKeyType);
+						_binder = (IModelBinder) get.Invoke(helper, new object[] {this});
+					}
+				}
+			}
+			return _binder;
+		}
+
+		/// <summary>
+		///   Notifies the mapping of a subtype.
+		/// </summary>
+		/// <param name="mapping"></param>
+		public void NotifySubtype(IMapping mapping)
+		{
+			var ht = typeof(IHierarchyMapping<TModel>).MatchGenericMethod("NotifySubtype", 1, typeof(void), typeof(IMapping<>))
+																								.MakeGenericMethod(mapping.RuntimeType);
+			ht.Invoke(DataModel<TModel>.Hierarchy, new object[] {mapping});
+		}
+
+		public Type IdentityKeyType { get { return DataModel<TModel>.IdentityKey.KeyType; } }
+
+		#endregion
 	}
 }

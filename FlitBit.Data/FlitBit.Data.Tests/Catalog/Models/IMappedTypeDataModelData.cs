@@ -231,7 +231,7 @@ namespace FlitBit.Data.Tests.Catalog.Models
 		internal static IMappedTypeDataModelData Create()
 		{
 			var res = new IMappedTypeDataModelData {DirtyFlags = new BitVector(14)};
-			res.IMappedType_MappedBaseType = DataModel<IMappedType>.ReferenceFactory.MakeFromReferent(default(IMappedType));
+			res.IMappedType_MappedBaseType = new DataModelReference<IMappedType, int>(null);
 			return res;
 		}
 

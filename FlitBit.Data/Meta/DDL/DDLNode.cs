@@ -22,13 +22,17 @@ namespace FlitBit.Data.Meta.DDL
 			this.Behaviors = (behaviors == DDLBehaviors.Inherit) ? parent.Behaviors : behaviors;
 		}
 
-		public DDLNodeKind Kind { get; private set; }
-		public DDLNode Parent { get; private set; }
-		public int Ordinal { get; private set; }
-		public string Name { get; private set; }
 		public DDLBehaviors Behaviors { get; private set; }
 
-		public DDLTable DefineTable(string name) { return DefineTable(name, Behaviors); }
+		public DDLNodeKind Kind { get; private set; }
+		public string Name { get; private set; }
+		public int Ordinal { get; private set; }
+		public DDLNode Parent { get; private set; }
+
+		public DDLTable DefineTable(string name)
+		{
+			return DefineTable(name, Behaviors);
+		}
 
 		public DDLTable DefineTable(string name, DDLBehaviors behaviors)
 		{
@@ -44,7 +48,10 @@ namespace FlitBit.Data.Meta.DDL
 			return (DDLTable) n;
 		}
 
-		public DDLCatalog UseCatalog(string name) { return UseCatalog(name, Behaviors); }
+		public DDLCatalog UseCatalog(string name)
+		{
+			return UseCatalog(name, Behaviors);
+		}
 
 		public DDLCatalog UseCatalog(string name, DDLBehaviors behaviors)
 		{
@@ -60,7 +67,10 @@ namespace FlitBit.Data.Meta.DDL
 			return (DDLCatalog) n;
 		}
 
-		public DDLSchema UseSchema(string name) { return UseSchema(name, Behaviors); }
+		public DDLSchema UseSchema(string name)
+		{
+			return UseSchema(name, Behaviors);
+		}
 
 		public DDLSchema UseSchema(string name, DDLBehaviors behaviors)
 		{
@@ -112,6 +122,9 @@ namespace FlitBit.Data.Meta.DDL
 							select n).Cast<TNode>();
 		}
 
-		protected void SpecializeKind(DDLNodeKind kind) { this.Kind = kind; }
+		protected void SpecializeKind(DDLNodeKind kind)
+		{
+			this.Kind = kind;
+		}
 	}
 }

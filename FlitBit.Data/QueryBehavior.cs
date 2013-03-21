@@ -41,7 +41,10 @@ namespace FlitBit.Data
 		///   Constructs a new instance.
 		/// </summary>
 		/// <param name="behaviors"></param>
-		public QueryBehavior(QueryBehaviors behaviors) { this._behaviors = behaviors; }
+		public QueryBehavior(QueryBehaviors behaviors)
+		{
+			this._behaviors = behaviors;
+		}
 
 		public QueryBehavior(QueryBehaviors behaviors, int limit)
 		{
@@ -70,35 +73,23 @@ namespace FlitBit.Data
 			this.PageCorrelationKey = correlationKey;
 		}
 
-		public QueryBehaviors Behaviors
-		{
-			get { return _behaviors; }
-		}
+		public QueryBehaviors Behaviors { get { return _behaviors; } }
 
-		public bool BypassCache
-		{
-			get { return _behaviors.HasFlag(QueryBehaviors.NoCache); }
-		}
+		public bool BypassCache { get { return _behaviors.HasFlag(QueryBehaviors.NoCache); } }
 
-		public bool IsPaging
-		{
-			get { return _behaviors.HasFlag(QueryBehaviors.Paged); }
-		}
-
-		public bool IsLimited
-		{
-			get { return _behaviors.HasFlag(QueryBehaviors.Limited); }
-		}
+		public bool IsLimited { get { return _behaviors.HasFlag(QueryBehaviors.Limited); } }
+		public bool IsPaging { get { return _behaviors.HasFlag(QueryBehaviors.Paged); } }
 
 		public int Limit { get; private set; }
-		public int PageSize { get; private set; }
 		public int Page { get; private set; }
-		public int PageCount { get; internal set; }
 
 		/// <summary>
 		///   Used by the framework to correlate paging operations.
 		/// </summary>
 		public object PageCorrelationKey { get; internal set; }
+
+		public int PageCount { get; internal set; }
+		public int PageSize { get; private set; }
 	}
 
 	public static class QueryBehaviorExtensions

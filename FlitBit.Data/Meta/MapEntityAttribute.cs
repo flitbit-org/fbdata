@@ -16,22 +16,28 @@ namespace FlitBit.Data.Meta
 	public sealed class MapEntityAttribute : AutoImplementedAttribute
 	{
 		public MapEntityAttribute()
-			: base(InstanceScopeKind.OnDemand) { }
+			: base(InstanceScopeKind.OnDemand)
+		{}
 
 		public MapEntityAttribute(EntityBehaviors behaviors)
-			: this(null, null, null, MappingStrategy.OneClassOneTable, behaviors) { }
+			: this(null, null, null, MappingStrategy.OneClassOneTable, behaviors)
+		{}
 
 		public MapEntityAttribute(string targetSchema)
-			: this(targetSchema, null, null, MappingStrategy.OneClassOneTable, EntityBehaviors.Default) { }
+			: this(targetSchema, null, null, MappingStrategy.OneClassOneTable, EntityBehaviors.Default)
+		{}
 
 		public MapEntityAttribute(string targetSchema, EntityBehaviors behaviors)
-			: this(targetSchema, null, null, MappingStrategy.OneClassOneTable, behaviors) { }
+			: this(targetSchema, null, null, MappingStrategy.OneClassOneTable, behaviors)
+		{}
 
 		public MapEntityAttribute(string targetSchema, string targetName)
-			: this(targetSchema, targetName, null, MappingStrategy.OneClassOneTable, EntityBehaviors.Default) { }
+			: this(targetSchema, targetName, null, MappingStrategy.OneClassOneTable, EntityBehaviors.Default)
+		{}
 
 		public MapEntityAttribute(string targetSchema, string targetName, EntityBehaviors behaviors)
-			: this(targetSchema, targetName, null, MappingStrategy.OneClassOneTable, behaviors) { }
+			: this(targetSchema, targetName, null, MappingStrategy.OneClassOneTable, behaviors)
+		{}
 
 		public MapEntityAttribute(string targetSchema, string targetName,
 			string connectionName, MappingStrategy strategy, EntityBehaviors behaviors)
@@ -44,12 +50,12 @@ namespace FlitBit.Data.Meta
 			this.Behaviors = behaviors;
 		}
 
+		public EntityBehaviors Behaviors { get; private set; }
+		public string ConnectionName { get; set; }
+		public object Discriminator { get; set; }
+		public MappingStrategy Strategy { get; private set; }
 		public string TargetName { get; set; }
 		public string TargetSchema { get; set; }
-		public string ConnectionName { get; set; }
-		public MappingStrategy Strategy { get; private set; }
-		public EntityBehaviors Behaviors { get; private set; }
-		public object Discriminator { get; set; }
 
 		/// <summary>
 		///   Implements the stereotypical DataModel behavior for interfaces of type T.
@@ -92,7 +98,8 @@ namespace FlitBit.Data.Meta
 			var mapAllProperties = this.Behaviors.HasFlag(EntityBehaviors.MapAllProperties);
 			foreach (var p in declaringType.GetProperties())
 			{
-				var mapColumn = (MapColumnAttribute) p.GetCustomAttributes(typeof(MapColumnAttribute), false).SingleOrDefault();
+				var mapColumn = (MapColumnAttribute) p.GetCustomAttributes(typeof(MapColumnAttribute), false)
+																							.SingleOrDefault();
 				if (mapColumn != null)
 				{
 					mapColumn.PrepareMapping(mapping, p);
@@ -101,12 +108,14 @@ namespace FlitBit.Data.Meta
 				{
 					if (p.IsDefined(typeof(MapInplaceColumnsAttribute), false))
 					{
-						var meta = (MapInplaceColumnsAttribute) p.GetCustomAttributes(typeof(MapInplaceColumnsAttribute), false).Single();
+						var meta = (MapInplaceColumnsAttribute) p.GetCustomAttributes(typeof(MapInplaceColumnsAttribute), false)
+																										.Single();
 						meta.PrepareMapping(mapping, p);
 					}
 					else if (p.IsDefined(typeof(MapCollectionAttribute), false))
 					{
-						var mapColl = (MapCollectionAttribute) p.GetCustomAttributes(typeof(MapCollectionAttribute), false).Single();
+						var mapColl = (MapCollectionAttribute) p.GetCustomAttributes(typeof(MapCollectionAttribute), false)
+																										.Single();
 						mapping.MapCollectionFromMeta(p, mapColl);
 					}
 					else if (mapAllProperties && !typeof(IEnumerable).IsAssignableFrom(p.PropertyType))

@@ -69,6 +69,25 @@ namespace FlitBit.Data
 		[ContractClassFor(typeof(IDataParameterBinder))]
 		internal abstract class ContractsForIDataParameterBinder : IDataParameterBinder
 		{
+			public void GetParameterValueAs<T>(string name, out T value)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
+
+				throw new NotImplementedException();
+			}
+
+			public IDataParameterBinder SetParameterValueAsEnum<E>(string name, E value)
+			{
+				Contract.Requires<ArgumentNullException>(name != null);
+				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
+				Contract.Ensures(Contract.Result<IDataParameterBinder>() != null);
+
+				throw new NotImplementedException();
+			}
+
+			#region IDataParameterBinder Members
+
 			public IDataParameterBinder DefineParameter(string name, Type runtimeType)
 			{
 				Contract.Requires<ArgumentNullException>(name != null);
@@ -353,7 +372,10 @@ namespace FlitBit.Data
 				throw new NotImplementedException();
 			}
 
-			public DbTypeTranslation TranslateRuntimeType(Type type) { throw new NotImplementedException(); }
+			public DbTypeTranslation TranslateRuntimeType(Type type)
+			{
+				throw new NotImplementedException();
+			}
 
 			public bool PrepareDbCommand(DbCommand command)
 			{
@@ -362,12 +384,12 @@ namespace FlitBit.Data
 				throw new NotImplementedException();
 			}
 
-			public IEnumerable<ParameterBinding> Bindings
-			{
-				get { throw new NotImplementedException(); }
-			}
+			public IEnumerable<ParameterBinding> Bindings { get { throw new NotImplementedException(); } }
 
-			public void Initialize(IEnumerable<ParameterBinding> bindings) { throw new NotImplementedException(); }
+			public void Initialize(IEnumerable<ParameterBinding> bindings)
+			{
+				throw new NotImplementedException();
+			}
 
 			public IDataParameterBinder SetParameterValueAsEnum<E>(string name, E value, bool useName)
 			{
@@ -377,22 +399,7 @@ namespace FlitBit.Data
 				throw new NotImplementedException();
 			}
 
-			public void GetParameterValueAs<T>(string name, out T value)
-			{
-				Contract.Requires<ArgumentNullException>(name != null);
-				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
-
-				throw new NotImplementedException();
-			}
-
-			public IDataParameterBinder SetParameterValueAsEnum<E>(string name, E value)
-			{
-				Contract.Requires<ArgumentNullException>(name != null);
-				Contract.Requires<ArgumentOutOfRangeException>(IndexOfParameter(name) >= 0, Resources.Chk_ParameterNotDefined);
-				Contract.Ensures(Contract.Result<IDataParameterBinder>() != null);
-
-				throw new NotImplementedException();
-			}
+			#endregion
 		}
 	}
 }

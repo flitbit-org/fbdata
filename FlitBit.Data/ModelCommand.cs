@@ -8,10 +8,14 @@ namespace FlitBit.Data
 		where TDbConnection : DbConnection
 		where TModelImpl : class, TModel, new()
 	{
+		#region IModelCommand<TModel,TKey,TDbConnection> Members
+
 		public abstract int Execute(IDbContext cx, TDbConnection cn, TKey key);
 
 		public abstract TModel ExecuteSingle(IDbContext cx, TDbConnection cn, TKey key);
 
 		public abstract IEnumerable<TModel> ExecuteMany(IDbContext cx, TDbConnection cn, QueryBehavior behavior, TKey key);
+
+		#endregion
 	}
 }

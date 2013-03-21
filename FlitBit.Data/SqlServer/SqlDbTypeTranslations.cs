@@ -15,61 +15,61 @@ namespace FlitBit.Data.SqlServer
 	internal static class SqlDbTypeTranslations
 	{
 		static readonly DbTypeTranslation[] DbTypeMap = new DbTypeTranslation[]
-			{
-				new SqlDbTypeTranslation(DbType.AnsiString, SqlDbType.VarChar, typeof(string), false, "VARCHAR",
-																DbTypeLengthRequirements.Length | DbTypeLengthRequirements.IndicatedByParenthesis, "MAX")
-				,
-				new SqlDbTypeTranslation(DbType.Binary, SqlDbType.Binary, typeof(byte[]), true, "VARBINARY",
-																DbTypeLengthRequirements.Length | DbTypeLengthRequirements.IndicatedByParenthesis, "MAX")
-				,
-				new SqlDbTypeTranslation(DbType.Byte, SqlDbType.TinyInt, typeof(byte), true, "TINYINT",
-																DbTypeLengthRequirements.None)
-				, new SqlDbTypeTranslation(DbType.Boolean, SqlDbType.Bit, typeof(bool), true, "BIT", DbTypeLengthRequirements.None)
-				,
-				new SqlDbTypeTranslation(DbType.Currency, SqlDbType.Money, typeof(decimal), false, "MONEY",
-																DbTypeLengthRequirements.None)
-				,
-				new SqlDbTypeTranslation(DbType.Date, SqlDbType.Date, typeof(DateTime), false, "DATE", DbTypeLengthRequirements.None)
-				, new SqlDbTypeTranslation(DbType.DateTime, SqlDbType.DateTime2, typeof(DateTime), true)
-				,
-				new SqlDbTypeTranslation(DbType.Decimal, SqlDbType.Decimal, typeof(decimal), true, "DECIMAL",
-																DbTypeLengthRequirements.Precision | DbTypeLengthRequirements.Scale |
-																	DbTypeLengthRequirements.IndicatedByParenthesis)
-				, new SqlDbTypeTranslation(DbType.Double, SqlDbType.Float, typeof(double), true)
-				, new SqlDbTypeTranslation(DbType.Guid, SqlDbType.UniqueIdentifier, typeof(Guid), true)
-				, new SqlDbTypeTranslation(DbType.Int16, SqlDbType.SmallInt, typeof(short), true)
-				, new SqlDbTypeTranslation(DbType.Int32, SqlDbType.Int, typeof(int), true)
-				, new SqlDbTypeTranslation(DbType.Int64, SqlDbType.BigInt, typeof(long), true)
-				, default(DbTypeTranslation)
-				, new SqlDbTypeTranslation(DbType.SByte, SqlDbType.TinyInt, typeof(sbyte), true)
-				, new SqlDbTypeTranslation(DbType.Single, SqlDbType.Float, typeof(float), true)
-				,
-				new SqlDbTypeTranslation(DbType.String, SqlDbType.NVarChar, typeof(string), true,
-																DbTypeLengthRequirements.Length | DbTypeLengthRequirements.IndicatedByParenthesis, "MAX")
-				, new SqlDbTypeTranslation(DbType.Time, SqlDbType.Time, typeof(DateTime), false)
-				, new SqlDbTypeTranslation(DbType.UInt16, SqlDbType.Int, typeof(ushort), true)
-				, new SqlDbTypeTranslation(DbType.UInt32, SqlDbType.BigInt, typeof(uint), true)
-				, new SqlDbTypeTranslation(DbType.UInt64, SqlDbType.BigInt, typeof(ulong), true)
-				,
-				new SqlDbTypeTranslation(DbType.VarNumeric, SqlDbType.Decimal, typeof(string), false, "NUMERIC",
-																DbTypeLengthRequirements.None)
-				,
-				new SqlDbTypeTranslation(DbType.AnsiStringFixedLength, SqlDbType.Char, typeof(string), false, "CHAR",
-																DbTypeLengthRequirements.Length | DbTypeLengthRequirements.IndicatedByParenthesis, "100")
-				,
-				new SqlDbTypeTranslation(DbType.StringFixedLength, SqlDbType.NChar, typeof(string), false, "NCHAR",
-																DbTypeLengthRequirements.Length | DbTypeLengthRequirements.IndicatedByParenthesis, "100")
-				, default(DbTypeTranslation)
-				,
-				new SqlDbTypeTranslation(DbType.Xml, SqlDbType.Xml, typeof(string), false, "XML",
-																DbTypeLengthRequirements.Length | DbTypeLengthRequirements.IndicatedByParenthesis)
-				,
-				new SqlDbTypeTranslation(DbType.DateTime2, SqlDbType.DateTime2, typeof(DateTime), false, "DATETIME2",
-																DbTypeLengthRequirements.Length | DbTypeLengthRequirements.IndicatedByParenthesis, "7")
-				,
-				new SqlDbTypeTranslation(DbType.DateTimeOffset, SqlDbType.DateTimeOffset, typeof(DateTime), false, "DATETIMEOFFSET",
-																DbTypeLengthRequirements.None)
-			};
+		{
+			new SqlDbTypeTranslation(DbType.AnsiString, SqlDbType.VarChar, typeof(string), false, "VARCHAR",
+															DbTypeLengthRequirements.Length | DbTypeLengthRequirements.IndicatedByParenthesis, "MAX")
+			,
+			new SqlDbTypeTranslation(DbType.Binary, SqlDbType.Binary, typeof(byte[]), true, "VARBINARY",
+															DbTypeLengthRequirements.Length | DbTypeLengthRequirements.IndicatedByParenthesis, "MAX")
+			,
+			new SqlDbTypeTranslation(DbType.Byte, SqlDbType.TinyInt, typeof(byte), true, "TINYINT",
+															DbTypeLengthRequirements.None)
+			, new SqlDbTypeTranslation(DbType.Boolean, SqlDbType.Bit, typeof(bool), true, "BIT", DbTypeLengthRequirements.None)
+			,
+			new SqlDbTypeTranslation(DbType.Currency, SqlDbType.Money, typeof(decimal), false, "MONEY",
+															DbTypeLengthRequirements.None)
+			,
+			new SqlDbTypeTranslation(DbType.Date, SqlDbType.Date, typeof(DateTime), false, "DATE", DbTypeLengthRequirements.None)
+			, new SqlDbTypeTranslation(DbType.DateTime, SqlDbType.DateTime2, typeof(DateTime), true)
+			,
+			new SqlDbTypeTranslation(DbType.Decimal, SqlDbType.Decimal, typeof(decimal), true, "DECIMAL",
+															DbTypeLengthRequirements.Precision | DbTypeLengthRequirements.Scale |
+																DbTypeLengthRequirements.IndicatedByParenthesis)
+			, new SqlDbTypeTranslation(DbType.Double, SqlDbType.Float, typeof(double), true)
+			, new SqlDbTypeTranslation(DbType.Guid, SqlDbType.UniqueIdentifier, typeof(Guid), true)
+			, new SqlDbTypeTranslation(DbType.Int16, SqlDbType.SmallInt, typeof(short), true)
+			, new SqlDbTypeTranslation(DbType.Int32, SqlDbType.Int, typeof(int), true)
+			, new SqlDbTypeTranslation(DbType.Int64, SqlDbType.BigInt, typeof(long), true)
+			, default(DbTypeTranslation)
+			, new SqlDbTypeTranslation(DbType.SByte, SqlDbType.TinyInt, typeof(sbyte), true)
+			, new SqlDbTypeTranslation(DbType.Single, SqlDbType.Float, typeof(float), true)
+			,
+			new SqlDbTypeTranslation(DbType.String, SqlDbType.NVarChar, typeof(string), true,
+															DbTypeLengthRequirements.Length | DbTypeLengthRequirements.IndicatedByParenthesis, "MAX")
+			, new SqlDbTypeTranslation(DbType.Time, SqlDbType.Time, typeof(DateTime), false)
+			, new SqlDbTypeTranslation(DbType.UInt16, SqlDbType.Int, typeof(ushort), true)
+			, new SqlDbTypeTranslation(DbType.UInt32, SqlDbType.BigInt, typeof(uint), true)
+			, new SqlDbTypeTranslation(DbType.UInt64, SqlDbType.BigInt, typeof(ulong), true)
+			,
+			new SqlDbTypeTranslation(DbType.VarNumeric, SqlDbType.Decimal, typeof(string), false, "NUMERIC",
+															DbTypeLengthRequirements.None)
+			,
+			new SqlDbTypeTranslation(DbType.AnsiStringFixedLength, SqlDbType.Char, typeof(string), false, "CHAR",
+															DbTypeLengthRequirements.Length | DbTypeLengthRequirements.IndicatedByParenthesis, "100")
+			,
+			new SqlDbTypeTranslation(DbType.StringFixedLength, SqlDbType.NChar, typeof(string), false, "NCHAR",
+															DbTypeLengthRequirements.Length | DbTypeLengthRequirements.IndicatedByParenthesis, "100")
+			, default(DbTypeTranslation)
+			,
+			new SqlDbTypeTranslation(DbType.Xml, SqlDbType.Xml, typeof(string), false, "XML",
+															DbTypeLengthRequirements.Length | DbTypeLengthRequirements.IndicatedByParenthesis)
+			,
+			new SqlDbTypeTranslation(DbType.DateTime2, SqlDbType.DateTime2, typeof(DateTime), false, "DATETIME2",
+															DbTypeLengthRequirements.Length | DbTypeLengthRequirements.IndicatedByParenthesis, "7")
+			,
+			new SqlDbTypeTranslation(DbType.DateTimeOffset, SqlDbType.DateTimeOffset, typeof(DateTime), false, "DATETIMEOFFSET",
+															DbTypeLengthRequirements.None)
+		};
 
 		static readonly ConcurrentDictionary<string, DbTypeTranslation> __runtimeTypeMappings =
 			new ConcurrentDictionary<string, DbTypeTranslation>();
@@ -129,7 +129,10 @@ namespace FlitBit.Data.SqlServer
 																													DbTypeLengthRequirements.ApproximationMapping));
 		}
 
-		public static DbTypeTranslation TranslateDbType(DbType dbType) { return DbTypeMap[(int) dbType]; }
+		public static DbTypeTranslation TranslateDbType(DbType dbType)
+		{
+			return DbTypeMap[(int) dbType];
+		}
 
 		public static DbTypeTranslation TranslateRuntimeType(Type type)
 		{
@@ -138,7 +141,8 @@ namespace FlitBit.Data.SqlServer
 			var result = DbTypeMap.Where(t =>
 																		t != null
 																			&& t.RuntimeType == type
-																			&& t.IsDefaultForRuntimeType == true).SingleOrDefault();
+																			&& t.IsDefaultForRuntimeType == true)
+														.SingleOrDefault();
 
 			if (result == null)
 			{

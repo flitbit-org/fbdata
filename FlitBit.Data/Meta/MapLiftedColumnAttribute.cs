@@ -12,9 +12,13 @@ namespace FlitBit.Data.Meta
 	public class MapLiftedColumnAttribute : Attribute
 	{
 		public MapLiftedColumnAttribute()
-			: this(LiftedColumnBehaviors.FullMatch) { }
+			: this(LiftedColumnBehaviors.FullMatch)
+		{}
 
-		public MapLiftedColumnAttribute(LiftedColumnBehaviors behaviors) { this.Behaviors = behaviors; }
+		public MapLiftedColumnAttribute(LiftedColumnBehaviors behaviors)
+		{
+			this.Behaviors = behaviors;
+		}
 
 		public LiftedColumnBehaviors Behaviors { get; set; }
 	}

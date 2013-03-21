@@ -23,14 +23,18 @@ namespace FlitBit.Data.Meta
 			Contract.Requires(member != null);
 
 			this.Member = member;
-			this.ElementType = member.GetTypeOfValue().FindElementType();
+			this.ElementType = member.GetTypeOfValue()
+															.FindElementType();
 			this.TargetName = member.Name;
 			this.Mapping = mapping;
 		}
 
+		public Type ElementType { get; private set; }
+
 		public IMapping Mapping { get; private set; }
-		public string TargetName { get; set; }
 		public MemberInfo Member { get; private set; }
+
+		public ReferenceBehaviors ReferenceBehaviors { get; internal set; }
 
 		public MemberInfo ReferenceJoinMember
 		{
@@ -45,11 +49,10 @@ namespace FlitBit.Data.Meta
 			internal set { _referenceTargetMember = value; }
 		}
 
-		public ReferenceBehaviors ReferenceBehaviors { get; internal set; }
-		public Type ElementType { get; private set; }
+		public string TargetName { get; set; }
 
-		internal Type CollectionType { get; set; }
 		internal ColumnMapping BackReference { get; set; }
+		internal Type CollectionType { get; set; }
 		protected abstract MemberInfo InferCollectionReferenceTargetMember(MemberInfo Member, Type ElementType);
 	}
 }

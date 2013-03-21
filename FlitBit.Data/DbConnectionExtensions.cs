@@ -126,11 +126,13 @@ namespace FlitBit.Data
 			Contract.Ensures(Contract.Result<IEnumerable<IDataRecord>>() != null);
 
 			using (var cmd = connection.CreateCommand(command))
-			using (var reader = cmd.ExecuteReader())
 			{
-				while (reader.Read())
+				using (var reader = cmd.ExecuteReader())
 				{
-					yield return reader;
+					while (reader.Read())
+					{
+						yield return reader;
+					}
 				}
 			}
 		}
@@ -152,11 +154,13 @@ namespace FlitBit.Data
 			Contract.Ensures(Contract.Result<IEnumerable<IDataRecord>>() != null);
 
 			using (var cmd = connection.CreateCommand(command, cmdType))
-			using (var reader = cmd.ExecuteReader())
 			{
-				while (reader.Read())
+				using (var reader = cmd.ExecuteReader())
 				{
-					yield return reader;
+					while (reader.Read())
+					{
+						yield return reader;
+					}
 				}
 			}
 		}
@@ -179,11 +183,13 @@ namespace FlitBit.Data
 			Contract.Ensures(Contract.Result<IEnumerable<IDataRecord>>() != null);
 
 			using (var cmd = connection.CreateCommand(command, cmdType, cmdTimeout))
-			using (var reader = cmd.ExecuteReader())
 			{
-				while (reader.Read())
+				using (var reader = cmd.ExecuteReader())
 				{
-					yield return reader;
+					while (reader.Read())
+					{
+						yield return reader;
+					}
 				}
 			}
 		}
@@ -204,11 +210,13 @@ namespace FlitBit.Data
 			Contract.Ensures(Contract.Result<IEnumerable<IDataRecord>>() != null);
 
 			using (var cmd = connection.CreateCommand(command))
-			using (var reader = cmd.ExecuteReader())
 			{
-				while (reader.Read())
+				using (var reader = cmd.ExecuteReader())
 				{
-					yield return transform(reader);
+					while (reader.Read())
+					{
+						yield return transform(reader);
+					}
 				}
 			}
 		}
@@ -230,11 +238,13 @@ namespace FlitBit.Data
 			Contract.Ensures(Contract.Result<IEnumerable<IDataRecord>>() != null);
 
 			using (var cmd = connection.CreateCommand(command, cmdType))
-			using (var reader = cmd.ExecuteReader())
 			{
-				while (reader.Read())
+				using (var reader = cmd.ExecuteReader())
 				{
-					yield return transform(reader);
+					while (reader.Read())
+					{
+						yield return transform(reader);
+					}
 				}
 			}
 		}
@@ -257,11 +267,13 @@ namespace FlitBit.Data
 			Contract.Ensures(Contract.Result<IEnumerable<IDataRecord>>() != null);
 
 			using (var cmd = connection.CreateCommand(command, cmdType, cmdTimeout))
-			using (var reader = cmd.ExecuteReader())
 			{
-				while (reader.Read())
+				using (var reader = cmd.ExecuteReader())
 				{
-					yield return transform(reader);
+					while (reader.Read())
+					{
+						yield return transform(reader);
+					}
 				}
 			}
 		}
@@ -315,10 +327,10 @@ namespace FlitBit.Data
 
 			return ImmediateExecuteNonQuery(connection,
 																			cmd =>
-																				{
-																					cmd.CommandText = command;
-																					cmd.CommandType = cmdType;
-																				}, null);
+																			{
+																				cmd.CommandText = command;
+																				cmd.CommandType = cmdType;
+																			}, null);
 		}
 
 		public static int ImmediateExecuteNonQuery(this DbConnection connection, string command, CommandType cmdType,
@@ -331,11 +343,11 @@ namespace FlitBit.Data
 
 			return ImmediateExecuteNonQuery(connection,
 																			cmd =>
-																				{
-																					cmd.CommandText = command;
-																					cmd.CommandType = cmdType;
-																					cmd.CommandTimeout = cmdTimeout;
-																				}, null);
+																			{
+																				cmd.CommandText = command;
+																				cmd.CommandType = cmdType;
+																				cmd.CommandTimeout = cmdTimeout;
+																			}, null);
 		}
 
 		/// <summary>

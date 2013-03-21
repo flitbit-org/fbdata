@@ -12,8 +12,13 @@ namespace FlitBit.Data
 	{
 		DataParameterBinder _binder;
 
-		public DbExecutableDefinition() { }
-		public DbExecutableDefinition(string cmdText) { this.CommandText = cmdText; }
+		public DbExecutableDefinition()
+		{}
+
+		public DbExecutableDefinition(string cmdText)
+		{
+			this.CommandText = cmdText;
+		}
 
 		public DbExecutableDefinition(string cmdText, CommandType cmdType)
 		{
@@ -27,6 +32,13 @@ namespace FlitBit.Data
 			this.CommandType = cmdType;
 			this.CommandTimeout = cmdTimeout;
 		}
+
+		protected override bool PerformDispose(bool disposing)
+		{
+			return true;
+		}
+
+		#region IDbExecutable Members
 
 		public CommandBehaviors Behaviors { get; internal set; }
 
@@ -63,19 +75,40 @@ namespace FlitBit.Data
 			return this;
 		}
 
-		public int ExecuteNonQuery() { throw new NotImplementedException(); }
+		public int ExecuteNonQuery()
+		{
+			throw new NotImplementedException();
+		}
 
-		public void ExecuteReader(Action<DbResult<DbDataReader>> action) { throw new NotImplementedException(); }
+		public void ExecuteReader(Action<DbResult<DbDataReader>> action)
+		{
+			throw new NotImplementedException();
+		}
 
-		public IEnumerable<IDataRecord> ExecuteEnumerable() { throw new NotImplementedException(); }
+		public IEnumerable<IDataRecord> ExecuteEnumerable()
+		{
+			throw new NotImplementedException();
+		}
 
-		public T ExecuteScalar<T>() { throw new NotImplementedException(); }
+		public T ExecuteScalar<T>()
+		{
+			throw new NotImplementedException();
+		}
 
-		public void ExecuteNonQuery(Continuation<DbResult<int>> continuation) { throw new NotImplementedException(); }
+		public void ExecuteNonQuery(Continuation<DbResult<int>> continuation)
+		{
+			throw new NotImplementedException();
+		}
 
-		public void ExecuteReader(Continuation<DbResult<DbDataReader>> continuation) { throw new NotImplementedException(); }
+		public void ExecuteReader(Continuation<DbResult<DbDataReader>> continuation)
+		{
+			throw new NotImplementedException();
+		}
 
-		public void ExecuteScalar<T>(Continuation<DbResult<T>> continuation) { throw new NotImplementedException(); }
+		public void ExecuteScalar<T>(Continuation<DbResult<T>> continuation)
+		{
+			throw new NotImplementedException();
+		}
 
 		public IDbExecutable CreateOnConnection(DbConnection connection)
 		{
@@ -83,15 +116,15 @@ namespace FlitBit.Data
 			return helper.DefineExecutableOnConnection(connection, this);
 		}
 
-		public IDbExecutable CreateOnConnection(string connection) { throw new NotImplementedException(); }
+		public IDbExecutable CreateOnConnection(string connection)
+		{
+			throw new NotImplementedException();
+		}
 
 		/// <summary>
 		///   Gets the command's parameter bindings.
 		/// </summary>
-		public IDataParameterBinder ParameterBinder
-		{
-			get { return Util.NonBlockingLazyInitializeVolatile(ref _binder); }
-		}
+		public IDataParameterBinder ParameterBinder { get { return Util.NonBlockingLazyInitializeVolatile(ref _binder); } }
 
 		/// <summary>
 		///   Gets the command's parameter bindings.
@@ -106,6 +139,6 @@ namespace FlitBit.Data
 			}
 		}
 
-		protected override bool PerformDispose(bool disposing) { return true; }
+		#endregion
 	}
 }

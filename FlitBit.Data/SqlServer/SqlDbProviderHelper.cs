@@ -27,7 +27,10 @@ FROM sys.schemas
 WHERE name = @schema")
 																															.DefineParameter("@schema", DbType.String);
 
-		public SqlDbProviderHelper() { base.Factory = DbProviderFactories.GetFactory("System.Data.SqlClient"); }
+		public SqlDbProviderHelper()
+		{
+			base.Factory = DbProviderFactories.GetFactory("System.Data.SqlClient");
+		}
 
 		public override IAsyncResult BeginExecuteNonQuery(DbCommand command, AsyncCallback callback, object stateObject)
 		{
@@ -58,26 +61,53 @@ WHERE name = @schema")
 				);
 		}
 
-		public override IDbExecutable DefineExecutableOnConnection(string connectionName) { return new SqlDbExecutable(connectionName, default(String)); }
+		public override IDbExecutable DefineExecutableOnConnection(string connectionName)
+		{
+			return new SqlDbExecutable(connectionName, default(String));
+		}
 
-		public override IDbExecutable DefineExecutableOnConnection(string connectionName, string cmdText) { return new SqlDbExecutable(connectionName, cmdText); }
+		public override IDbExecutable DefineExecutableOnConnection(string connectionName, string cmdText)
+		{
+			return new SqlDbExecutable(connectionName, cmdText);
+		}
 
-		public override IDbExecutable DefineExecutableOnConnection(string connectionName, string cmdText, CommandType cmdType) { return new SqlDbExecutable(connectionName, cmdText, cmdType); }
+		public override IDbExecutable DefineExecutableOnConnection(string connectionName, string cmdText, CommandType cmdType)
+		{
+			return new SqlDbExecutable(connectionName, cmdText, cmdType);
+		}
 
 		public override IDbExecutable DefineExecutableOnConnection(string connectionName, string cmdText, CommandType cmdType,
-			int cmdTimeout) { return new SqlDbExecutable(connectionName, cmdText, cmdType, cmdTimeout); }
+			int cmdTimeout)
+		{
+			return new SqlDbExecutable(connectionName, cmdText, cmdType, cmdTimeout);
+		}
 
-		public override IDbExecutable DefineExecutableOnConnection(string connectionName, IDbExecutable exe) { return new SqlDbExecutable(connectionName, exe); }
+		public override IDbExecutable DefineExecutableOnConnection(string connectionName, IDbExecutable exe)
+		{
+			return new SqlDbExecutable(connectionName, exe);
+		}
 
-		public override IDbExecutable DefineExecutableOnConnection(DbConnection connection, IDbExecutable exe) { return new SqlDbExecutable((SqlConnection) connection, exe); }
+		public override IDbExecutable DefineExecutableOnConnection(DbConnection connection, IDbExecutable exe)
+		{
+			return new SqlDbExecutable((SqlConnection) connection, exe);
+		}
 
-		public override IDbExecutable DefineExecutableOnConnection(DbConnection connection, string cmdText) { return new SqlDbExecutable((SqlConnection) connection, cmdText); }
+		public override IDbExecutable DefineExecutableOnConnection(DbConnection connection, string cmdText)
+		{
+			return new SqlDbExecutable((SqlConnection) connection, cmdText);
+		}
 
 		public override IDbExecutable DefineExecutableOnConnection(DbConnection connection, string cmdText,
-			CommandType cmdType) { return new SqlDbExecutable((SqlConnection) connection, cmdText, cmdType); }
+			CommandType cmdType)
+		{
+			return new SqlDbExecutable((SqlConnection) connection, cmdText, cmdType);
+		}
 
 		public override IDbExecutable DefineExecutableOnConnection(DbConnection connection, string cmdText,
-			CommandType cmdType, int cmdTimeout) { return new SqlDbExecutable((SqlConnection) connection, cmdText, cmdType, cmdTimeout); }
+			CommandType cmdType, int cmdTimeout)
+		{
+			return new SqlDbExecutable((SqlConnection) connection, cmdText, cmdType, cmdTimeout);
+		}
 
 		public override int EndExecuteNonQuery(DbCommand command, IAsyncResult ar)
 		{
@@ -122,12 +152,20 @@ WHERE name = @schema")
 			{
 				throw new ArgumentNullException("connection");
 			}
-			return connection.ImmediateExecuteEnumerable("SELECT @@SERVERNAME").Single().GetString(0);
+			return connection.ImmediateExecuteEnumerable("SELECT @@SERVERNAME")
+											.Single()
+											.GetString(0);
 		}
 
-		public override IDataParameterBinder MakeParameterBinder() { return new SqlParameterBinder(); }
+		public override IDataParameterBinder MakeParameterBinder()
+		{
+			return new SqlParameterBinder();
+		}
 
-		public override IDataParameterBinder MakeParameterBinder(DbCommand cmd) { return new DirectSqlParameterBinder((SqlCommand) cmd); }
+		public override IDataParameterBinder MakeParameterBinder(DbCommand cmd)
+		{
+			return new DirectSqlParameterBinder((SqlCommand) cmd);
+		}
 
 		public override bool SchemaExists(DbConnection connection, string catalog, string schema)
 		{
@@ -162,7 +200,10 @@ WHERE name = @schema")
 			return cnsb.MultipleActiveResultSets;
 		}
 
-		public override DbTypeTranslation TranslateRuntimeType(Type type) { return SqlDbTypeTranslations.TranslateRuntimeType(type); }
+		public override DbTypeTranslation TranslateRuntimeType(Type type)
+		{
+			return SqlDbTypeTranslations.TranslateRuntimeType(type);
+		}
 
 		protected override string FormatCreateSchemaCommandText(string catalog, string schema)
 		{

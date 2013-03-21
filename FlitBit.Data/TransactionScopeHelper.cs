@@ -13,11 +13,10 @@ namespace FlitBit.Data
 {
 	public static class TransactionScopeHelper
 	{
-		internal static readonly string __TransactionPropagationTokenName = "TransactionPropagationToken";
-
+		public static readonly bool AutoForceTransactionPromotion = false;
 		public static readonly IsolationLevel DefaultIsolationLevel = IsolationLevel.ReadCommitted;
 		public static readonly TimeSpan DefaultTransactionTimeout = TimeSpan.FromSeconds(-1);
-		public static readonly bool AutoForceTransactionPromotion = false;
+		internal static readonly string __TransactionPropagationTokenName = "TransactionPropagationToken";
 
 		public static void AssertTransaction()
 		{
@@ -27,8 +26,15 @@ namespace FlitBit.Data
 			}
 		}
 
-		public static TransactionScope CreateScope_RequireNew() { return CreateScope_RequireNew(DefaultIsolationLevel, DefaultTransactionTimeout); }
-		public static TransactionScope CreateScope_RequireNew(IsolationLevel isolation) { return CreateScope_RequireNew(isolation, DefaultTransactionTimeout); }
+		public static TransactionScope CreateScope_RequireNew()
+		{
+			return CreateScope_RequireNew(DefaultIsolationLevel, DefaultTransactionTimeout);
+		}
+
+		public static TransactionScope CreateScope_RequireNew(IsolationLevel isolation)
+		{
+			return CreateScope_RequireNew(isolation, DefaultTransactionTimeout);
+		}
 
 		[SuppressMessage("Microsoft.Reliability", "CA2000",
 			Justification = "By design; the purpose of the method is to construct a TransactionScope")]
@@ -49,9 +55,20 @@ namespace FlitBit.Data
 			return result;
 		}
 
-		public static TransactionScope CreateScope_ShareCurrentOrCreate() { return CreateScope_ShareCurrentOrCreate(DefaultIsolationLevel, DefaultTransactionTimeout); }
-		public static TransactionScope CreateScope_ShareCurrentOrCreate(IsolationLevel isolation) { return CreateScope_ShareCurrentOrCreate(isolation, DefaultTransactionTimeout); }
-		public static TransactionScope CreateScope_ShareCurrentOrCreate(TimeSpan timeout) { return CreateScope_ShareCurrentOrCreate(DefaultIsolationLevel, timeout); }
+		public static TransactionScope CreateScope_ShareCurrentOrCreate()
+		{
+			return CreateScope_ShareCurrentOrCreate(DefaultIsolationLevel, DefaultTransactionTimeout);
+		}
+
+		public static TransactionScope CreateScope_ShareCurrentOrCreate(IsolationLevel isolation)
+		{
+			return CreateScope_ShareCurrentOrCreate(isolation, DefaultTransactionTimeout);
+		}
+
+		public static TransactionScope CreateScope_ShareCurrentOrCreate(TimeSpan timeout)
+		{
+			return CreateScope_ShareCurrentOrCreate(DefaultIsolationLevel, timeout);
+		}
 
 		[SuppressMessage("Microsoft.Reliability", "CA2000",
 			Justification = "By design; the purpose of the method is to construct a TransactionScope")]
@@ -73,11 +90,25 @@ namespace FlitBit.Data
 			return result;
 		}
 
-		public static TransactionScope CreateScope_Suppress() { return new TransactionScope(TransactionScopeOption.Suppress); }
+		public static TransactionScope CreateScope_Suppress()
+		{
+			return new TransactionScope(TransactionScopeOption.Suppress);
+		}
 
-		public static TransactionScope CreateScope_SuppressCurrentTransaction() { return CreateScope_SuppressCurrentTransaction(DefaultIsolationLevel, DefaultTransactionTimeout); }
-		public static TransactionScope CreateScope_SuppressCurrentTransaction(IsolationLevel isolation) { return CreateScope_SuppressCurrentTransaction(isolation, DefaultTransactionTimeout); }
-		public static TransactionScope CreateScope_SuppressCurrentTransaction(TimeSpan timeout) { return CreateScope_SuppressCurrentTransaction(DefaultIsolationLevel, timeout); }
+		public static TransactionScope CreateScope_SuppressCurrentTransaction()
+		{
+			return CreateScope_SuppressCurrentTransaction(DefaultIsolationLevel, DefaultTransactionTimeout);
+		}
+
+		public static TransactionScope CreateScope_SuppressCurrentTransaction(IsolationLevel isolation)
+		{
+			return CreateScope_SuppressCurrentTransaction(isolation, DefaultTransactionTimeout);
+		}
+
+		public static TransactionScope CreateScope_SuppressCurrentTransaction(TimeSpan timeout)
+		{
+			return CreateScope_SuppressCurrentTransaction(DefaultIsolationLevel, timeout);
+		}
 
 		[SuppressMessage("Microsoft.Reliability", "CA2000",
 			Justification = "By design; the purpose of the method is to construct a TransactionScope")]
@@ -92,7 +123,10 @@ namespace FlitBit.Data
 			return new TransactionScope(TransactionScopeOption.Suppress, options, EnterpriseServicesInteropOption.Automatic);
 		}
 
-		public static void ForcePromotionOfCurrentTransaction() { TransactionInterop.GetTransmitterPropagationToken(Transaction.Current); }
+		public static void ForcePromotionOfCurrentTransaction()
+		{
+			TransactionInterop.GetTransmitterPropagationToken(Transaction.Current);
+		}
 
 		internal static void CheckTransactionConfidenceFromCallContext(LogicalCallContext lcc)
 		{
@@ -145,15 +179,20 @@ namespace FlitBit.Data
 	{
 		byte[] _token;
 
-		TransactionCallContext() { }
-
 		internal TransactionCallContext(byte[] token, bool voteNoConfidence)
 		{
 			this._token = token;
 			this.RemoteVoteOfNoConfidence = voteNoConfidence;
 		}
 
+		TransactionCallContext()
+		{}
+
 		public bool RemoteVoteOfNoConfidence { get; private set; }
-		public byte[] GetPropagationToken() { return _token; }
+
+		public byte[] GetPropagationToken()
+		{
+			return _token;
+		}
 	}
 }

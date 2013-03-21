@@ -27,7 +27,8 @@ namespace FlitBit.Data
 
 		public static IDataParameterBinder GetBinderForDbCommand(DbCommand cmd)
 		{
-			var key = cmd.GetType().AssemblyQualifiedName;
+			var key = cmd.GetType()
+									.AssemblyQualifiedName;
 			var factory = default(Func<DbCommand, IDataParameterBinder>);
 			if (__binderFactories.TryGetValue(key, out factory))
 			{

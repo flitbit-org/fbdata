@@ -64,7 +64,8 @@ namespace FlitBit.Data
 			Contract.Requires<ArgumentNullException>(name != null);
 			Contract.Requires(name.Length > 0);
 
-			return AccessProvider(name).Provider;
+			return AccessProvider(name)
+				.Provider;
 		}
 
 		public static string GetProviderName(string name)
@@ -72,18 +73,23 @@ namespace FlitBit.Data
 			Contract.Requires<ArgumentNullException>(name != null);
 			Contract.Requires(name.Length > 0);
 
-			return AccessProvider(name).ProviderName;
+			return AccessProvider(name)
+				.ProviderName;
 		}
 
 		/// <summary>
 		///   Clears cached providers.
 		/// </summary>
-		public static void ResetProviders() { __providers = new ConcurrentDictionary<string, ProviderRecord>(); }
+		public static void ResetProviders()
+		{
+			__providers = new ConcurrentDictionary<string, ProviderRecord>();
+		}
 
 		internal static TConnection CreateConnection<TConnection>(string connectionName)
 			where TConnection : DbConnection, new()
 		{
-			var connectionString = AccessProvider(connectionName).ConnectionString;
+			var connectionString = AccessProvider(connectionName)
+				.ConnectionString;
 			var cn = new TConnection();
 			cn.ConnectionString = connectionString;
 			return cn;
@@ -95,19 +101,19 @@ namespace FlitBit.Data
 			Contract.Requires(name.Length > 0);
 
 			return __providers.GetOrAdd(name, (n) =>
+			{
+				var css = ConfigurationManager.ConnectionStrings[name];
+				if (css == null)
 				{
-					var css = ConfigurationManager.ConnectionStrings[name];
-					if (css == null)
-					{
-						throw new ConfigurationErrorsException(String.Concat("Connection string not found: ", name));
-					}
-					var r = new ProviderRecord();
-					r.ConnectionName = name;
-					r.ConnectionString = css.ConnectionString;
-					r.ProviderName = css.ProviderName;
-					r.Provider = DbProviderFactories.GetFactory(css.ProviderName);
-					return r;
-				});
+					throw new ConfigurationErrorsException(String.Concat("Connection string not found: ", name));
+				}
+				var r = new ProviderRecord();
+				r.ConnectionName = name;
+				r.ConnectionString = css.ConnectionString;
+				r.ProviderName = css.ProviderName;
+				r.Provider = DbProviderFactories.GetFactory(css.ProviderName);
+				return r;
+			});
 		}
 
 		struct ProviderRecord

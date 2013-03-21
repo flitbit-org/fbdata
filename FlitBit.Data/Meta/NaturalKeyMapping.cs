@@ -25,8 +25,6 @@ namespace FlitBit.Data.Meta
 			_owner = owner;
 		}
 
-		public string TargetName { get; protected set; }
-
 		/// <summary>
 		///   The columns that are mapped to the identity.
 		/// </summary>
@@ -39,6 +37,8 @@ namespace FlitBit.Data.Meta
 								select x).ToArray();
 			}
 		}
+
+		public string TargetName { get; protected set; }
 
 		public NaturalKeyMapping<T> Column(Expression<Func<T, object>> expression)
 		{
@@ -66,6 +66,9 @@ namespace FlitBit.Data.Meta
 			return this;
 		}
 
-		public Mapping<T> End() { return _owner; }
+		public Mapping<T> End()
+		{
+			return _owner;
+		}
 	}
 }

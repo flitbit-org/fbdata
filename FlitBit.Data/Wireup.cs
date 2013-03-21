@@ -6,23 +6,54 @@
 
 using System.Data.SqlClient;
 using FlitBit.Data;
+using FlitBit.Data.Catalog;
 using FlitBit.Data.SqlServer;
 using FlitBit.Wireup;
 using FlitBit.Wireup.Meta;
 
-[assembly: Wireup(typeof(WireupThisAssembly))]
+[assembly: HookWirupCoordinatorTask]
+[assembly: Wireup(typeof(AssemblyWireup))]
 
 namespace FlitBit.Data
 {
 	/// <summary>
 	///   Wires up this assembly.
 	/// </summary>
-	public sealed class WireupThisAssembly : IWireupCommand
+	public sealed class AssemblyWireup : IWireupCommand
 	{
+		#region IWireupCommand Members
+
 		/// <summary>
 		///   Wires up this assembly.
 		/// </summary>
 		/// <param name="coordinator"></param>
-		public void Execute(IWireupCoordinator coordinator) { DbProviderHelpers.RegisterHelper<SqlClientFactory, SqlConnection, SqlCommand, SqlDbProviderHelper>(); }
+		public void Execute(IWireupCoordinator coordinator)
+		{
+			DbProviderHelpers.RegisterHelper<SqlClientFactory, SqlConnection, SqlCommand, SqlDbProviderHelper>();
+		}
+
+		#endregion
+	}
+
+	/// <summary>
+	///   Wires this module.
+	/// </summary>
+	public class HookWirupCoordinatorTask : WireupTaskAttribute
+	{
+		/// <summary>
+		///   Creates a new instance.
+		/// </summary>
+		public HookWirupCoordinatorTask()
+			: base(WireupPhase.BeforeDependencies) { }
+
+		/// <summary>
+		///   Performs wireup.
+		/// </summary>
+		/// <param name="coordinator"></param>
+		protected override void PerformTask(IWireupCoordinator coordinator)
+		{
+			// Attach the root container as a wireup observer...
+			coordinator.RegisterObserver(StaticCatalog.Observer);
+		}
 	}
 }

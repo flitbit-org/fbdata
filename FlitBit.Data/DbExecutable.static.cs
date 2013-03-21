@@ -44,11 +44,20 @@ namespace FlitBit.Data
 			return provider.DefineExecutableOnConnection(connection, commandText, commandType);
 		}
 
-		public static IDbExecutable FromCommandText(string cmdText) { return new DbExecutableDefinition(cmdText); }
+		public static IDbExecutable FromCommandText(string cmdText)
+		{
+			return new DbExecutableDefinition(cmdText);
+		}
 
-		public static IDbExecutable FromCommandText(string cmdText, CommandType cmdType) { return new DbExecutableDefinition(cmdText, cmdType); }
+		public static IDbExecutable FromCommandText(string cmdText, CommandType cmdType)
+		{
+			return new DbExecutableDefinition(cmdText, cmdType);
+		}
 
-		public static IDbExecutable FromCommandText(string cmdText, CommandType cmdType, int cmdTimeout) { return new DbExecutableDefinition(cmdText, cmdType, cmdTimeout); }
+		public static IDbExecutable FromCommandText(string cmdText, CommandType cmdType, int cmdTimeout)
+		{
+			return new DbExecutableDefinition(cmdText, cmdType, cmdTimeout);
+		}
 
 		public static IDbExecutable FromConnectionName(string connectionName)
 		{
