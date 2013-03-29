@@ -5,6 +5,7 @@
 #endregion
 
 using System;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Reflection;
 using FlitBit.Emit;
@@ -13,11 +14,26 @@ namespace FlitBit.Data.Meta
 {
 	public class ColumnMapping
 	{
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
+		Tuple<int, MappedDbTypeEmitter> _emitter;
+
+		public MappedDbTypeEmitter Emitter
+		{
+			get
+			{
+				if (_emitter == null || _emitter.Item1 != Mapping.Revision)
+				{
+					_emitter = Tuple.Create<int, MappedDbTypeEmitter>(Mapping.Revision, Mapping.GetEmitterFor(this));
+				}
+				return _emitter.Item2;
+			}
+		}
+
 		protected ColumnMapping(IMapping mapping, MemberInfo member, int ordinal)
 		{
-			Contract.Requires(mapping != null);
-			Contract.Requires(member != null);
-
+			Contract.Requires<ArgumentNullException>(mapping != null);
+			Contract.Requires<ArgumentException>(member != null);
+			
 			this.Member = member;
 			this.TargetName = member.Name;
 			this.Ordinal = ordinal;
@@ -78,10 +94,9 @@ namespace FlitBit.Data.Meta
 
 		internal static ColumnMapping FromMember<T>(IMapping mapping, MemberInfo member, int ordinal)
 		{
-			Contract.Requires(mapping != null);
-			Contract.Requires(member != null);
-			var memberType = member.MemberType;
-
+			Contract.Requires<ArgumentNullException>(mapping != null);
+			Contract.Requires<ArgumentException>(member != null);
+			
 			return new ColumnMapping<T>(mapping, member, ordinal);
 		}
 	}

@@ -124,37 +124,45 @@ namespace FlitBit.Data.Meta
 			{
 				mapping.Identity.AddColumn(column);
 			}
-			if (this.DbTypeTranslator == null && Mappings.ExistsFor(p.PropertyType))
+			if (p.PropertyType == mapping.RuntimeType)
 			{
-				var foreignMapping = Mappings.AccessMappingFor(p.PropertyType);
-				var foreignColumn = default(ColumnMapping);
+				MakeReferenceTo(mapping, mapping, p, column);
+			}
+			else if (this.DbTypeTranslator == null && Mappings.ExistsFor(p.PropertyType))
+			{
+				MakeReferenceTo(mapping, Mappings.AccessMappingFor(p.PropertyType), p, column);
+			}
+		}
 
-				if (References == null || References.Count() == 0)
-				{
-					foreignColumn = foreignMapping.GetPreferredReferenceColumn();
-					if (foreignColumn == null)
-					{
-						throw new MappingException(String.Concat("Relationship not defined between ", typeof(T).Name, ".", p.Name,
-																										" and the referenced type: ", p.PropertyType.Name));
-					}
+		private void MakeReferenceTo<T>(Mapping<T> mapping, IMapping foreign, PropertyInfo p, ColumnMapping<T> column)
+		{
+			var foreignColumn = default(ColumnMapping);
 
-					References = new string[] {foreignColumn.Member.Name};
-				}
-				else
-				{
-					// Only 1 reference column for now.
-					foreignColumn = foreignMapping.Columns.Where(c => c.Member.Name == this.References.First())
-																				.FirstOrDefault();
-				}
-
+			if (References == null || References.Count() == 0)
+			{
+				foreignColumn = foreign.GetPreferredReferenceColumn();
 				if (foreignColumn == null)
 				{
-					throw new InvalidOperationException(String.Concat("Property '", p.Name,
-																														"' references an entity but a relationship cannot be determined."));
+					throw new MappingException(String.Concat("Relationship not defined between ", typeof(T).Name, ".", p.Name,
+																									" and the referenced type: ", p.PropertyType.Name));
 				}
-				column.DefineReference(foreignColumn, this.ReferenceBehaviors);
-				mapping.AddDependency(foreignMapping, DependencyKind.Direct, p);
+
+				References = new string[] { foreignColumn.Member.Name };
 			}
+			else
+			{
+				// Only 1 reference column for now.
+				foreignColumn = foreign.Columns.Where(c => c.Member.Name == this.References.First())
+																			.FirstOrDefault();
+			}
+
+			if (foreignColumn == null)
+			{
+				throw new InvalidOperationException(String.Concat("Property '", p.Name,
+																													"' references an entity but a relationship cannot be determined."));
+			}
+			column.DefineReference(foreignColumn, this.ReferenceBehaviors);
+			mapping.AddDependency(foreign, DependencyKind.Direct, p);
 		}
 
 		internal static MapColumnAttribute DefineOnProperty<T>(PropertyInfo property)

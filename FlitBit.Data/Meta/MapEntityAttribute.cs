@@ -20,23 +20,27 @@ namespace FlitBit.Data.Meta
 		{}
 
 		public MapEntityAttribute(EntityBehaviors behaviors)
-			: this(null, null, null, MappingStrategy.OneClassOneTable, behaviors)
+			: this(null, null, null, default(MappingStrategy), behaviors)
 		{}
 
 		public MapEntityAttribute(string targetSchema)
-			: this(targetSchema, null, null, MappingStrategy.OneClassOneTable, EntityBehaviors.Default)
+			: this(targetSchema, null, null, default(MappingStrategy), EntityBehaviors.Default)
 		{}
 
 		public MapEntityAttribute(string targetSchema, EntityBehaviors behaviors)
-			: this(targetSchema, null, null, MappingStrategy.OneClassOneTable, behaviors)
+			: this(targetSchema, null, null, default(MappingStrategy), behaviors)
 		{}
 
+		public MapEntityAttribute(string targetSchema, EntityBehaviors behaviors, MappingStrategy strategy)
+			: this(targetSchema, null, null, strategy, behaviors)
+		{ }
+
 		public MapEntityAttribute(string targetSchema, string targetName)
-			: this(targetSchema, targetName, null, MappingStrategy.OneClassOneTable, EntityBehaviors.Default)
+			: this(targetSchema, targetName, null, default(MappingStrategy), EntityBehaviors.Default)
 		{}
 
 		public MapEntityAttribute(string targetSchema, string targetName, EntityBehaviors behaviors)
-			: this(targetSchema, targetName, null, MappingStrategy.OneClassOneTable, behaviors)
+			: this(targetSchema, targetName, null, default(MappingStrategy), behaviors)
 		{}
 
 		public MapEntityAttribute(string targetSchema, string targetName,
@@ -52,7 +56,6 @@ namespace FlitBit.Data.Meta
 
 		public EntityBehaviors Behaviors { get; private set; }
 		public string ConnectionName { get; set; }
-		public object Discriminator { get; set; }
 		public MappingStrategy Strategy { get; private set; }
 		public string TargetName { get; set; }
 		public string TargetSchema { get; set; }
@@ -125,7 +128,6 @@ namespace FlitBit.Data.Meta
 					}
 				}
 			}
-			mapping.SetDiscriminator(this.Discriminator);
 		}
 	}
 }

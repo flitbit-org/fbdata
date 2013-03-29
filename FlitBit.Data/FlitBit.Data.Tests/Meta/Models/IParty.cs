@@ -3,20 +3,21 @@ using FlitBit.Data.Meta;
 using FlitBit.ObjectIdentity;
 using FlitBit.Wireup.Meta;
 
-
-
 namespace FlitBit.Data.Tests.Meta.Models
 {
-	[DataModel(typeof(PreparePartyMapping))]
+	[MapEntity]
 	public interface IParty
 	{
-		[IdentityKey]
+		[IdentityKey, MapColumn(ColumnBehaviors.Synthetic)]
 		int ID { get; }
 
+		[MapColumn(ColumnBehaviors.Nullable, 200)]
 		string Name { get; set; }
 
+		[MapColumn(ColumnBehaviors.TimestampOnInsert)]
 		DateTime DateCreated { get; }
 
+		[MapColumn(ColumnBehaviors.TimestampOnUpdate | ColumnBehaviors.RevisionConcurrency)]
 		DateTime DateUpdated { get; }
 	}
 

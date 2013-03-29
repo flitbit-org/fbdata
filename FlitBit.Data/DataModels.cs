@@ -126,11 +126,13 @@ namespace FlitBit.Data
 				var offsets = method.DefineParameter("offsets", typeof(int[]));
 				method.ContributeInstructions(
 																		 (m, il) =>
-																		 {
-																			 var col = il.DeclareLocal<int>();
-
+																			 {
+																				var col = m.DefineLocal("col", typeof(int));
+																			 
 																			 foreach (var prop in props)
 																			 {
+																				 var mappedColumn = mapping.Columns.FirstOrDefault(c => c.Member == prop.Source);
+																				 Debug.Assert(mappedColumn != null, "mappedColumn != null");																				 
 																				 if (prop.IsObservableCollection)
 																				 {}
 																				 else
@@ -140,15 +142,15 @@ namespace FlitBit.Data
 																					 il.LoadArg(offsets);
 																					 il.LoadValue(prop.Index);
 																					 il.Emit(OpCodes.Ldelem_I4);
-																					 il.StoreLocal(col);
+																					 col.StoreValue(il);
 																					 il.LoadArg_0();
 																					 il.LoadArg(reader);
-																					 il.LoadLocal(col);
+																					 col.LoadValue(il);
 																					 il.CallVirtual<DbDataReader>("IsDBNull", typeof(int));
 																					 il.BranchIfTrue(isnull);
 																					 if (prop.IsReference && prop.HasIdentityKey)
 																					 {
-																						 helper.EmitLoadValueFromDataReader(method.Builder, il, prop.Source, reader.Builder, col, prop.Mapping.IdentityKeyType);
+																						 mappedColumn.Emitter.LoadValueFromDbReader(method.Builder, reader, col, prop.Mapping.DbTypeDetails);
 																						 il.NewObj(prop.FieldType.GetConstructor(new[] { prop.Mapping.IdentityKeyType }));
 																						 il.Branch(store);
 																						 il.MarkLabel(isnull);
@@ -157,7 +159,7 @@ namespace FlitBit.Data
 																					 }
 																					 else
 																					 {
-																						 helper.EmitLoadValueFromDataReader(method.Builder, il, prop.Source, reader.Builder, col, prop.FieldType);
+																						 mappedColumn.Emitter.LoadValueFromDbReader(method.Builder, reader, col, prop.Mapping.DbTypeDetails);
 																						 il.Branch(store);
 																						 il.MarkLabel(isnull);
 																						 if (prop.FieldType.IsValueType)

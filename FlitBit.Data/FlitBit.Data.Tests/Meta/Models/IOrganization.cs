@@ -2,7 +2,7 @@
 
 namespace FlitBit.Data.Tests.Meta.Models
 {
-	[MapEntity(Discriminator = "Organizations")]
+	[MapEntity]
 	public interface IOrganization : IParty
 	{
 		[MapColumn(ColumnBehaviors.Nullable)]

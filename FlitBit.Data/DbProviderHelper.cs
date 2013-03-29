@@ -417,5 +417,7 @@ WHERE TABLE_CATALOG = '{0}'
 					throw new ArgumentOutOfRangeException();
 			}
 		}
+
+		internal MappedDbTypeEmitter GetDbTypeEmitter(IMapping mapping, ColumnMapping column) { return null; }
 	}
 }

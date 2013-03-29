@@ -34,13 +34,13 @@ WHERE name = @schema")
 
 		public override IAsyncResult BeginExecuteNonQuery(DbCommand command, AsyncCallback callback, object stateObject)
 		{
-			var sql = (SqlCommand) command;
+			var sql = (SqlCommand)command;
 			return sql.BeginExecuteNonQuery(callback, stateObject);
 		}
 
 		public override IAsyncResult BeginExecuteReader(DbCommand command, AsyncCallback callback, object stateObject)
 		{
-			var sql = (SqlCommand) command;
+			var sql = (SqlCommand)command;
 			return sql.BeginExecuteReader(callback, stateObject, CommandBehavior.CloseConnection);
 		}
 
@@ -54,7 +54,7 @@ WHERE name = @schema")
 		{
 			Contract.Assert(typeof(SqlConnection).IsInstanceOfType(connection), "Invalid DbConnection for DbProvider");
 
-			var scn = (SqlConnection) connection;
+			var scn = (SqlConnection)connection;
 			return __catalogExists.ImmediateExecuteSingleOrDefault<bool>(scn,
 																																	b => b.SetParameterValue("@catalog", catalog),
 																																	r => r.GetBoolean(r.GetOrdinal("HasCatalog"))
@@ -89,35 +89,35 @@ WHERE name = @schema")
 
 		public override IDbExecutable DefineExecutableOnConnection(DbConnection connection, IDbExecutable exe)
 		{
-			return new SqlDbExecutable((SqlConnection) connection, exe);
+			return new SqlDbExecutable((SqlConnection)connection, exe);
 		}
 
 		public override IDbExecutable DefineExecutableOnConnection(DbConnection connection, string cmdText)
 		{
-			return new SqlDbExecutable((SqlConnection) connection, cmdText);
+			return new SqlDbExecutable((SqlConnection)connection, cmdText);
 		}
 
 		public override IDbExecutable DefineExecutableOnConnection(DbConnection connection, string cmdText,
 			CommandType cmdType)
 		{
-			return new SqlDbExecutable((SqlConnection) connection, cmdText, cmdType);
+			return new SqlDbExecutable((SqlConnection)connection, cmdText, cmdType);
 		}
 
 		public override IDbExecutable DefineExecutableOnConnection(DbConnection connection, string cmdText,
 			CommandType cmdType, int cmdTimeout)
 		{
-			return new SqlDbExecutable((SqlConnection) connection, cmdText, cmdType, cmdTimeout);
+			return new SqlDbExecutable((SqlConnection)connection, cmdText, cmdType, cmdTimeout);
 		}
 
 		public override int EndExecuteNonQuery(DbCommand command, IAsyncResult ar)
 		{
-			var sql = (SqlCommand) command;
+			var sql = (SqlCommand)command;
 			return sql.EndExecuteNonQuery(ar);
 		}
 
 		public override DbDataReader EndExecuteReader(DbCommand command, IAsyncResult ar)
 		{
-			var sql = (SqlCommand) command;
+			var sql = (SqlCommand)command;
 			return sql.EndExecuteReader(ar);
 		}
 
@@ -130,20 +130,27 @@ WHERE name = @schema")
 
 		public override IModelBinder<TModel, Id> GetModelBinder<TModel, Id>(Mapping<TModel> mapping)
 		{
-			// Currently only support the default hybrid scheme...
-			if (mapping.Strategy != MappingStrategy.DynamicHybridInheritanceTree)
-			{
-				throw new NotImplementedException();
-			}
+			Type binderType;
 
-			var concreteType = typeof(TModel);
-			if (concreteType.IsAbstract && FactoryProvider.Factory.CanConstruct<TModel>())
+			switch (mapping.Strategy)
 			{
-				concreteType = FactoryProvider.Factory.GetImplementationType<TModel>();
+				case MappingStrategy.Default:
+					binderType = typeof(DynamicHybridInheritanceTreeBinder<,,>).MakeGenericType(typeof(TModel), typeof(Id),
+																																													Mapping<TModel>.Instance.ConcreteType);
+					break;
+				case MappingStrategy.OneClassOneTable:
+					binderType = typeof(DynamicHybridInheritanceTreeBinder<,,>).MakeGenericType(typeof(TModel), typeof(Id),
+																																													Mapping<TModel>.Instance.ConcreteType);
+					break;
+				case MappingStrategy.OneInheritanceTreeOneTable:
+					throw new NotImplementedException();
+				case MappingStrategy.OneInheritancePathOneTable:
+					throw new NotImplementedException();
+				default:
+					throw new ArgumentOutOfRangeException();
 			}
-			var binderType = typeof(DynamicHybridInheritanceTreeBinder<,,>).MakeGenericType(typeof(TModel), typeof(Id),
-																																											concreteType);
-			return (IModelBinder<TModel, Id>) Activator.CreateInstance(binderType, mapping);
+			
+			return (IModelBinder<TModel, Id>)Activator.CreateInstance(binderType, mapping);
 		}
 
 		public override string GetServerName(DbConnection connection)
@@ -164,14 +171,14 @@ WHERE name = @schema")
 
 		public override IDataParameterBinder MakeParameterBinder(DbCommand cmd)
 		{
-			return new DirectSqlParameterBinder((SqlCommand) cmd);
+			return new DirectSqlParameterBinder((SqlCommand)cmd);
 		}
 
 		public override bool SchemaExists(DbConnection connection, string catalog, string schema)
 		{
 			Contract.Assert(typeof(SqlConnection).IsInstanceOfType(connection), "Invalid DbConnection for DbProvider");
 
-			var scn = (SqlConnection) connection;
+			var scn = (SqlConnection)connection;
 			if (!String.Equals(scn.Database, catalog, StringComparison.OrdinalIgnoreCase))
 			{
 				scn.ChangeDatabase(catalog);
@@ -186,7 +193,7 @@ WHERE name = @schema")
 		{
 			Contract.Assert(typeof(SqlConnection).IsInstanceOfType(connection), "Invalid DbConnection for DbProvider");
 
-			var scn = (SqlConnection) connection;
+			var scn = (SqlConnection)connection;
 			var cnsb = new SqlConnectionStringBuilder(scn.ConnectionString);
 			return cnsb.AsynchronousProcessing;
 		}
@@ -195,7 +202,7 @@ WHERE name = @schema")
 		{
 			Contract.Assert(typeof(SqlConnection).IsInstanceOfType(connection), "Invalid DbConnection for DbProvider");
 
-			var scn = (SqlConnection) connection;
+			var scn = (SqlConnection)connection;
 			var cnsb = new SqlConnectionStringBuilder(scn.ConnectionString);
 			return cnsb.MultipleActiveResultSets;
 		}

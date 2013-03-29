@@ -100,9 +100,8 @@
     <CodeContractsReferenceAssembly>Build</CodeContractsReferenceAssembly>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="FlitBit.Core, Version=2.10.0.0, Culture=neutral, PublicKeyToken=38f03d0878531ff3, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\packages\FlitBit.Core.2.10.0\lib\net40\FlitBit.Core.dll</HintPath>
+    <Reference Include="FlitBit.Core">
+      <HintPath>..\..\packages\FlitBit.Core.2.10.1\lib\net40\FlitBit.Core.dll</HintPath>
     </Reference>
     <Reference Include="FlitBit.Emit, Version=2.8.3.0, Culture=neutral, PublicKeyToken=38f03d0878531ff3, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
@@ -136,7 +135,6 @@
     <Compile Include="BasicDbCommandTests.cs" />
     <Compile Include="Catalog\MappedTypeTests.cs" />
     <Compile Include="Catalog\Models\IMappedTypeDataModel.cs" />
-    <Compile Include="Catalog\Models\IMappedTypeDataModelData.cs" />
     <Compile Include="DataRepositoryTests.cs" />
     <Compile Include="DbConnectionExtensionTests.cs" />
     <Compile Include="DbContextTests.cs" />

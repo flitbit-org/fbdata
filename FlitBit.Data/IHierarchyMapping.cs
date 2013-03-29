@@ -1,4 +1,6 @@
-﻿namespace FlitBit.Data
+﻿using System;
+
+namespace FlitBit.Data
 {
 	/// <summary>
 	/// Interface for hierarchy mapping.
@@ -6,6 +8,8 @@
 	/// <typeparam name="TModel">model type TModel</typeparam>
 	public interface IHierarchyMapping<in TModel>
 	{
+		event EventHandler<EventArgs> OnChanged;
+
 		/// <summary>
 		/// Notifies the hierarchy of a new subtype of TModel.
 		/// </summary>

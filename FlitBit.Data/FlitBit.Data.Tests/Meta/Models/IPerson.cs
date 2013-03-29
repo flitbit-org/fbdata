@@ -1,9 +1,10 @@
 ﻿using FlitBit.Data.Meta;
+using FlitBit.Data.SPI;
 
 namespace FlitBit.Data.Tests.Meta.Models
 {
-	[MapEntity(Discriminator = "People")]
-	public interface IPerson : IParty
+	[MapEntity]
+	public interface IPerson : IParty, IDataModel
 	{
 		[MapColumn(ColumnBehaviors.Nullable, 40)]
 		string FirstName { get; set; }

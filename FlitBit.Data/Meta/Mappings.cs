@@ -5,64 +5,71 @@
 #endregion
 
 using System;
-using System.Collections.Concurrent;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
-using FlitBit.Core;
 
 namespace FlitBit.Data.Meta
 {
-	public class Mappings
+	/// <summary>
+	/// Utilities for mappings.
+	/// </summary>
+	public sealed class Mappings
 	{
 		public const int CInvalidOrdinal = -1;
 
-		static Lazy<Mappings> __instance = new Lazy<Mappings>(() => { return new Mappings(); },
+		static readonly Lazy<Mappings> __instance = new Lazy<Mappings>(() => { return new Mappings(); },
 																													LazyThreadSafetyMode.PublicationOnly);
-
-		static readonly ConcurrentDictionary<object, IMapping> __mappings = new ConcurrentDictionary<object, IMapping>();
-
+		
 		internal Mappings()
 		{}
 
+		/// <summary>
+		/// Gets the default connection's name.
+		/// </summary>
 		public string DefaultConnection { get; private set; }
+		/// <summary>
+		/// Gets the default schema.
+		/// </summary>
 		public string DefaultSchema { get; private set; }
 
-		public Mapping<T> ForType<T>()
-		{
-			var key = typeof(T).GetKeyForType();
-			IMapping m;
-			if (!__mappings.TryGetValue(key, out m))
-			{
-				var mm = new Mapping<T>();
-				if (__mappings.TryAdd(key, mm))
-				{
-					mm.InitFromMetadata()
-						.End();
-					return mm;
-				}
-				__mappings.TryGetValue(key, out m);
-			}
-			return m as Mapping<T>;
-		}
+		/// <summary>
+		/// Accesses a mapping for a type of model.
+		/// </summary>
+		/// <typeparam name="TModel">model's type</typeparam>
+		/// <returns></returns>
+		public Mapping<TModel> ForType<TModel>() { return Mapping<TModel>.Instance; }
 
+		/// <summary>
+		/// Sets the default connection's name.
+		/// </summary>
+		/// <param name="connection">the name of a connection</param>
+		/// <returns>the mappings</returns>
 		public Mappings UseDefaultConnection(string connection)
 		{
-			Contract.Requires(connection != null);
-			Contract.Requires(connection.Length > 0);
+			Contract.Requires<ArgumentNullException>(connection != null);
+			Contract.Requires<ArgumentException>(connection.Length > 0);
 			this.DefaultConnection = connection;
 			return this;
 		}
 
+		/// <summary>
+		/// Sets the default schema used when one is not specified for a data model.
+		/// </summary>
+		/// <param name="schema"></param>
+		/// <returns></returns>
 		public Mappings UseDefaultSchema(string schema)
 		{
-			Contract.Requires(schema != null);
-			Contract.Requires(schema.Length > 0);
+			Contract.Requires<ArgumentNullException>(schema != null);
+			Contract.Requires<ArgumentException>(schema.Length > 0);
 			this.DefaultSchema = schema;
 			return this;
 		}
 
+		/// <summary>
+		/// Accesses the single mappings instance.
+		/// </summary>
 		public static Mappings Instance { get { return __instance.Value; } }
 
 		internal static IMapping AccessMappingFor(Type type)

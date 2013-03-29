@@ -1,13 +1,23 @@
 ﻿using System;
+using System.Reflection;
+using FlitBit.Core;
+using FlitBit.Core.Factory;
 using FlitBit.Data.Meta;
 using FlitBit.Wireup;
+using FlitBit.Emit;
 using FlitBit.Wireup.Meta;
 
 namespace FlitBit.Data.Catalog
 {
+	/// <summary>
+	/// Static utilities.
+	/// </summary>
 	public static class StaticCatalog
 	{
-		public static readonly Guid ContainerWireupObserverKey = new Guid("693183CA-1D1E-4186-B84F-082FE9D8B551");
+		/// <summary>
+		/// The data model observer's wirup observer key.
+		/// </summary>
+		public static readonly Guid WireupObserverKey = new Guid("693183CA-1D1E-4186-B84F-082FE9D8B551");
 
 		class DataModelObserver: IWireupObserver
 		{
@@ -29,11 +39,14 @@ namespace FlitBit.Data.Catalog
 			/// <summary>
 			/// Gets the observer's key.
 			/// </summary>
-			public Guid ObserverKey { get { return ContainerWireupObserverKey; } }
+			public Guid ObserverKey { get { return WireupObserverKey; } }
 		}
 
 		readonly static IWireupObserver __observer = new DataModelObserver();
 
+		/// <summary>
+		/// Gets the data model observer.
+		/// </summary>
 		public static IWireupObserver Observer { get { return __observer; } }
 	}
 

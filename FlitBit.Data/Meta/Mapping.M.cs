@@ -13,8 +13,10 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Threading;
 using FlitBit.Core;
 using FlitBit.Emit;
+using FlitBit.ObjectIdentity;
 using FlitBit.Wireup;
 
 namespace FlitBit.Data.Meta
@@ -25,6 +27,23 @@ namespace FlitBit.Data.Meta
 	/// <typeparam name="TModel"></typeparam>
 	public class Mapping<TModel> : IMapping<TModel>
 	{
+		static Lazy<Mapping<TModel>> __mapping = new Lazy<Mapping<TModel>>(() => new Mapping<TModel>(),
+																														LazyThreadSafetyMode.ExecutionAndPublication);
+
+		/// <summary>
+		/// Gets the single mapping instance.
+		/// </summary>
+		public static Mapping<TModel> Instance { get { return __mapping.Value; } }
+
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
+		int _revision;
+
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
+		readonly HierarchyMapping<TModel> _hierarchyMapping = new HierarchyMapping<TModel>();
+
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
+		readonly IdentityKey<TModel> _identityKey;
+
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 		readonly List<IMapping> _baseTypes = new List<IMapping>();
 
@@ -62,13 +81,21 @@ namespace FlitBit.Data.Meta
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 		List<string> _errors;
 
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 		DbProviderHelper _helper;
 
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 		string _targetSchema;
 
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
+		Tuple<int, MappedDbTypeEmitter> _emitter;
+
 		internal Mapping()
 		{
+			_emitter = Tuple.Create(_revision, default(MappedDbTypeEmitter));
+			_hierarchyMapping = new HierarchyMapping<TModel>();
+			_hierarchyMapping.OnChanged += (sender, e) => Interlocked.Increment(ref _revision);
+			_identityKey = FactoryProvider.Factory.CreateInstance<IdentityKey<TModel>>();
 			_identity = new IdentityMapping<TModel>(this);
 			_naturalKey = new NaturalKeyMapping<TModel>(this);
 			var name = typeof(TModel).Name;
@@ -77,15 +104,32 @@ namespace FlitBit.Data.Meta
 				name = name.Substring(1);
 			}
 			this.TargetObject = name;
+			this.InitFromMetadata();
+		}
+
+		public int LocalRevision { get { return _revision; } }
+
+		public HierarchyMapping<TModel> Hierarchy { get { return _hierarchyMapping; } } 
+		public IdentityKey<TModel> IdentityKey { get { return _identityKey; } }
+
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
+		public Type ConcreteType
+		{
+			get
+			{
+				if (typeof(TModel).IsAbstract)
+				{
+					return DataModels.ConcreteType<TModel>();
+				}
+				return typeof(TModel);	
+			}
 		}
 
 		/// <summary>
 		///   Indicates the entity's behaviors.
 		/// </summary>
 		public EntityBehaviors Behaviors { get; internal set; }
-
-		public object Discriminator { get; private set; }
-
+		
 		public IEnumerable<string> Errors { get { return (_errors == null) ? new String[0] : _errors.ToArray(); } }
 
 		public bool HasBinder
@@ -199,16 +243,15 @@ namespace FlitBit.Data.Meta
 			return this;
 		}
 
-		public MemberInfo InferCollectionReferenceTargetMember(MemberInfo member, Type elementType)
+		public MemberInfo InferCollectionReferenceTargetMember(MemberInfo member, IMapping elmMapping)
 		{
-			var elmMapping = Mappings.AccessMappingFor(elementType);
 			AddDependency(elmMapping, DependencyKind.Soft, member);
 
 			var foreignObjectID = elmMapping.GetPreferredReferenceColumn();
 			if (foreignObjectID == null)
 			{
 				throw new MappingException(String.Concat("Relationship not defined between ", typeof(TModel).Name, ".", member.Name,
-																								" and the referenced type: ", elementType.Name));
+																								" and the referenced type: ", elmMapping.RuntimeType.Name));
 			}
 
 			return foreignObjectID.Member;
@@ -293,6 +336,12 @@ namespace FlitBit.Data.Meta
 			return this;
 		}
 
+		internal MappedDbTypeEmitter GetColumnEmitter(ColumnMapping column)
+		{
+			var helper = this.GetDbProviderHelper();
+			return (helper != null) ? helper.GetDbTypeEmitter(this, column) : null;
+		}
+
 		internal void AddContributedColumn(ColumnMapping contributed)
 		{
 			var name = contributed.TargetName;
@@ -306,6 +355,7 @@ namespace FlitBit.Data.Meta
 				_declaredColumns.Add(contributed);
 				_columns.Add(contributed);
 			}
+			Interlocked.Increment(ref _revision);
 		}
 
 		internal void AddDependency(IMapping target, DependencyKind kind, MemberInfo member)
@@ -316,6 +366,7 @@ namespace FlitBit.Data.Meta
 				if (dep == null)
 				{
 					_dependencies.Add(new Dependency(kind, this, member, target).CalculateDependencyKind());
+					Interlocked.Increment(ref _revision);
 				}
 			}
 		}
@@ -432,13 +483,24 @@ namespace FlitBit.Data.Meta
 				var names = Enum.GetNames(idcol.Member.GetTypeOfValue());
 				namecol.VariableLength = names.Max(n => n.Length);
 			}
+			Interlocked.Increment(ref _revision);
 			return this;
 		}
 
 		internal void MapCollectionFromMeta(PropertyInfo p, MapCollectionAttribute mapColl)
 		{
 			var elmType = p.PropertyType.FindElementType();
-			if (!Mappings.ExistsFor(elmType))
+			IMapping elmMapping;
+
+			if (elmType == this.RuntimeType)
+			{
+				elmMapping = this;
+			} 
+			else if (Mappings.ExistsFor(elmType))
+			{
+				elmMapping = Mappings.AccessMappingFor(elmType);
+			}
+			else
 			{
 				throw new MappingException(String.Concat(typeof(TModel).Name,
 																								": reference collection must be mapped over other mapped types: ",
@@ -448,7 +510,7 @@ namespace FlitBit.Data.Meta
 			MemberInfo refColumn;
 			if (mapColl.References == null || !mapColl.References.Any())
 			{
-				refColumn = InferCollectionReferenceTargetMember(p, elmType);
+				refColumn = InferCollectionReferenceTargetMember(p, elmMapping);
 			}
 			else
 			{
@@ -520,12 +582,7 @@ namespace FlitBit.Data.Meta
 				column.DefineReference(foreignColumn, mapColumn.ReferenceBehaviors);
 			}
 		}
-
-		internal void SetDiscriminator(object discriminator)
-		{
-			this.Discriminator = discriminator;
-		}
-
+		
 		void MarkComplete()
 		{
 			this.IsComplete = true;
@@ -728,11 +785,46 @@ namespace FlitBit.Data.Meta
 		{
 			var ht = typeof(IHierarchyMapping<TModel>).MatchGenericMethod("NotifySubtype", 1, typeof(void), typeof(IMapping<>))
 																								.MakeGenericMethod(mapping.RuntimeType);
-			ht.Invoke(DataModel<TModel>.Hierarchy, new object[] {mapping});
+			ht.Invoke(Mapping<TModel>.Instance.Hierarchy, new object[] {mapping});
 		}
 
-		public Type IdentityKeyType { get { return DataModel<TModel>.IdentityKey.KeyType; } }
-
 		#endregion
+
+
+		public Type IdentityKeyType
+		{
+			get { return IdentityKey.KeyType; }
+		}
+
+		public MappedDbTypeEmitter GetEmitterFor(ColumnMapping column)
+		{
+			var helper = GetDbProviderHelper();
+			return (helper != null) ? helper.GetDbTypeEmitter(this, column) : null;
+		}
+
+
+		public int Revision
+		{
+			get
+			{
+				throw new NotImplementedException();
+			}
+			set
+			{
+				throw new NotImplementedException();
+			}
+		}
+
+		public DbTypeDetails DbTypeDetails
+		{
+			get
+			{
+				throw new NotImplementedException();
+			}
+			set
+			{
+				throw new NotImplementedException();
+			}
+		}
 	}
 }

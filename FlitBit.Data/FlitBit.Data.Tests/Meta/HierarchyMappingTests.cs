@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using System.Text;
+using FlitBit.Data.Meta;
 using FlitBit.Data.Tests.Meta.Models;
 using FlitBit.Emit;
 using FlitBit.Wireup;
@@ -20,8 +21,8 @@ namespace FlitBit.Data.Tests.Meta
 		[TestMethod]
 		public void TestMethod1()
 		{
-			var party = DataModel<IParty>.Mapping;
-			var idk = DataModel<IParty>.IdentityKey;
+			var party = Mapping<IParty>.Instance;
+			var idk = party.IdentityKeyType;
 			Assert.IsNotNull(party);
 			Assert.IsNotNull(party.Columns);
 			Assert.AreEqual(4, party.Columns.Count());
@@ -34,8 +35,8 @@ namespace FlitBit.Data.Tests.Meta
 
 			Assert.IsNotNull(sql);
 
-			var people = DataModel<IPerson>.Mapping;
-			idk = DataModel<IParty>.IdentityKey;
+			var people = Mapping<IPerson>.Instance;
+			idk = Mapping<IParty>.Instance.IdentityKeyType;
 
 			Assert.IsNotNull(people);
 
@@ -52,11 +53,13 @@ namespace FlitBit.Data.Tests.Meta
 
 			Assert.IsNotNull(sql);
 
-			var organizations = DataModel<IOrganization>.Mapping;
-			var groups = DataModel<IGroup>.Mapping;
+			var organizations = Mapping<IOrganization>.Instance;
+			var groups = Mapping<IGroup>.Instance;
 
-			var parties = DataModel<IParty>.Hierarchy.KnownSubtypes;
+			var parties = party.Hierarchy.KnownSubtypes;
 			Assert.IsNotNull(parties);
+			Assert.IsNotNull(party.ConcreteType);
+			Assert.IsNotNull(people.ConcreteType);
 		}
 	}
 }

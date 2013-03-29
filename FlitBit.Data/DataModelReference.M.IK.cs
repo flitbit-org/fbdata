@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using FlitBit.Core;
+using FlitBit.Data.Meta;
 
 namespace FlitBit.Data
 {
@@ -20,7 +21,7 @@ namespace FlitBit.Data
 			_model = model;
 			if (HasModel)
 			{
-				this.IdentityKey = (TIdentityKey) DataModel<TModel>.IdentityKey.UntypedKey(_model);
+				this.IdentityKey = (TIdentityKey) Mapping<TModel>.Instance.IdentityKey.UntypedKey(_model);
 			}
 		}
 
@@ -155,7 +156,7 @@ namespace FlitBit.Data
 			_model = referent;
 			if (HasModel)
 			{
-				this.IdentityKey = (TIdentityKey) DataModel<TModel>.IdentityKey.UntypedKey(_model);
+				this.IdentityKey = (TIdentityKey) Mapping<TModel>.Instance.IdentityKey.UntypedKey(_model);
 			}
 		}
 

@@ -65,6 +65,12 @@ namespace FlitBit.Data
 		string QuoteObjectNameForSQL(string name);
 
 		Type IdentityKeyType { get; }
+
+		int Revision { get; set; }
+
+		MappedDbTypeEmitter GetEmitterFor(ColumnMapping columnMapping);
+
+		DbTypeDetails DbTypeDetails { get; set; }
 	}
 
 	public interface IMapping<out M> : IMapping

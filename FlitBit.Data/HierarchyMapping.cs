@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 
 namespace FlitBit.Data
 {
@@ -20,6 +21,10 @@ namespace FlitBit.Data
 		public void NotifySubtype<TSubModel>(IMapping<TSubModel> mapping) where TSubModel : TModel
 		{
 			this._knownSubtypes.Add((IMapping<TModel>) mapping);
+			if (OnChanged != null)
+			{
+				OnChanged(this, new EventArgs());
+			}
 		}
 
 		#endregion
@@ -32,5 +37,7 @@ namespace FlitBit.Data
 		public IEnumerable<IMapping<TModel>> KnownSubtypes { get { return this._knownSubtypes.AsReadOnly(); } }
 
 		#endregion
+
+		public event EventHandler<EventArgs> OnChanged;
 	}
 }

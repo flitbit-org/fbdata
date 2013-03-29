@@ -2,7 +2,7 @@
 
 namespace FlitBit.Data.Tests.Meta.Models
 {
-	[MapEntity(Discriminator = "Groups")]
+	[MapEntity]
 	public interface IGroup : IParty
 	{
 		[MapColumn(ColumnBehaviors.Nullable, 200)]

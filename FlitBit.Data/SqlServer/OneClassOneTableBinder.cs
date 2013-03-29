@@ -15,7 +15,7 @@ namespace FlitBit.Data.SqlServer
 	/// <typeparam name="TModel"></typeparam>
 	/// <typeparam name="TIdentityKey"></typeparam>
 	/// <typeparam name="TModelImpl"></typeparam>
-	public class DynamicHybridInheritanceTreeBinder<TModel, TIdentityKey, TModelImpl> : IModelBinder<TModel, TIdentityKey>
+	public class OneClassOneTableBinder<TModel, TIdentityKey, TModelImpl> : IModelBinder<TModel, TIdentityKey>
 		where TModelImpl : class, TModel, new()
 	{
 		readonly Mapping<TModel> _mapping;
@@ -25,7 +25,7 @@ namespace FlitBit.Data.SqlServer
 		/// Creates a new instance.
 		/// </summary>
 		/// <param name="mapping"></param>
-		public DynamicHybridInheritanceTreeBinder(Mapping<TModel> mapping)
+		public OneClassOneTableBinder(Mapping<TModel> mapping)
 		{
 			Contract.Requires<ArgumentNullException>(mapping != null);
 			//Contract.Requires<ArgumentException>(mapping.IsComplete);
@@ -268,14 +268,6 @@ namespace FlitBit.Data.SqlServer
 						.Append(typeof(TModel).GetReadableSimpleName())
 						.Append(Environment.NewLine);
 
-				foreach (
-					var dep in mapping.Dependencies.Where(d => d.Kind == DependencyKind.Base || d.Kind.HasFlag(DependencyKind.Direct)))
-				{
-					var dmap = Mappings.AccessMappingFor(dep.Target.RuntimeType);
-					var binder = dmap.GetBinder();
-					binder.BuildDdlBatch(batch, members);
-				}
-
 				var catalog = mapping.TargetCatalog;
 				var schema = mapping.TargetSchema;
 				var table = mapping.TargetObject;
@@ -322,8 +314,6 @@ namespace FlitBit.Data.SqlServer
 						dbt.WriteLength(col.VariableLength, 0, batch);
 					}
 
-					if (col.Member.DeclaringType == mapping.RuntimeType)
-					{
 						hasLcgColumns = hasLcgColumns || col.Behaviors.HasFlag(ColumnBehaviors.LinearCongruentGenerated);
 						// IDENTITY CONSTRAINTS
 						if (col.IsSynthetic)
@@ -366,10 +356,8 @@ namespace FlitBit.Data.SqlServer
 									.Append(mapping.TargetObject)
 									.Append(" PRIMARY KEY");
 						}
-					}
-					else
-					{
-						if (mapping.Identity.Columns.Count() == 1)
+					
+					if (mapping.Identity.Columns.Count() == 1)
 						{
 							batch.Append(" NOT NULL")
 									.Append(Environment.NewLine)
@@ -396,10 +384,9 @@ namespace FlitBit.Data.SqlServer
 									.Append("\t\t\t\tON DELETE CASCADE")
 									.Append(Environment.NewLine)
 									.Append("\t\t\t\tON UPDATE CASCADE");
-						}
 					}
 				}
-				foreach (var col in mapping.DeclaredColumns.Where(c => c.IsIdentity == false))
+				foreach (var col in mapping.Columns.Where(c => c.IsIdentity == false))
 				{
 					hasLcgColumns = hasLcgColumns || col.Behaviors.HasFlag(ColumnBehaviors.LinearCongruentGenerated);
 					if (i++ > 0)
@@ -566,8 +553,6 @@ namespace FlitBit.Data.SqlServer
 						.Append(Environment.NewLine);
 			}
 		}
-
-
 
 		#endregion
 	}

@@ -54,7 +54,9 @@ namespace FlitBit.Data.Meta
 		protected override MemberInfo InferCollectionReferenceTargetMember(MemberInfo member, Type elementType)
 		{
 			var typedMapping = (Mapping<T>) Mapping;
-			return typedMapping.InferCollectionReferenceTargetMember(member, elementType);
+			IMapping elmMapping = (elementType == typedMapping.RuntimeType) ? typedMapping : Mappings.AccessMappingFor(elementType);
+			
+			return typedMapping.InferCollectionReferenceTargetMember(member, elmMapping);
 		}
 	}
 }

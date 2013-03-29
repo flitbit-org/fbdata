@@ -29,6 +29,7 @@ namespace FlitBit.Data.Tests.Catalog
 			var builder = new StringBuilder(2000);
 			binder.BuildDdlBatch(builder);
 			var sql = builder.ToString();
+			Assert.IsNotNull(mapping.ConcreteType);
 			Assert.IsNotNull(sql);
 		}
 	}
