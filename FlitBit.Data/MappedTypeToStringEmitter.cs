@@ -1,11 +1,12 @@
 using System;
 using System.Data;
+using System.Reflection;
 using System.Reflection.Emit;
 using FlitBit.Emit;
 
 namespace FlitBit.Data
 {
-	internal class MappedTypeToStringEmitter: MappedAnyToStringEmitter<TypeBuilder>
+	internal class MappedTypeToStringEmitter: MappedAnyToStringEmitter<Type>
 	{
 		public MappedTypeToStringEmitter(DbType dbType)
 			: base(dbType)
@@ -14,7 +15,7 @@ namespace FlitBit.Data
 		protected override void EmitTranslateType(MethodBuilder method)
 		{
 			var il = method.GetILGenerator();
-			il.New<Type>(typeof(string));
+			il.Call<Type>("GetType", BindingFlags.Static | BindingFlags.Public, typeof(string));
 		}
 	}
 }

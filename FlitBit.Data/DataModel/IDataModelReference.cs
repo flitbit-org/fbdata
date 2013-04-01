@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace FlitBit.Data
+namespace FlitBit.Data.DataModel
 {
 	/// <summary>
 	///   Base interface for model references.

@@ -9,7 +9,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using FlitBit.Data.Meta;
 
-namespace FlitBit.Data
+namespace FlitBit.Data.DataModel
 {
 	public interface IMapping
 	{
@@ -28,6 +28,9 @@ namespace FlitBit.Data
 
 		IEnumerable<Dependency> DeclaredDependencies { get; }
 		IEnumerable<Dependency> Dependencies { get; }
+
+		IdentityMapping Identity { get; }
+
 		bool IsComplete { get; }
 		bool IsEnum { get; }
 
@@ -59,18 +62,16 @@ namespace FlitBit.Data
 		string TargetSchema { get; }
 
 		IMapping Completed(Action action);
-		IModelBinder GetBinder();
+		IDataModelBinder GetBinder();
 
 		void NotifySubtype(IMapping mapping);
 		string QuoteObjectNameForSQL(string name);
 
 		Type IdentityKeyType { get; }
 
-		int Revision { get; set; }
+		int Revision { get; }
 
 		MappedDbTypeEmitter GetEmitterFor(ColumnMapping columnMapping);
-
-		DbTypeDetails DbTypeDetails { get; set; }
 	}
 
 	public interface IMapping<out M> : IMapping

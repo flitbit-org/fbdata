@@ -1,4 +1,4 @@
-namespace FlitBit.Data
+namespace FlitBit.Data.DataModel
 {
 	/// <summary>
 	/// Interface for establishing a model referent.

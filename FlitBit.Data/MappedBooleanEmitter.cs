@@ -10,7 +10,6 @@ namespace FlitBit.Data
 		internal MappedBooleanEmitter()
 			: base(DbType.Boolean, DbType.Boolean)
 		{
-
 		}
 
 		/// <summary>

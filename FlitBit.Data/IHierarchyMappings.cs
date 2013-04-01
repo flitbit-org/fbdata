@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using FlitBit.Data.DataModel;
 
 namespace FlitBit.Data
 {

@@ -8,7 +8,10 @@ using System;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Reflection;
+using System.Text;
+using FlitBit.Data.DataModel;
 using FlitBit.Emit;
+using FlitBit.Core;
 
 namespace FlitBit.Data.Meta
 {
@@ -16,6 +19,9 @@ namespace FlitBit.Data.Meta
 	{
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 		Tuple<int, MappedDbTypeEmitter> _emitter;
+
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
+		DbTypeDetails _detail;
 
 		public MappedDbTypeEmitter Emitter
 		{
@@ -98,6 +104,46 @@ namespace FlitBit.Data.Meta
 			Contract.Requires<ArgumentException>(member != null);
 			
 			return new ColumnMapping<T>(mapping, member, ordinal);
+		}
+
+		public DbTypeDetails DbTypeDetails
+		{
+			get
+			{
+				if (_detail.IsEmpty)
+				{
+					_detail = ResolveDbTypeDetails();
+				}
+				return _detail;
+			}
+		}
+
+		protected virtual DbTypeDetails ResolveDbTypeDetails()
+		{
+			var emitter = this.Emitter;
+			if (emitter != null)
+			{
+				return emitter.GetDbTypeDetails(this);
+			}
+			else return default(DbTypeDetails);
+		}
+
+		public override string ToString()
+		{
+			var buffer = new StringBuilder(200);
+			var emitter = this.Emitter;
+			buffer.Append(Member.DeclaringType.GetReadableSimpleName())
+						.Append('.')
+						.Append(Member.Name)
+						.Append(": ")
+						.Append(Member.GetTypeOfValue()
+													.GetReadableSimpleName())
+						.Append(" ~> ");
+			if (emitter != null)
+			{
+				emitter.DescribeColumn(buffer, this);
+			}
+			return buffer.ToString();
 		}
 	}
 }

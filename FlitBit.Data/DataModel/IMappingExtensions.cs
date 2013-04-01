@@ -7,7 +7,7 @@ using FlitBit.Core;
 using FlitBit.Data.Meta;
 using FlitBit.Data.Meta.DDL;
 
-namespace FlitBit.Data
+namespace FlitBit.Data.DataModel
 {
 	public static class IMappingExtensions
 	{

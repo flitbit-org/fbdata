@@ -37,8 +37,8 @@ namespace FlitBit.Data.Meta
 		/// <param name="value">Value of the ID</param>
 		public SyntheticID(string value)
 		{
-			Contract.Requires(value != null);
-			Contract.Requires(value.Length > 0);
+			Contract.Requires<ArgumentNullException>(value != null);
+			Contract.Requires<ArgumentException>(value.Length > 0);
 			_value = value.ToCharArray();
 			_hashcode = _value.CalculateCombinedHashcode(CHashCodeSeed);
 		}
@@ -47,11 +47,12 @@ namespace FlitBit.Data.Meta
 		///   Creates a new instance.
 		/// </summary>
 		/// <param name="value">Value of the ID</param>
-		public SyntheticID(IEnumerable<Char> value)
+		public SyntheticID(char[] value)
 		{
-			Contract.Requires(value != null);
-			Contract.Requires(value.Count() > 0);
-			_value = value.ToArray();
+			Contract.Requires<ArgumentNullException>(value != null);
+			Contract.Requires<ArgumentException>(value.Length > 0);
+			_value = new char[value.Length];
+			Array.Copy(value, _value, value.Length);
 			_hashcode = _value.CalculateCombinedHashcode(CHashCodeSeed);
 		}
 
@@ -68,7 +69,7 @@ namespace FlitBit.Data.Meta
 		/// <summary>
 		///   Determins if the ID is equal to another.
 		/// </summary>
-		/// <param name="other">the other ID</param>
+		/// <param name="obj">the other ID</param>
 		/// <returns>
 		///   <em>true</em> if this and the other are equal; otherwise <em>false</em>
 		/// </returns>
@@ -95,11 +96,23 @@ namespace FlitBit.Data.Meta
 			return (IsEmpty) ? String.Empty : new String(_value);
 		}
 
+		/// <summary>
+		/// Compares two syntetic IDs for equality.
+		/// </summary>
+		/// <param name="lhs">left-hand operand</param>
+		/// <param name="rhs">right-hand operand</param>
+		/// <returns><em>true</em> if equal; otherwise <em>false</em></returns>
 		public static bool operator ==(SyntheticID lhs, SyntheticID rhs)
 		{
 			return lhs.Equals(rhs);
 		}
 
+		/// <summary>
+		/// Compares two syntetic IDs for inequality.
+		/// </summary>
+		/// <param name="lhs">left-hand operand</param>
+		/// <param name="rhs">right-hand operand</param>
+		/// <returns><em>true</em> if unequal; otherwise <em>false</em></returns>
 		public static bool operator !=(SyntheticID lhs, SyntheticID rhs)
 		{
 			return !lhs.Equals(rhs);
@@ -129,7 +142,8 @@ namespace FlitBit.Data.Meta
 		/// <returns>a check digit for the given value</returns>
 		public static char CalculateCheckDigit(string value)
 		{
-			Contract.Requires(value != null);
+			Contract.Requires<ArgumentNullException>(value != null);
+			Contract.Requires<ArgumentException>(value.Length > 0);
 			return CalculateCheckDigit(value.ToCharArray());
 		}
 
@@ -140,9 +154,9 @@ namespace FlitBit.Data.Meta
 		/// <returns>a check digit for the given value</returns>
 		public static char CalculateCheckDigit(char[] value)
 		{
-			Contract.Requires(value != null);
-			Contract.Requires(value.Length > 0);
-
+			Contract.Requires<ArgumentNullException>(value != null);
+			Contract.Requires<ArgumentException>(value.Length > 0);
+			
 			// Modified Luhn algorithm for base 16 check digit. -Pdc      
 			var len = value.Length - 1;
 			var sum = 0;
@@ -181,11 +195,7 @@ namespace FlitBit.Data.Meta
 		/// </returns>
 		public static bool IsValidID(string value)
 		{
-			if (value == null || value.Length == 0)
-			{
-				return false;
-			}
-			return IsValidID(value.ToCharArray());
+			return !string.IsNullOrEmpty(value) && IsValidID(value.ToCharArray());
 		}
 
 		/// <summary>
@@ -197,38 +207,38 @@ namespace FlitBit.Data.Meta
 		/// </returns>
 		public static bool IsValidID(char[] value)
 		{
-			if (value == null || value.Length == 0)
+			if (value != null && value.Length != 0)
 			{
-				return false;
+				// Modified Luhn algorithm for base 16 check digit. -Pdc
+				var len = value.Length - 1;
+				var sum = 0;
+				for (var i = 0; i <= len; i++)
+				{
+					var digit = (value[len - i] - AsciiOffsetToDigitZero);
+					if (digit < 0)
+					{
+						return false;
+					}
+
+					if (digit < 10)
+					{
+						sum += (i % 2 == 1) ? (digit << 1) % 0xf : digit;
+					}
+					else if ((digit >= OffsetToUpperCaseA && digit < OffsetToUpperCaseG)
+						|| (digit >= OffsetToLowerCaseA && digit < OffsetToLowerCaseG))
+					{
+						digit = 9 + (0x0F & digit);
+						sum += (i % 2 == 1) ? (digit << 1) % 0xf : digit;
+					}
+					else
+					{
+						return false; // input contains a non-digit character
+					}
+				}
+				return (sum % 0xF == 0);
 			}
 
-			// Modified Luhn algorithm for base 16 check digit. -Pdc      
-			var len = value.Length - 1;
-			var sum = 0;
-			for (var i = 0; i <= len; i++)
-			{
-				var digit = (value[len - i] - AsciiOffsetToDigitZero);
-				if (digit < 0)
-				{
-					return false;
-				}
-
-				if (digit < 10)
-				{
-					sum += (i % 2 == 1) ? (digit << 1) % 0xf : digit;
-				}
-				else if ((digit >= OffsetToUpperCaseA && digit < OffsetToUpperCaseG)
-					|| (digit >= OffsetToLowerCaseA && digit < OffsetToLowerCaseG))
-				{
-					digit = 9 + (0x0F & digit);
-					sum += (i % 2 == 1) ? (digit << 1) % 0xf : digit;
-				}
-				else
-				{
-					return false; // input contains a non-digit character
-				}
-			}
-			return (sum % 0xF == 0);
+			return false;
 		}
 	}
 }

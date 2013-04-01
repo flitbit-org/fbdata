@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using System.Text;
+using FlitBit.Data.DataModel;
 using FlitBit.Data.Meta;
 using FlitBit.Data.Tests.Meta.Models;
 using FlitBit.Emit;

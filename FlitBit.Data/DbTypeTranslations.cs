@@ -18,17 +18,17 @@ namespace FlitBit.Data
 		static readonly DbTypeTranslation[] DbTypeMap = new DbTypeTranslation[]
 		{
 			new DbTypeTranslation(DbType.AnsiString, (int) DbType.AnsiString, typeof(string), false, "VARCHAR",
-														DbTypeLengthRequirements.Length | DbTypeLengthRequirements.IndicatedByParenthesis)
+														DbTypeLengthRequirements.Length)
 			,
 			new DbTypeTranslation(DbType.Binary, (int) DbType.Binary, typeof(byte[]), true, "BINARY",
-														DbTypeLengthRequirements.Length | DbTypeLengthRequirements.IndicatedByParenthesis)
+														DbTypeLengthRequirements.Length)
 			,
 			new DbTypeTranslation(DbType.Byte, (int) DbType.Byte, typeof(byte), true, "TINYINT", DbTypeLengthRequirements.None)
 			,
 			new DbTypeTranslation(DbType.Boolean, (int) DbType.Boolean, typeof(bool), true, "BIT", DbTypeLengthRequirements.None)
 			,
 			new DbTypeTranslation(DbType.Currency, (int) DbType.Currency, typeof(decimal), false, "MONEY",
-														DbTypeLengthRequirements.Length | DbTypeLengthRequirements.IndicatedByParenthesis)
+														DbTypeLengthRequirements.Length)
 			,
 			new DbTypeTranslation(DbType.Date, (int) DbType.Date, typeof(DateTime), false, "DATE", DbTypeLengthRequirements.None)
 			,
@@ -36,8 +36,7 @@ namespace FlitBit.Data
 														DbTypeLengthRequirements.None)
 			,
 			new DbTypeTranslation(DbType.Decimal, (int) DbType.Decimal, typeof(decimal), true, "DECIMAL",
-														DbTypeLengthRequirements.Precision | DbTypeLengthRequirements.Scale |
-															DbTypeLengthRequirements.IndicatedByParenthesis)
+														DbTypeLengthRequirements.Precision | DbTypeLengthRequirements.Scale)
 			,
 			new DbTypeTranslation(DbType.Double, (int) DbType.Double, typeof(double), true, "FLOAT",
 														DbTypeLengthRequirements.None)
@@ -60,7 +59,7 @@ namespace FlitBit.Data
 														DbTypeLengthRequirements.None)
 			,
 			new DbTypeTranslation(DbType.String, (int) DbType.String, typeof(string), true, "NVARCHAR",
-														DbTypeLengthRequirements.Length | DbTypeLengthRequirements.IndicatedByParenthesis)
+														DbTypeLengthRequirements.Length)
 			,
 			new DbTypeTranslation(DbType.Time, (int) DbType.Time, typeof(DateTime), false, "TIME", DbTypeLengthRequirements.None)
 			,
@@ -69,24 +68,23 @@ namespace FlitBit.Data
 			new DbTypeTranslation(DbType.UInt32, (int) DbType.UInt32, typeof(uint), true, "BIGINT",
 														DbTypeLengthRequirements.None)
 			,
-			new DbTypeTranslation(DbType.UInt64, (int) DbType.UInt64, typeof(ulong), true, "BIGINT",
-														DbTypeLengthRequirements.ApproximationMapping)
+			new DbTypeTranslation(DbType.UInt64, (int) DbType.UInt64, typeof(ulong), true, "BIGINT")
 			,
 			new DbTypeTranslation(DbType.VarNumeric, (int) DbType.VarNumeric, typeof(string), false, "NUMERIC",
 														DbTypeLengthRequirements.None)
 			,
 			new DbTypeTranslation(DbType.AnsiStringFixedLength, (int) DbType.AnsiStringFixedLength, typeof(string), false,
-														"CHAR", DbTypeLengthRequirements.Length | DbTypeLengthRequirements.IndicatedByParenthesis)
+														"CHAR", DbTypeLengthRequirements.Length)
 			,
 			new DbTypeTranslation(DbType.StringFixedLength, (int) DbType.StringFixedLength, typeof(string), false, "NCHAR",
-														DbTypeLengthRequirements.Length | DbTypeLengthRequirements.IndicatedByParenthesis)
+														DbTypeLengthRequirements.Length)
 			, default(DbTypeTranslation)
 			,
 			new DbTypeTranslation(DbType.Xml, (int) DbType.Xml, typeof(string), false, "XML",
-														DbTypeLengthRequirements.Length | DbTypeLengthRequirements.IndicatedByParenthesis)
+														DbTypeLengthRequirements.Length)
 			,
 			new DbTypeTranslation(DbType.DateTime2, (int) DbType.DateTime2, typeof(DateTime), false, "DATETIME2",
-														DbTypeLengthRequirements.Length | DbTypeLengthRequirements.IndicatedByParenthesis)
+														DbTypeLengthRequirements.Length)
 			,
 			new DbTypeTranslation(DbType.DateTimeOffset, (int) DbType.DateTimeOffset, typeof(DateTime), false, "DATETIMEOFFSET",
 														DbTypeLengthRequirements.None)

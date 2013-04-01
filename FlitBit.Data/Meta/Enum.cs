@@ -91,11 +91,12 @@ namespace FlitBit.Data.Meta
 	{
 		Lazy = 0,
 		Aggressive = 1,
-		Enforced = 2,
-		EnforcedLazy = Enforced | Lazy,
+		Enforced = 1 << 2,
 		EnforcedAggressive = Enforced | Aggressive,
-		OnUpdateCascade = 4,
-		OnDeleteCascade = 8,
+		OnUpdateCascade = 1 << 3,
+		OnDeleteCascade = 1 << 4,
+		OnDeleteSetNull = 1 << 5,
+		OnDeleteSetDefault = 1 << 6
 	}
 
 	/// <summary>

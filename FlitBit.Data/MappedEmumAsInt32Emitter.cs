@@ -11,7 +11,7 @@ namespace FlitBit.Data
 		internal MappedEmumAsInt32Emitter()
 			: base(DbType.Int32, DbType.Int32)
 		{
-
+			this.SpecializedSqlTypeName = "INT";
 		}
 
 		/// <summary>

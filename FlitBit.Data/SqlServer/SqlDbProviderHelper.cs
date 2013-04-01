@@ -11,25 +11,36 @@ using System.Data.SqlClient;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using FlitBit.Core;
+using FlitBit.Data.DataModel;
 using FlitBit.Data.Meta;
 
 namespace FlitBit.Data.SqlServer
 {
 	public class SqlDbProviderHelper : DbProviderHelper
 	{
-		static readonly IDbExecutable __catalogExists = DbExecutable.FromCommandText(
-																																								 @"SELECT CONVERT(BIT, CASE ISNULL(DB_ID(@catalog),-1) WHEN -1 THEN 0 ELSE 1 END) AS HasCatalog")
-																																.DefineParameter("@catalog", DbType.String);
+		static readonly IDbExecutable __catalogExists = DbExecutable.FromCommandText(@"
+SELECT CONVERT(BIT, CASE ISNULL(DB_ID(@catalog),-1) WHEN -1 THEN 0 ELSE 1 END) AS HasCatalog"
+			).DefineParameter("@catalog", DbType.String);
 
 		static readonly IDbExecutable __schemaExists = DbExecutable.FromCommandText(@"
 SELECT name AS SCHEMA_NAME 
 FROM sys.schemas 
-WHERE name = @schema")
-																															.DefineParameter("@schema", DbType.String);
+WHERE name = @schema"
+			).DefineParameter("@schema", DbType.String);
 
 		public SqlDbProviderHelper()
 		{
 			base.Factory = DbProviderFactories.GetFactory("System.Data.SqlClient");
+		}
+
+		protected override void Initialize()
+		{
+			base.Initialize();
+			MapRuntimeType<DateTime>(new SqlMappedDateTimeEmitter(SqlDbType.DateTime2));
+			MapRuntimeType<Int32>(new SqlMappedInt32Emitter());
+			MapRuntimeType<Int64>(new SqlMappedInt64Emitter());
+			MapRuntimeType<string>(new SqlMappedStringEmitter(SqlDbType.NVarChar));
+			MapRuntimeType<Type>(new SqlMappedTypeToStringEmitter());
 		}
 
 		public override IAsyncResult BeginExecuteNonQuery(DbCommand command, AsyncCallback callback, object stateObject)
@@ -128,7 +139,7 @@ WHERE name = @schema")
 			return (name[0] == '@') ? name : String.Concat("@", name);
 		}
 
-		public override IModelBinder<TModel, Id> GetModelBinder<TModel, Id>(Mapping<TModel> mapping)
+		public override IDataModelBinder<TModel, Id> GetModelBinder<TModel, Id>(Mapping<TModel> mapping)
 		{
 			Type binderType;
 
@@ -139,7 +150,7 @@ WHERE name = @schema")
 																																													Mapping<TModel>.Instance.ConcreteType);
 					break;
 				case MappingStrategy.OneClassOneTable:
-					binderType = typeof(DynamicHybridInheritanceTreeBinder<,,>).MakeGenericType(typeof(TModel), typeof(Id),
+					binderType = typeof(OneClassOneTableBinder<,,>).MakeGenericType(typeof(TModel), typeof(Id),
 																																													Mapping<TModel>.Instance.ConcreteType);
 					break;
 				case MappingStrategy.OneInheritanceTreeOneTable:
@@ -150,7 +161,7 @@ WHERE name = @schema")
 					throw new ArgumentOutOfRangeException();
 			}
 			
-			return (IModelBinder<TModel, Id>)Activator.CreateInstance(binderType, mapping);
+			return (IDataModelBinder<TModel, Id>)Activator.CreateInstance(binderType, mapping);
 		}
 
 		public override string GetServerName(DbConnection connection)

@@ -17,10 +17,10 @@ namespace FlitBit.Data.SqlServer
 		static readonly DbTypeTranslation[] DbTypeMap = new DbTypeTranslation[]
 		{
 			new SqlDbTypeTranslation(DbType.AnsiString, SqlDbType.VarChar, typeof(string), false, "VARCHAR",
-															DbTypeLengthRequirements.Length | DbTypeLengthRequirements.IndicatedByParenthesis, "MAX")
+															DbTypeLengthRequirements.Length , "MAX")
 			,
 			new SqlDbTypeTranslation(DbType.Binary, SqlDbType.Binary, typeof(byte[]), true, "VARBINARY",
-															DbTypeLengthRequirements.Length | DbTypeLengthRequirements.IndicatedByParenthesis, "MAX")
+															DbTypeLengthRequirements.Length , "MAX")
 			,
 			new SqlDbTypeTranslation(DbType.Byte, SqlDbType.TinyInt, typeof(byte), true, "TINYINT",
 															DbTypeLengthRequirements.None)
@@ -33,8 +33,7 @@ namespace FlitBit.Data.SqlServer
 			, new SqlDbTypeTranslation(DbType.DateTime, SqlDbType.DateTime2, typeof(DateTime), true)
 			,
 			new SqlDbTypeTranslation(DbType.Decimal, SqlDbType.Decimal, typeof(decimal), true, "DECIMAL",
-															DbTypeLengthRequirements.Precision | DbTypeLengthRequirements.Scale |
-																DbTypeLengthRequirements.IndicatedByParenthesis)
+															DbTypeLengthRequirements.Precision | DbTypeLengthRequirements.Scale)
 			, new SqlDbTypeTranslation(DbType.Double, SqlDbType.Float, typeof(double), true)
 			, new SqlDbTypeTranslation(DbType.Guid, SqlDbType.UniqueIdentifier, typeof(Guid), true)
 			, new SqlDbTypeTranslation(DbType.Int16, SqlDbType.SmallInt, typeof(short), true)
@@ -45,7 +44,7 @@ namespace FlitBit.Data.SqlServer
 			, new SqlDbTypeTranslation(DbType.Single, SqlDbType.Float, typeof(float), true)
 			,
 			new SqlDbTypeTranslation(DbType.String, SqlDbType.NVarChar, typeof(string), true,
-															DbTypeLengthRequirements.Length | DbTypeLengthRequirements.IndicatedByParenthesis, "MAX")
+															DbTypeLengthRequirements.Length , "MAX")
 			, new SqlDbTypeTranslation(DbType.Time, SqlDbType.Time, typeof(DateTime), false)
 			, new SqlDbTypeTranslation(DbType.UInt16, SqlDbType.Int, typeof(ushort), true)
 			, new SqlDbTypeTranslation(DbType.UInt32, SqlDbType.BigInt, typeof(uint), true)
@@ -55,17 +54,17 @@ namespace FlitBit.Data.SqlServer
 															DbTypeLengthRequirements.None)
 			,
 			new SqlDbTypeTranslation(DbType.AnsiStringFixedLength, SqlDbType.Char, typeof(string), false, "CHAR",
-															DbTypeLengthRequirements.Length | DbTypeLengthRequirements.IndicatedByParenthesis, "100")
+															DbTypeLengthRequirements.Length , "100")
 			,
 			new SqlDbTypeTranslation(DbType.StringFixedLength, SqlDbType.NChar, typeof(string), false, "NCHAR",
-															DbTypeLengthRequirements.Length | DbTypeLengthRequirements.IndicatedByParenthesis, "100")
+															DbTypeLengthRequirements.Length , "100")
 			, default(DbTypeTranslation)
 			,
 			new SqlDbTypeTranslation(DbType.Xml, SqlDbType.Xml, typeof(string), false, "XML",
-															DbTypeLengthRequirements.Length | DbTypeLengthRequirements.IndicatedByParenthesis)
+															DbTypeLengthRequirements.Length )
 			,
 			new SqlDbTypeTranslation(DbType.DateTime2, SqlDbType.DateTime2, typeof(DateTime), false, "DATETIME2",
-															DbTypeLengthRequirements.Length | DbTypeLengthRequirements.IndicatedByParenthesis, "7")
+															DbTypeLengthRequirements.Length , "7")
 			,
 			new SqlDbTypeTranslation(DbType.DateTimeOffset, SqlDbType.DateTimeOffset, typeof(DateTime), false, "DATETIMEOFFSET",
 															DbTypeLengthRequirements.None)
@@ -78,13 +77,13 @@ namespace FlitBit.Data.SqlServer
 		{
 			__runtimeTypeMappings.TryAdd(typeof(Char).AssemblyQualifiedName,
 																	new SqlDbTypeTranslation(DbType.AnsiStringFixedLength, SqlDbType.Char, typeof(char), true, "CHAR",
-																													DbTypeLengthRequirements.Length | DbTypeLengthRequirements.IndicatedByParenthesis, "1"));
+																													DbTypeLengthRequirements.Length , "1"));
 			__runtimeTypeMappings.TryAdd(typeof(Type).AssemblyQualifiedName,
 																	new SqlDbTypeTranslation(DbType.String, SqlDbType.NVarChar, typeof(Type), true,
-																													DbTypeLengthRequirements.Length | DbTypeLengthRequirements.IndicatedByParenthesis, "400"));
+																													DbTypeLengthRequirements.Length , "400"));
 			__runtimeTypeMappings.TryAdd(typeof(Char[]).AssemblyQualifiedName,
 																	new SqlDbTypeTranslation(DbType.String, SqlDbType.NChar, typeof(Char[]), true, "NVARCHAR",
-																													DbTypeLengthRequirements.Length | DbTypeLengthRequirements.IndicatedByParenthesis, "MAX"));
+																													DbTypeLengthRequirements.Length , "MAX"));
 
 			__runtimeTypeMappings.TryAdd(typeof(byte?).AssemblyQualifiedName,
 																	new SqlDbTypeTranslation(DbType.Byte, SqlDbType.TinyInt, typeof(byte), true));
@@ -92,11 +91,10 @@ namespace FlitBit.Data.SqlServer
 																	new SqlDbTypeTranslation(DbType.Boolean, SqlDbType.Bit, typeof(bool), true));
 			__runtimeTypeMappings.TryAdd(typeof(DateTime?).AssemblyQualifiedName,
 																	new SqlDbTypeTranslation(DbType.DateTime, SqlDbType.DateTime2, typeof(DateTime), true, "DATETIME2",
-																													DbTypeLengthRequirements.Length | DbTypeLengthRequirements.IndicatedByParenthesis, "7"));
+																													DbTypeLengthRequirements.Length , "7"));
 			__runtimeTypeMappings.TryAdd(typeof(decimal?).AssemblyQualifiedName,
 																	new SqlDbTypeTranslation(DbType.Decimal, SqlDbType.Decimal, typeof(decimal), true, "DECIMAL",
-																													DbTypeLengthRequirements.Precision | DbTypeLengthRequirements.Scale |
-																														DbTypeLengthRequirements.IndicatedByParenthesis));
+																													DbTypeLengthRequirements.Precision | DbTypeLengthRequirements.Scale));
 			__runtimeTypeMappings.TryAdd(typeof(double?).AssemblyQualifiedName,
 																	new SqlDbTypeTranslation(DbType.Double, SqlDbType.Float, typeof(double), true, "FLOAT",
 																													DbTypeLengthRequirements.None));
@@ -125,8 +123,7 @@ namespace FlitBit.Data.SqlServer
 																	new SqlDbTypeTranslation(DbType.UInt32, SqlDbType.BigInt, typeof(uint), true, "BIGINT",
 																													DbTypeLengthRequirements.None));
 			__runtimeTypeMappings.TryAdd(typeof(ulong?).AssemblyQualifiedName,
-																	new SqlDbTypeTranslation(DbType.UInt64, SqlDbType.BigInt, typeof(ulong), true, "BIGINT",
-																													DbTypeLengthRequirements.ApproximationMapping));
+																	new SqlDbTypeTranslation(DbType.UInt64, SqlDbType.BigInt, typeof(ulong), true, "BIGINT", DbTypeLengthRequirements.None));
 		}
 
 		public static DbTypeTranslation TranslateDbType(DbType dbType)

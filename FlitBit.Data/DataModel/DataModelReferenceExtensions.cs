@@ -1,7 +1,7 @@
 using System;
 using FlitBit.Core;
 
-namespace FlitBit.Data
+namespace FlitBit.Data.DataModel
 {
 	/// <summary>
 	/// Extensions over IDataModelReference.

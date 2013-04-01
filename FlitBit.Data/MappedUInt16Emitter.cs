@@ -10,7 +10,7 @@ namespace FlitBit.Data
 		internal MappedUInt16Emitter()
 			: base(DbType.UInt16, DbType.UInt16)
 		{
-
+			this.SpecializedSqlTypeName = "SMALLINT";
 		}
 
 		/// <summary>

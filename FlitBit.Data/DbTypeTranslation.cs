@@ -103,8 +103,8 @@ namespace FlitBit.Data
 
 		public virtual void WriteLength(int declaredLength, int declaredScale, StringBuilder sql)
 		{
-			var lbracket = (this.LengthRequirements.HasFlag(DbTypeLengthRequirements.IndicatedByBrackets)) ? '[' : '(';
-			var rbracket = (this.LengthRequirements.HasFlag(DbTypeLengthRequirements.IndicatedByBrackets)) ? ']' : ')';
+			var lbracket = '(';
+			var rbracket = ')';
 			sql.Append(lbracket);
 			if (this.LengthRequirements.HasFlag(DbTypeLengthRequirements.Length)
 				|| this.LengthRequirements.HasFlag(DbTypeLengthRequirements.Precision))

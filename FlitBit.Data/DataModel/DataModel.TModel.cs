@@ -1,7 +1,7 @@
 ﻿using System;
 using FlitBit.Data.Meta;
 
-namespace FlitBit.Data
+namespace FlitBit.Data.DataModel
 {
 	/// <summary>
 	/// Data model utilities.

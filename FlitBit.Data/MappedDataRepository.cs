@@ -4,6 +4,7 @@ using System.Data;
 using System.Data.Common;
 using System.Diagnostics.Contracts;
 using System.Linq;
+using FlitBit.Data.DataModel;
 using FlitBit.Data.Meta;
 
 namespace FlitBit.Data
@@ -12,7 +13,7 @@ namespace FlitBit.Data
 		AbstractCachingRepository<TModel, Id>
 		where TModelImpl : class, TModel, new()
 		where TDbConnection : DbConnection, new()
-		where TModelBinder : IModelBinder<TModel, Id>
+		where TModelBinder : IDataModelBinder<TModel, Id>
 	{
 		TModelBinder _binder;
 		Mapping<TModel> _mapping;

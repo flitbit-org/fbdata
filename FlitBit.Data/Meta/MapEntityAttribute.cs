@@ -9,6 +9,7 @@ using System.Collections;
 using System.Linq;
 using FlitBit.Core.Factory;
 using FlitBit.Core.Meta;
+using FlitBit.Data.DataModel;
 
 namespace FlitBit.Data.Meta
 {
@@ -73,7 +74,7 @@ namespace FlitBit.Data.Meta
 		{
 			if (typeof(T).IsDefined(typeof(MapEntityAttribute), true))
 			{
-				complete(DataModels.ConcreteType<T>(), null);
+				complete(DataModelEmitter.ConcreteType<T>(), null);
 				return true;
 			}
 			return false;
@@ -96,6 +97,7 @@ namespace FlitBit.Data.Meta
 					mapping.InSchema(TargetSchema);
 				}
 				mapping.Behaviors = this.Behaviors;
+				mapping.Strategy = this.Strategy;
 			}
 
 			var mapAllProperties = this.Behaviors.HasFlag(EntityBehaviors.MapAllProperties);

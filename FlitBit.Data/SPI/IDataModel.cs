@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel;
+using System.Data.Common;
 using FlitBit.Core.Collections;
 
 namespace FlitBit.Data.SPI
@@ -48,5 +49,12 @@ namespace FlitBit.Data.SPI
 		///   Resets all dirty flags, effectively marking the instance as clean.
 		/// </summary>
 		void ResetDirtyFlags();
+
+		/// <summary>
+		/// Used by the framework to load an instance's internal state from a data reader's current row, using the column offsets provided.
+		/// </summary>
+		/// <param name="reader">a data reader positioned on a row of data</param>
+		/// <param name="offsets">column offsets, numbered in the column ordinal order.</param>
+		void LoadFromDataReader(DbDataReader reader, int[] offsets);
 	}
 }

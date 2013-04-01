@@ -152,6 +152,8 @@
     </Compile>
     <Compile Include="Catalog\IMappedType.cs" />
     <Compile Include="Catalog\StaticCatalog.cs" />
+    <Compile Include="DataModel\DataModelBinder.cs" />
+    <Compile Include="DbTypeDetails.cs" />
     <Compile Include="IHierarchyMapping.cs" />
     <Compile Include="IHierarchyMappings.cs" />
     <Compile Include="MappedDbTypeEmitter.cs" />
@@ -221,15 +223,15 @@
     <Compile Include="MappedUInt64Emitter.cs">
       <DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
     </Compile>
-    <Compile Include="DataModel.TModel.cs" />
-    <Compile Include="DataModelReference.M.IK.cs" />
+    <Compile Include="DataModel\DataModel.TModel.cs" />
+    <Compile Include="DataModel\DataModelReference.M.IK.cs" />
     <Compile Include="HierarchyMapping.cs" />
-    <Compile Include="IDataModelReference.cs" />
-    <Compile Include="DataModelReferenceExtensions.cs" />
-    <Compile Include="IDataModelReferent.cs" />
-    <Compile Include="IDataModelResolver.cs" />
-    <Compile Include="IModelBinderExtensions.cs" />
-    <Compile Include="DataModels.cs" />
+    <Compile Include="DataModel\IDataModelReference.cs" />
+    <Compile Include="DataModel\DataModelReferenceExtensions.cs" />
+    <Compile Include="DataModel\IDataModelReferent.cs" />
+    <Compile Include="DataModel\IDataModelResolver.cs" />
+    <Compile Include="DataModel\IDataModelBinderExtensions.cs" />
+    <Compile Include="DataModel\DataModelEmitter.cs" />
     <Compile Include="DbTypeLengthRequirements.cs" />
     <Compile Include="Meta\ColumnMapping.T.cs" />
     <Compile Include="DbContext.static.cs">
@@ -267,7 +269,7 @@
     <Compile Include="DbTypeTranslation.cs" />
     <Compile Include="DbTypeTranslations.cs" />
     <Compile Include="Exceptions.cs" />
-    <Compile Include="IDataModelCatalog.cs" />
+    <Compile Include="DataModel\IDataModelCatalog.cs" />
     <Compile Include="IDataParameterBinder.cs" />
     <Compile Include="IDataParameterBinderExtensions.cs">
       <DependentUpon>IDataParameterBinder.cs</DependentUpon>
@@ -285,7 +287,7 @@
     <Compile Include="IDbExecutableExtensions.cs">
       <DependentUpon>IDbExecutable.cs</DependentUpon>
     </Compile>
-    <Compile Include="IModelCommand.cs" />
+    <Compile Include="DataModel\IDataModelCommand.cs" />
     <Compile Include="MappedDataRepository.cs">
       <DependentUpon>IDataRepository.cs</DependentUpon>
     </Compile>
@@ -306,8 +308,8 @@
     <Compile Include="Meta\Enum.cs" />
     <Compile Include="Meta\Exceptions.cs" />
     <Compile Include="Meta\IdentityMapping.cs" />
-    <Compile Include="IMapping.cs" />
-    <Compile Include="IMappingExtensions.cs">
+    <Compile Include="DataModel\IMapping.cs" />
+    <Compile Include="DataModel\IMappingExtensions.cs">
       <DependentUpon>IMapping.cs</DependentUpon>
     </Compile>
     <Compile Include="Meta\IndexMapping.cs" />
@@ -329,9 +331,9 @@
     <Compile Include="Meta\NaturalKeyMapping.cs" />
     <Compile Include="Meta\SyntheticID.cs" />
     <Compile Include="Meta\SyntheticIDAttribute.cs" />
-    <Compile Include="IModelBinder.cs" />
-    <Compile Include="ModelCommand.cs">
-      <DependentUpon>IModelCommand.cs</DependentUpon>
+    <Compile Include="DataModel\IDataModelBinder.cs" />
+    <Compile Include="DataModel\ModelCommand.cs">
+      <DependentUpon>IDataModelCommand.cs</DependentUpon>
     </Compile>
     <Compile Include="ParameterBinding.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
@@ -342,6 +344,8 @@
     </Compile>
     <Compile Include="QueryBehavior.cs" />
     <Compile Include="SPI\IDataModel.cs" />
+    <Compile Include="SqlServer\SqlMappedGuidEmitter.cs" />
+    <Compile Include="SqlServer\SqlMappedDateTimeEmitter.cs" />
     <Compile Include="SqlServer\OneClassOneTableBinder.cs" />
     <Compile Include="SqlServer\DirectSqlParameterBinder.cs" />
     <Compile Include="SqlServer\DynamicHybridInheritanceTreeBinder.cs" />
@@ -349,6 +353,9 @@
     <Compile Include="SqlServer\SqlDbProviderHelper.cs" />
     <Compile Include="SqlServer\SqlDbTypeTranslation.cs" />
     <Compile Include="SqlServer\SqlDbTypeTranslations.cs" />
+    <Compile Include="SqlServer\SqlMappedAnyToStringEmitter.cs" />
+    <Compile Include="SqlServer\SqlMappedStringEmitter.cs" />
+    <Compile Include="SqlServer\SqlMappedTypeToStringEmitter.cs" />
     <Compile Include="SqlServer\SqlParameterBinder.cs" />
     <Compile Include="TableBackedDataRepository.cs">
       <DependentUpon>IDataRepository.cs</DependentUpon>

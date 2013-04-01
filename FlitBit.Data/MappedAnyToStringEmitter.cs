@@ -1,4 +1,6 @@
+using System;
 using System.Data;
+using System.Reflection;
 using System.Reflection.Emit;
 using FlitBit.Emit;
 
@@ -12,6 +14,7 @@ namespace FlitBit.Data
 			: base(dbType, dbType)
 		{
 			this._stringEmitter = new MappedStringEmitter(dbType);
+			this.SpecializedSqlTypeName = _stringEmitter.SpecializedSqlTypeName;
 		}
 
 		/// <summary>
@@ -27,6 +30,9 @@ namespace FlitBit.Data
 			EmitTranslateType(method);
 		}
 
-		protected abstract void EmitTranslateType(MethodBuilder method);
+		protected virtual void EmitTranslateType(MethodBuilder method)
+		{
+			// default to nothing, assuming the string type is ok.
+		}
 	}
 }

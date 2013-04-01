@@ -3,6 +3,7 @@ using System.Diagnostics.Contracts;
 using System.Linq.Expressions;
 using System.Reflection;
 using FlitBit.Core;
+using FlitBit.Data.DataModel;
 
 namespace FlitBit.Data.Meta
 {

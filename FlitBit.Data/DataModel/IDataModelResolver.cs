@@ -1,4 +1,4 @@
-﻿namespace FlitBit.Data
+﻿namespace FlitBit.Data.DataModel
 {
 	/// <summary>
 	///   Interface for classes that can resolve references to models of type M

@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using FlitBit.Core;
 using FlitBit.Data.Meta;
 
-namespace FlitBit.Data
+namespace FlitBit.Data.DataModel
 {
 	[Serializable]
 	public sealed class DataModelReference<TModel, TIdentityKey> : IDataModelReference<TModel, TIdentityKey>, IDataModelReferent<TModel, TIdentityKey>,
@@ -18,10 +18,10 @@ namespace FlitBit.Data
 
 		public DataModelReference(TModel model)
 		{
-			_model = model;
-			if (HasModel)
+			this._model = model;
+			if (this.HasModel)
 			{
-				this.IdentityKey = (TIdentityKey) Mapping<TModel>.Instance.IdentityKey.UntypedKey(_model);
+				this.IdentityKey = (TIdentityKey) Mapping<TModel>.Instance.IdentityKey.UntypedKey(this._model);
 			}
 		}
 
@@ -43,11 +43,11 @@ namespace FlitBit.Data
 		/// <param name="other">An object to compare with this object.</param>
 		public bool Equals(TModel other)
 		{
-			if (IsEmpty) return EqualityComparer<TModel>.Default.Equals(default(TModel), other);
-			if (HasModel) return _model.Equals(other);
-			if (HasIdentityKey)
+			if (this.IsEmpty) return EqualityComparer<TModel>.Default.Equals(default(TModel), other);
+			if (this.HasModel) return this._model.Equals(other);
+			if (this.HasIdentityKey)
 			{
-				return Model.Equals(other);
+				return this.Model.Equals(other);
 			}
 			return false;
 		}
@@ -62,13 +62,13 @@ namespace FlitBit.Data
 		{
 			const int prime = Constants.NotSoRandomPrime;
 			var res = CHashCodeSeed * prime;
-			if (HasIdentityKey)
+			if (this.HasIdentityKey)
 			{
 				res ^= this.IdentityKey.GetHashCode() * prime;
 			}
-			if (HasModel)
+			if (this.HasModel)
 			{
-				res ^= _model.GetHashCode() * prime;
+				res ^= this._model.GetHashCode() * prime;
 			}
 			return res;
 		}
@@ -77,7 +77,7 @@ namespace FlitBit.Data
 
 		public bool IsEmpty
 		{
-			get { return !HasIdentityKey && !HasModel; }
+			get { return !this.HasIdentityKey && !this.HasModel; }
 		}
 
 		/// <summary>
@@ -94,7 +94,7 @@ namespace FlitBit.Data
 		/// </summary>
 		public Exception Exception { get; private set; }
 
-		public bool HasModel { get { return !EqualityComparer<TModel>.Default.Equals(default(TModel), _model); ; } }
+		public bool HasModel { get { return !EqualityComparer<TModel>.Default.Equals(default(TModel), this._model); ; } }
 
 		public bool HasIdentityKey { get { return !EqualityComparer<TIdentityKey>.Default.Equals(default(TIdentityKey), this.IdentityKey); } }
 
@@ -102,15 +102,15 @@ namespace FlitBit.Data
 		{
 			get
 			{
-				if (!HasModel && HasModel)
+				if (!this.HasModel && this.HasModel)
 				{
-					if (IsFaulted)
+					if (this.IsFaulted)
 					{
 						throw new DataModelReferenceException("Unable to resolve reference do to prior fault.", this.Exception);
 					}
 					try
 					{
-						_model = DataModel<TModel>.ResolveIdentityKey(this.IdentityKey);
+						this._model = DataModel<TModel>.ResolveIdentityKey(this.IdentityKey);
 					}
 					catch (Exception e)
 					{
@@ -118,7 +118,7 @@ namespace FlitBit.Data
 						throw new DataModelReferenceException("Unable to resolve reference.", e);
 					}
 				}
-				return _model;
+				return this._model;
 			}
 		}
 
@@ -140,7 +140,7 @@ namespace FlitBit.Data
 
 		public void SetIdentityKey(TIdentityKey id)
 		{
-			if (!IsEmpty)
+			if (!this.IsEmpty)
 			{
 				throw new InvalidOperationException("References are write-once.");
 			}
@@ -149,14 +149,14 @@ namespace FlitBit.Data
 
 		public void SetReferent(TModel referent)
 		{
-			if (!IsEmpty)
+			if (!this.IsEmpty)
 			{
 				throw new InvalidOperationException("References are write-once.");
 			}
-			_model = referent;
-			if (HasModel)
+			this._model = referent;
+			if (this.HasModel)
 			{
-				this.IdentityKey = (TIdentityKey) Mapping<TModel>.Instance.IdentityKey.UntypedKey(_model);
+				this.IdentityKey = (TIdentityKey) Mapping<TModel>.Instance.IdentityKey.UntypedKey(this._model);
 			}
 		}
 
@@ -170,9 +170,9 @@ namespace FlitBit.Data
 				&& EqualityComparer<TIdentityKey>.Default.Equals(this.IdentityKey, other.IdentityKey);
 			if (res)
 			{
-				if (HasModel && other.HasModel)
+				if (this.HasModel && other.HasModel)
 				{
-					res = _model.Equals(other._model);
+					res = this._model.Equals(other._model);
 				}
 			}
 			return res;
@@ -182,7 +182,7 @@ namespace FlitBit.Data
 
 		public bool IdentityEquals(object referentID)
 		{
-			return EqualityComparer<TIdentityKey>.Default.Equals(IdentityKey, (TIdentityKey)referentID);
+			return EqualityComparer<TIdentityKey>.Default.Equals(this.IdentityKey, (TIdentityKey)referentID);
 		}
 	}
 }

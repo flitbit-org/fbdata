@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Data.Common;
 
-namespace FlitBit.Data
+namespace FlitBit.Data.DataModel
 {
-	public abstract class ModelCommand<TModel, TKey, TModelImpl, TDbConnection>
-		: IModelCommand<TModel, TKey, TDbConnection>
+	public abstract class DataModelCommand<TModel, TKey, TModelImpl, TDbConnection>
+		: IDataModelCommand<TModel, TKey, TDbConnection>
 		where TDbConnection : DbConnection
 		where TModelImpl : class, TModel, new()
 	{

@@ -15,6 +15,7 @@ using System.Linq.Expressions;
 using System.Reflection;
 using System.Threading;
 using FlitBit.Core;
+using FlitBit.Data.DataModel;
 using FlitBit.Emit;
 using FlitBit.ObjectIdentity;
 using FlitBit.Wireup;
@@ -73,7 +74,7 @@ namespace FlitBit.Data.Meta
 		readonly ConcurrentQueue<Action> _whenCompleted = new ConcurrentQueue<Action>();
 
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
-		IModelBinder _binder;
+		IDataModelBinder _binder;
 
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 		string _connectionName;
@@ -112,14 +113,13 @@ namespace FlitBit.Data.Meta
 		public HierarchyMapping<TModel> Hierarchy { get { return _hierarchyMapping; } } 
 		public IdentityKey<TModel> IdentityKey { get { return _identityKey; } }
 
-		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 		public Type ConcreteType
 		{
 			get
 			{
 				if (typeof(TModel).IsAbstract)
 				{
-					return DataModels.ConcreteType<TModel>();
+					return DataModelEmitter.ConcreteType<TModel>();
 				}
 				return typeof(TModel);	
 			}
@@ -146,7 +146,7 @@ namespace FlitBit.Data.Meta
 		/// <summary>
 		///   Gets the mapped type's identity mapping.
 		/// </summary>
-		public IdentityMapping<TModel> Identity { get { return _identity; } }
+		public IdentityMapping Identity { get { return _identity; } }
 
 		public NaturalKeyMapping<TModel> NaturalKey { get { return _naturalKey; } }
 
@@ -312,8 +312,8 @@ namespace FlitBit.Data.Meta
 
 		public Mapping<TModel> UsesConnection(string connection)
 		{
-			Contract.Requires(connection != null);
-			Contract.Requires(connection.Length > 0);
+			Contract.Requires<ArgumentNullException>(connection != null);
+			Contract.Requires<ArgumentException>(connection.Length > 0);
 
 			this.ConnectionName = connection;
 			return this;
@@ -329,8 +329,8 @@ namespace FlitBit.Data.Meta
 		/// <returns></returns>
 		public Mapping<TModel> WithName(string name)
 		{
-			Contract.Requires(name != null);
-			Contract.Requires(name.Length > 0);
+			Contract.Requires<ArgumentNullException>(name != null);
+			Contract.Requires<ArgumentException>(name.Length > 0);
 
 			this.TargetObject = name;
 			return this;
@@ -456,6 +456,10 @@ namespace FlitBit.Data.Meta
 						_baseTypes.Add(baseMapping);
 						this.AddDependency(baseMapping, DependencyKind.Base, null);
 						_columns.AddRange(baseMapping.DeclaredColumns);
+						foreach (var idcol in baseMapping.Identity.Columns.Where(c => c.Member.DeclaringType == baseMapping.RuntimeType))
+						{
+							this.Identity.AddColumn(idcol);
+						}
 					}
 					else
 					{
@@ -633,7 +637,7 @@ namespace FlitBit.Data.Meta
 		/// <summary>
 		///   The ORM strategy.
 		/// </summary>
-		public MappingStrategy Strategy { get; private set; }
+		public MappingStrategy Strategy { get; internal set; }
 
 		/// <summary>
 		///   The full name of the primary underlying database object.
@@ -758,7 +762,7 @@ namespace FlitBit.Data.Meta
 		///   Gets the mapping's model binder.
 		/// </summary>
 		/// <returns></returns>
-		public IModelBinder GetBinder()
+		public IDataModelBinder GetBinder()
 		{
 			if (_binder == null)
 			{
@@ -767,10 +771,10 @@ namespace FlitBit.Data.Meta
 					var helper = GetDbProviderHelper();
 					if (HasBinder)
 					{
-						var get = typeof(DbProviderHelper).MatchGenericMethod("GetModelBinder", 2, typeof(IModelBinder<,>),
+						var get = typeof(DbProviderHelper).MatchGenericMethod("GetModelBinder", 2, typeof(IDataModelBinder<,>),
 																																	typeof(Mapping<>))
 																							.MakeGenericMethod(typeof(TModel), IdentityKeyType);
-						_binder = (IModelBinder) get.Invoke(helper, new object[] {this});
+						_binder = (IDataModelBinder) get.Invoke(helper, new object[] {this});
 					}
 				}
 			}
@@ -805,26 +809,7 @@ namespace FlitBit.Data.Meta
 
 		public int Revision
 		{
-			get
-			{
-				throw new NotImplementedException();
-			}
-			set
-			{
-				throw new NotImplementedException();
-			}
+			get { return Thread.VolatileRead(ref _revision); }
 		}
-
-		public DbTypeDetails DbTypeDetails
-		{
-			get
-			{
-				throw new NotImplementedException();
-			}
-			set
-			{
-				throw new NotImplementedException();
-			}
-		}
-	}
+}
 }

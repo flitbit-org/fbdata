@@ -1,5 +1,6 @@
 ﻿using System.Text;
 using FlitBit.Data.Catalog;
+using FlitBit.Data.DataModel;
 using FlitBit.Data.Meta;
 using FlitBit.Emit;
 using Microsoft.VisualStudio.TestTools.UnitTesting;

@@ -6,6 +6,7 @@ using System.Data.SqlClient;
 using System.Threading;
 using FlitBit.Core;
 using FlitBit.Core.Collections;
+using FlitBit.Data.DataModel;
 using FlitBit.Data.SPI;
 
 namespace FlitBit.Data.Tests.Meta.Models
@@ -338,7 +339,7 @@ public sealed class IPersonDataModel : INotifyPropertyChanged, IParty, IPerson, 
 				}
 		}
 		
-		internal void LoadFromDataReader(DbDataReader reader, int[] offsets)
+		public void LoadFromDataReader(DbDataReader reader, int[] offsets)
 		{
 			int ordinal = offsets[0];
 			this.IParty_ID_field = reader.IsDBNull(ordinal) ? new int() : reader.GetInt32(ordinal);

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using FlitBit.Data.DataModel;
 using FlitBit.Wireup;
 using FlitBit.Wireup.Meta;
 using System.Diagnostics.Contracts;

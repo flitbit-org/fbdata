@@ -14,21 +14,13 @@ using FlitBit.Core;
 
 namespace FlitBit.Data.Meta
 {
-	public class IdentityMapping<T>
+	public abstract class IdentityMapping
 	{
-		readonly Dictionary<string, ColumnMapping> _columns = new Dictionary<string, ColumnMapping>();
-		Mapping<T> _owner;
+		protected readonly Dictionary<string, ColumnMapping> _columns = new Dictionary<string, ColumnMapping>();
 
-		internal IdentityMapping(Mapping<T> owner)
-		{
-			Contract.Requires(owner != null);
-			_owner = owner;
-		}
+		public string TargetName { get; protected set; }
 
-		/// <summary>
-		///   The columns that are mapped to the identity.
-		/// </summary>
-		public IEnumerable<ColumnMapping> Columns
+		public IList<ColumnMapping> Columns
 		{
 			get
 			{
@@ -37,8 +29,28 @@ namespace FlitBit.Data.Meta
 			}
 		}
 
-		public string TargetName { get; protected set; }
+		internal void AddColumn(ColumnMapping column)
+		{
+			Contract.Requires<ArgumentNullException>(column != null);
 
+			ColumnMapping existing;
+			Contract.Assert(!_columns.TryGetValue(column.TargetName, out existing),
+											"A column may only appear in the identity once");
+
+			_columns.Add(column.TargetName, column);
+		}
+	}
+
+	public class IdentityMapping<T> : IdentityMapping
+	{
+		Mapping<T> _owner;
+
+		internal IdentityMapping(Mapping<T> owner)
+		{
+			Contract.Requires<ArgumentNullException>(owner != null);
+			_owner = owner;
+		}
+	
 		public IdentityMapping<T> Column(Expression<Func<T, object>> expression)
 		{
 			Contract.Requires(expression != null);
@@ -70,17 +82,6 @@ namespace FlitBit.Data.Meta
 		public Mapping<T> End()
 		{
 			return _owner;
-		}
-
-		internal void AddColumn(ColumnMapping column)
-		{
-			Contract.Requires(column != null);
-
-			ColumnMapping existing;
-			Contract.Assert(!_columns.TryGetValue(column.TargetName, out existing),
-											"A column may only appear in the identity once");
-
-			_columns.Add(column.TargetName, column);
 		}
 	}
 }

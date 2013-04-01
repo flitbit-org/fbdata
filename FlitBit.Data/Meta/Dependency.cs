@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using FlitBit.Core;
+using FlitBit.Data.DataModel;
 using FlitBit.Emit;
 
 namespace FlitBit.Data.Meta

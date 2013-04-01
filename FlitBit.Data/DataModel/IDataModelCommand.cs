@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Data.Common;
 
-namespace FlitBit.Data
+namespace FlitBit.Data.DataModel
 {
 	/// <summary>
 	///   Interface for model commands.
@@ -9,7 +9,7 @@ namespace FlitBit.Data
 	/// <typeparam name="TModel"></typeparam>
 	/// <typeparam name="TKey"></typeparam>
 	/// <typeparam name="TDbConnection"></typeparam>
-	public interface IModelCommand<out TModel, in TKey, in TDbConnection>
+	public interface IDataModelCommand<out TModel, in TKey, in TDbConnection>
 		where TDbConnection : DbConnection
 	{
 		int Execute(IDbContext cx, TDbConnection cn, TKey key);
@@ -23,7 +23,7 @@ namespace FlitBit.Data
 	/// <typeparam name="TModel"></typeparam>
 	/// <typeparam name="TKey"></typeparam>
 	/// <typeparam name="TDbConnection"></typeparam>
-	public interface IModelCommand<out TModel, in TDbConnection>
+	public interface IDataModelCommand<out TModel, in TDbConnection>
 		where TDbConnection : DbConnection
 	{
 		int Execute(IDbContext cx, TDbConnection cn);

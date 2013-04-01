@@ -11,7 +11,6 @@ namespace FlitBit.Data
 		internal MappedByteEmitter()
 			: base(DbType.Byte, DbType.Byte)
 		{
-
 		}
 
 		/// <summary>

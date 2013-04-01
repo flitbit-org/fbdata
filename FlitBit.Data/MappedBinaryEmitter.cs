@@ -10,7 +10,7 @@ namespace FlitBit.Data
 		internal MappedBinaryEmitter()
 			: base(DbType.Binary, DbType.Binary)
 		{
-
+			this.SpecializedSqlTypeName = "VARBINARY";
 		}
 
 		/// <summary>
@@ -26,6 +26,6 @@ namespace FlitBit.Data
 			reader.LoadValue(il);
 			columnIndex.LoadValue(il);
 			il.Call(typeof(DbDataReaderExtensions).GetMethod("StreamBinaryDataFromDbDataReader", BindingFlags.Public | BindingFlags.Static));
-		}								
+		}
 	}
 }

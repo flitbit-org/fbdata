@@ -12,6 +12,7 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using FlitBit.Data.DataModel;
 using FlitBit.Data.Meta;
 using FlitBit.Emit;
 
@@ -45,10 +46,11 @@ namespace FlitBit.Data
 			MapRuntimeType<double>(new MappedDoubleEmitter());
 			MapRuntimeType<float>(new MappedSingleEmitter());
 			MapRuntimeType<DateTime>(new MappedDateTimeEmitter());
-			MapRuntimeType<DateTimeOffset>(new MappedDateTimeOffsetEmitter()); 
+			MapRuntimeType<DateTimeOffset>(new MappedDateTimeOffsetEmitter());
+			MapRuntimeType<Type>(new MappedTypeToStringEmitter(DbType.String)); 
 		}
 
-		void MapRuntimeType<T>(MappedDbTypeEmitter map)
+		protected void MapRuntimeType<T>(MappedDbTypeEmitter map)
 		{
 			var key = typeof(T);
 			_emitters.AddOrUpdate(key, map, (k, it) => map);
@@ -79,7 +81,7 @@ namespace FlitBit.Data
 
 		public abstract string FormatParameterName(string rawParameterName);
 
-		public abstract IModelBinder<TModel, Id> GetModelBinder<TModel, Id>(Mapping<TModel> mapping);
+		public abstract IDataModelBinder<TModel, Id> GetModelBinder<TModel, Id>(Mapping<TModel> mapping);
 		public abstract string GetServerName(DbConnection connection);
 
 		public abstract IDataParameterBinder MakeParameterBinder();
@@ -281,143 +283,33 @@ WHERE TABLE_CATALOG = '{0}'
 	AND TABLE_SCHEMA = '{1}'
 	AND TABLE_NAME = '{2}'", catalogName, schemaName, viewName);
 		}
-
-		protected internal virtual void EmitLoadValueFromDataReader(MethodBuilder method, ILGenerator il, PropertyInfo source, ParameterBuilder reader, LocalBuilder columnIndex, Type fieldType)
+		
+		internal MappedDbTypeEmitter GetDbTypeEmitter(IMapping mapping, ColumnMapping column)
 		{
-			var translated = this.TranslateRuntimeType(fieldType);
-			switch (translated.DbType)
+			MappedDbTypeEmitter emitter;
+			var type = column.RuntimeType;
+			if (column.IsReference && column.ReferenceTargetMember != null)
 			{
-				case DbType.AnsiString:
-					il.LoadArg(reader.Position);
-					il.LoadLocal(columnIndex);
-					il.CallVirtual<DbDataReader>("GetString", typeof(int));
-					break;
-				case DbType.Binary:
-					break;
-				case DbType.Byte:
-					il.LoadArg(reader.Position);
-					il.LoadLocal(columnIndex);
-					il.CallVirtual<DbDataReader>("GetByte", typeof(int));
-					break;
-				case DbType.Boolean:
-					il.LoadArg(reader.Position);
-					il.LoadLocal(columnIndex);
-					il.CallVirtual<DbDataReader>("GetBoolean", typeof(int));
-					break;
-				case DbType.Currency:
-					il.LoadArg(reader.Position);
-					il.LoadLocal(columnIndex);
-					il.CallVirtual<DbDataReader>("GetDecimal", typeof(int));
-					break;
-				case DbType.Date:
-					il.LoadArg(reader.Position);
-					il.LoadLocal(columnIndex);
-					il.CallVirtual<DbDataReader>("GetDateTime", typeof(int));
-					break;
-				case DbType.DateTime:
-					il.LoadArg(reader.Position);
-					il.LoadLocal(columnIndex);
-					il.CallVirtual<DbDataReader>("GetDateTime", typeof(int));
-					break;
-				case DbType.Decimal:
-					il.LoadArg(reader.Position);
-					il.LoadLocal(columnIndex);
-					il.CallVirtual<DbDataReader>("GetDecimal", typeof(int));
-					break;
-				case DbType.Double:
-					il.LoadArg(reader.Position);
-					il.LoadLocal(columnIndex);
-					il.CallVirtual<DbDataReader>("GetDouble", typeof(int));
-					break;
-				case DbType.Guid:
-					il.LoadArg(reader.Position);
-					il.LoadLocal(columnIndex);
-					il.CallVirtual<DbDataReader>("GetGuid", typeof(int));
-					break;
-				case DbType.Int16:
-					il.LoadArg(reader.Position);
-					il.LoadLocal(columnIndex);
-					il.CallVirtual<DbDataReader>("GetInt16", typeof(int));
-					break;
-				case DbType.Int32:
-					il.LoadArg(reader.Position);
-					il.LoadLocal(columnIndex);
-					il.CallVirtual<DbDataReader>("GetInt32", typeof(int));
-					break;
-				case DbType.Int64:
-					il.LoadArg(reader.Position);
-					il.LoadLocal(columnIndex);
-					il.CallVirtual<DbDataReader>("GetInt64", typeof(int));
-					break;
-				case DbType.Object:
-					break;
-				case DbType.SByte:
-					il.LoadArg(reader.Position);
-					il.LoadLocal(columnIndex);
-					il.CallVirtual<DbDataReader>("GetDecimal", typeof(int));
-					break;
-				case DbType.Single:
-					il.LoadArg(reader.Position);
-					il.LoadLocal(columnIndex);
-					il.CallVirtual<DbDataReader>("GetDecimal", typeof(int));
-					break;
-				case DbType.String:
-					il.LoadArg(reader.Position);
-					il.LoadLocal(columnIndex);
-					il.CallVirtual<DbDataReader>("GetString", typeof(int));
-					break;
-				case DbType.Time:
-					il.LoadArg(reader.Position);
-					il.LoadLocal(columnIndex);
-					il.CallVirtual<DbDataReader>("GetDateTime", typeof(int));
-					break;
-				case DbType.UInt16:
-					il.LoadArg(reader.Position);
-					il.LoadLocal(columnIndex);
-					il.CallVirtual<DbDataReader>("GetInt16", typeof(int));
-					break;
-				case DbType.UInt32:
-					il.LoadArg(reader.Position);
-					il.LoadLocal(columnIndex);
-					il.CallVirtual<DbDataReader>("GetInt32", typeof(int));
-					break;
-				case DbType.UInt64:
-					il.LoadArg(reader.Position);
-					il.LoadLocal(columnIndex);
-					il.CallVirtual<DbDataReader>("GetInt64", typeof(int));
-					break;
-				case DbType.VarNumeric:
-					il.LoadArg(reader.Position);
-					il.LoadLocal(columnIndex);
-					il.CallVirtual<DbDataReader>("GetDecimal", typeof(int));
-					break;
-				case DbType.AnsiStringFixedLength:
-					il.LoadArg(reader.Position);
-					il.LoadLocal(columnIndex);
-					il.CallVirtual<DbDataReader>("GetString", typeof(int));
-					break;
-				case DbType.StringFixedLength:
-					il.LoadArg(reader.Position);
-					il.LoadLocal(columnIndex);
-					il.CallVirtual<DbDataReader>("GetString", typeof(int));
-					break;
-				case DbType.Xml:
-					throw new NotImplementedException();
-				case DbType.DateTime2:
-					il.LoadArg(reader.Position);
-					il.LoadLocal(columnIndex);
-					il.CallVirtual<DbDataReader>("GetDateTime", typeof(int));
-					break;
-				case DbType.DateTimeOffset:
-					il.LoadArg(reader.Position);
-					il.LoadLocal(columnIndex);
-					il.CallVirtual<DbDataReader>("GetDateTimeOffset", typeof(int));
-					break;
-				default:
-					throw new ArgumentOutOfRangeException();
+				type = column.ReferenceTargetMember.GetTypeOfValue();
 			}
+			if (!_emitters.TryGetValue(type, out emitter))
+			{
+				if (type.IsEnum)
+				{
+					type = Enum.GetUnderlyingType(type);
+					var emitterType = type == typeof(short) 
+						? typeof(MappedEmumAsInt16Emitter<>).MakeGenericType(type) 
+						: typeof(MappedEmumAsInt32Emitter<>).MakeGenericType(type);
+					return (MappedDbTypeEmitter) Activator.CreateInstance(emitterType, true);
+				}
+				emitter = GetMissingDbTypeEmitter(mapping, column, type);
+			}
+			return emitter;
 		}
-
-		internal MappedDbTypeEmitter GetDbTypeEmitter(IMapping mapping, ColumnMapping column) { return null; }
+		
+		protected virtual MappedDbTypeEmitter GetMissingDbTypeEmitter(IMapping mapping, ColumnMapping column, Type type)
+		{
+			throw new NotImplementedException();
+		}
 	}
 }

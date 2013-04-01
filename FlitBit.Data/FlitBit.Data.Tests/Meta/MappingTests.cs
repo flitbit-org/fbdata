@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using System.Text;
+using FlitBit.Data.DataModel;
 using FlitBit.Data.Meta.DDL;
 using FlitBit.Data.Meta.Tests.Models;
 using FlitBit.Data.SqlServer;
@@ -49,7 +50,7 @@ namespace FlitBit.Data.Meta.Tests
 																where c.TargetName == "ID"
 																select c);
 
-			Assert.AreEqual("Person.ID", id.DbObjectReference);
+			Assert.AreEqual("[TestPerson].[ID]", id.DbObjectReference);
 			// things we specified...		
 			Assert.IsTrue(id.IsIdentity);
 			Assert.IsTrue(id.IsImmutable);
@@ -69,7 +70,7 @@ namespace FlitBit.Data.Meta.Tests
 																where c.TargetName == "ExternalID"
 																select c);
 
-			Assert.AreEqual("Person.ExternalID", ext.DbObjectReference);
+			Assert.AreEqual("[TestPerson].[ExternalID]", ext.DbObjectReference);
 			// things we specified...		
 			Assert.IsTrue(ext.IsAlternateKey);
 			// things we didn't specify
@@ -88,7 +89,7 @@ namespace FlitBit.Data.Meta.Tests
 																where c.TargetName == "Name"
 																select c);
 
-			Assert.AreEqual("Person.Name", nm.DbObjectReference);
+			Assert.AreEqual("[TestPerson].[Name]", nm.DbObjectReference);
 			// things we specified...		
 			Assert.AreEqual(50, nm.VariableLength);
 			// things we didn't specify

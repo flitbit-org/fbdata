@@ -9,6 +9,7 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Reflection;
 using System.Threading;
+using FlitBit.Data.DataModel;
 
 namespace FlitBit.Data.Meta
 {

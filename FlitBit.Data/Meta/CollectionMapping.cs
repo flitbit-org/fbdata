@@ -8,6 +8,7 @@ using System;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Reflection;
+using FlitBit.Data.DataModel;
 using FlitBit.Emit;
 
 namespace FlitBit.Data.Meta

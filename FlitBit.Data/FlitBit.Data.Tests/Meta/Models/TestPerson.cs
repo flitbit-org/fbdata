@@ -5,6 +5,7 @@ using System.Data.Common;
 using System.Data.SqlClient;
 using System.Data.SqlTypes;
 using System.Threading;
+using FlitBit.Data.DataModel;
 
 namespace FlitBit.Data.Meta.Tests.Models
 {
@@ -23,24 +24,24 @@ namespace FlitBit.Data.Meta.Tests.Models
 		public string Name { get; set; }
 		public IEnumerable<IPhone> PhoneNumbers { get; internal set; }
 
-		public IModelCommand<TestPerson, TestPerson, DbConnection> CreateCommand
+		public IDataModelCommand<TestPerson, TestPerson, DbConnection> CreateCommand
 		{
-			get { return (IModelCommand<TestPerson, TestPerson, DbConnection>) _create.Value; }
+			get { return (IDataModelCommand<TestPerson, TestPerson, DbConnection>) _create.Value; }
 		}
 
-		public IModelCommand<TestPerson, TestPerson, DbConnection> UpdateCommand
+		public IDataModelCommand<TestPerson, TestPerson, DbConnection> UpdateCommand
 		{
-			get { return (IModelCommand<TestPerson, TestPerson, DbConnection>) _update.Value; }
+			get { return (IDataModelCommand<TestPerson, TestPerson, DbConnection>) _update.Value; }
 		}
 
-		public IModelCommand<TestPerson, int, DbConnection> ReadByIdCommand
+		public IDataModelCommand<TestPerson, int, DbConnection> ReadByIdCommand
 		{
-			get { return (IModelCommand<TestPerson, int, DbConnection>) _readByID.Value; }
+			get { return (IDataModelCommand<TestPerson, int, DbConnection>) _readByID.Value; }
 		}
 
-		public IModelCommand<TestPerson, string, DbConnection> ReadByNameCommand
+		public IDataModelCommand<TestPerson, string, DbConnection> ReadByNameCommand
 		{
-			get { return (IModelCommand<TestPerson, string, DbConnection>) _readByName.Value; }
+			get { return (IDataModelCommand<TestPerson, string, DbConnection>) _readByName.Value; }
 		}
 
 		public class Handback
@@ -48,7 +49,7 @@ namespace FlitBit.Data.Meta.Tests.Models
 			public DbCommand Command { get; set; }
 		}
 
-		class PersonCreateBinding : ModelCommand<TestPerson, TestPerson, TestPerson, SqlConnection>
+		class PersonCreateBinding : DataModelCommand<TestPerson, TestPerson, TestPerson, SqlConnection>
 		{
 			public override int Execute(IDbContext cx, SqlConnection cn, TestPerson key) { throw new NotImplementedException(); }
 
@@ -87,7 +88,7 @@ SELECT SCOPE_IDENTITY()
 			}
 		}
 
-		class PersonReadBinding : ModelCommand<TestPerson, int, TestPerson, SqlConnection>
+		class PersonReadBinding : DataModelCommand<TestPerson, int, TestPerson, SqlConnection>
 		{
 			public override int Execute(IDbContext cx, SqlConnection cn, int key) { throw new NotImplementedException(); }
 			public override IEnumerable<TestPerson> ExecuteMany(IDbContext cx, SqlConnection cn, QueryBehavior behavior, int key) { throw new NotImplementedException(); }
@@ -124,7 +125,7 @@ SELECT SCOPE_IDENTITY()
 			}
 		}
 
-		class PersonReadByNameBinding : ModelCommand<TestPerson, string, TestPerson, SqlConnection>
+		class PersonReadByNameBinding : DataModelCommand<TestPerson, string, TestPerson, SqlConnection>
 		{
 			public override int Execute(IDbContext cx, SqlConnection cn, string key) { throw new NotImplementedException(); }
 
@@ -165,7 +166,7 @@ SELECT SCOPE_IDENTITY()
 			}
 		}
 
-		class PersonUpdateBinding : ModelCommand<TestPerson, TestPerson, TestPerson, SqlConnection>
+		class PersonUpdateBinding : DataModelCommand<TestPerson, TestPerson, TestPerson, SqlConnection>
 		{
 			public override int Execute(IDbContext cx, SqlConnection cn, TestPerson key) { throw new NotImplementedException(); }
 

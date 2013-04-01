@@ -8,18 +8,18 @@ namespace FlitBit.Data.Catalog
 	[MapEntity("OrmCatalog", EntityBehaviors.DefinedColumnsOnly, MappingStrategy.OneClassOneTable)]
 	public interface IMappedType
 	{
-		[MapColumn(128)]
-		string Catalog { get; set; }
+		[MapColumn(ColumnBehaviors.Synthetic), IdentityKey]
+		int ID { get; }
 
 		[MapColumn(ColumnBehaviors.TimestampOnInsert)]
 		DateTime DateCreated { get; }
 
 		[MapColumn(ColumnBehaviors.TimestampOnUpdate | ColumnBehaviors.RevisionConcurrency)]
-		DateTime DateUpdated { get; }
+		DateTime DateUpdated { get; }	
 
-		[MapColumn(ColumnBehaviors.Synthetic), IdentityKey]
-		int ID { get; }
-
+		[MapColumn(128)]
+		string Catalog { get; set; }
+		
 		[MapColumn(40)]
 		string LatestVersion { get; set; }
 
