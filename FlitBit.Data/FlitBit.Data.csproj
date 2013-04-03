@@ -134,6 +134,7 @@
       <HintPath>..\packages\Newtonsoft.Json.4.5.11\lib\net40\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core" />
     <Reference Include="System.Transactions" />
@@ -153,6 +154,10 @@
     <Compile Include="Catalog\IMappedType.cs" />
     <Compile Include="Catalog\StaticCatalog.cs" />
     <Compile Include="DataModel\DataModelBinder.cs" />
+    <Compile Include="DataModel\DataModelQueryResult.cs" />
+    <Compile Include="DataModel\IDataModelNonQueryCommand.cs" />
+    <Compile Include="DataModel\IDataModelQueryManyCommand.cs" />
+    <Compile Include="DataModel\IDataModelQuerySingleCommand.cs" />
     <Compile Include="DbTypeDetails.cs" />
     <Compile Include="IHierarchyMapping.cs" />
     <Compile Include="IHierarchyMappings.cs" />
@@ -287,7 +292,6 @@
     <Compile Include="IDbExecutableExtensions.cs">
       <DependentUpon>IDbExecutable.cs</DependentUpon>
     </Compile>
-    <Compile Include="DataModel\IDataModelCommand.cs" />
     <Compile Include="MappedDataRepository.cs">
       <DependentUpon>IDataRepository.cs</DependentUpon>
     </Compile>
@@ -332,9 +336,6 @@
     <Compile Include="Meta\SyntheticID.cs" />
     <Compile Include="Meta\SyntheticIDAttribute.cs" />
     <Compile Include="DataModel\IDataModelBinder.cs" />
-    <Compile Include="DataModel\ModelCommand.cs">
-      <DependentUpon>IDataModelCommand.cs</DependentUpon>
-    </Compile>
     <Compile Include="ParameterBinding.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Properties\Resources.Designer.cs">
@@ -343,6 +344,8 @@
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
     <Compile Include="QueryBehavior.cs" />
+    <Compile Include="QueryBehaviorExtensions.cs" />
+    <Compile Include="QueryBehaviors.cs" />
     <Compile Include="SPI\IDataModel.cs" />
     <Compile Include="SqlServer\SqlMappedGuidEmitter.cs" />
     <Compile Include="SqlServer\SqlMappedDateTimeEmitter.cs" />

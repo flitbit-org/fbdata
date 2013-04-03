@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Diagnostics.Contracts;
+using FlitBit.Data.DataModel;
 
 namespace FlitBit.Data
 {
 	public static class IDataRepositoryExtensions
 	{
-		public static IEnumerable<TModel> All<TModel, Id>(this IDataRepository<TModel, Id> repo, QueryBehavior behavior)
+		public static IDataModelQueryResult<TModel> All<TModel, Id>(this IDataRepository<TModel, Id> repo, QueryBehavior behavior)
 		{
 			Contract.Requires<ArgumentNullException>(repo != null);
 
@@ -16,7 +17,7 @@ namespace FlitBit.Data
 			}
 		}
 
-		public static IEnumerable<TModel> All<TModel, Id>(this IDataRepository<TModel, Id> repo, IDbContext context)
+		public static IDataModelQueryResult<TModel> All<TModel, Id>(this IDataRepository<TModel, Id> repo, IDbContext context)
 		{
 			Contract.Requires<ArgumentNullException>(repo != null);
 			Contract.Requires<ArgumentNullException>(context != null);
@@ -45,7 +46,7 @@ namespace FlitBit.Data
 			}
 		}
 
-		public static IEnumerable<TModel> ReadMatch<TModel, Id, TMatch>(this IDataRepository<TModel, Id> repo,
+		public static IDataModelQueryResult<TModel> ReadMatch<TModel, Id, TMatch>(this IDataRepository<TModel, Id> repo,
 			QueryBehavior behavior, TMatch match)
 			where TMatch : class
 		{
@@ -58,7 +59,7 @@ namespace FlitBit.Data
 			}
 		}
 
-		public static IEnumerable<TModel> ReadMatch<TModel, Id, TMatch>(this IDataRepository<TModel, Id> repo,
+		public static IDataModelQueryResult<TModel> ReadMatch<TModel, Id, TMatch>(this IDataRepository<TModel, Id> repo,
 			IDbContext context, TMatch match)
 			where TMatch : class
 		{

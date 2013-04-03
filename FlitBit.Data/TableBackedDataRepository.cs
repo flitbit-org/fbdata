@@ -4,6 +4,7 @@ using System.Data;
 using System.Data.Common;
 using System.Diagnostics.Contracts;
 using System.Linq;
+using FlitBit.Data.DataModel;
 
 namespace FlitBit.Data
 {
@@ -31,7 +32,7 @@ namespace FlitBit.Data
 			throw new NotImplementedException();
 		}
 
-		public override IEnumerable<TModel> ReadMatch<TMatch>(IDbContext context, QueryBehavior behavior, TMatch match)
+		public override IDataModelQueryResult<TModel> ReadMatch<TMatch>(IDbContext context, QueryBehavior behavior, TMatch match)
 		{
 			throw new NotImplementedException();
 		}
@@ -100,7 +101,7 @@ namespace FlitBit.Data
 			return null;
 		}
 
-		protected override IEnumerable<TModel> PerformAll(IDbContext context, QueryBehavior behavior)
+		protected override IDataModelQueryResult<TModel> PerformAll(IDbContext context, QueryBehavior behavior)
 		{
 			var result = new List<TModel>();
 			var cn = context.SharedOrNewConnection(ConnectionName);
@@ -122,7 +123,7 @@ namespace FlitBit.Data
 					}
 				}
 			}
-			return result;
+			return new DataModelQueryResult<TModel>(behavior, result);
 		}
 
 		protected override TModel PerformCreate(IDbContext context, TModel model)
@@ -166,8 +167,7 @@ namespace FlitBit.Data
 			return result;
 		}
 
-		protected override IEnumerable<TModel> PerformDirectQueryBy<TItemKey>(IDbContext context, string command,
-			Action<TItemKey, IDataParameterBinder> binder, TItemKey key)
+		protected override IEnumerable<TModel> PerformDirectQueryBy<TItemKey>(IDbContext context, string command, Action<TItemKey, IDataParameterBinder> binder, TItemKey key)
 		{
 			var result = new List<TModel>();
 			var cn = context.SharedOrNewConnection(ConnectionName);

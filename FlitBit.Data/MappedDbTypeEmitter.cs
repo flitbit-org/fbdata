@@ -25,8 +25,8 @@ namespace FlitBit.Data
 			this.NameDelimiterBegin = '[';
 			this.NameDelimiterEnd = ']';
 			this.NamePartSeperator = '.';
-			this.LengthDelimiterBegin = '[';
-			this.LengthDelimiterEnd = ']';
+			this.LengthDelimiterBegin = '(';
+			this.LengthDelimiterEnd = ')';
 			this.PrecisionScaleSeparator = ',';
 			this.TreatMissingLengthAsMaximum = false;
 			this.LengthMaximum = String.Empty;

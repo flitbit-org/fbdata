@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.Data.Common;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
@@ -313,8 +314,23 @@ namespace FlitBit.Data.DataModel
 				ImplementIDataModelResetDirtyFlags(builder, props, dirtyFlags);
 				ImplementIDataModelIsDirty(builder, cctor, props, dirtyFlags);
 				ImplementICloneableClone(builder, props, dirtyFlags);
+				ImplementIValidatableObject(builder, props, dirtyFlags);
 				// mapping...
 				ImplementIDataModelLoadFromDbRecord(builder, props, dirtyFlags, mapping);
+			}
+
+			static void ImplementIValidatableObject(EmittedClass builder, List<PropertyRec> props, EmittedField dirtyFlags)
+			{
+				var method = builder.DefineMethod("Validate");
+				method.ClearAttributes();
+				method.IncludeAttributes(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.NewSlot |
+					MethodAttributes.Virtual | MethodAttributes.Final);
+				method.ReturnType = TypeRef.FromType<IEnumerable<ValidationResult>>();
+				var validationContext = method.DefineParameter("validationContext", typeof(ValidationContext));
+				method.ContributeInstructions((m, il) =>
+				{
+					il.LoadNull();
+				});
 			}
 
 			static void ImplementIDataModelGetDirtyFlags(EmittedClass builder, EmittedField dirtyFlags)
@@ -778,6 +794,7 @@ namespace FlitBit.Data.DataModel
 					rec.EmittedProperty.AddSetter()
 						.ContributeInstructions((m, il) =>
 						{
+							var cont = il.DefineLabel();
 							var exit = il.DefineLabel();
 
 							il.DeclareLocal(typeof(bool));
@@ -827,8 +844,12 @@ namespace FlitBit.Data.DataModel
 							}
 							il.StoreLocal_0();
 							il.LoadLocal_0();
-							il.BranchIfTrue_ShortForm(exit);
+							il.BranchIfFalse_ShortForm(cont);
+							il.Branch(exit);
+							il.MarkLabel(cont);
 
+							// TODO: emit column validation in setter
+							
 							il.LoadArg_0();
 							il.LoadArg_1();
 							if (rec.IsReference && rec.HasIdentityKey)

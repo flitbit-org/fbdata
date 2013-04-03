@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Threading;
+using FlitBit.Data.DataModel;
 
 namespace FlitBit.Data
 {
@@ -27,7 +28,7 @@ namespace FlitBit.Data
 
 		protected DbProviderHelper Helper { get { return _helper; } }
 
-		protected abstract IEnumerable<M> PerformAll(IDbContext context, QueryBehavior behavior);
+		protected abstract IDataModelQueryResult<M> PerformAll(IDbContext context, QueryBehavior behavior);
 
 		protected abstract M PerformCreate(IDbContext context, M model);
 		protected abstract bool PerformDelete(IDbContext context, IK id);
@@ -208,22 +209,23 @@ namespace FlitBit.Data
 			return res;
 		}
 
-		public IEnumerable<M> All(IDbContext context, QueryBehavior behavior)
+		public IDataModelQueryResult<M> All(IDbContext context, QueryBehavior behavior)
 		{
 			var res = PerformAll(context, behavior);
 
-			if (!context.Behaviors.HasFlag(DbContextBehaviors.DisableCaching) && !behavior.BypassCache)
+			if (res.Succeeded && !context.Behaviors.HasFlag(DbContextBehaviors.DisableCaching) && !behavior.BypassCache)
 			{
-				ThreadPool.QueueUserWorkItem(unused => PerformUpdateCacheItems(context, res));
+				ThreadPool.QueueUserWorkItem(unused => PerformUpdateCacheItems(context, res.Results));
 			}
 			return res;
 		}
 
-		public abstract IEnumerable<M> ReadMatch<TMatch>(IDbContext context, QueryBehavior behavior, TMatch match)
+		public abstract IDataModelQueryResult<M> ReadMatch<TMatch>(IDbContext context, QueryBehavior behavior, TMatch match)
 			where TMatch : class;
 
 		public abstract int UpdateMatch<TMatch, TUpdate>(IDbContext context, TMatch match, TUpdate update)
-			where TMatch : class;
+			where TMatch : class
+			where TUpdate : class;
 
 		public abstract int DeleteMatch<TMatch>(IDbContext context, TMatch match) where TMatch : class;
 

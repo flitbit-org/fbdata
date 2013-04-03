@@ -33,8 +33,8 @@ namespace FlitBit.Data.DataModel
 	///   Binds a model to an underlying database structure.
 	/// </summary>
 	/// <typeparam name="TModel">the model's type.</typeparam>
-	/// <typeparam name="Id">the model's identity type</typeparam>
-	public interface IDataModelBinder<TModel, Id> : IDataModelBinder
+	/// <typeparam name="TIdentityKey">the model's identity type</typeparam>
+	public interface IDataModelBinder<TModel, TIdentityKey> : IDataModelBinder
 	{
 		/// <summary>
 		/// Gets the model's mapping.
@@ -45,31 +45,31 @@ namespace FlitBit.Data.DataModel
 		///   Gets a model command for selecting all models of the type TModel.
 		/// </summary>
 		/// <returns></returns>
-		IDataModelCommand<TModel, DbConnection> GetAllCommand();
+		IDataModelQueryManyCommand<TModel, DbConnection> GetAllCommand();
 
 		/// <summary>
 		///   Gets a create command.
 		/// </summary>
 		/// <returns></returns>
-		IDataModelCommand<TModel, TModel, DbConnection> GetCreateCommand();
+		IDataModelQuerySingleCommand<TModel, DbConnection, TModel> GetCreateCommand();
 
 		/// <summary>
 		///   Gets a delete (by ID) command.
 		/// </summary>
 		/// <returns></returns>
-		IDataModelCommand<TModel, Id, DbConnection> GetDeleteCommand();
+		IDataModelNonQueryCommand<TModel, DbConnection, TIdentityKey> GetDeleteCommand();
 
 		/// <summary>
 		///   Gets a read (by ID) command.
 		/// </summary>
 		/// <returns></returns>
-		IDataModelCommand<TModel, Id, DbConnection> GetReadCommand();
+		IDataModelQuerySingleCommand<TModel, DbConnection, TIdentityKey> GetReadCommand();
 
 		/// <summary>
 		///   Gets an update command.
 		/// </summary>
 		/// <returns></returns>
-		IDataModelCommand<TModel, TModel, DbConnection> GetUpdateCommand();
+		IDataModelQuerySingleCommand<TModel, DbConnection, TModel> GetUpdateCommand();
 
 		/// <summary>
 		///   Makes a delete-match command.
@@ -77,7 +77,7 @@ namespace FlitBit.Data.DataModel
 		/// <typeparam name="TMatch">the match's type</typeparam>
 		/// <param name="match">an match specification</param>
 		/// <returns></returns>
-		IDataModelCommand<TModel, TMatch, DbConnection> MakeDeleteMatchCommand<TMatch>(TMatch match)
+		IDataModelNonQueryCommand<TModel, DbConnection, TMatch> MakeDeleteMatchCommand<TMatch>(TMatch match)
 			where TMatch : class;
 
 		/// <summary>
@@ -86,16 +86,17 @@ namespace FlitBit.Data.DataModel
 		/// <typeparam name="TMatch">the match's type</typeparam>
 		/// <param name="match">an match specification</param>
 		/// <returns></returns>
-		IDataModelCommand<TModel, TMatch, DbConnection> MakeReadMatchCommand<TMatch>(TMatch match)
+		IDataModelQueryManyCommand<TModel, DbConnection, TMatch> MakeReadMatchCommand<TMatch>(TMatch match)
 			where TMatch : class;
 
-		/// <summary>
-		///   Makes an update-match command.
-		/// </summary>
-		/// <typeparam name="TMatch">the match's type</typeparam>
-		/// <param name="match">an match specification</param>
-		/// <returns></returns>
-		IDataModelCommand<TModel, TMatch, DbConnection> MakeUpdateMatchCommand<TMatch>(TMatch match)
-			where TMatch : class;
+		///// <summary>
+		/////   Makes an update-match command.
+		///// </summary>
+		///// <typeparam name="TMatch">the match's type</typeparam>
+		///// <param name="match">an match specification</param>
+		///// <returns></returns>
+		IDataModelNonQueryCommand<TModel, DbConnection, TMatch, TUpdate> MakeUpdateMatchCommand<TMatch, TUpdate>(TMatch match, TUpdate update)
+		  where TMatch : class
+			where TUpdate : class;
 	}
 }

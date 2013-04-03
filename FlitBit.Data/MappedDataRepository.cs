@@ -41,7 +41,7 @@ namespace FlitBit.Data
 			throw new NotImplementedException();
 		}
 
-		public override IEnumerable<TModel> ReadMatch<TMatch>(IDbContext context, QueryBehavior behavior, TMatch match)
+		public override IDataModelQueryResult<TModel> ReadMatch<TMatch>(IDbContext context, QueryBehavior behavior, TMatch match)
 		{
 			var cn = context.SharedOrNewConnection<TDbConnection>(_mapping.ConnectionName);
 			if (!cn.State.HasFlag(ConnectionState.Open))
@@ -59,11 +59,11 @@ namespace FlitBit.Data
 			{
 				cn.Open();
 			}
-			return _binder.MakeUpdateMatchCommand(match)
-										.Execute(context, cn, match);
+			return _binder.MakeUpdateMatchCommand(match, update)
+										.Execute(context, cn, match, update);
 		}
 
-		protected override IEnumerable<TModel> PerformAll(IDbContext context, QueryBehavior behavior)
+		protected override IDataModelQueryResult<TModel> PerformAll(IDbContext context, QueryBehavior behavior)
 		{
 			var cn = context.SharedOrNewConnection<TDbConnection>(_mapping.ConnectionName);
 			if (!cn.State.HasFlag(ConnectionState.Open))

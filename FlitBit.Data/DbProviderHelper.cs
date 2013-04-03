@@ -15,6 +15,7 @@ using System.Reflection.Emit;
 using FlitBit.Data.DataModel;
 using FlitBit.Data.Meta;
 using FlitBit.Emit;
+using FlitBit.Core;
 
 namespace FlitBit.Data
 {
@@ -309,7 +310,7 @@ WHERE TABLE_CATALOG = '{0}'
 		
 		protected virtual MappedDbTypeEmitter GetMissingDbTypeEmitter(IMapping mapping, ColumnMapping column, Type type)
 		{
-			throw new NotImplementedException();
+			throw new NotImplementedException(String.Concat("There is no mapping for `", type.GetReadableFullName(), "` registered for the underlying DbProvider."));
 		}
 	}
 }

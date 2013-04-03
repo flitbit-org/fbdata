@@ -191,26 +191,7 @@ namespace FlitBit.Data.DataModel
 		}
 
 		#region IModelBinder<TModel,TIdentityKey> Members
-
-		public abstract IDataModelCommand<TModel, DbConnection> GetAllCommand();
-
-		public abstract IDataModelCommand<TModel, TModel, DbConnection> GetCreateCommand();
-
-		public abstract IDataModelCommand<TModel, TIdentityKey, DbConnection> GetDeleteCommand();
-
-		public abstract IDataModelCommand<TModel, TIdentityKey, DbConnection> GetReadCommand();
-
-		public abstract IDataModelCommand<TModel, TModel, DbConnection> GetUpdateCommand();
-
-		public abstract IDataModelCommand<TModel, TMatch, DbConnection> MakeDeleteMatchCommand<TMatch>(TMatch match)
-			where TMatch : class;
-
-		public abstract IDataModelCommand<TModel, TMatch, DbConnection> MakeReadMatchCommand<TMatch>(TMatch match)
-			where TMatch : class;
-
-		public abstract IDataModelCommand<TModel, TMatch, DbConnection> MakeUpdateMatchCommand<TMatch>(TMatch match)
-			where TMatch : class;
-
+		
 		public IMapping UntypedMapping { get { return this._mapping; } }
 
 		public MappingStrategy Strategy { get; private set; }
@@ -219,6 +200,60 @@ namespace FlitBit.Data.DataModel
 
 		public Mapping<TModel> Mapping { get { return this._mapping; } }
 
+		/// <summary>
+		///   Gets a model command for selecting all models of the type TModel.
+		/// </summary>
+		/// <returns></returns>
+		public abstract IDataModelQueryManyCommand<TModel, DbConnection> GetAllCommand();
+
+		/// <summary>
+		///   Gets a create command.
+		/// </summary>
+		/// <returns></returns>
+		public abstract IDataModelQuerySingleCommand<TModel, DbConnection, TModel> GetCreateCommand();
+
+		/// <summary>
+		///   Gets a delete (by ID) command.
+		/// </summary>
+		/// <returns></returns>
+		public abstract IDataModelNonQueryCommand<TModel, DbConnection, TIdentityKey> GetDeleteCommand();
+
+		/// <summary>
+		///   Gets a read (by ID) command.
+		/// </summary>
+		/// <returns></returns>
+		public abstract IDataModelQuerySingleCommand<TModel, DbConnection, TIdentityKey> GetReadCommand();
+
+		/// <summary>
+		///   Gets an update command.
+		/// </summary>
+		/// <returns></returns>
+		public abstract IDataModelQuerySingleCommand<TModel, DbConnection, TModel> GetUpdateCommand();
+
+		/// <summary>
+		///   Makes a delete-match command.
+		/// </summary>
+		/// <typeparam name="TMatch">the match's type</typeparam>
+		/// <param name="match">an match specification</param>
+		/// <returns></returns>
+		public abstract IDataModelNonQueryCommand<TModel, DbConnection, TMatch> MakeDeleteMatchCommand<TMatch>(TMatch match) where TMatch : class;
+
+		/// <summary>
+		///   Makes a read-match command.
+		/// </summary>
+		/// <typeparam name="TMatch">the match's type</typeparam>
+		/// <param name="match">an match specification</param>
+		/// <returns></returns>
+		public abstract IDataModelQueryManyCommand<TModel, DbConnection, TMatch> MakeReadMatchCommand<TMatch>(TMatch match) where TMatch : class;
+
+		public abstract IDataModelNonQueryCommand<TModel, DbConnection, TMatch, TUpdate> MakeUpdateMatchCommand<TMatch, TUpdate>(
+			TMatch match, TUpdate update)
+			where TMatch : class
+			where TUpdate : class;
+
 		#endregion
+
+
+
 	}
 }

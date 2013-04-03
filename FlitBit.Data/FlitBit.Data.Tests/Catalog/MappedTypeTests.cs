@@ -1,7 +1,10 @@
-﻿using System.Text;
+﻿using System;
+using System.Data.SqlClient;
+using System.Text;
 using FlitBit.Data.Catalog;
 using FlitBit.Data.DataModel;
 using FlitBit.Data.Meta;
+using FlitBit.Data.Tests.Catalog.Models;
 using FlitBit.Emit;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
@@ -32,6 +35,54 @@ namespace FlitBit.Data.Tests.Catalog
 			var sql = builder.ToString();
 			Assert.IsNotNull(mapping.ConcreteType);
 			Assert.IsNotNull(sql);
+
+			var all = new AllMappedTypeCommand();
+			var create = new CreateMappedTypeCommand();
+			var update = new UpdateMappedTypeCommand();
+			var readByType = new ReadMappedTypeByRuntimeTypeCommand();
+
+			using (var cx = DbContext.NewContext())
+			{
+				using (var cn = cx.SharedOrNewConnection<SqlConnection>("test-data"))
+				{
+					var them = all.ExecuteMany(cx, cn, QueryBehavior.Default);
+					Assert.IsNotNull(them);
+					Assert.IsTrue(them.Succeeded);
+
+					var existing = readByType.ExecuteSingle(cx, cn, typeof(IMappedType));
+					if (existing != null)
+					{
+						var ver = typeof(IMappedType).Assembly
+																				.GetName()
+																				.Version;
+						if (existing.LatestVersion == ver.ToString(3))
+						{
+							existing.LatestVersion = new Version(ver.Major, ver.Minor, ver.Build + 1).ToString();
+						}
+						else
+						{
+							existing.LatestVersion = ver.ToString(3);
+						}
+						update.ExecuteSingle(cx, cn, existing);
+					}
+					else 
+					{
+						var model = new IMappedTypeDataModel();
+						model.Catalog = "unitest";
+						model.LatestVersion = typeof(IMappedType).Assembly.GetName()
+																										.Version.ToString(3);
+						model.Schema = "OrmCatalog";
+						model.MappedTable = "MappedType";
+						model.RuntimeType = typeof(IMappedType);
+						model.OriginalVersion = model.LatestVersion;
+						model.ReadObjectName = "MappedType";
+						model.Strategy = MappingStrategy.OneClassOneTable; 
+
+						var created = create.ExecuteSingle(cx, cn, model);
+						Assert.IsNotNull(created);
+					}
+				}
+			}
 		}
 	}
 }

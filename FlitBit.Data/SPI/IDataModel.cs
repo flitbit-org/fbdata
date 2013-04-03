@@ -1,5 +1,6 @@
 using System;
 using System.ComponentModel;
+using System.ComponentModel.DataAnnotations;
 using System.Data.Common;
 using FlitBit.Core.Collections;
 
@@ -8,7 +9,7 @@ namespace FlitBit.Data.SPI
 	/// <summary>
 	///   DataModel service provider interface.
 	/// </summary>
-	public interface IDataModel : ICloneable, INotifyPropertyChanged
+	public interface IDataModel : ICloneable, INotifyPropertyChanged, IValidatableObject
 	{
 		/// <summary>
 		/// Gets a referent's identity, without resolving the reference.

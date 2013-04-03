@@ -24,24 +24,24 @@ namespace FlitBit.Data.Meta.Tests.Models
 		public string Name { get; set; }
 		public IEnumerable<IPhone> PhoneNumbers { get; internal set; }
 
-		public IDataModelCommand<TestPerson, TestPerson, DbConnection> CreateCommand
+		public IDataModelQuerySingleCommand<TestPerson, DbConnection, TestPerson> CreateCommand
 		{
-			get { return (IDataModelCommand<TestPerson, TestPerson, DbConnection>) _create.Value; }
+			get { return (IDataModelQuerySingleCommand<TestPerson,DbConnection, TestPerson>)_create.Value; }
 		}
 
-		public IDataModelCommand<TestPerson, TestPerson, DbConnection> UpdateCommand
+		public IDataModelQuerySingleCommand<TestPerson, DbConnection, TestPerson> UpdateCommand
 		{
-			get { return (IDataModelCommand<TestPerson, TestPerson, DbConnection>) _update.Value; }
+			get { return (IDataModelQuerySingleCommand<TestPerson, DbConnection, TestPerson>)_update.Value; }
 		}
 
-		public IDataModelCommand<TestPerson, int, DbConnection> ReadByIdCommand
+		public IDataModelQuerySingleCommand<TestPerson,DbConnection, int> ReadByIdCommand
 		{
-			get { return (IDataModelCommand<TestPerson, int, DbConnection>) _readByID.Value; }
+			get { return (IDataModelQuerySingleCommand<TestPerson,DbConnection, int>)_readByID.Value; }
 		}
 
-		public IDataModelCommand<TestPerson, string, DbConnection> ReadByNameCommand
+		public IDataModelQuerySingleCommand<TestPerson, DbConnection, string> ReadByNameCommand
 		{
-			get { return (IDataModelCommand<TestPerson, string, DbConnection>) _readByName.Value; }
+			get { return (IDataModelQuerySingleCommand<TestPerson, DbConnection, string>)_readByName.Value; }
 		}
 
 		public class Handback
@@ -49,14 +49,9 @@ namespace FlitBit.Data.Meta.Tests.Models
 			public DbCommand Command { get; set; }
 		}
 
-		class PersonCreateBinding : DataModelCommand<TestPerson, TestPerson, TestPerson, SqlConnection>
+		class PersonCreateBinding : IDataModelQuerySingleCommand<TestPerson, SqlConnection, TestPerson>
 		{
-			public override int Execute(IDbContext cx, SqlConnection cn, TestPerson key) { throw new NotImplementedException(); }
-
-			public override IEnumerable<TestPerson> ExecuteMany(IDbContext cx, SqlConnection cn, QueryBehavior behavior,
-				TestPerson key) { throw new NotImplementedException(); }
-
-			public override TestPerson ExecuteSingle(IDbContext cx, SqlConnection cn, TestPerson key)
+			public TestPerson ExecuteSingle(IDbContext cx, SqlConnection cn, TestPerson key)
 			{
 				var res = key;
 				using (var cmd = cn.CreateCommand(@"
@@ -88,12 +83,9 @@ SELECT SCOPE_IDENTITY()
 			}
 		}
 
-		class PersonReadBinding : DataModelCommand<TestPerson, int, TestPerson, SqlConnection>
+		class PersonReadBinding : IDataModelQuerySingleCommand<TestPerson, SqlConnection, int>
 		{
-			public override int Execute(IDbContext cx, SqlConnection cn, int key) { throw new NotImplementedException(); }
-			public override IEnumerable<TestPerson> ExecuteMany(IDbContext cx, SqlConnection cn, QueryBehavior behavior, int key) { throw new NotImplementedException(); }
-
-			public override TestPerson ExecuteSingle(IDbContext cx, SqlConnection cn, int key)
+			public TestPerson ExecuteSingle(IDbContext cx, SqlConnection cn, int key)
 			{
 				var res = default(TestPerson);
 				using (var cmd = cn.CreateCommand("SELECT [ID], [ExternalID], [Name] FROM [Person] WHERE [ID] = @ID"))
@@ -125,14 +117,9 @@ SELECT SCOPE_IDENTITY()
 			}
 		}
 
-		class PersonReadByNameBinding : DataModelCommand<TestPerson, string, TestPerson, SqlConnection>
+		class PersonReadByNameBinding : IDataModelQuerySingleCommand<TestPerson, SqlConnection, string>
 		{
-			public override int Execute(IDbContext cx, SqlConnection cn, string key) { throw new NotImplementedException(); }
-
-			public override IEnumerable<TestPerson> ExecuteMany(IDbContext cx, SqlConnection cn, QueryBehavior behavior,
-				string key) { throw new NotImplementedException(); }
-
-			public override TestPerson ExecuteSingle(IDbContext cx, SqlConnection cn, string key)
+			public TestPerson ExecuteSingle(IDbContext cx, SqlConnection cn, string key)
 			{
 				var res = default(TestPerson);
 				using (var cmd = cn.CreateCommand("SELECT [ID], [ExternalID], [Name] FROM [Person] WHERE [Name] = @Name"))
@@ -166,14 +153,9 @@ SELECT SCOPE_IDENTITY()
 			}
 		}
 
-		class PersonUpdateBinding : DataModelCommand<TestPerson, TestPerson, TestPerson, SqlConnection>
+		class PersonUpdateBinding : IDataModelQuerySingleCommand<TestPerson, SqlConnection, TestPerson>
 		{
-			public override int Execute(IDbContext cx, SqlConnection cn, TestPerson key) { throw new NotImplementedException(); }
-
-			public override IEnumerable<TestPerson> ExecuteMany(IDbContext cx, SqlConnection cn, QueryBehavior behavior,
-				TestPerson key) { throw new NotImplementedException(); }
-
-			public override TestPerson ExecuteSingle(IDbContext cx, SqlConnection cn, TestPerson key)
+			public TestPerson ExecuteSingle(IDbContext cx, SqlConnection cn, TestPerson key)
 			{
 				var res = key;
 				using (var cmd = cn.CreateCommand(@"

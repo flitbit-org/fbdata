@@ -29,7 +29,7 @@ namespace FlitBit.Data.Catalog
 		[MapColumn(128)]
 		string MappedTable { get; set; }
 
-		[MapColumn(40)]
+		[MapColumn(ColumnBehaviors.Immutable, 40)]
 		string OriginalVersion { get; set; }
 
 		[MapColumn(128)]

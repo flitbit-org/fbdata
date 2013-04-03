@@ -308,7 +308,7 @@ DROP TABLE [{0}].[Peeps]";
 			var itemsUpdated = 0;
 			using (var ctx = DbContext.NewContext())
 			{
-				foreach (var peep in repo.All(ctx))
+				foreach (var peep in repo.All(ctx).Results)
 				{
 					if (peep.DateUpdated > peep.DateCreated)
 					{
@@ -389,7 +389,7 @@ DROP TABLE [{0}].[Peeps]";
 			var itemsUpdated = 0;
 			using (var ctx = DbContext.NewContext())
 			{
-				foreach (var peep in repo.All(ctx))
+				foreach (var peep in repo.All(ctx).Results)
 				{
 					if (peep.DateUpdated > peep.DateCreated)
 					{

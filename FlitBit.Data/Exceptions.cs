@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Data;
 using System.Runtime.Serialization;
 
 namespace FlitBit.Data
@@ -7,19 +8,19 @@ namespace FlitBit.Data
 	///   Base object data exceptions.
 	/// </summary>
 	[Serializable]
-	public class DataException : ApplicationException
+	public class DataModelException : ApplicationException
 	{
 		/// <summary>
 		///   Default constructor; creates a new instance.
 		/// </summary>
-		public DataException()
+		public DataModelException()
 		{}
 
 		/// <summary>
 		///   Creates a new instance using the error message given.
 		/// </summary>
 		/// <param name="errorMessage">An error message describing the exception.</param>
-		public DataException(string errorMessage)
+		public DataModelException(string errorMessage)
 			: base(errorMessage)
 		{}
 
@@ -28,7 +29,7 @@ namespace FlitBit.Data
 		/// </summary>
 		/// <param name="errorMessage">An error message describing the exception.</param>
 		/// <param name="cause">An inner exception that caused this exception</param>
-		public DataException(string errorMessage, Exception cause)
+		public DataModelException(string errorMessage, Exception cause)
 			: base(errorMessage, cause)
 		{}
 
@@ -37,7 +38,7 @@ namespace FlitBit.Data
 		/// </summary>
 		/// <param name="si">SerializationInfo</param>
 		/// <param name="sc">StreamingContext</param>
-		protected DataException(SerializationInfo si, StreamingContext sc)
+		protected DataModelException(SerializationInfo si, StreamingContext sc)
 			: base(si, sc)
 		{}
 	}

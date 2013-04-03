@@ -13,15 +13,14 @@ namespace FlitBit.Data.Meta.Tests
 	{
 		[TestMethod]
 		public void Monkey()
-		{	
-			Mappings.Instance
-				//.UseDefaultConnection("test-data")
-							.ForType<TestPerson>()
-							.Column(x => x.ID).WithBehaviors(ColumnBehaviors.Synthetic).End()
-							.Column(x => x.ExternalID).WithBehaviors(ColumnBehaviors.AlternateKey).End()
-							.Column(x => x.Name).WithVariableLength(50).End()
-							.Collection(p => p.PhoneNumbers).JoinReference<IPhone>(p => p.Person).End()
-							.End();
+		{
+			Mapping<TestPerson>.Instance
+												.UsesConnection("test-data")
+												.Column(x => x.ID).WithBehaviors(ColumnBehaviors.Synthetic).End()
+												.Column(x => x.ExternalID).WithBehaviors(ColumnBehaviors.AlternateKey).End()
+												.Column(x => x.Name).WithVariableLength(50).End()
+												.Collection(p => p.PhoneNumbers).JoinReference<IPhone>(p => p.Person).End()
+												.End();
 
 			// Check the mapping for People...
 			var people = Mappings.Instance.ForType<TestPerson>();
@@ -117,7 +116,7 @@ namespace FlitBit.Data.Meta.Tests
 			Assert.IsNotNull(ddl);
 			Assert.IsNotNull(ddl.Name);
 
-			var binder = new DynamicHybridInheritanceTreeBinder<TestPerson, int, TestPerson>(null);
+			var binder = new DynamicHybridInheritanceTreeBinder<TestPerson, int, TestPerson>(people);
 			var builder = new StringBuilder(2000);
 			binder.BuildDdlBatch(builder);
 			var sql = builder.ToString();

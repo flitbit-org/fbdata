@@ -125,6 +125,7 @@
       <HintPath>..\..\packages\Newtonsoft.Json.4.5.11\lib\net40\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
+    <Reference Include="System.ComponentModel.DataAnnotations" />
     <Reference Include="System.Configuration" />
     <Reference Include="System.Core">
       <RequiredTargetFramework>3.5</RequiredTargetFramework>
@@ -150,7 +151,6 @@
     <Compile Include="Meta\Models\IEmailAddress.cs" />
     <Compile Include="Meta\Models\IGroup.cs" />
     <Compile Include="Meta\Models\IOrganization.cs" />
-    <Compile Include="Meta\Models\IPartyKind.cs" />
     <Compile Include="Meta\Models\IPerson.cs" />
     <Compile Include="Meta\Models\PersonDataModel.cs" />
     <Compile Include="Meta\Models\TestPerson.cs" />

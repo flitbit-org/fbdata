@@ -44,17 +44,16 @@ namespace FlitBit.Data.SqlServer
 				{
 					throw new MappingException("ConnectionName must be set before creating SQL commands for a data model.");
 				}
-
-				batch.Append("-- BEGIN: ")
-						.Append(typeof(TModel).GetReadableSimpleName())
-						.Append(Environment.NewLine);
-
+				
 				foreach (
 					var dep in mapping.Dependencies.Where(d => d.Kind == DependencyKind.Base || d.Kind.HasFlag(DependencyKind.Direct)))
 				{
 					var dmap = Mappings.AccessMappingFor(dep.Target.RuntimeType);
 					var binder = dmap.GetBinder();
 					binder.BuildDDLBatch(batch, members);
+					batch.Append(Environment.NewLine)
+							.Append("GO")
+							.Append(Environment.NewLine);
 				}
 
 				batch.Append("CREATE TABLE ")
@@ -82,14 +81,14 @@ namespace FlitBit.Data.SqlServer
 				}
 				if (baseMapping != null)
 				{
-					idcol.Emitter.EmitColumnDDLForHierarchy(batch, i++, mapping, baseMapping, idcol);
+					idcol.Emitter.EmitColumnDDLForHierarchy(batch, ++i, mapping, baseMapping, idcol);
 				}
 
 				// Write each field's definition...
 				var columnsWithTableConstraints = new List<Tuple<ColumnMapping<TModel>, object>>();
 				foreach (ColumnMapping<TModel> col in mapping.DeclaredColumns)
 				{
-					var handback = col.Emitter.EmitColumnDDL(batch, i++, mapping, col);
+					var handback = col.Emitter.EmitColumnDDL(batch, ++i, mapping, col);
 					if (handback != null)
 					{
 						columnsWithTableConstraints.Add(Tuple.Create(col, handback));
@@ -145,51 +144,77 @@ namespace FlitBit.Data.SqlServer
 								.Append("')");
 					}
 				}
-				batch.Append(Environment.NewLine)
-						.Append("GO")
-						.Append(Environment.NewLine)
-						.Append("-- END: ")
-						.Append(typeof(TModel).GetReadableSimpleName())
-						.Append(Environment.NewLine);
 			}
 		}
 
-		public override IDataModelCommand<TModel, DbConnection> GetAllCommand()
+		/// <summary>
+		///   Gets a model command for selecting all models of the type TModel.
+		/// </summary>
+		/// <returns></returns>
+		public override IDataModelQueryManyCommand<TModel, DbConnection> GetAllCommand()
 		{
 			throw new NotImplementedException();
 		}
 
-		public override IDataModelCommand<TModel, TModel, DbConnection> GetCreateCommand()
+		/// <summary>
+		///   Gets a create command.
+		/// </summary>
+		/// <returns></returns>
+		public override IDataModelQuerySingleCommand<TModel, DbConnection, TModel> GetCreateCommand()
 		{
 			throw new NotImplementedException();
 		}
 
-		public override IDataModelCommand<TModel, TIdentityKey, DbConnection> GetDeleteCommand()
+		/// <summary>
+		///   Gets a delete (by ID) command.
+		/// </summary>
+		/// <returns></returns>
+		public override IDataModelNonQueryCommand<TModel, DbConnection, TIdentityKey> GetDeleteCommand()
 		{
 			throw new NotImplementedException();
 		}
 
-		public override IDataModelCommand<TModel, TIdentityKey, DbConnection> GetReadCommand()
+		/// <summary>
+		///   Gets a read (by ID) command.
+		/// </summary>
+		/// <returns></returns>
+		public override IDataModelQuerySingleCommand<TModel, DbConnection, TIdentityKey> GetReadCommand()
 		{
 			throw new NotImplementedException();
 		}
 
-		public override IDataModelCommand<TModel, TModel, DbConnection> GetUpdateCommand()
+		/// <summary>
+		///   Gets an update command.
+		/// </summary>
+		/// <returns></returns>
+		public override IDataModelQuerySingleCommand<TModel, DbConnection, TModel> GetUpdateCommand()
 		{
 			throw new NotImplementedException();
 		}
 
-		public override IDataModelCommand<TModel, TMatch, DbConnection> MakeDeleteMatchCommand<TMatch>(TMatch match)
+		/// <summary>
+		///   Makes a delete-match command.
+		/// </summary>
+		/// <typeparam name="TMatch">the match's type</typeparam>
+		/// <param name="match">an match specification</param>
+		/// <returns></returns>
+		public override IDataModelNonQueryCommand<TModel, DbConnection, TMatch> MakeDeleteMatchCommand<TMatch>(TMatch match)
 		{
 			throw new NotImplementedException();
 		}
 
-		public override IDataModelCommand<TModel, TMatch, DbConnection> MakeReadMatchCommand<TMatch>(TMatch match)
+		/// <summary>
+		///   Makes a read-match command.
+		/// </summary>
+		/// <typeparam name="TMatch">the match's type</typeparam>
+		/// <param name="match">an match specification</param>
+		/// <returns></returns>
+		public override IDataModelQueryManyCommand<TModel, DbConnection, TMatch> MakeReadMatchCommand<TMatch>(TMatch match)
 		{
 			throw new NotImplementedException();
 		}
 
-		public override IDataModelCommand<TModel, TMatch, DbConnection> MakeUpdateMatchCommand<TMatch>(TMatch match)
+		public override IDataModelNonQueryCommand<TModel, DbConnection, TMatch, TUpdate> MakeUpdateMatchCommand<TMatch, TUpdate>(TMatch match, TUpdate update)
 		{
 			throw new NotImplementedException();
 		}
