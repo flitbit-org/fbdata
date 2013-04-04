@@ -10,6 +10,7 @@ using System.Data.Common;
 using System.Data.SqlClient;
 using System.Diagnostics.Contracts;
 using System.Linq;
+using System.Text;
 using FlitBit.Core;
 using FlitBit.Data.DataModel;
 using FlitBit.Data.Meta;
@@ -228,6 +229,21 @@ WHERE name = @schema"
 			// SQL Server doesn't allow you to specify the catalog, it assumes current catalog
 			// It also requires that CREATE SCHEMA is the first command in a batch.
 			return String.Concat("USE [", catalog, "] EXECUTE ('CREATE SCHEMA [", schema, "]')");
+		}
+
+		public override void EmitCreateSchema(StringBuilder batch, string schemaName)
+		{
+			batch.Append(Environment.NewLine)
+					.Append("IF NOT EXISTS (SELECT 1 FROM sys.schemas WHERE name = '")
+					.Append(schemaName)
+					.Append("')")
+					.Append(Environment.NewLine)
+					.AppendLine("BEGIN")
+					.Append("\tEXEC( 'CREATE SCHEMA [").Append(schemaName).Append("]' )")
+					.Append(Environment.NewLine)
+					.AppendLine("END")
+					.AppendLine("GO")
+					;
 		}
 	}
 }

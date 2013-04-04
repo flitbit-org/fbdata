@@ -153,6 +153,7 @@
     </Compile>
     <Compile Include="Catalog\IMappedType.cs" />
     <Compile Include="Catalog\StaticCatalog.cs" />
+    <Compile Include="Copy of ITermResolver.cs" />
     <Compile Include="DataModel\DataModelBinder.cs" />
     <Compile Include="DataModel\DataModelQueryResult.cs" />
     <Compile Include="DataModel\IDataModelNonQueryCommand.cs" />
@@ -161,6 +162,7 @@
     <Compile Include="DbTypeDetails.cs" />
     <Compile Include="IHierarchyMapping.cs" />
     <Compile Include="IHierarchyMappings.cs" />
+    <Compile Include="Terminology\ITermResolver.cs" />
     <Compile Include="MappedDbTypeEmitter.cs" />
     <Compile Include="MappedBinaryEmitter.cs">
       <DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
@@ -363,6 +365,8 @@
     <Compile Include="TableBackedDataRepository.cs">
       <DependentUpon>IDataRepository.cs</DependentUpon>
     </Compile>
+    <Compile Include="Terminology\ITranslatableTermDefinition.cs" />
+    <Compile Include="Terminology\ITranslatedTerm.cs" />
     <Compile Include="TransactionScopeHelper.cs" />
     <Compile Include="Wireup.cs" />
   </ItemGroup>

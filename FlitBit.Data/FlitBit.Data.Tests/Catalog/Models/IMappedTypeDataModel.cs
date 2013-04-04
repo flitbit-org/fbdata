@@ -8,6 +8,7 @@ using System.Data;
 using System.Data.Common;
 using System.Data.SqlClient;
 using System.Data.SqlTypes;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -737,7 +738,7 @@ WHERE [RuntimeType] = @IMappedType_RuntimeType
 				{
 					return;
 				}
-				if (value == null) throw new ValidationException("Catalog must have a value.");
+				if (value == null) throw new ValidationException(CultureInfo.CurrentUICulture.IetfLanguageTag, "Catalog must have a value.");
 				if (value.Length > 128) throw new ValidationException("Catalog name cannot exceed 128 characters.");
 				this.IMappedType_Catalog_field = value;
 				this.DirtyFlags[0] = true;

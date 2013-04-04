@@ -12,6 +12,7 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
+using System.Text;
 using FlitBit.Data.DataModel;
 using FlitBit.Data.Meta;
 using FlitBit.Emit;
@@ -311,6 +312,13 @@ WHERE TABLE_CATALOG = '{0}'
 		protected virtual MappedDbTypeEmitter GetMissingDbTypeEmitter(IMapping mapping, ColumnMapping column, Type type)
 		{
 			throw new NotImplementedException(String.Concat("There is no mapping for `", type.GetReadableFullName(), "` registered for the underlying DbProvider."));
+		}
+
+		public virtual void EmitCreateSchema(StringBuilder batch, string schemaName)
+		{
+			throw new NotImplementedException();
+			
+			
 		}
 	}
 }

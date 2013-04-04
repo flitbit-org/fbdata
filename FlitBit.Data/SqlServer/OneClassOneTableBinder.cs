@@ -44,7 +44,7 @@ namespace FlitBit.Data.SqlServer
 				}
 
 				foreach (
-					var dep in mapping.Dependencies.Where(d => d.Kind == DependencyKind.Base || d.Kind.HasFlag(DependencyKind.Direct)))
+					var dep in mapping.Dependencies.Where(d => d.Kind == DependencyKind.Base || d.Kind.HasFlag(DependencyKind.Direct) && d.Target != mapping))
 				{
 					var dmap = Mappings.AccessMappingFor(dep.Target.RuntimeType);
 					var binder = dmap.GetBinder();
@@ -54,6 +54,11 @@ namespace FlitBit.Data.SqlServer
 							.Append(Environment.NewLine);
 				}
 
+				if (!String.IsNullOrWhiteSpace(mapping.TargetSchema))
+				{
+					var providerHelper = mapping.GetDbProviderHelper();
+					providerHelper.EmitCreateSchema(batch, mapping.TargetSchema);
+				}
 				batch.Append("CREATE TABLE ")
 						.Append(mapping.DbObjectReference)
 						.Append(Environment.NewLine)
