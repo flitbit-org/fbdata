@@ -153,7 +153,6 @@
     </Compile>
     <Compile Include="Catalog\IMappedType.cs" />
     <Compile Include="Catalog\StaticCatalog.cs" />
-    <Compile Include="Copy of ITermResolver.cs" />
     <Compile Include="DataModel\DataModelBinder.cs" />
     <Compile Include="DataModel\DataModelQueryResult.cs" />
     <Compile Include="DataModel\IDataModelNonQueryCommand.cs" />
