@@ -25,7 +25,7 @@ namespace FlitBit.Data.Tests.Catalog.Models
 {
 	public class AllMappedTypeCommand : IDataModelQueryManyCommand<IMappedType, SqlConnection>
 	{
-		static readonly string SelectAll = @"
+		const string SelectAll = @"
 SELECT 
 	[Catalog]
 	, [DateCreated]
@@ -42,15 +42,15 @@ SELECT
 FROM [OrmCatalog].[MappedType]
 ";
 		static readonly string SelectTop = SelectAll.Replace("SELECT", "SELECT TOP(@query_limit)");
-		static readonly string KeySetPriorCondition = @"
+		const string KeySetPriorCondition = @"
 WHERE [ID] < @id";
-		static readonly string KeySetNextCondition = @"
+		const string KeySetNextCondition = @"
 WHERE [ID] > @id";
-		static readonly string KeySetOrderDescending = @"
+		const string KeySetOrderDescending = @"
 ORDER BY [ID] DESC";
-		static readonly string KeySetOrder = @"
+		const string KeySetOrder = @"
 ORDER BY [ID]";
-		static readonly int[] ColumnOffsets = new[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
+		static readonly int[] ColumnOffsets = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
 
 		public IDataModelQueryResult<IMappedType> ExecuteMany(IDbContext cx, SqlConnection cn, QueryBehavior behavior)
 		{
@@ -110,12 +110,11 @@ ORDER BY [ID]";
 			}
 			return new DataModelQueryResult<IMappedType>(behavior, res);
 		}
-
 	}
 
 	public class CreateMappedTypeCommand : IDataModelQuerySingleCommand<IMappedType, SqlConnection, IMappedType>
 	{
-		static readonly string CreateFmt = @"
+		const string CreateFmt = @"
 DECLARE @generated_timestamp DATETIME2 = GETUTCDATE()
 DECLARE @IMappedType_ID INT
 
@@ -141,7 +140,7 @@ SELECT
 FROM [OrmCatalog].[MappedType]
 WHERE [ID] = @IMappedType_ID
 ";
-		static readonly int[] ColumnOffsets = new[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
+		static readonly int[] ColumnOffsets = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
 
 		public IMappedType ExecuteSingle(IDbContext cx, SqlConnection cn, IMappedType key)
 		{
@@ -157,11 +156,11 @@ WHERE [ID] = @IMappedType_ID
 				throw new InvalidOperationException("You must transform the instance to the mapped concrete type before saving.");
 			}
 
-			var dirty = model.GetDirtyFlags();
+			BitVector dirty = model.GetDirtyFlags();
 			if (dirty.TrueFlagCount == 0)
 			{
 				return model;
-			}
+			} 
 			using (var cmd = cn.CreateCommand())
 			{
 				SqlParameter parm;
@@ -298,7 +297,7 @@ SELECT
 FROM [OrmCatalog].[MappedType]
 WHERE [ID] = @IMappedType_ID
 ";
-		static readonly int[] ColumnOffsets = new[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
+		static readonly int[] ColumnOffsets = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
 
 		public IMappedType ExecuteSingle(IDbContext cx, SqlConnection cn, IMappedType key)
 		{
@@ -429,7 +428,7 @@ SELECT [Catalog]
 FROM [OrmCatalog].[MappedType]
 WHERE [ID] = @ID
 ";
-		static readonly int[] ColumnOffsets = new[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
+		static readonly int[] ColumnOffsets = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
 
 		public IMappedType ExecuteSingle(IDbContext cx, SqlConnection cn, int id)
 		{
@@ -474,7 +473,7 @@ SELECT [Catalog]
 FROM [OrmCatalog].[MappedType]
 WHERE [RuntimeType] = @IMappedType_RuntimeType
 ";
-		static readonly int[] ColumnOffsets = new[] { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
+		static readonly int[] ColumnOffsets = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
 
 		public IMappedType ExecuteSingle(IDbContext cx, SqlConnection cn, Type key)
 		{
@@ -738,8 +737,6 @@ WHERE [RuntimeType] = @IMappedType_RuntimeType
 				{
 					return;
 				}
-				if (value == null) throw new ValidationException(CultureInfo.CurrentUICulture.IetfLanguageTag, "Catalog must have a value.");
-				if (value.Length > 128) throw new ValidationException("Catalog name cannot exceed 128 characters.");
 				this.IMappedType_Catalog_field = value;
 				this.DirtyFlags[0] = true;
 				this.HandlePropertyChanged("Catalog");

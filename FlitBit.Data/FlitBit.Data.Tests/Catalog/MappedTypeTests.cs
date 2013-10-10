@@ -6,6 +6,7 @@ using FlitBit.Data.DataModel;
 using FlitBit.Data.Meta;
 using FlitBit.Data.Tests.Catalog.Models;
 using FlitBit.Emit;
+using FlitBit.Wireup;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace FlitBit.Data.Tests.Catalog
@@ -16,6 +17,7 @@ namespace FlitBit.Data.Tests.Catalog
 		[TestInitialize]
 		public void Initialize()
 		{
+			WireupCoordinator.SelfConfigure();
 			// force the dynamic assembly to disk so we can put eyeballs on the code...
 			RuntimeAssemblies.WriteDynamicAssemblyOnExit = true;
 		}

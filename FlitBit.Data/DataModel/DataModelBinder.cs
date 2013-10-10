@@ -252,8 +252,5 @@ namespace FlitBit.Data.DataModel
 			where TUpdate : class;
 
 		#endregion
-
-
-
 	}
 }
