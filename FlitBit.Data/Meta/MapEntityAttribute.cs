@@ -7,30 +7,35 @@
 using System;
 using System.Collections;
 using System.Linq;
+using System.Reflection;
+using FlitBit.Core;
 using FlitBit.Core.Factory;
 using FlitBit.Core.Meta;
 using FlitBit.Data.DataModel;
+using FlitBit.Emit;
+using FlitBit.Wireup;
+using FlitBit.Wireup.Meta;
 
 namespace FlitBit.Data.Meta
 {
 	[AttributeUsage(AttributeTargets.Interface | AttributeTargets.Class)]
-	public sealed class MapEntityAttribute : AutoImplementedAttribute
+	public sealed class MapEntityAttribute : WireupTaskAttribute
 	{
 		public MapEntityAttribute()
-			: base(InstanceScopeKind.OnDemand)
-		{}
+			: base(WireupPhase.Tasks)
+		{ }
 
 		public MapEntityAttribute(EntityBehaviors behaviors)
 			: this(null, null, null, default(MappingStrategy), behaviors)
-		{}
+		{ }
 
 		public MapEntityAttribute(string targetSchema)
 			: this(targetSchema, null, null, default(MappingStrategy), EntityBehaviors.Default)
-		{}
+		{ }
 
 		public MapEntityAttribute(string targetSchema, EntityBehaviors behaviors)
 			: this(targetSchema, null, null, default(MappingStrategy), behaviors)
-		{}
+		{ }
 
 		public MapEntityAttribute(string targetSchema, EntityBehaviors behaviors, MappingStrategy strategy)
 			: this(targetSchema, null, null, strategy, behaviors)
@@ -38,15 +43,15 @@ namespace FlitBit.Data.Meta
 
 		public MapEntityAttribute(string targetSchema, string targetName)
 			: this(targetSchema, targetName, null, default(MappingStrategy), EntityBehaviors.Default)
-		{}
+		{ }
 
 		public MapEntityAttribute(string targetSchema, string targetName, EntityBehaviors behaviors)
 			: this(targetSchema, targetName, null, default(MappingStrategy), behaviors)
-		{}
+		{ }
 
 		public MapEntityAttribute(string targetSchema, string targetName,
 			string connectionName, MappingStrategy strategy, EntityBehaviors behaviors)
-			: base(InstanceScopeKind.OnDemand)
+			: base(WireupPhase.Tasks)
 		{
 			this.TargetName = targetName;
 			this.TargetSchema = targetSchema;
@@ -60,25 +65,6 @@ namespace FlitBit.Data.Meta
 		public MappingStrategy Strategy { get; private set; }
 		public string TargetName { get; set; }
 		public string TargetSchema { get; set; }
-
-		/// <summary>
-		///   Implements the stereotypical DataModel behavior for interfaces of type T.
-		/// </summary>
-		/// <typeparam name="T">target type T</typeparam>
-		/// <param name="factory">the requesting factory</param>
-		/// <param name="complete">callback invoked with the implementation type or the type's factory function.</param>
-		/// <returns>
-		///   <em>true</em> if the data model was generated; otherwise <em>false</em>.
-		/// </returns>
-		public override bool GetImplementation<T>(IFactory factory, Action<Type, Func<T>> complete)
-		{
-			if (typeof(T).IsDefined(typeof(MapEntityAttribute), true))
-			{
-				complete(DataModelEmitter.ConcreteType<T>(), null);
-				return true;
-			}
-			return false;
-		}
 
 		internal void PrepareMapping<T>(Mapping<T> mapping, Type declaringType)
 		{
@@ -103,7 +89,7 @@ namespace FlitBit.Data.Meta
 			var mapAllProperties = this.Behaviors.HasFlag(EntityBehaviors.MapAllProperties);
 			foreach (var p in declaringType.GetProperties())
 			{
-				var mapColumn = (MapColumnAttribute) p.GetCustomAttributes(typeof(MapColumnAttribute), false)
+				var mapColumn = (MapColumnAttribute)p.GetCustomAttributes(typeof(MapColumnAttribute), false)
 																							.SingleOrDefault();
 				if (mapColumn != null)
 				{
@@ -113,13 +99,13 @@ namespace FlitBit.Data.Meta
 				{
 					if (p.IsDefined(typeof(MapInplaceColumnsAttribute), false))
 					{
-						var meta = (MapInplaceColumnsAttribute) p.GetCustomAttributes(typeof(MapInplaceColumnsAttribute), false)
+						var meta = (MapInplaceColumnsAttribute)p.GetCustomAttributes(typeof(MapInplaceColumnsAttribute), false)
 																										.Single();
 						meta.PrepareMapping(mapping, p);
 					}
 					else if (p.IsDefined(typeof(MapCollectionAttribute), false))
 					{
-						var mapColl = (MapCollectionAttribute) p.GetCustomAttributes(typeof(MapCollectionAttribute), false)
+						var mapColl = (MapCollectionAttribute)p.GetCustomAttributes(typeof(MapCollectionAttribute), false)
 																										.Single();
 						mapping.MapCollectionFromMeta(p, mapColl);
 					}
@@ -130,6 +116,54 @@ namespace FlitBit.Data.Meta
 					}
 				}
 			}
+		}
+
+		/// <summary>
+		/// Called by the base class upon execution. Derived classes should
+		///               provide an implementation that performs the wireup logic.
+		/// </summary>
+		protected override void PerformTask(IWireupCoordinator coordinator, Wireup.Recording.WireupContext context)
+		{
+		}
+	}
+
+	internal static class EntityWireupObserver
+	{
+		public static readonly Guid WireupObserverKey = new Guid("C24627E8-ECA0-4ECA-93E0-AD907461CD26");
+
+		static readonly MethodInfo ConcreteTypeMethod = typeof(DataModelEmitter).MatchGenericMethod("ConcreteType",
+																																																	BindingFlags.Static | BindingFlags.NonPublic, 1, typeof(Type));
+
+		static readonly MethodInfo RegisterMethod = typeof(IFactory).MatchGenericMethod("RegisterImplementationType", 2,
+																																										typeof(void));
+
+
+		static readonly IWireupObserver SingletonObserver = new DtoObserver();
+
+		public static IWireupObserver Observer { get { return SingletonObserver; } }
+
+		class DtoObserver : IWireupObserver
+		{
+			#region IWireupObserver Members
+
+			public void NotifyWireupTask(IWireupCoordinator coordinator, WireupTaskAttribute task, Type target)
+			{
+				var cra = task as MapEntityAttribute;
+				if (cra != null && target != null)
+				{
+					var concreteMethod = ConcreteTypeMethod.MakeGenericMethod(target);
+					var concrete = (Type)concreteMethod.Invoke(null, null);
+					var reg = RegisterMethod.MakeGenericMethod(target, concrete);
+					reg.Invoke(FactoryProvider.Factory, null);
+				}
+			}
+
+			/// <summary>
+			///   Gets the observer's key.
+			/// </summary>
+			public Guid ObserverKey { get { return WireupObserverKey; } }
+
+			#endregion
 		}
 	}
 }

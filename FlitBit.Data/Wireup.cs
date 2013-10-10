@@ -12,7 +12,7 @@ using FlitBit.Wireup;
 using FlitBit.Wireup.Meta;
 
 [assembly: HookWirupCoordinatorTask]
-[assembly: Wireup(typeof(AssemblyWireup))]
+[assembly: Wireup(typeof(FlitBit.Data.AssemblyWireup))]
 
 namespace FlitBit.Data
 {
@@ -44,13 +44,13 @@ namespace FlitBit.Data
 		///   Creates a new instance.
 		/// </summary>
 		public HookWirupCoordinatorTask()
-			: base(WireupPhase.BeforeDependencies) { }
+			: base(WireupPhase.BeforeTasks) { }
 
 		/// <summary>
-		///   Performs wireup.
+		/// Called by the base class upon execution. Derived classes should
+		///               provide an implementation that performs the wireup logic.
 		/// </summary>
-		/// <param name="coordinator"></param>
-		protected override void PerformTask(IWireupCoordinator coordinator)
+		protected override void PerformTask(IWireupCoordinator coordinator, Wireup.Recording.WireupContext context)
 		{
 			// Attach the root container as a wireup observer...
 			coordinator.RegisterObserver(StaticCatalog.Observer);

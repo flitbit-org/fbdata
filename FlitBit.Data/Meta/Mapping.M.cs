@@ -19,6 +19,7 @@ using FlitBit.Data.DataModel;
 using FlitBit.Emit;
 using FlitBit.ObjectIdentity;
 using FlitBit.Wireup;
+using FlitBit.Wireup.Recording;
 
 namespace FlitBit.Data.Meta
 {
@@ -410,7 +411,10 @@ namespace FlitBit.Data.Meta
 			var typ = typeof(TModel);
 			var mod = typ.Module;
 			var asm = typ.Assembly;
-			WireupCoordinator.Instance.WireupDependencies(asm);
+			using (var ctx = new WireupContext())
+			{
+				WireupCoordinator.Instance.WireupDependencies(ctx, asm);
+			}
 			// module, then assembly - module takes precedence
 			if (mod.IsDefined(typeof(MapConnectionAttribute), false))
 			{

@@ -6,21 +6,23 @@ using FlitBit.Data.DataModel;
 using FlitBit.Wireup;
 using FlitBit.Wireup.Meta;
 using System.Diagnostics.Contracts;
+using FlitBit.Wireup.Recording;
 
 namespace FlitBit.Data.Meta
 {
 	[AttributeUsage(AttributeTargets.Interface)]
 	public class DataModelAttribute : WireupTaskAttribute
 	{
-		public DataModelAttribute(Type prepareDataMappingType) : base(WireupPhase.Tasks)
+		public DataModelAttribute(Type prepareDataMappingType)
+			: base(WireupPhase.Tasks)
 		{
 			PrepareDataMappingType = prepareDataMappingType;
 		}
 
 		public Type PrepareDataMappingType { get; private set; }
 
-		protected override void PerformTask(Wireup.IWireupCoordinator coordinator)
-		{	
+		protected override void PerformTask(IWireupCoordinator coordinator, WireupContext context)
+		{
 		}
 	}
 

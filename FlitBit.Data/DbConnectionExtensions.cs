@@ -207,7 +207,7 @@ namespace FlitBit.Data
 			Contract.Requires<InvalidOperationException>(connection.State.HasFlag(ConnectionState.Open));
 			Contract.Requires<ArgumentNullException>(command != null);
 			Contract.Requires(command.Length > 0);
-			Contract.Ensures(Contract.Result<IEnumerable<IDataRecord>>() != null);
+			Contract.Ensures(Contract.Result<IEnumerable<T>>() != null);
 
 			using (var cmd = connection.CreateCommand(command))
 			{
@@ -235,7 +235,7 @@ namespace FlitBit.Data
 			Contract.Requires<InvalidOperationException>(connection.State.HasFlag(ConnectionState.Open));
 			Contract.Requires<ArgumentNullException>(command != null);
 			Contract.Requires(command.Length > 0);
-			Contract.Ensures(Contract.Result<IEnumerable<IDataRecord>>() != null);
+			Contract.Ensures(Contract.Result<IEnumerable<T>>() != null);
 
 			using (var cmd = connection.CreateCommand(command, cmdType))
 			{
@@ -263,8 +263,8 @@ namespace FlitBit.Data
 			Contract.Requires<ArgumentNullException>(connection != null);
 			Contract.Requires<InvalidOperationException>(connection.State.HasFlag(ConnectionState.Open));
 			Contract.Requires<ArgumentNullException>(command != null);
-			Contract.Requires(command.Length > 0);
-			Contract.Ensures(Contract.Result<IEnumerable<IDataRecord>>() != null);
+			Contract.Requires<ArgumentException>(command.Length > 0);
+			Contract.Ensures(Contract.Result<IEnumerable<T>>() != null);
 
 			using (var cmd = connection.CreateCommand(command, cmdType, cmdTimeout))
 			{
