@@ -26,6 +26,6 @@ namespace FlitBit.Data
 		/// <summary>
 		///   Indicates the results should be paged.
 		/// </summary>
-		Paged = 1 << 2,
+		Paged = Limited | 1 << 2,
 	}
 }

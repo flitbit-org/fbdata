@@ -14,7 +14,8 @@ namespace FlitBit.Data
 		/// </summary>
 		public static QueryBehavior Default = new QueryBehavior(QueryBehaviors.Default);
 
-		readonly QueryBehaviors _behaviors;
+		private readonly QueryBehaviors _behaviors;
+		private readonly int _limit;
 
 		/// <summary>
 		///   Constructs a new instance.
@@ -35,7 +36,7 @@ namespace FlitBit.Data
 			Contract.Requires<ArgumentException>(behaviors.HasFlag(QueryBehaviors.Limited));
 			Contract.Requires<ArgumentOutOfRangeException>(limit > 0);
 			this._behaviors = behaviors;
-			this.Limit = limit;
+			this._limit = limit;
 		}
 
 		/// <summary>
@@ -49,7 +50,7 @@ namespace FlitBit.Data
 			Contract.Requires<ArgumentException>(behaviors.HasFlag(QueryBehaviors.Limited));
 			Contract.Requires<ArgumentOutOfRangeException>(pageSize > 0);
 			this._behaviors = behaviors;
-			this.PageSize = pageSize;
+			this._limit = pageSize;
 			this.Page = page;
 		}
 
@@ -66,7 +67,7 @@ namespace FlitBit.Data
 			Contract.Requires<ArgumentException>(behaviors.HasFlag(QueryBehaviors.Limited));
 			Contract.Requires<ArgumentOutOfRangeException>(pageSize > 0);
 			this._behaviors = behaviors;
-			this.PageSize = pageSize;
+			this._limit = pageSize;
 			this.Page = page;
 			this.PageCorrelationKey = correlationKey;
 			this.Backward = backward;
@@ -94,7 +95,8 @@ namespace FlitBit.Data
 		/// <summary>
 		/// Indicates the query's limit.
 		/// </summary>
-		public int Limit { get; private set; }
+		public int Limit { get { return _limit; } }
+
 		/// <summary>
 		/// Indicates a query's current page when paging.
 		/// </summary>
@@ -109,10 +111,11 @@ namespace FlitBit.Data
 		/// Indicates the total number of pages in the query.
 		/// </summary>
 		public int PageCount { get; internal set; }
+
 		/// <summary>
 		/// Indicates the query's page size.
 		/// </summary>
-		public int PageSize { get; private set; }
+		public int PageSize { get { return _limit; } }
 
 		/// <summary>
 		/// Indicates whether the query is paging backwards.

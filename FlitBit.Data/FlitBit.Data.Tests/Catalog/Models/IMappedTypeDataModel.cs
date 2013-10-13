@@ -20,95 +20,65 @@ using FlitBit.Data.DataModel;
 using FlitBit.Data.Meta;
 using FlitBit.Data.SPI;
 using System.Diagnostics.Contracts;
+using FlitBit.Data.SqlServer;
 
 namespace FlitBit.Data.Tests.Catalog.Models
 {
-	public class AllMappedTypeCommand : IDataModelQueryManyCommand<IMappedType, SqlConnection>
+
+	public class AllMappedTypeCommand : SqlDataModelQueryManyCommand<IMappedType, IMappedTypeDataModel, Tuple<int,int>>
 	{
-		const string SelectAll = @"
-SELECT 
-	[Catalog]
-	, [DateCreated]
-	, [DateUpdated]
-	, [ID]
-	, [LatestVersion]
-	, [MappedBaseType]
-	, [MappedTable]
-	, [OriginalVersion]
-	, [ReadObjectName]
-	, [RuntimeType]
-	, [Schema]
-	, [Strategy]
-FROM [OrmCatalog].[MappedType]
-";
-		static readonly string SelectTop = SelectAll.Replace("SELECT", "SELECT TOP(@query_limit)");
-		const string KeySetPriorCondition = @"
-WHERE [ID] < @id";
-		const string KeySetNextCondition = @"
-WHERE [ID] > @id";
-		const string KeySetOrderDescending = @"
-ORDER BY [ID] DESC";
-		const string KeySetOrder = @"
-ORDER BY [ID]";
-		static readonly int[] ColumnOffsets = { 0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11 };
-
-		public IDataModelQueryResult<IMappedType> ExecuteMany(IDbContext cx, SqlConnection cn, QueryBehavior behavior)
+		public AllMappedTypeCommand(Mapping<IMappedType> mapping)
+			: base(mapping)
 		{
-			Tuple<int, int> currentPageCorrelationKey = null;
-			var res = new List<IMappedType>();
-			cn.EnsureConnectionIsOpen();
-			var query = behavior.IsLimited ? SelectTop : SelectAll;
-			if (behavior.IsPaging)
+		}
+		/*
+WHERE [ID] < @id", @"
+WHERE [ID] > @id", @"
+ORDER BY [ID] DESC", @"
+ORDER BY [ID]", new int[]
 			{
-				if (behavior.PageCorrelationKey != null)
-				{
-					currentPageCorrelationKey = (Tuple<int, int>)behavior.PageCorrelationKey;
-					query = String.Concat(query, behavior.Backward ? KeySetPriorCondition : KeySetNextCondition);
-				}
-				query = String.Concat(query, behavior.Backward ? KeySetOrderDescending : KeySetOrder);
-			}
+				0,
+				1,
+				2,
+				3,
+				4,
+				5,
+				6,
+				7,
+				8,
+				9,
+				10,
+				11
+			}) {
+		}
+		 * */
 
-			using (var cmd = cn.CreateCommand(query, CommandType.Text))
+		protected override Tuple<int, int> UpdateCorrelationKey(Tuple<int, int> inKey, bool backward,
+			IMappedTypeDataModel model)
+		{
+			if (backward)
 			{
-				if (behavior.IsLimited)
-				{
-					var pageSizeParam = new SqlParameter("@query_limit", SqlDbType.Int);
-					pageSizeParam.Value = behavior.PageSize;
-					cmd.Parameters.Add(pageSizeParam);
-				}
-				if (currentPageCorrelationKey != null)
-				{
-					var idParam = new SqlParameter("@id", SqlDbType.Int);
-					idParam.Value = behavior.Backward ? currentPageCorrelationKey.Item1 : currentPageCorrelationKey.Item2;
-					cmd.Parameters.Add(idParam);
-				}
-
-				using (var reader = cmd.ExecuteReader(CommandBehavior.SequentialAccess))
-				{
-					IMappedTypeDataModel model = null;
-
-					if (behavior.IsPaging && reader.Read())
-					{
-						model = new IMappedTypeDataModel();
-						model.LoadFromDataReader(reader, ColumnOffsets);
-						currentPageCorrelationKey = Tuple.Create(model.ID, 0);
-						res.Add(model);
-					}
-					while (reader.Read())
-					{
-						model = new IMappedTypeDataModel();
-						model.LoadFromDataReader(reader, ColumnOffsets);
-						res.Add(model);
-					}
-					if (behavior.IsPaging && res.Count > 1)
-					{
-						currentPageCorrelationKey = Tuple.Create(currentPageCorrelationKey.Item1, model.ID);
-						behavior = new QueryBehavior(behavior.Behaviors, behavior.PageSize, behavior.Page, currentPageCorrelationKey,
-																				false);
-					}
-				}
+				return Tuple.Create(model.ID, inKey.Item1);
 			}
-			return new DataModelQueryResult<IMappedType>(behavior, res);
+			return Tuple.Create(inKey.Item2, model.ID);
+		}
+
+		protected override Tuple<int, int> MakeInitialCorrelationKey(IMappedTypeDataModel model)
+		{
+			return Tuple.Create(model.ID, 0);
+		}
+
+		protected override void BindPageCorrelation(SqlCommand cmd, bool backward, Tuple<int, int> key)
+		{
+			var idParam = cmd.Parameters.Add(new SqlParameter("@id", SqlDbType.Int));
+			if (backward)
+			{
+				idParam.Value = key.Item1;
+			}
+			else
+			{
+				idParam.Value = key.Item2;
+			}
 		}
 	}
 

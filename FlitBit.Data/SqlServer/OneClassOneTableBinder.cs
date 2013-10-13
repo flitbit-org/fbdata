@@ -32,7 +32,7 @@ namespace FlitBit.Data.SqlServer
 			Contract.Requires<ArgumentException>(mapping.Strategy == MappingStrategy.OneClassOneTable);
 		}
 
-		public override void BuildDDLBatch(StringBuilder batch, IList<Type> members)
+		public override void BuildDdlBatch(StringBuilder batch, IList<Type> members)
 		{
 			var mapping = this.Mapping;
 			if (!members.Contains(mapping.RuntimeType))
@@ -48,7 +48,7 @@ namespace FlitBit.Data.SqlServer
 				{
 					var dmap = Mappings.AccessMappingFor(dep.Target.RuntimeType);
 					var binder = dmap.GetBinder();
-					binder.BuildDDLBatch(batch, members);
+					binder.BuildDdlBatch(batch, members);
 					batch.Append(Environment.NewLine)
 							.Append("GO")
 							.Append(Environment.NewLine);
@@ -95,10 +95,11 @@ namespace FlitBit.Data.SqlServer
 			}
 		}
 
-		void Initialize()
+		public override void Initialize()
 		{
 			if (!_initialized)
 			{
+
 				_initialized = true;
 			}
 		}

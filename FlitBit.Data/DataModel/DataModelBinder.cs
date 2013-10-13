@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Data.Common;
 using System.Diagnostics.Contracts;
 using System.Linq;
@@ -196,7 +197,7 @@ namespace FlitBit.Data.DataModel
 
 		public MappingStrategy Strategy { get; private set; }
 
-		public abstract void BuildDDLBatch(StringBuilder batch, IList<Type> members);
+		public abstract void BuildDdlBatch(StringBuilder batch, IList<Type> members);
 
 		public Mapping<TModel> Mapping { get { return this._mapping; } }
 
@@ -250,6 +251,11 @@ namespace FlitBit.Data.DataModel
 			TMatch match, TUpdate update)
 			where TMatch : class
 			where TUpdate : class;
+
+		/// <summary>
+		/// Initializes the binder.
+		/// </summary>
+		public abstract void Initialize();
 
 		#endregion
 	}

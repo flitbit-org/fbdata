@@ -159,6 +159,7 @@
     <Compile Include="DbTypeDetails.cs" />
     <Compile Include="IHierarchyMapping.cs" />
     <Compile Include="IHierarchyMappings.cs" />
+    <Compile Include="SqlServer\SqlDataModelQueryManyCommand.cs" />
     <Compile Include="Terminology\IUITerminologyService.cs" />
     <Compile Include="MappedDbTypeEmitter.cs" />
     <Compile Include="MappedBinaryEmitter.cs">
@@ -316,7 +317,6 @@
       <DependentUpon>IMapping.cs</DependentUpon>
     </Compile>
     <Compile Include="Meta\IndexMapping.cs" />
-    <Compile Include="LogSink.cs" />
     <Compile Include="Meta\MapCollectionAttribute.cs" />
     <Compile Include="Meta\MapColumnAttribute.cs" />
     <Compile Include="Meta\MapConnectionAttribute.cs" />

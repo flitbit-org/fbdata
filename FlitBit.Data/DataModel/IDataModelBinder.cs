@@ -26,7 +26,12 @@ namespace FlitBit.Data.DataModel
 		/// </summary>
 		/// <param name="batch"></param>
 		/// <param name="members"></param>
-		void BuildDDLBatch(StringBuilder batch, IList<Type> members);
+		void BuildDdlBatch(StringBuilder batch, IList<Type> members);
+
+		/// <summary>
+		/// Initializes the binder.
+		/// </summary>
+		void Initialize();
 	}
 
 	/// <summary>
@@ -34,7 +39,7 @@ namespace FlitBit.Data.DataModel
 	/// </summary>
 	/// <typeparam name="TModel">the model's type.</typeparam>
 	/// <typeparam name="TIdentityKey">the model's identity type</typeparam>
-	public interface IDataModelBinder<TModel, TIdentityKey> : IDataModelBinder
+	public interface IDataModelBinder<TModel, in TIdentityKey> : IDataModelBinder
 	{
 		/// <summary>
 		/// Gets the model's mapping.

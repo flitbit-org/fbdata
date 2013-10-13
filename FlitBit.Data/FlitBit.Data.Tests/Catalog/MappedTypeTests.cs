@@ -23,7 +23,7 @@ namespace FlitBit.Data.Tests.Catalog
 		}
 
 		[TestMethod]
-		public void TestMethod1()
+		public void OneTypeOneTableMappingTest()
 		{
 			var mapping = Mappings.Instance.ForType<IMappedType>();
 			mapping.ConnectionName = "test-data";
@@ -38,7 +38,7 @@ namespace FlitBit.Data.Tests.Catalog
 			Assert.IsNotNull(mapping.ConcreteType);
 			Assert.IsNotNull(sql);
 
-			var all = new AllMappedTypeCommand();
+			var all = new AllMappedTypeCommand(mapping);
 			var create = new CreateMappedTypeCommand();
 			var update = new UpdateMappedTypeCommand();
 			var readByType = new ReadMappedTypeByRuntimeTypeCommand();

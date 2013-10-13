@@ -162,7 +162,9 @@ WHERE name = @schema"
 					throw new ArgumentOutOfRangeException();
 			}
 			
-			return (IDataModelBinder<TModel, Id>)Activator.CreateInstance(binderType, mapping);
+			var result = (IDataModelBinder<TModel, Id>)Activator.CreateInstance(binderType, mapping);
+			result.Initialize();
+			return result;
 		}
 
 		public override string GetServerName(DbConnection connection)

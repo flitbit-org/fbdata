@@ -9,7 +9,7 @@ namespace FlitBit.Data.DataModel
 		public static void BuildDdlBatch(this IDataModelBinder binder, StringBuilder batch)
 		{
 			var members = new List<Type>();
-			binder.BuildDDLBatch(batch, members);
+			binder.BuildDdlBatch(batch, members);
 		}
 	}
 }

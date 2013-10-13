@@ -156,7 +156,7 @@ namespace FlitBit.Data
 			}
 			if (mapping.IsAlternateKey)
 			{
-				buffer.Append(" ALTER KEY");
+				buffer.Append(" ALTERNATE KEY");
 			}
 			if (mapping.IsReference && mapping.ReferenceTargetMember != null)
 			{
