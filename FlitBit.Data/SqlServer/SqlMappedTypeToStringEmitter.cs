@@ -14,10 +14,14 @@ namespace FlitBit.Data.SqlServer
 			: base(SqlDbType.NVarChar)
 		{ }
 
-		protected override void EmitTranslateType(MethodBuilder method)
+		protected override void EmitTranslateDbType(ILGenerator il)
 		{
-			var il = method.GetILGenerator();
 			il.Call<Type>("GetType", BindingFlags.Static | BindingFlags.Public, typeof(string));
+		}
+
+		internal protected override void EmitTranslateRuntimeType(ILGenerator il)
+		{
+			il.CallVirtual<Type>("get_FullName");
 		}
 
 		public override DbTypeDetails GetDbTypeDetails(ColumnMapping column)

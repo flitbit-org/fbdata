@@ -11,7 +11,6 @@ using System.Data.SqlClient;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
-using FlitBit.Core;
 using FlitBit.Data.DataModel;
 using FlitBit.Data.Meta;
 

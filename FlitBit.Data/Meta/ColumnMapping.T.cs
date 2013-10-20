@@ -27,7 +27,7 @@ namespace FlitBit.Data.Meta
 		public ColumnMapping<T> WithReference<U>(Expression<Func<U, object>> expression,
 			ReferenceBehaviors behaviors = ReferenceBehaviors.Lazy)
 		{
-			Contract.Requires(expression != null);
+			Contract.Requires<ArgumentNullException>(expression != null);
 
 			var member = expression.GetMemberFromExpression();
 			Contract.Assert(member != null, "Expression must reference a field or property member");
@@ -46,8 +46,8 @@ namespace FlitBit.Data.Meta
 
 		public ColumnMapping<T> WithTargetName(string name)
 		{
-			Contract.Requires(name != null, "name cannot be null");
-			Contract.Requires(name.Length > 0, "name cannot be empty");
+			Contract.Requires<ArgumentNullException>(name != null, "name cannot be null");
+			Contract.Requires<ArgumentException>(name.Length > 0, "name cannot be empty");
 
 			this.TargetName = name;
 			return this;
@@ -55,7 +55,7 @@ namespace FlitBit.Data.Meta
 
 		public ColumnMapping<T> WithVariableLength(int length)
 		{
-			Contract.Requires(length >= 0, "length must be greater than zero");
+			Contract.Requires<ArgumentException>(length >= 0, "length must be greater than zero");
 			this.VariableLength = length;
 			return this;
 		}

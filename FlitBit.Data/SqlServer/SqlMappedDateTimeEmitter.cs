@@ -1,12 +1,15 @@
 ﻿using System;
 using System.Data;
 using System.Data.Common;
+using System.Data.SqlClient;
+using System.Reflection;
 using System.Reflection.Emit;
+using FlitBit.Data.Meta;
 using FlitBit.Emit;
 
 namespace FlitBit.Data.SqlServer
 {
-	internal class SqlMappedDateTimeEmitter : MappedDbTypeEmitter<DateTime, SqlDbType>
+	internal class SqlMappedDateTimeEmitter : SqlDbTypeEmitter<DateTime>
 	{
 		internal SqlMappedDateTimeEmitter(SqlDbType dbType)
 			: base(default(DbType), dbType)
@@ -43,5 +46,6 @@ namespace FlitBit.Data.SqlServer
 			columnIndex.LoadValue(il);
 			il.CallVirtual<DbDataReader>("GetDateTime", typeof(int));
 		}
+		
 	}
 }

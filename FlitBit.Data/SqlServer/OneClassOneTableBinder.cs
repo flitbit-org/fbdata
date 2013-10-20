@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data.Common;
+using System.Data.SqlClient;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
-using FlitBit.Core;
 using FlitBit.Data.DataModel;
 using FlitBit.Data.Meta;
+using FlitBit.Data.SPI;
 
 namespace FlitBit.Data.SqlServer
 {
@@ -16,10 +16,65 @@ namespace FlitBit.Data.SqlServer
 	/// <typeparam name="TModel"></typeparam>
 	/// <typeparam name="TIdentityKey"></typeparam>
 	/// <typeparam name="TModelImpl"></typeparam>
-	public class OneClassOneTableBinder<TModel, TIdentityKey, TModelImpl> : DataModelBinder<TModel, TIdentityKey>
-		where TModelImpl : class, TModel, new()
+	public class OneClassOneTableBinder<TModel, TIdentityKey, TModelImpl> : DataModelBinder<TModel, TIdentityKey, SqlConnection>
+		where TModelImpl : class, TModel, IDataModel, new()
 	{
+		static readonly string SelectAllFormat = @"SELECT {1}
+FROM {0}";
+		static readonly string SelectPageFormat = @"DECLARE @first_id int
+DECLARE @totrows int
+
+SELECT @totrows = SUM (row_count)
+FROM sys.dm_db_partition_stats
+WHERE object_id=OBJECT_ID('{0}')   
+AND (index_id=0 or index_id=1);
+
+SET ROWCOUNT @startRow
+SELECT @first_id = {2} 
+	FROM {0}
+	ORDER BY {2}
+
+SET ROWCOUNT @limit
+SELECT {1},
+       @totrows AS TotRows
+FROM {0}
+WHERE {2} >= @first_id
+ORDER BY {2}
+SET ROWCOUNT 0
+";
+		static readonly string GeneratedTimestamp = "DECLARE @generated_timestamp DATETIME2 = GETUTCDATE()";
+
+		static readonly string CreateFormat = @"
+DECLARE @identity INT
+
+INSERT INTO {0} (
+  $(columns)
+)
+VALUES (
+  $(values)
+)
+
+SET @identity = SCOPE_IDENTITY()
+SELECT {1}
+FROM {0}
+WHERE {2} = @identity
+";
+		static readonly string UpdateFormat = @"
+UPDATE {0}
+	SET $(columns)
+WHERE {2} = @identity
+
+SELECT {1}
+FROM {0}
+WHERE {2} = @identity";
+
 		bool _initialized;
+		readonly string[] _columns;
+		readonly int[] _offsets;
+
+		readonly IDataModelQueryManyCommand<TModel, SqlConnection> _selectAll;
+		readonly IDataModelQuerySingleCommand<TModel, SqlConnection, TModel> _create;
+		readonly IDataModelQuerySingleCommand<TModel, SqlConnection, TModel> _update;
 
 		/// <summary>
 		///   Creates a new instance.
@@ -30,6 +85,32 @@ namespace FlitBit.Data.SqlServer
 		{
 			Contract.Requires<ArgumentNullException>(mapping != null);
 			Contract.Requires<ArgumentException>(mapping.Strategy == MappingStrategy.OneClassOneTable);
+			_columns = mapping.Columns.Select(c => mapping.QuoteObjectNameForSQL(c.TargetName)).ToArray();
+			_offsets = Enumerable.Range(0, _columns.Length).ToArray();
+
+			var usesTimestamp = mapping.Columns.Count(c => c.IsTimestampOnInsert || c.IsTimestampOnUpdate);
+			if (mapping.Identity.Columns.Count() == 1)
+			{
+				var idCol = mapping.QuoteObjectNameForSQL(mapping.Identity.Columns[0].TargetName);
+				var columnList = String.Join(String.Concat(",", Environment.NewLine, "       "), _columns);
+				var selectAll = String.Format(SelectAllFormat, mapping.DbObjectReference, columnList);
+				var selectPage = String.Format(SelectPageFormat, mapping.DbObjectReference, columnList, idCol);
+
+				_selectAll = new SingleKeySelectManyCommand<TModel, TModelImpl>(selectAll, selectPage, _offsets);
+				var create = (mapping.Columns.Any(c => c.IsTimestampOnInsert || c.IsTimestampOnUpdate))
+ 					? String.Format(GeneratedTimestamp, CreateFormat, mapping.DbObjectReference, columnList, idCol).Replace("$(columns)", "{0}").Replace("$(values)", "{1}")
+					: String.Format(CreateFormat, mapping.DbObjectReference, columnList, idCol).Replace("$(columns)", "{0}").Replace("$(values)", "{1}");
+				_create =
+					(IDataModelQuerySingleCommand<TModel, SqlConnection, TModel>)
+						Activator.CreateInstance(OneClassOneTableEmitter.CreateCommand<TModel, TModelImpl>(mapping), create, _offsets);
+				var update = (mapping.Columns.Any(c => c.IsTimestampOnUpdate))
+					? String.Format(GeneratedTimestamp, UpdateFormat, mapping.DbObjectReference, columnList, idCol).Replace("$(columns)", "{0}")
+					: String.Format(UpdateFormat, mapping.DbObjectReference, columnList, idCol).Replace("$(columns)", "{0}");
+				
+				_update =
+					(IDataModelQuerySingleCommand<TModel, SqlConnection, TModel>)
+						Activator.CreateInstance(OneClassOneTableEmitter.UpdateCommand<TModel, TModelImpl>(mapping), update, _offsets);
+			}
 		}
 
 		public override void BuildDdlBatch(StringBuilder batch, IList<Type> members)
@@ -99,47 +180,46 @@ namespace FlitBit.Data.SqlServer
 		{
 			if (!_initialized)
 			{
-
 				_initialized = true;
 			}
 		}
 
-		public override IDataModelQueryManyCommand<TModel, DbConnection> GetAllCommand()
+		public override IDataModelQueryManyCommand<TModel, SqlConnection> GetAllCommand()
+		{
+			return _selectAll;
+		}
+
+		public override IDataModelQuerySingleCommand<TModel, SqlConnection, TModel> GetCreateCommand()
+		{
+			return _create;
+		}
+
+		public override IDataModelNonQueryCommand<TModel, SqlConnection, TIdentityKey> GetDeleteCommand()
 		{
 			throw new NotImplementedException();
 		}
 
-		public override IDataModelQuerySingleCommand<TModel, DbConnection, TModel> GetCreateCommand()
+		public override IDataModelQuerySingleCommand<TModel, SqlConnection, TIdentityKey> GetReadCommand()
 		{
 			throw new NotImplementedException();
 		}
 
-		public override IDataModelNonQueryCommand<TModel, DbConnection, TIdentityKey> GetDeleteCommand()
+		public override IDataModelQuerySingleCommand<TModel, SqlConnection, TModel> GetUpdateCommand()
 		{
 			throw new NotImplementedException();
 		}
 
-		public override IDataModelQuerySingleCommand<TModel, DbConnection, TIdentityKey> GetReadCommand()
+		public override IDataModelNonQueryCommand<TModel, SqlConnection, TMatch> MakeDeleteMatchCommand<TMatch>(TMatch match)
 		{
 			throw new NotImplementedException();
 		}
 
-		public override IDataModelQuerySingleCommand<TModel, DbConnection, TModel> GetUpdateCommand()
+		public override IDataModelQueryManyCommand<TModel, SqlConnection, TMatch> MakeReadMatchCommand<TMatch>(TMatch match)
 		{
 			throw new NotImplementedException();
 		}
 
-		public override IDataModelNonQueryCommand<TModel, DbConnection, TMatch> MakeDeleteMatchCommand<TMatch>(TMatch match)
-		{
-			throw new NotImplementedException();
-		}
-
-		public override IDataModelQueryManyCommand<TModel, DbConnection, TMatch> MakeReadMatchCommand<TMatch>(TMatch match)
-		{
-			throw new NotImplementedException();
-		}
-
-		public override IDataModelNonQueryCommand<TModel, DbConnection, TMatch, TUpdate> MakeUpdateMatchCommand<TMatch, TUpdate>(TMatch match, TUpdate update)
+		public override IDataModelNonQueryCommand<TModel, SqlConnection, TMatch, TUpdate> MakeUpdateMatchCommand<TMatch, TUpdate>(TMatch match, TUpdate update)
 		{
 			throw new NotImplementedException();
 		}

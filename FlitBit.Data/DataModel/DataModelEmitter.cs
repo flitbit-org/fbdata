@@ -434,14 +434,15 @@ namespace FlitBit.Data.DataModel
 				cctor.ContributeInstructions((m, il) =>
 				{
 					var arr = il.DeclareLocal(typeof(String[]));
+					var cols = props.Where(ea => !ea.IsObservableCollection).ToArray();
 
-					il.NewArr(typeof(string), props.Count);
+					il.NewArr(typeof(string), cols.Length);
 					il.StoreLocal(arr);
-					for (var i = 0; i < props.Count; i++)
+					for (var i = 0; i < cols.Length; i++)
 					{
 						il.LoadLocal(arr);
 						il.LoadValue(i);
-						il.LoadValue(props[i].Source.Name);
+						il.LoadValue(cols[i].Source.Name);
 						il.Emit(OpCodes.Stelem, typeof(string));
 					}
 					il.LoadLocal(arr);
@@ -769,7 +770,7 @@ namespace FlitBit.Data.DataModel
 			{
 				var rec = PropertyRec.Create(intf, builder, property);
 
-				rec.Index = props.Count;
+				rec.Index = props.Count(ea => !ea.IsObservableCollection);
 				props.Add(rec);
 
 				rec.EmittedProperty.AddGetter()

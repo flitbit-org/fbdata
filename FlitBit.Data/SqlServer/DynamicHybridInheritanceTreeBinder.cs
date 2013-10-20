@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Data.SqlClient;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
@@ -17,7 +18,7 @@ namespace FlitBit.Data.SqlServer
 	/// <typeparam name="TIdentityKey"></typeparam>
 	/// <typeparam name="TModelImpl"></typeparam>
 	public class DynamicHybridInheritanceTreeBinder<TModel, TIdentityKey, TModelImpl> :
-		DataModelBinder<TModel, TIdentityKey>
+		DataModelBinder<TModel, TIdentityKey, SqlConnection>
 		where TModelImpl : class, TModel, new()
 	{
 		bool _initialized;
@@ -151,7 +152,7 @@ namespace FlitBit.Data.SqlServer
 		///   Gets a model command for selecting all models of the type TModel.
 		/// </summary>
 		/// <returns></returns>
-		public override IDataModelQueryManyCommand<TModel, DbConnection> GetAllCommand()
+		public override IDataModelQueryManyCommand<TModel, SqlConnection> GetAllCommand()
 		{
 			throw new NotImplementedException();
 		}
@@ -160,7 +161,7 @@ namespace FlitBit.Data.SqlServer
 		///   Gets a create command.
 		/// </summary>
 		/// <returns></returns>
-		public override IDataModelQuerySingleCommand<TModel, DbConnection, TModel> GetCreateCommand()
+		public override IDataModelQuerySingleCommand<TModel, SqlConnection, TModel> GetCreateCommand()
 		{
 			throw new NotImplementedException();
 		}
@@ -169,7 +170,7 @@ namespace FlitBit.Data.SqlServer
 		///   Gets a delete (by ID) command.
 		/// </summary>
 		/// <returns></returns>
-		public override IDataModelNonQueryCommand<TModel, DbConnection, TIdentityKey> GetDeleteCommand()
+		public override IDataModelNonQueryCommand<TModel, SqlConnection, TIdentityKey> GetDeleteCommand()
 		{
 			throw new NotImplementedException();
 		}
@@ -178,7 +179,7 @@ namespace FlitBit.Data.SqlServer
 		///   Gets a read (by ID) command.
 		/// </summary>
 		/// <returns></returns>
-		public override IDataModelQuerySingleCommand<TModel, DbConnection, TIdentityKey> GetReadCommand()
+		public override IDataModelQuerySingleCommand<TModel, SqlConnection, TIdentityKey> GetReadCommand()
 		{
 			throw new NotImplementedException();
 		}
@@ -187,7 +188,7 @@ namespace FlitBit.Data.SqlServer
 		///   Gets an update command.
 		/// </summary>
 		/// <returns></returns>
-		public override IDataModelQuerySingleCommand<TModel, DbConnection, TModel> GetUpdateCommand()
+		public override IDataModelQuerySingleCommand<TModel, SqlConnection, TModel> GetUpdateCommand()
 		{
 			throw new NotImplementedException();
 		}
@@ -198,7 +199,7 @@ namespace FlitBit.Data.SqlServer
 		/// <typeparam name="TMatch">the match's type</typeparam>
 		/// <param name="match">an match specification</param>
 		/// <returns></returns>
-		public override IDataModelNonQueryCommand<TModel, DbConnection, TMatch> MakeDeleteMatchCommand<TMatch>(TMatch match)
+		public override IDataModelNonQueryCommand<TModel, SqlConnection, TMatch> MakeDeleteMatchCommand<TMatch>(TMatch match)
 		{
 			throw new NotImplementedException();
 		}
@@ -209,12 +210,12 @@ namespace FlitBit.Data.SqlServer
 		/// <typeparam name="TMatch">the match's type</typeparam>
 		/// <param name="match">an match specification</param>
 		/// <returns></returns>
-		public override IDataModelQueryManyCommand<TModel, DbConnection, TMatch> MakeReadMatchCommand<TMatch>(TMatch match)
+		public override IDataModelQueryManyCommand<TModel, SqlConnection, TMatch> MakeReadMatchCommand<TMatch>(TMatch match)
 		{
 			throw new NotImplementedException();
 		}
 
-		public override IDataModelNonQueryCommand<TModel, DbConnection, TMatch, TUpdate> MakeUpdateMatchCommand<TMatch, TUpdate>(TMatch match, TUpdate update)
+		public override IDataModelNonQueryCommand<TModel, SqlConnection, TMatch, TUpdate> MakeUpdateMatchCommand<TMatch, TUpdate>(TMatch match, TUpdate update)
 		{
 			throw new NotImplementedException();
 		}

@@ -45,13 +45,15 @@ namespace FlitBit.Data
 		/// <param name="behaviors"></param>
 		/// <param name="pageSize"></param>
 		/// <param name="page"></param>
-		public QueryBehavior(QueryBehaviors behaviors, int pageSize, int page)
+		/// <param name="pageCount"></param>
+		public QueryBehavior(QueryBehaviors behaviors, int pageSize, int page, int pageCount)
 		{
 			Contract.Requires<ArgumentException>(behaviors.HasFlag(QueryBehaviors.Limited));
 			Contract.Requires<ArgumentOutOfRangeException>(pageSize > 0);
 			this._behaviors = behaviors;
 			this._limit = pageSize;
 			this.Page = page;
+			this.PageCount = pageCount;
 		}
 
 		/// <summary>

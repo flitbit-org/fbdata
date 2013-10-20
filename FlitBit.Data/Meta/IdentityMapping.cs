@@ -64,8 +64,7 @@ namespace FlitBit.Data.Meta
 				);
 
 			var name = member.Name;
-			var col = _owner.Columns.Where(c => c.Member == member)
-											.SingleOrDefault();
+			var col = this._owner.Columns.SingleOrDefault(c => c.Member == member);
 
 			Contract.Assert(col != null, "A column must be defined on the member before it can be used as an identity");
 			Contract.Assert(col.Behaviors.HasFlag(ColumnBehaviors.Identity),

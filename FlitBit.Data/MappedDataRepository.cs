@@ -13,7 +13,7 @@ namespace FlitBit.Data
 		AbstractCachingRepository<TModel, Id>
 		where TModelImpl : class, TModel, new()
 		where TDbConnection : DbConnection, new()
-		where TModelBinder : IDataModelBinder<TModel, Id>
+		where TModelBinder : IDataModelBinder<TModel, Id, TDbConnection>
 	{
 		TModelBinder _binder;
 		Mapping<TModel> _mapping;

@@ -1,12 +1,16 @@
 ﻿using System;
 using System.Data;
 using System.Data.Common;
+using System.Data.SqlClient;
+using System.Data.SqlTypes;
+using System.Reflection;
 using System.Reflection.Emit;
+using FlitBit.Data.Meta;
 using FlitBit.Emit;
 
 namespace FlitBit.Data.SqlServer
 {
-	internal class SqlMappedAnyToStringEmitter<T> : MappedDbTypeEmitter<T, SqlDbType>
+	internal class SqlMappedAnyToStringEmitter<T> : SqlDbTypeEmitter<T>
 	{
 		internal SqlMappedAnyToStringEmitter(SqlDbType dbType)
 			: base(default(DbType), dbType)
@@ -49,12 +53,38 @@ namespace FlitBit.Data.SqlServer
 			reader.LoadValue(il);
 			columnIndex.LoadValue(il);
 			il.CallVirtual<DbDataReader>("GetString", typeof(int));
-			EmitTranslateType(method);
+			EmitTranslateDbType(il);
 		}
 
-		protected virtual void EmitTranslateType(MethodBuilder method)
+		internal protected virtual void EmitTranslateRuntimeType(ILGenerator il)
 		{
-			// default to nothing, assuming the string type is ok.
+			il.NewObj(typeof(SqlString).GetConstructor(new Type[] {typeof(string)}));
+			il.Box(typeof(SqlString));
+		}
+
+		internal protected override void EmitDbParameterSetValue(ILGenerator il, LocalBuilder parm, LocalBuilder local,
+			LocalBuilder flag)
+		{
+			var fin = il.DefineLabel();
+			var ifelse = il.DefineLabel();
+			il.LoadLocal(local);
+			il.LoadNull();
+			il.CompareEqual();
+			il.LoadValue(0);
+			il.CompareEqual();
+			il.StoreLocal(flag);
+			il.LoadLocal(flag);
+			il.BranchIfTrue(ifelse);
+			il.LoadLocal(parm);
+			il.LoadField(typeof(DBNull).GetField("Value", BindingFlags.Static | BindingFlags.Public));
+			il.CallVirtual<SqlParameter>("set_SqlValue");
+			il.Branch(fin);
+			il.MarkLabel(ifelse);
+			il.LoadLocal(parm);
+			il.LoadLocal(local);
+			EmitTranslateRuntimeType(il);
+			il.CallVirtual<SqlParameter>("set_SqlValue");
+			il.MarkLabel(fin);
 		}
 	}
 }

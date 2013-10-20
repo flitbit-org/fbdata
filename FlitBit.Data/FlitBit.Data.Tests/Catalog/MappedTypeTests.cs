@@ -31,15 +31,15 @@ namespace FlitBit.Data.Tests.Catalog
 			Assert.IsNotNull(mapping);
 			Assert.IsNotNull(mapping.Columns);
 
-			var binder = mapping.GetBinder();
+			var binder = (IDataModelBinder<IMappedType,int, SqlConnection>)mapping.GetBinder();
 			var builder = new StringBuilder(2000);
 			binder.BuildDdlBatch(builder);
 			var sql = builder.ToString();
 			Assert.IsNotNull(mapping.ConcreteType);
 			Assert.IsNotNull(sql);
 
-			var all = new AllMappedTypeCommand(mapping);
-			var create = new CreateMappedTypeCommand();
+			var all = binder.GetAllCommand();
+			var create = binder.GetCreateCommand();
 			var update = new UpdateMappedTypeCommand();
 			var readByType = new ReadMappedTypeByRuntimeTypeCommand();
 

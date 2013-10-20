@@ -51,9 +51,9 @@ namespace FlitBit.Data.Meta.Tests.Models
 
 		class PersonCreateBinding : IDataModelQuerySingleCommand<TestPerson, SqlConnection, TestPerson>
 		{
-			public TestPerson ExecuteSingle(IDbContext cx, SqlConnection cn, TestPerson key)
+			public TestPerson ExecuteSingle(IDbContext cx, SqlConnection cn, TestPerson model)
 			{
-				var res = key;
+				var res = model;
 				using (var cmd = cn.CreateCommand(@"
 INSERT INTO [Person]
 	(
@@ -68,8 +68,8 @@ VALUES
 SELECT SCOPE_IDENTITY()
 "))
 				{
-					cmd.Parameters.Add(new SqlParameter("@ExternalID", new SqlGuid(key.ExternalID)));
-					cmd.Parameters.Add(new SqlParameter("@Name", new SqlString(key.Name)));
+					cmd.Parameters.Add(new SqlParameter("@ExternalID", new SqlGuid(model.ExternalID)));
+					cmd.Parameters.Add(new SqlParameter("@Name", new SqlString(model.Name)));
 					using (var reader = cmd.ExecuteReader(CommandBehavior.SequentialAccess | CommandBehavior.SingleRow))
 					{
 						cx.IncrementQueryCounter();
@@ -85,12 +85,12 @@ SELECT SCOPE_IDENTITY()
 
 		class PersonReadBinding : IDataModelQuerySingleCommand<TestPerson, SqlConnection, int>
 		{
-			public TestPerson ExecuteSingle(IDbContext cx, SqlConnection cn, int key)
+			public TestPerson ExecuteSingle(IDbContext cx, SqlConnection cn, int model)
 			{
 				var res = default(TestPerson);
 				using (var cmd = cn.CreateCommand("SELECT [ID], [ExternalID], [Name] FROM [Person] WHERE [ID] = @ID"))
 				{
-					cmd.Parameters.Add(new SqlParameter("@ID", key));
+					cmd.Parameters.Add(new SqlParameter("@ID", model));
 					using (var reader = cmd.ExecuteReader(CommandBehavior.SequentialAccess | CommandBehavior.SingleRow))
 					{
 						cx.IncrementQueryCounter();
@@ -109,7 +109,7 @@ SELECT SCOPE_IDENTITY()
 						}
 						if (reader.Read())
 						{
-							throw new DuplicateObjectException(String.Concat("Person.ID: ", key));
+							throw new DuplicateObjectException(String.Concat("Person.ID: ", model));
 						}
 					}
 				}
@@ -119,13 +119,13 @@ SELECT SCOPE_IDENTITY()
 
 		class PersonReadByNameBinding : IDataModelQuerySingleCommand<TestPerson, SqlConnection, string>
 		{
-			public TestPerson ExecuteSingle(IDbContext cx, SqlConnection cn, string key)
+			public TestPerson ExecuteSingle(IDbContext cx, SqlConnection cn, string model)
 			{
 				var res = default(TestPerson);
 				using (var cmd = cn.CreateCommand("SELECT [ID], [ExternalID], [Name] FROM [Person] WHERE [Name] = @Name"))
 				{
 					var parm = new SqlParameter("@Name", SqlDbType.NVarChar, 50);
-					parm.Value = key;
+					parm.Value = model;
 					cmd.Parameters.Add(parm);
 					using (var reader = cmd.ExecuteReader(CommandBehavior.SequentialAccess | CommandBehavior.SingleRow))
 					{
@@ -145,7 +145,7 @@ SELECT SCOPE_IDENTITY()
 						}
 						if (reader.Read())
 						{
-							throw new DuplicateObjectException(String.Concat("Person.Name: ", key));
+							throw new DuplicateObjectException(String.Concat("Person.Name: ", model));
 						}
 					}
 				}
@@ -155,9 +155,9 @@ SELECT SCOPE_IDENTITY()
 
 		class PersonUpdateBinding : IDataModelQuerySingleCommand<TestPerson, SqlConnection, TestPerson>
 		{
-			public TestPerson ExecuteSingle(IDbContext cx, SqlConnection cn, TestPerson key)
+			public TestPerson ExecuteSingle(IDbContext cx, SqlConnection cn, TestPerson model)
 			{
-				var res = key;
+				var res = model;
 				using (var cmd = cn.CreateCommand(@"
 UPDATE [Person] 
 	SET [ExternalID] = @ExternalID
@@ -166,21 +166,21 @@ WHERE [ID] = @ID
 "))
 				{
 					var parm = new SqlParameter("@ExternalID", SqlDbType.UniqueIdentifier);
-					parm.Value = key.ExternalID;
+					parm.Value = model.ExternalID;
 					cmd.Parameters.Add(parm);
 					parm = new SqlParameter("@Name", SqlDbType.NVarChar, 50);
-					parm.Value = key.Name;
+					parm.Value = model.Name;
 					cmd.Parameters.Add(parm);
 					parm = new SqlParameter("@ID", SqlDbType.Int);
-					parm.Value = key.ID;
+					parm.Value = model.ID;
 					var updated = cmd.ExecuteNonQuery();
 					if (updated > 1)
 					{
-						throw new DuplicateObjectException(String.Concat("Person.ID: ", key.ID));
+						throw new DuplicateObjectException(String.Concat("Person.ID: ", model.ID));
 					}
 					else if (updated == 0)
 					{
-						throw new ObjectNotFoundException(String.Concat("Person.ID: ", key.ID));
+						throw new ObjectNotFoundException(String.Concat("Person.ID: ", model.ID));
 					}
 				}
 				return res;

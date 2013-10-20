@@ -10,7 +10,6 @@ namespace FlitBit.Data
 		internal MappedDecimalEmitter()
 			: base(DbType.Decimal, DbType.Decimal)
 		{
-
 		}
 
 		/// <summary>
