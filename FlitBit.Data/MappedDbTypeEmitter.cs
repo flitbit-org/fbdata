@@ -428,7 +428,7 @@ namespace FlitBit.Data
 		}
 
 		public virtual void BindParameterOnDbCommand<TDbParameter>(MethodBuilder method, ColumnMapping column,
-			string bindingName, Action<ILGenerator> loadCmd, Action<ILGenerator> loadModel, LocalBuilder flag)
+			string bindingName, Action<ILGenerator> loadCmd, Action<ILGenerator> loadModel, Action<ILGenerator> loadProp, LocalBuilder flag)
 			where TDbParameter : DbParameter
 		{
 			ILGenerator il = method.GetILGenerator();
@@ -465,10 +465,12 @@ namespace FlitBit.Data
 			var local = il.DeclareLocal(column.RuntimeType);
 
 			loadModel(il);
-			il.CallVirtual(((PropertyInfo) column.Member).GetGetMethod());
+			loadProp(il);
 			il.StoreLocal(local);
-			EmitDbParameterSetValue(il, parm, local, flag);
-
+			il.LoadLocal(local);
+			
+			EmitDbParameterSetValue(il, column, parm, local, flag);
+			
 			loadCmd(il);
 			il.CallVirtual<DbCommand>("get_Parameters");
 			il.LoadLocal(parm);
@@ -476,12 +478,43 @@ namespace FlitBit.Data
 			il.Pop();
 		}
 
-		internal protected virtual void EmitDbParameterSetValue(ILGenerator il, LocalBuilder parm, LocalBuilder local, LocalBuilder flag)
+		internal protected virtual void EmitDbParameterSetValue(ILGenerator il, ColumnMapping column, LocalBuilder parm, LocalBuilder local, LocalBuilder flag)
 		{
-			il.LoadLocal(parm);
-			il.LoadLocal(local);
-			EmitTranslateRuntimeType(il);
-			il.CallVirtual<DbParameter>("set_Value");
+			if (column.IsReference && column.RuntimeType.IsValueType)
+			{
+				var fin = il.DefineLabel();
+				var ifelse = il.DefineLabel();
+				il.DeclareLocal(column.RuntimeType);
+				var comparerType = typeof (EqualityComparer<>).MakeGenericType(column.RuntimeType);
+				il.Call(comparerType.GetProperty("Default").GetGetMethod());
+				il.LoadDefaultValue(typeof (int));
+				il.LoadLocal(local);
+				il.CallVirtual(comparerType.GetMethod("Equals", BindingFlags.Instance | BindingFlags.Public, null,
+					new[] {column.RuntimeType, column.RuntimeType}, null)
+					);
+				il.LoadValue(0);
+				il.CompareEqual();
+				il.StoreLocal(flag);
+				il.LoadLocal(flag);
+				il.BranchIfTrue(ifelse);
+				il.LoadLocal(parm);
+				il.LoadField(typeof (DBNull).GetField("Value", BindingFlags.Static | BindingFlags.Public));
+				il.CallVirtual<DbParameter>("set_Value");
+				il.Branch(fin);
+				il.MarkLabel(ifelse);
+				il.LoadLocal(parm);
+				il.LoadLocal(local);
+				EmitTranslateRuntimeType(il);
+				il.CallVirtual<DbParameter>("set_Value");
+				il.MarkLabel(fin);
+			}
+			else
+			{
+				il.LoadLocal(parm);
+				il.LoadLocal(local);
+				EmitTranslateRuntimeType(il);
+				il.CallVirtual<DbParameter>("set_Value");
+			}
 		}
 
 		internal protected virtual void EmitDbParameterSetDbType(ILGenerator il, LocalBuilder parm)

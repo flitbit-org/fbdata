@@ -9,6 +9,7 @@ using System.Collections.Concurrent;
 using System.Configuration;
 using System.Data.Common;
 using System.Diagnostics.Contracts;
+using FlitBit.Data.Configuration;
 
 namespace FlitBit.Data
 {
@@ -62,7 +63,7 @@ namespace FlitBit.Data
 		public static DbProviderFactory GetProviderByConnectionName(string name)
 		{
 			Contract.Requires<ArgumentNullException>(name != null);
-			Contract.Requires(name.Length > 0);
+			Contract.Requires<ArgumentException>(name.Length > 0);
 
 			return AccessProvider(name)
 				.Provider;
@@ -71,7 +72,7 @@ namespace FlitBit.Data
 		public static string GetProviderName(string name)
 		{
 			Contract.Requires<ArgumentNullException>(name != null);
-			Contract.Requires(name.Length > 0);
+			Contract.Requires<ArgumentException>(name.Length > 0);
 
 			return AccessProvider(name)
 				.ProviderName;
@@ -95,25 +96,32 @@ namespace FlitBit.Data
 			return cn;
 		}
 
-		static ProviderRecord AccessProvider(string name)
+		private static ProviderRecord AccessProvider(string name)
 		{
 			Contract.Requires<ArgumentNullException>(name != null);
-			Contract.Requires(name.Length > 0);
+			Contract.Requires<ArgumentException>(name.Length > 0);
 
-			return __providers.GetOrAdd(name, (n) =>
+			return __providers.GetOrAdd(name, GetProviderRecordFromConfiguration);
+		}
+
+		private static ProviderRecord GetProviderRecordFromConfiguration(string name)
+		{
+			var map = DataModelConfigSection.Instance.MapConnectionStrings[name];
+			var n = (map != null) ? map.ToName : name;
+
+			var css = ConfigurationManager.ConnectionStrings[n];
+			if (css == null)
 			{
-				var css = ConfigurationManager.ConnectionStrings[name];
-				if (css == null)
-				{
-					throw new ConfigurationErrorsException(String.Concat("Connection string not found: ", name));
-				}
-				var r = new ProviderRecord();
-				r.ConnectionName = name;
-				r.ConnectionString = css.ConnectionString;
-				r.ProviderName = css.ProviderName;
-				r.Provider = DbProviderFactories.GetFactory(css.ProviderName);
-				return r;
-			});
+				throw new ConfigurationErrorsException(String.Concat("Connection string not found: ", name));
+			}
+			var r = new ProviderRecord
+			{
+				ConnectionName = name,
+				ConnectionString = css.ConnectionString,
+				ProviderName = css.ProviderName,
+				Provider = DbProviderFactories.GetFactory(css.ProviderName)
+			};
+			return r;
 		}
 
 		struct ProviderRecord

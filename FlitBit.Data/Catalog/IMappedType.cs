@@ -5,7 +5,7 @@ using FlitBit.ObjectIdentity;
 
 namespace FlitBit.Data.Catalog
 {
-	[MapEntity("OrmCatalog", EntityBehaviors.DefinedColumnsOnly, MappingStrategy.OneClassOneTable)]
+	[MapEntity("OrmCatalog", EntityBehaviors.DefinedColumnsOnly, MappingStrategy.OneClassOneTable, ConnectionName = "orm-catalog")]
 	public interface IMappedType
 	{
 		[MapColumn(ColumnBehaviors.Synthetic), IdentityKey]

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Data.SqlClient;
 using System.Text;
+using FlitBit.Core;
 using FlitBit.Data.Catalog;
 using FlitBit.Data.DataModel;
 using FlitBit.Data.Meta;
@@ -40,7 +41,7 @@ namespace FlitBit.Data.Tests.Catalog
 
 			var all = binder.GetAllCommand();
 			var create = binder.GetCreateCommand();
-			var update = new UpdateMappedTypeCommand();
+			var update = binder.GetUpdateCommand();
 			var readByType = new ReadMappedTypeByRuntimeTypeCommand();
 
 			using (var cx = DbContext.NewContext())
@@ -67,9 +68,9 @@ namespace FlitBit.Data.Tests.Catalog
 						}
 						update.ExecuteSingle(cx, cn, existing);
 					}
-					else 
+					else
 					{
-						var model = new IMappedTypeDataModel();
+						var model = FactoryProvider.Factory.CreateInstance<IMappedType>();
 						model.Catalog = "unitest";
 						model.LatestVersion = typeof(IMappedType).Assembly.GetName()
 																										.Version.ToString(3);

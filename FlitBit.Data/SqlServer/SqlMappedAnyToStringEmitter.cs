@@ -62,8 +62,7 @@ namespace FlitBit.Data.SqlServer
 			il.Box(typeof(SqlString));
 		}
 
-		internal protected override void EmitDbParameterSetValue(ILGenerator il, LocalBuilder parm, LocalBuilder local,
-			LocalBuilder flag)
+		internal protected override void EmitDbParameterSetValue(ILGenerator il, ColumnMapping column, LocalBuilder parm, LocalBuilder local, LocalBuilder flag)
 		{
 			var fin = il.DefineLabel();
 			var ifelse = il.DefineLabel();

@@ -206,7 +206,7 @@ WHERE {2} = @identity";
 
 		public override IDataModelQuerySingleCommand<TModel, SqlConnection, TModel> GetUpdateCommand()
 		{
-			throw new NotImplementedException();
+			return _update;
 		}
 
 		public override IDataModelNonQueryCommand<TModel, SqlConnection, TMatch> MakeDeleteMatchCommand<TMatch>(TMatch match)

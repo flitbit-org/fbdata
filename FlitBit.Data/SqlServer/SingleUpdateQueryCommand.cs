@@ -53,14 +53,14 @@ namespace FlitBit.Data.SqlServer
 			TImpl res = default(TImpl);
 			using (var cmd = cn.CreateCommand(_commandText, CommandType.Text))
 			{
-				BindCommand((SqlCommand)cmd, impl, dirty);
+				BindCommand((SqlCommand)cmd, impl, dirty, _offsets);
 				cmd.Prepare();
 				using (var reader = cmd.ExecuteReader())
 				{
 					if (reader.Read())
 					{
 						res = new TImpl();
-						res.LoadFromDataReader(reader, this._offsets);
+						res.LoadFromDataReader(reader, _offsets);
 					}
 					if (reader.Read()) throw new DuplicateObjectException();
 				}
@@ -74,6 +74,7 @@ namespace FlitBit.Data.SqlServer
 		/// <param name="cmd"></param>
 		/// <param name="model"></param>
 		/// <param name="dirty"></param>
-		protected abstract void BindCommand(SqlCommand cmd, TImpl model, BitVector dirty);
+		/// <param name="offsets"></param>
+		protected abstract void BindCommand(SqlCommand cmd, TImpl model, BitVector dirty, int[] offsets);
 	}
 }

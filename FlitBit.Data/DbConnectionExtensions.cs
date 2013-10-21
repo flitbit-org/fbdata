@@ -12,6 +12,9 @@ using System.Diagnostics.Contracts;
 
 namespace FlitBit.Data
 {
+	/// <summary>
+	/// DbConnection extensions.
+	/// </summary>
 	public static class DbConnectionExtensions
 	{
 		/// <summary>
@@ -26,41 +29,62 @@ namespace FlitBit.Data
 			return provider.CatalogExists(connection, catalog);
 		}
 
-		public static DbCommand CreateCommand(this DbConnection connection, string command)
+		/// <summary>
+		/// Creates a command on the specified connection.
+		/// </summary>
+		/// <param name="connection">the connection</param>
+		/// <param name="commandText">the command text</param>
+		/// <returns>a newly created command</returns>
+		public static DbCommand CreateCommand(this DbConnection connection, string commandText)
 		{
 			Contract.Requires<ArgumentNullException>(connection != null);
 			Contract.Requires<InvalidOperationException>(connection.State.HasFlag(ConnectionState.Open));
-			Contract.Requires<ArgumentNullException>(command != null);
-			Contract.Requires<ArgumentException>(command.Length > 0);
+			Contract.Requires<ArgumentNullException>(commandText != null);
+			Contract.Requires<ArgumentException>(commandText.Length > 0);
 			Contract.Ensures(Contract.Result<DbCommand>() != null);
 			var res = connection.CreateCommand();
-			res.CommandText = command;
+			res.CommandText = commandText;
 			return res;
 		}
 
-		public static DbCommand CreateCommand(this DbConnection connection, string command, CommandType cmdType)
+		/// <summary>
+		/// Creates a command on the specified connection.
+		/// </summary>
+		/// <param name="connection">the connection</param>
+		/// <param name="commandText">the command text</param>
+		/// <param name="cmdType">the command's type</param>
+		/// <returns>a newly created command</returns>
+		public static DbCommand CreateCommand(this DbConnection connection, string commandText, CommandType cmdType)
 		{
 			Contract.Requires<ArgumentNullException>(connection != null);
 			Contract.Requires<InvalidOperationException>(connection.State.HasFlag(ConnectionState.Open));
-			Contract.Requires<ArgumentNullException>(command != null);
-			Contract.Requires<ArgumentException>(command.Length > 0);
+			Contract.Requires<ArgumentNullException>(commandText != null);
+			Contract.Requires<ArgumentException>(commandText.Length > 0);
 			Contract.Ensures(Contract.Result<DbCommand>() != null);
 			var res = connection.CreateCommand();
-			res.CommandText = command;
+			res.CommandText = commandText;
 			res.CommandType = cmdType;
 			return res;
 		}
 
-		public static DbCommand CreateCommand(this DbConnection connection, string command, CommandType cmdType,
+		/// <summary>
+		/// Creates a command on the specified connection.
+		/// </summary>
+		/// <param name="connection">the connection</param>
+		/// <param name="commandText">the command text</param>
+		/// <param name="cmdType">the command's type</param>
+		/// <param name="cmdTimeout">the command's timeout</param>
+		/// <returns>a newly created command</returns>
+		public static DbCommand CreateCommand(this DbConnection connection, string commandText, CommandType cmdType,
 			int cmdTimeout)
 		{
 			Contract.Requires<ArgumentNullException>(connection != null);
 			Contract.Requires<InvalidOperationException>(connection.State.HasFlag(ConnectionState.Open));
-			Contract.Requires<ArgumentNullException>(command != null);
-			Contract.Requires<ArgumentException>(command.Length > 0);
+			Contract.Requires<ArgumentNullException>(commandText != null);
+			Contract.Requires<ArgumentException>(commandText.Length > 0);
 			Contract.Ensures(Contract.Result<DbCommand>() != null);
 			var res = connection.CreateCommand();
-			res.CommandText = command;
+			res.CommandText = commandText;
 			res.CommandType = cmdType;
 			res.CommandTimeout = cmdTimeout;
 			return res;
@@ -122,7 +146,7 @@ namespace FlitBit.Data
 			Contract.Requires<ArgumentNullException>(connection != null);
 			Contract.Requires<InvalidOperationException>(connection.State.HasFlag(ConnectionState.Open));
 			Contract.Requires<ArgumentNullException>(command != null);
-			Contract.Requires(command.Length > 0);
+			Contract.Requires<ArgumentException>(command.Length > 0);
 			Contract.Ensures(Contract.Result<IEnumerable<IDataRecord>>() != null);
 
 			using (var cmd = connection.CreateCommand(command))
@@ -150,7 +174,7 @@ namespace FlitBit.Data
 			Contract.Requires<ArgumentNullException>(connection != null);
 			Contract.Requires<InvalidOperationException>(connection.State.HasFlag(ConnectionState.Open));
 			Contract.Requires<ArgumentNullException>(command != null);
-			Contract.Requires(command.Length > 0);
+			Contract.Requires<ArgumentException>(command.Length > 0);
 			Contract.Ensures(Contract.Result<IEnumerable<IDataRecord>>() != null);
 
 			using (var cmd = connection.CreateCommand(command, cmdType))
@@ -179,7 +203,7 @@ namespace FlitBit.Data
 			Contract.Requires<ArgumentNullException>(connection != null);
 			Contract.Requires<InvalidOperationException>(connection.State.HasFlag(ConnectionState.Open));
 			Contract.Requires<ArgumentNullException>(command != null);
-			Contract.Requires(command.Length > 0);
+			Contract.Requires<ArgumentException>(command.Length > 0);
 			Contract.Ensures(Contract.Result<IEnumerable<IDataRecord>>() != null);
 
 			using (var cmd = connection.CreateCommand(command, cmdType, cmdTimeout))
@@ -206,7 +230,7 @@ namespace FlitBit.Data
 			Contract.Requires<ArgumentNullException>(connection != null);
 			Contract.Requires<InvalidOperationException>(connection.State.HasFlag(ConnectionState.Open));
 			Contract.Requires<ArgumentNullException>(command != null);
-			Contract.Requires(command.Length > 0);
+			Contract.Requires<ArgumentException>(command.Length > 0);
 			Contract.Ensures(Contract.Result<IEnumerable<T>>() != null);
 
 			using (var cmd = connection.CreateCommand(command))
@@ -234,7 +258,7 @@ namespace FlitBit.Data
 			Contract.Requires<ArgumentNullException>(connection != null);
 			Contract.Requires<InvalidOperationException>(connection.State.HasFlag(ConnectionState.Open));
 			Contract.Requires<ArgumentNullException>(command != null);
-			Contract.Requires(command.Length > 0);
+			Contract.Requires<ArgumentException>(command.Length > 0);
 			Contract.Ensures(Contract.Result<IEnumerable<T>>() != null);
 
 			using (var cmd = connection.CreateCommand(command, cmdType))
@@ -312,7 +336,7 @@ namespace FlitBit.Data
 			Contract.Requires<ArgumentNullException>(connection != null);
 			Contract.Requires<InvalidOperationException>(connection.State.HasFlag(ConnectionState.Open));
 			Contract.Requires<ArgumentNullException>(command != null);
-			Contract.Requires(command.Length > 0);
+			Contract.Requires<ArgumentException>(command.Length > 0);
 
 			return ImmediateExecuteNonQuery(connection,
 																			cmd => { cmd.CommandText = command; }, null);
@@ -323,7 +347,7 @@ namespace FlitBit.Data
 			Contract.Requires<ArgumentNullException>(connection != null);
 			Contract.Requires<InvalidOperationException>(connection.State.HasFlag(ConnectionState.Open));
 			Contract.Requires<ArgumentNullException>(command != null);
-			Contract.Requires(command.Length > 0);
+			Contract.Requires<ArgumentException>(command.Length > 0);
 
 			return ImmediateExecuteNonQuery(connection,
 																			cmd =>
@@ -339,7 +363,7 @@ namespace FlitBit.Data
 			Contract.Requires<ArgumentNullException>(connection != null);
 			Contract.Requires<InvalidOperationException>(connection.State.HasFlag(ConnectionState.Open));
 			Contract.Requires<ArgumentNullException>(command != null);
-			Contract.Requires(command.Length > 0);
+			Contract.Requires<ArgumentException>(command.Length > 0);
 
 			return ImmediateExecuteNonQuery(connection,
 																			cmd =>

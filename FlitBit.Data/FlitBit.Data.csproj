@@ -151,12 +151,14 @@
     </Compile>
     <Compile Include="Catalog\IMappedType.cs" />
     <Compile Include="Catalog\StaticCatalog.cs" />
+    <Compile Include="Configuration\DataModelConfigSection.cs" />
+    <Compile Include="Configuration\MapConnectionStringConfigSection.cs" />
+    <Compile Include="Configuration\MapConnectionStringsConfigurationElementCollection.cs" />
     <Compile Include="DataModel\DataModelBinder.cs" />
     <Compile Include="DataModel\DataModelQueryResult.cs" />
     <Compile Include="DataModel\IDataModelNonQueryCommand.cs" />
     <Compile Include="DataModel\IDataModelQueryManyCommand.cs" />
     <Compile Include="DataModel\IDataModelQuerySingleCommand.cs" />
-    <Compile Include="DataModel\ReferenceEmitter.cs" />
     <Compile Include="DbTypeDetails.cs" />
     <Compile Include="IHierarchyMapping.cs" />
     <Compile Include="IHierarchyMappings.cs" />

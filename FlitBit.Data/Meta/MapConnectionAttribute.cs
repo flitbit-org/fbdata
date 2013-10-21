@@ -24,12 +24,15 @@ namespace FlitBit.Data.Meta
 		/// </summary>
 		public MapConnectionAttribute(string connectionName)
 		{
-			Contract.Requires(connectionName != null);
-			Contract.Requires(connectionName.Length > 0);
+			Contract.Requires<ArgumentNullException>(connectionName != null);
+			Contract.Requires<ArgumentException>(connectionName.Length > 0);
 
 			this.ConnectionName = connectionName;
 		}
 
+		/// <summary>
+		/// The default connection name used for DataModels and Entities defined within the scope.
+		/// </summary>
 		public string ConnectionName { get; private set; }
 
 		internal void PrepareMapping<T>(Mapping<T> mapping)

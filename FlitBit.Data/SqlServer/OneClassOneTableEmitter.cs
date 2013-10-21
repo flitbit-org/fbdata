@@ -109,7 +109,8 @@ namespace FlitBit.Data.SqlServer
 					self = 0,
 					cmd = 1,
 					model = 2,
-					dirty = 3
+					dirty = 3,
+					offsets = 4
 				};
 				method.ContributeInstructions((m, il) =>
 				{
@@ -132,13 +133,15 @@ namespace FlitBit.Data.SqlServer
 							il.LoadValue("@generated_timestamp");
 							il.CallVirtual<List<string>>("Add");	
 						}
-						else if (!column.IsCalculated && !column.IsImmutable)
+						else if (!column.IsCalculated)
 						{
 							var emitter = column.Emitter;
 							var bindingName = helper.FormatParameterName(column.DbTypeDetails.BindingName);
 							var next = il.DefineLabel();
 							il.LoadArg(args.dirty);
+							il.LoadArg(args.offsets);
 							il.LoadValue(column.Ordinal);
+							il.Emit(OpCodes.Ldelem_I4);
 							il.Call<BitVector>("get_Item");
 							il.LoadValue(0);
 							il.CompareEqual();
@@ -153,31 +156,24 @@ namespace FlitBit.Data.SqlServer
 							il.CallVirtual<List<string>>("Add");
 							if (column.IsReference)
 							{
-								ReferenceEmitter.BindParameterOnDbCommand<SqlParameter>(method.Builder, emitter, column, bindingName, 
+								var reftype = col.ReferenceTargetMember.GetTypeOfValue();
+								emitter.BindParameterOnDbCommand<SqlParameter>(method.Builder, column, bindingName,
+									gen => gen.LoadArg(args.cmd),
+									gen => gen.LoadArg(args.model),
 									gen =>
 									{
-										gen.LoadArg(args.cmd);
-									},
-									gen =>
-									{
-										gen.LoadArg(args.model);
-										gen.CallVirtual(typeof(IDataModel).MatchGenericMethod("GetReferentId", 1,
-											col.ReferenceTargetMember.GetTypeOfValue(), typeof(string)));
+										gen.LoadValue(col.Member.Name);
+										gen.CallVirtual(typeof (IDataModel).MatchGenericMethod("GetReferentID", 1,
+											reftype, typeof (string)).MakeGenericMethod(reftype));
 									},
 									flag);
 							}
 							else
 							{
 								emitter.BindParameterOnDbCommand<SqlParameter>(method.Builder, column, bindingName,
-									gen =>
-									{
-										gen.LoadArg(args.cmd);
-									},
-									gen =>
-									{
-										gen.LoadArg(args.model);
-										gen.CallVirtual(((PropertyInfo)col.Member).GetGetMethod());
-									},
+									gen => gen.LoadArg(args.cmd),
+									gen => gen.LoadArg(args.model),
+									gen => gen.CallVirtual(((PropertyInfo)col.Member).GetGetMethod()),
 									flag);
 							}
 							il.MarkLabel(next);
@@ -257,6 +253,7 @@ namespace FlitBit.Data.SqlServer
 						}
 						else if (!column.IsCalculated)
 						{
+							var col = column;
 							var emitter = column.Emitter;
 							var bindingName = helper.FormatParameterName(column.DbTypeDetails.BindingName);
 							var next = il.DefineLabel();
@@ -271,97 +268,30 @@ namespace FlitBit.Data.SqlServer
 							il.LoadLocal(columnList);
 							il.LoadValue(String.Concat(mapping.QuoteObjectNameForSQL(column.TargetName), " = ", bindingName));
 							il.CallVirtual<List<string>>("Add");
-							il.LoadValue(bindingName);
-							il.LoadValue(emitter.SpecializedDbTypeValue);
-							if (emitter.IsLengthRequired)
-							{
-								il.LoadValue(column.DbTypeDetails.Length.Value);
-								il.NewObj(typeof(SqlParameter).GetConstructor(BindingFlags.Public | BindingFlags.Instance, null, new Type[]
-								{
-									typeof(string), typeof(SqlDbType), typeof(int)
-								}, null));
-							}
-							else
-							{
-								il.NewObj(typeof(SqlParameter).GetConstructor(BindingFlags.Public | BindingFlags.Instance, null, new Type[]
-								{
-									typeof(string), typeof(SqlDbType)
-								}, null));
-							}
-							il.StoreLocal(parm);
-							if (emitter.IsPrecisionRequired)
-							{
-								il.LoadLocal(parm);
-								il.LoadValue((byte)column.DbTypeDetails.Length.Value);
-								il.Call<SqlParameter>("set_Precision");
-							}
-							if (emitter.IsScaleRequired || (emitter.IsScaleOptional && column.DbTypeDetails.Scale.HasValue))
-							{
-								il.LoadLocal(parm);
-								il.LoadValue((byte)column.DbTypeDetails.Scale.Value);
-								il.Call<SqlParameter>("set_Scale");
-							}
-							var fin = il.DefineLabel();
-
 							if (column.IsReference)
 							{
-								// todo: load from GetReferentID... etc.
+								var reftype = col.ReferenceTargetMember.GetTypeOfValue();
+								emitter.BindParameterOnDbCommand<SqlParameter>(method.Builder, column, bindingName,
+									gen => gen.LoadArg(args.cmd),
+									gen => gen.LoadArg(args.model),
+									gen =>
+									{
+										gen.LoadValue(col.Member.Name);
+										gen.CallVirtual(typeof (IDataModel).MatchGenericMethod("GetReferentID", 1,
+											reftype, typeof (string)).MakeGenericMethod(reftype));
+									},
+									flag);
 							}
 							else
 							{
-								LocalBuilder local;
-								if (column.RuntimeType.IsValueType)
-								{
-									if (column.RuntimeType.IsGenericType && column.RuntimeType.GetGenericTypeDefinition() == typeof(Nullable<>))
-									{
-
-									}
-									else
-									{
-										local = il.DeclareLocal(column.RuntimeType);
-										il.LoadArg(args.model);
-										il.CallVirtual(((PropertyInfo)column.Member).GetGetMethod());
-										il.StoreLocal(local);
-										il.LoadLocal(local);
-										il.LoadLocal(parm);
-										il.LoadLocal(local);
-										il.CallVirtual<SqlParameter>("set_SqlValue");
-									}
-								}
-								else
-								{
-									local = il.DeclareLocal(column.RuntimeType);
-									var ifelse = il.DefineLabel();
-									il.LoadArg(args.model);
-									il.CallVirtual(((PropertyInfo)column.Member).GetGetMethod());
-									il.StoreLocal(local);
-									il.LoadLocal(local);
-									il.LoadNull();
-									il.CompareEqual();
-									il.LoadValue(0);
-									il.CompareEqual();
-									il.StoreLocal(flag);
-									il.LoadLocal(flag);
-									il.BranchIfTrue(ifelse);
-									il.LoadLocal(parm);
-									il.LoadField(typeof(DBNull).GetField("Value", BindingFlags.Static | BindingFlags.Public));
-									il.CallVirtual<SqlParameter>("set_SqlValue");
-									il.Branch(fin);
-									il.MarkLabel(ifelse);
-									il.LoadLocal(parm);
-									il.LoadLocal(local);
-									il.CallVirtual<SqlParameter>("set_SqlValue");
-								}
+								emitter.BindParameterOnDbCommand<SqlParameter>(method.Builder, column, bindingName,
+									gen => gen.LoadArg(args.cmd),
+									gen => gen.LoadArg(args.model),
+									gen => gen.CallVirtual(((PropertyInfo) col.Member).GetGetMethod()),
+									flag);
 							}
-							il.MarkLabel(fin);
-							il.LoadArg(args.cmd);
-							il.CallVirtual<SqlCommand>("get_Parameters");
-							il.LoadLocal(parm);
-							il.CallVirtual<SqlParameterCollection>("Add", typeof(SqlParameter));
-							il.Pop();
 							il.MarkLabel(next);
 						}
-
 					}
 					il.LoadArg(args.cmd);
 					il.LoadArg(args.cmd);
