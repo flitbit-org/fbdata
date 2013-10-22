@@ -161,10 +161,10 @@ namespace FlitBit.Data.DataModel
 					{
 						if (prop.IsObservableCollection)
 						{}
-						else
+						else if (prop.IsColumn)
 						{
-							var mappedColumn = mapping.Columns.FirstOrDefault(c => c.Member == prop.Source);
-							Debug.Assert(mappedColumn != null, "mappedColumn != null");
+							var mappedColumn = mapping.Columns.First(c => c.Member == prop.Source);
+							
 							var isnull = il.DefineLabel();
 							var store = il.DefineLabel();
 							il.LoadArg(offsets);
@@ -1287,6 +1287,8 @@ namespace FlitBit.Data.DataModel
 				public int Index { get; set; }
 				public bool IsObservableCollection { get; private set; }
 				public bool IsReference { get; private set; }
+				public bool IsColumn { get; private set; }
+				public bool IsLifted { get; private set; }
 				public IMapping Mapping { get; private set; }
 				public PropertyInfo Source { get; private set; }
 
@@ -1321,10 +1323,14 @@ namespace FlitBit.Data.DataModel
 							res.FieldType = typeof(ObservableCollection<>).MakeGenericType(genericArgType);
 						}
 					}
+					res.IsColumn = info.IsDefined(typeof(MapColumnAttribute), true);
+					res.IsLifted = info.IsDefined(typeof(MapLiftedColumnAttribute), true);
 					res.EmittedProperty = builder.DefinePropertyFromPropertyInfo(info);
 					res.EmittedField = builder.DefineField(fieldName, res.FieldType);
 					return res;
 				}
+
+				
 			}
 		}
 	}

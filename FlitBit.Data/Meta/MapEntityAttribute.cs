@@ -138,11 +138,11 @@ namespace FlitBit.Data.Meta
 																																										typeof(void));
 
 
-		static readonly IWireupObserver SingletonObserver = new DtoObserver();
+		static readonly IWireupObserver SingletonObserver = new EntityObserver();
 
 		public static IWireupObserver Observer { get { return SingletonObserver; } }
 
-		class DtoObserver : IWireupObserver
+		class EntityObserver : IWireupObserver
 		{
 			#region IWireupObserver Members
 

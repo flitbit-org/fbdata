@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Data.SqlClient;
+using System.Linq;
 using System.Text;
 using FlitBit.Core;
 using FlitBit.Data.Catalog;
@@ -42,7 +43,9 @@ namespace FlitBit.Data.Tests.Catalog
 			var all = binder.GetAllCommand();
 			var create = binder.GetCreateCommand();
 			var update = binder.GetUpdateCommand();
-			var readByType = new ReadMappedTypeByRuntimeTypeCommand();
+			var readByType = binder.MakeQueryCommand(new {RuntimeType = default(Type)}).Where((m, p) => 
+					m.RuntimeType == p.RuntimeType 
+					&& m.Catalog == "unittest");
 
 			using (var cx = DbContext.NewContext())
 			{
@@ -52,21 +55,22 @@ namespace FlitBit.Data.Tests.Catalog
 					Assert.IsNotNull(them);
 					Assert.IsTrue(them.Succeeded);
 
-					var existing = readByType.ExecuteSingle(cx, cn, typeof(IMappedType));
-					if (existing != null)
+					var existing = readByType.ExecuteMany(cx, cn, QueryBehavior.Default, new {RuntimeType = typeof(IMappedType) });
+					var res = existing.Results.SingleOrDefault();
+					if (res != null)
 					{
 						var ver = typeof(IMappedType).Assembly
 																				.GetName()
 																				.Version;
-						if (existing.LatestVersion == ver.ToString(3))
+						if (res.LatestVersion == ver.ToString(3))
 						{
-							existing.LatestVersion = new Version(ver.Major, ver.Minor, ver.Build + 1).ToString();
+							res.LatestVersion = new Version(ver.Major, ver.Minor, ver.Build + 1).ToString();
 						}
 						else
 						{
-							existing.LatestVersion = ver.ToString(3);
+							res.LatestVersion = ver.ToString(3);
 						}
-						update.ExecuteSingle(cx, cn, existing);
+						update.ExecuteSingle(cx, cn, res);
 					}
 					else
 					{

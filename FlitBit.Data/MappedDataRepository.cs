@@ -27,13 +27,15 @@ namespace FlitBit.Data
 
 		public override int DeleteMatch<TMatch>(IDbContext context, TMatch match)
 		{
-			var cn = context.SharedOrNewConnection<TDbConnection>(_mapping.ConnectionName);
-			if (!cn.State.HasFlag(ConnectionState.Open))
-			{
-				cn.Open();
-			}
-			return _binder.MakeDeleteMatchCommand(match)
-										.Execute(context, cn, match);
+			throw new NotImplementedException();
+
+			//var cn = context.SharedOrNewConnection<TDbConnection>(_mapping.ConnectionName);
+			//if (!cn.State.HasFlag(ConnectionState.Open))
+			//{
+			//  cn.Open();
+			//}
+			//return _binder.MakeDeleteMatchCommand(match)
+			//              .Execute(context, cn, match);
 		}
 
 		public override IQueryable<TModel> Query()
@@ -43,24 +45,28 @@ namespace FlitBit.Data
 
 		public override IDataModelQueryResult<TModel> ReadMatch<TMatch>(IDbContext context, QueryBehavior behavior, TMatch match)
 		{
-			var cn = context.SharedOrNewConnection<TDbConnection>(_mapping.ConnectionName);
-			if (!cn.State.HasFlag(ConnectionState.Open))
-			{
-				cn.Open();
-			}
-			return _binder.MakeReadMatchCommand(match)
-										.ExecuteMany(context, cn, behavior, match);
+			throw new NotImplementedException();
+
+			//var cn = context.SharedOrNewConnection<TDbConnection>(_mapping.ConnectionName);
+			//if (!cn.State.HasFlag(ConnectionState.Open))
+			//{
+			//  cn.Open();
+			//}
+			//return _binder.MakeReadMatchCommand(match)
+			//              .ExecuteMany(context, cn, behavior, match);
 		}
 
 		public override int UpdateMatch<TMatch, TUpdate>(IDbContext context, TMatch match, TUpdate update)
 		{
-			var cn = context.SharedOrNewConnection<TDbConnection>(_mapping.ConnectionName);
-			if (!cn.State.HasFlag(ConnectionState.Open))
-			{
-				cn.Open();
-			}
-			return _binder.MakeUpdateMatchCommand(match, update)
-										.Execute(context, cn, match, update);
+			throw new NotImplementedException();
+
+			//var cn = context.SharedOrNewConnection<TDbConnection>(_mapping.ConnectionName);
+			//if (!cn.State.HasFlag(ConnectionState.Open))
+			//{
+			//  cn.Open();
+			//}
+			//return _binder.MakeUpdateMatchCommand(match, update)
+			//              .Execute(context, cn, match, update);
 		}
 
 		protected override IDataModelQueryResult<TModel> PerformAll(IDbContext context, QueryBehavior behavior)

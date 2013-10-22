@@ -75,6 +75,7 @@ WHERE {2} = @identity";
 		readonly IDataModelQueryManyCommand<TModel, SqlConnection> _selectAll;
 		readonly IDataModelQuerySingleCommand<TModel, SqlConnection, TModel> _create;
 		readonly IDataModelQuerySingleCommand<TModel, SqlConnection, TModel> _update;
+		readonly IDataModelQuerySingleCommand<TModel, SqlConnection, TIdentityKey> _byId;
 
 		/// <summary>
 		///   Creates a new instance.
@@ -110,6 +111,11 @@ WHERE {2} = @identity";
 				_update =
 					(IDataModelQuerySingleCommand<TModel, SqlConnection, TModel>)
 						Activator.CreateInstance(OneClassOneTableEmitter.UpdateCommand<TModel, TModelImpl>(mapping), update, _offsets);
+
+				_byId =
+					(IDataModelQuerySingleCommand<TModel, SqlConnection, TIdentityKey>)
+						Activator.CreateInstance(OneClassOneTableEmitter.ReadByIdCommand<TModel, TModelImpl, TIdentityKey>(mapping), update, _offsets);
+
 			}
 		}
 
@@ -201,27 +207,17 @@ WHERE {2} = @identity";
 
 		public override IDataModelQuerySingleCommand<TModel, SqlConnection, TIdentityKey> GetReadCommand()
 		{
-			throw new NotImplementedException();
+			return _byId;
 		}
 
 		public override IDataModelQuerySingleCommand<TModel, SqlConnection, TModel> GetUpdateCommand()
 		{
 			return _update;
 		}
-
-		public override IDataModelNonQueryCommand<TModel, SqlConnection, TMatch> MakeDeleteMatchCommand<TMatch>(TMatch match)
+		
+		public override IDataModelCommandBuilder<TModel, SqlConnection, TCriteria> MakeQueryCommand<TCriteria>(TCriteria input)
 		{
-			throw new NotImplementedException();
-		}
-
-		public override IDataModelQueryManyCommand<TModel, SqlConnection, TMatch> MakeReadMatchCommand<TMatch>(TMatch match)
-		{
-			throw new NotImplementedException();
-		}
-
-		public override IDataModelNonQueryCommand<TModel, SqlConnection, TMatch, TUpdate> MakeUpdateMatchCommand<TMatch, TUpdate>(TMatch match, TUpdate update)
-		{
-			throw new NotImplementedException();
+			return new SqlDataModelCommandBuilder<TModel, TModelImpl, TCriteria>();
 		}
 	}
 }

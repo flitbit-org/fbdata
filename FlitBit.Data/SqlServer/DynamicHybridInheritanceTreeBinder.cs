@@ -193,31 +193,9 @@ namespace FlitBit.Data.SqlServer
 			throw new NotImplementedException();
 		}
 
-		/// <summary>
-		///   Makes a delete-match command.
-		/// </summary>
-		/// <typeparam name="TMatch">the match's type</typeparam>
-		/// <param name="match">an match specification</param>
-		/// <returns></returns>
-		public override IDataModelNonQueryCommand<TModel, SqlConnection, TMatch> MakeDeleteMatchCommand<TMatch>(TMatch match)
+		public override IDataModelCommandBuilder<TModel, SqlConnection, TInput> MakeQueryCommand<TInput>(TInput input)
 		{
-			throw new NotImplementedException();
-		}
-
-		/// <summary>
-		///   Makes a read-match command.
-		/// </summary>
-		/// <typeparam name="TMatch">the match's type</typeparam>
-		/// <param name="match">an match specification</param>
-		/// <returns></returns>
-		public override IDataModelQueryManyCommand<TModel, SqlConnection, TMatch> MakeReadMatchCommand<TMatch>(TMatch match)
-		{
-			throw new NotImplementedException();
-		}
-
-		public override IDataModelNonQueryCommand<TModel, SqlConnection, TMatch, TUpdate> MakeUpdateMatchCommand<TMatch, TUpdate>(TMatch match, TUpdate update)
-		{
-			throw new NotImplementedException();
+			return new SqlDataModelCommandBuilder<TModel, TModelImpl, TInput>();
 		}
 
 		public override void Initialize()

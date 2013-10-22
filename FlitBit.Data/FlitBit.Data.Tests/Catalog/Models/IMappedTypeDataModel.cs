@@ -3,23 +3,17 @@ using System.Collections.Generic;
 using System.Collections.ObjectModel;
 using System.Collections.Specialized;
 using System.ComponentModel;
-using System.ComponentModel.DataAnnotations;
 using System.Data;
 using System.Data.Common;
 using System.Data.SqlClient;
 using System.Data.SqlTypes;
-using System.Globalization;
 using System.Linq;
-using System.Text;
 using System.Threading;
-using FlitBit.Copy;
-using FlitBit.Core;
 using FlitBit.Core.Collections;
 using FlitBit.Data.Catalog;
 using FlitBit.Data.DataModel;
 using FlitBit.Data.Meta;
 using FlitBit.Data.SPI;
-using System.Diagnostics.Contracts;
 using FlitBit.Data.SqlServer;
 
 namespace FlitBit.Data.Tests.Catalog.Models
@@ -338,7 +332,7 @@ WHERE [ID] = @ID
 		{
 		}
 
-		protected override void BindCommand(SqlCommand cmd, int param)
+		protected override void BindCommand(SqlCommand cmd, int param, int[] offsets)
 		{
 			var parm = new SqlParameter("@ID", SqlDbType.Int) {Value = new SqlInt32(param)};
 			cmd.Parameters.Add(parm);
@@ -367,7 +361,7 @@ WHERE [RuntimeType] = @IMappedType_RuntimeType
 		{
 		}
 
-		protected override void BindCommand(SqlCommand cmd, Type param)
+		protected override void BindCommand(SqlCommand cmd, Type param, int[] offsets)
 		{
 			var parm = new SqlParameter("@IMappedType_RuntimeType", SqlDbType.NVarChar, 128);
 			parm.Value = (param == null) ? (object)DBNull.Value : new SqlString(param.FullName);

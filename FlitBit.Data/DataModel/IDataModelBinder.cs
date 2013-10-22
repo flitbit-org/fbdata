@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Linq.Expressions;
 using System.Text;
 using FlitBit.Data.Meta;
 
@@ -88,31 +89,12 @@ namespace FlitBit.Data.DataModel
 		IDataModelQuerySingleCommand<TModel, TDbConnection, TModel> GetUpdateCommand();
 
 		/// <summary>
-		///   Makes a delete-match command.
+		/// Creates a command builder for the specified criteria.
 		/// </summary>
-		/// <typeparam name="TMatch">the match's type</typeparam>
-		/// <param name="match">an match specification</param>
+		/// <param name="criteria"></param>
+		/// <typeparam name="TCriteria"></typeparam>
 		/// <returns></returns>
-		IDataModelNonQueryCommand<TModel, TDbConnection, TMatch> MakeDeleteMatchCommand<TMatch>(TMatch match)
-			where TMatch : class;
-
-		/// <summary>
-		///   Makes a read-match command.
-		/// </summary>
-		/// <typeparam name="TMatch">the match's type</typeparam>
-		/// <param name="match">an match specification</param>
-		/// <returns></returns>
-		IDataModelQueryManyCommand<TModel, TDbConnection, TMatch> MakeReadMatchCommand<TMatch>(TMatch match)
-			where TMatch : class;
-
-		///// <summary>
-		/////   Makes an update-match command.
-		///// </summary>
-		///// <typeparam name="TMatch">the match's type</typeparam>
-		///// <param name="match">an match specification</param>
-		///// <returns></returns>
-		IDataModelNonQueryCommand<TModel, TDbConnection, TMatch, TUpdate> MakeUpdateMatchCommand<TMatch, TUpdate>(TMatch match, TUpdate update)
-		  where TMatch : class
-			where TUpdate : class;
+		IDataModelCommandBuilder<TModel, TDbConnection, TCriteria> MakeQueryCommand<TCriteria>(
+			TCriteria criteria);
 	}
 }

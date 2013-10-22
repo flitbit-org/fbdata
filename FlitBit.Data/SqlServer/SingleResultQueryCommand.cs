@@ -41,7 +41,7 @@ namespace FlitBit.Data.SqlServer
 			TImpl res = default(TImpl);
 			using (var cmd = cn.CreateCommand(_commandText, CommandType.Text))
 			{
-				BindCommand((SqlCommand)cmd, parameters);
+				BindCommand((SqlCommand)cmd, parameters, this._offsets);
 				cmd.Prepare();
 				using (var reader = cmd.ExecuteReader())
 				{
@@ -61,6 +61,7 @@ namespace FlitBit.Data.SqlServer
 		/// </summary>
 		/// <param name="cmd"></param>
 		/// <param name="parameters"></param>
-		protected abstract void BindCommand(SqlCommand cmd, TParams parameters);
+		/// <param name="offsets"></param>
+		protected abstract void BindCommand(SqlCommand cmd, TParams parameters, int[] offsets);
 	}
 }
