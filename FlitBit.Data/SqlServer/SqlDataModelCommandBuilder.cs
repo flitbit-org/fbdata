@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Linq.Expressions;
@@ -31,13 +32,32 @@ namespace FlitBit.Data.SqlServer
 
 			var binary = expr as BinaryExpression;
 			if (binary == null) throw new NotSupportedException(String.Concat("Expression not supported: ", expr.NodeType));
-			var condition = handleBinaryExpression(binary, cns);
+			cns.Conditions = handleBinaryExpression(binary, cns);
 			foreach (var join in cns.Joins.Values.OrderBy(j => j.Ordinal))
 			{
-
+				var stack = new Stack<Tuple<Condition, bool>>();
+				ProcessConditionsFor(join, cns.Conditions, stack);
 			}
-			condition.LeftReduce(null);
 			return null;
+		}
+
+		private void ProcessConditionsFor(Join join, Condition condition, Stack<Tuple<Condition, bool>> path)
+		{
+			if (condition != null)
+			{
+				if (condition.IsLiftCandidateFor(join))
+				{
+					join.AddCondition(condition);
+				}
+				else
+				{
+					if (condition.Kind == ConditionKind.AndAlso)
+					{
+						ProcessConditionsFor(join, ((AndCondition)condition).Left, path);
+						ProcessConditionsFor(join, ((AndCondition)condition).Right, path);
+					}
+				}
+			}
 		}
 
 		private Condition handleBinaryExpression(BinaryExpression binary, Constraints cns)
@@ -45,6 +65,7 @@ namespace FlitBit.Data.SqlServer
 			if (binary.NodeType == ExpressionType.AndAlso)
 			{
 				return processAndAlso(binary, cns);
+
 			}
 			if (binary.NodeType == ExpressionType.OrElse)
 			{
@@ -59,43 +80,27 @@ namespace FlitBit.Data.SqlServer
 
 		private Condition processOrElse(BinaryExpression binary, Constraints cns)
 		{
-			var res = new Condition { Kind = ConditionKind.OrElse };
 			var left = binary.Left as BinaryExpression;
 			if (left == null)
 			{
 				throw new NotSupportedException(String.Concat("Expression not supported in binary expression: ", binary.Left.NodeType));
 			}
-			Condition lhs = handleBinaryExpression(left, cns);
-			if (lhs != null)
-			{
-				res.And(lhs);
-			}
-
+			
 			var right = binary.Right as BinaryExpression;
 			if (right == null)
 			{
 				throw new NotSupportedException(String.Concat("Expression not supported in binary expression: ", binary.Right.NodeType));
 			}
-			Condition rhs = handleBinaryExpression(right, cns);
-			if (rhs != null)
-			{
-				res.Or(rhs);
-			}
-			return res;
+
+			return handleBinaryExpression(left, cns).Or(handleBinaryExpression(right, cns));
 		}
 
 		private Condition processAndAlso(BinaryExpression binary, Constraints cns)
 		{
-			var res = new Condition { Kind = ConditionKind.AndAlso };
 			var left = binary.Left as BinaryExpression;
 			if (left == null)
 			{
 				throw new NotSupportedException(String.Concat("Expression not supported in binary expression: ", binary.Left.NodeType));
-			}
-			Condition lhs = handleBinaryExpression(left, cns);
-			if (lhs != null)
-			{
-				res.And(lhs);
 			}
 
 			var right = binary.Right as BinaryExpression;
@@ -103,12 +108,8 @@ namespace FlitBit.Data.SqlServer
 			{
 				throw new NotSupportedException(String.Concat("Expression not supported in binary expression: ", binary.Right.NodeType));
 			}
-			Condition rhs = handleBinaryExpression(right, cns);
-			if (rhs != null)
-			{
-				res.And(rhs);
-			}
-			return res;
+
+			return handleBinaryExpression(left, cns).And(handleBinaryExpression(right, cns));
 		}
 
 		ComparisonCondition processEquals(BinaryExpression binary, Constraints cns)
@@ -127,11 +128,8 @@ namespace FlitBit.Data.SqlServer
 					? String.Concat(lhs.Value, " IS NULL")
 					: String.Concat(lhs.Value, " = ", rhs.Value);
 			}
-			return new ComparisonCondition()
+			return new ComparisonCondition(ConditionKind.Equal, lhs, rhs) 
 			{
-				Kind = ConditionKind.Equal,
-				Left = lhs,
-				Right = rhs,
 				Text = res
 			};
 		}
@@ -157,7 +155,7 @@ namespace FlitBit.Data.SqlServer
 					else
 					{
 
-						var targetCol = Join.Mapping.Columns.Single(c => c.Member == ((MemberExpression) expr).Member);
+						var targetCol = j.Mapping.Columns.Single(c => c.Member == ((MemberExpression) expr).Member);
 
 						res = new ValueReference
 						{
@@ -285,11 +283,10 @@ namespace FlitBit.Data.SqlServer
 		{
 			readonly Dictionary<string, Join> _joins = new Dictionary<string, Join>();
 			readonly Dictionary<string, Parameter> _parms = new Dictionary<string, Parameter>();
-			readonly Condition _conditions = new Condition {Kind = ConditionKind.AndAlso};
 
 			public Dictionary<string, Join> Joins { get { return _joins; } }
 			public Dictionary<string, Parameter> Parameters { get { return _parms; } }
-			public Condition Conditions { get { return _conditions; } }
+			public Condition Conditions { get; set; }
 		}
 
 		class Parameter
@@ -305,6 +302,20 @@ namespace FlitBit.Data.SqlServer
 			public Type TargetType { get; set; }
 
 			public IMapping Mapping { get; set; }
+			public Condition Conditions { get; set; }
+
+			internal void AddCondition(Condition condition)
+			{
+				var existing = Conditions;
+				if (existing == null)
+				{
+					Conditions = condition;
+				}
+				else
+				{
+					Conditions = existing.And(condition);
+				}
+			}
 		}
 
 		[Flags]
@@ -320,71 +331,98 @@ namespace FlitBit.Data.SqlServer
 
 		class Condition
 		{
-			readonly Stack<Condition> _stack = new Stack<Condition>();
-			readonly List<Condition> _leftAndConditions = new List<Condition>();
-			readonly List<Condition> _orElseConditions = new List<Condition>();
-
-			public ConditionKind Kind { get; set; }
-
-			public void And(Condition cond)
+			public Condition(ConditionKind kind)
 			{
-				if (_stack.Count > 0)
-				{
-					_stack.Peek().And(cond);
-				}
-				else
-				{
-					_leftAndConditions.Add(cond);
-					var self = this;
-					cond.End = () => self;
-				}
+				Kind = kind;
 			}
 
-			public void Or(Condition cond)
+			public ConditionKind Kind { get; private set; }
+
+			public Condition Lift()
 			{
-				if (_stack.Count > 0)
-				{
-					_stack.Peek().Or(cond);
-				}
-				else
-				{
-					_orElseConditions.Add(cond);
-					_stack.Push(cond);
-					var self = this;
-					cond.End = () =>
-					{
-						_stack.Pop();
-						return self;
-					};
-				}
+				IsLifted = true;
+				return this;
 			}
 
-			public void LeftReduce(Func<Condition, bool> lift)
+			public bool IsLifted { get; private set; }
+
+			internal virtual bool IsLiftCandidateFor(Join j)
 			{
-				var len = _leftAndConditions.Count;
-				var i = -1;
-				while (++i < len)
-				{
-					if (_leftAndConditions[i].Kind.HasFlag(ConditionKind.Comparison))
-					{
-						var c = (ComparisonCondition)_leftAndConditions[i];
-						if (c.Left.Kind.HasFlag(ValueReferenceKind.Join))
-						{
-						}
-					}
-				}
+				// A condition is a lift candidate if its operands apply to the
+				// joined type, or a join type with a lessor join ordinal, or self.
+				return false;
 			}
-			
-			public Func<Condition> End { get; private set; }
+
+			public Condition And(Condition right)
+			{
+				return new AndCondition(this, right);
+			}
+
+			public Condition Or(Condition right)
+			{
+				return new OrCondition(this, right);
+			}
+		}
+
+		class AndCondition : Condition
+		{
+			public AndCondition(Condition left, Condition right) : base(ConditionKind.AndAlso)
+			{
+				Left = left;
+				Right = right;
+			}
+
+			public Condition Right { get; set; }
+
+			public Condition Left { get; set; }
+
+			internal override bool IsLiftCandidateFor(Join j)
+			{
+				return Left.IsLiftCandidateFor(j) && Right.IsLiftCandidateFor(j);
+			}
+		}
+
+		class OrCondition : Condition
+		{
+			public OrCondition(Condition left, Condition right)
+				: base(ConditionKind.OrElse)
+			{
+				Left = left;
+				Right = right;
+			}
+
+			public Condition Right { get; set; }
+
+			public Condition Left { get; set; }
+
+			internal override bool IsLiftCandidateFor(Join j)
+			{
+				return Left.IsLiftCandidateFor(j) && Right.IsLiftCandidateFor(j);
+			}
 		}
 
 		class ComparisonCondition : Condition
 		{
-			public ValueReference Left { get; set; }
+			public ComparisonCondition(ConditionKind kind, ValueReference left, ValueReference right) 
+				: base(kind)
+			{
+				Contract.Requires<ArgumentOutOfRangeException>(kind.HasFlag(ConditionKind.Comparison));
+				Left = left;
+				Right = right;
+			}
 
-			public ValueReference Right { get; set; }
+			public ValueReference Left { get; protected set; }
+
+			public ValueReference Right { get; protected set; }
 
 			public string Text { get; set; }
+
+			internal override bool IsLiftCandidateFor(Join j)
+			{
+				return !IsLifted
+				       && Left.IsLiftCandidateFor(j)
+				       && Right.IsLiftCandidateFor(j);
+			}
 		}
 
 		[Flags]
@@ -404,6 +442,11 @@ namespace FlitBit.Data.SqlServer
 			public ValueReferenceKind Kind { get; set; }
 			public string Value { get; set; }
 			public Join Join { get; set; }
+			internal bool IsLiftCandidateFor(Join j)
+			{
+				var join = this.Join;
+				return Join == null || Join.Ordinal <= j.Ordinal;
+			}
 		}
 	}
 }
