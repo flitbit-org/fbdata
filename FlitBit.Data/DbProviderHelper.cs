@@ -305,21 +305,37 @@ WHERE TABLE_CATALOG = '{0}'
 						: typeof(MappedEmumAsInt32Emitter<>).MakeGenericType(type);
 					return (MappedDbTypeEmitter) Activator.CreateInstance(emitterType, true);
 				}
-				emitter = GetMissingDbTypeEmitter(mapping, column, type);
+				emitter = GetMissingDbTypeEmitter(mapping, type);
+			}
+			return emitter;
+		}
+
+		internal MappedDbTypeEmitter GetDbTypeEmitter(IMapping mapping, Type type)
+		{
+			MappedDbTypeEmitter emitter;
+			if (!_emitters.TryGetValue(type, out emitter))
+			{
+				if (type.IsEnum)
+				{
+					type = Enum.GetUnderlyingType(type);
+					var emitterType = type == typeof(short)
+						? typeof(MappedEmumAsInt16Emitter<>).MakeGenericType(type)
+						: typeof(MappedEmumAsInt32Emitter<>).MakeGenericType(type);
+					return (MappedDbTypeEmitter)Activator.CreateInstance(emitterType, true);
+				}
+				emitter = GetMissingDbTypeEmitter(mapping, type);
 			}
 			return emitter;
 		}
 		
-		protected virtual MappedDbTypeEmitter GetMissingDbTypeEmitter(IMapping mapping, ColumnMapping column, Type type)
+		protected virtual MappedDbTypeEmitter GetMissingDbTypeEmitter(IMapping mapping, Type type)
 		{
 			throw new NotImplementedException(String.Concat("There is no mapping for `", type.GetReadableFullName(), "` registered for the underlying DbProvider."));
 		}
 
 		public virtual void EmitCreateSchema(StringBuilder batch, string schemaName)
 		{
-			throw new NotImplementedException();
-			
-			
+			throw new NotImplementedException();	
 		}
 	}
 }

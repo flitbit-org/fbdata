@@ -523,6 +523,34 @@ namespace FlitBit.Data
 			il.LoadValue(this.DbType);
 			il.CallVirtual<DbParameter>("set_DbType");
 		}
+
+		public virtual string PrepareConstantValueForSql(object value)
+		{
+			var res = TransformConstantValueToString(value);
+			if (this.IsQuoteRequired)
+			{
+
+				if (this.CanConstantContainQuote)
+				{
+					res = res.Replace(this.QuoteChars, this.DelimitedQuoteChars);
+				}
+				res = String.Concat(this.QuoteChars, res, this.QuoteChars);
+			}
+			return res;
+		}
+
+		protected virtual string TransformConstantValueToString(object value)
+		{
+			return Convert.ToString(value);
+		}
+
+		public bool IsQuoteRequired { get; protected set; }
+
+		public bool CanConstantContainQuote { get; protected set; }
+
+		public string QuoteChars { get; protected set; }
+
+		public string DelimitedQuoteChars { get; protected set; }
 	}
 
 	internal abstract class MappedDbTypeEmitter<T> : MappedDbTypeEmitter

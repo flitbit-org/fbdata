@@ -12,7 +12,11 @@ namespace FlitBit.Data.SqlServer
 	{
 		internal SqlMappedStringEmitter(SqlDbType dbType)
 			: base(dbType)
-		{ }
+		{
+			this.IsQuoteRequired = true;
+			this.QuoteChars = "'";
+			this.DelimitedQuoteChars = "''";
+		}
 
 	}
 }

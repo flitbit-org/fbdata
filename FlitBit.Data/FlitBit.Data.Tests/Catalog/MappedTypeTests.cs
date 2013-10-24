@@ -28,7 +28,6 @@ namespace FlitBit.Data.Tests.Catalog
 		public void OneTypeOneTableMappingTest()
 		{
 			var mapping = Mappings.Instance.ForType<IMappedType>();
-			mapping.ConnectionName = "test-data";
 
 			Assert.IsNotNull(mapping);
 			Assert.IsNotNull(mapping.Columns);
@@ -43,9 +42,12 @@ namespace FlitBit.Data.Tests.Catalog
 			var all = binder.GetAllCommand();
 			var create = binder.GetCreateCommand();
 			var update = binder.GetUpdateCommand();
-			var readByType = binder.MakeQueryCommand(new {RuntimeType = default(Type)}).Where((m, p) => 
-					m.RuntimeType == p.RuntimeType 
-					&& m.Catalog == "unittest");
+			var readByType = binder
+				.MakeQueryCommand(new {RuntimeType = default(Type)})
+				.Where((m, p) =>
+					m.MappedBaseType.RuntimeType == p.RuntimeType
+					&& m.Catalog == "unittest"
+				);
 
 			using (var cx = DbContext.NewContext())
 			{
@@ -88,6 +90,8 @@ namespace FlitBit.Data.Tests.Catalog
 						var created = create.ExecuteSingle(cx, cn, model);
 						Assert.IsNotNull(created);
 					}
+
+
 				}
 			}
 		}

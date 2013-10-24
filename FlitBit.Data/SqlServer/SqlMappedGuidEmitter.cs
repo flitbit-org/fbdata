@@ -15,7 +15,9 @@ namespace FlitBit.Data.SqlServer
 	{
 		internal SqlMappedGuidEmitter()
 			: base(DbType.Guid, SqlDbType.UniqueIdentifier)
-		{	
+		{
+			this.IsQuoteRequired = true;
+			this.QuoteChars = "'";
 		}
 		public override void LoadValueFromDbReader(MethodBuilder method, IValueRef reader, IValueRef columnIndex, DbTypeDetails details)
 		{
