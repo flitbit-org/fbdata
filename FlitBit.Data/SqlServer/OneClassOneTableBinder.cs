@@ -5,6 +5,7 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
 using FlitBit.Data.DataModel;
+using FlitBit.Data.Expressions;
 using FlitBit.Data.Meta;
 using FlitBit.Data.SPI;
 
@@ -19,8 +20,6 @@ namespace FlitBit.Data.SqlServer
 	public class OneClassOneTableBinder<TModel, TIdentityKey, TModelImpl> : DataModelBinder<TModel, TIdentityKey, SqlConnection>
 		where TModelImpl : class, TModel, IDataModel, new()
 	{
-		static readonly string SelectAllFormat = @"SELECT {1}
-FROM {0}";
 		static readonly string SelectPageFormat = @"DECLARE @first_id int
 DECLARE @totrows int
 
@@ -71,6 +70,7 @@ WHERE {2} = @identity";
 		bool _initialized;
 		readonly string[] _columns;
 		readonly int[] _offsets;
+		readonly string _selectSql;
 
 		readonly IDataModelQueryManyCommand<TModel, SqlConnection> _selectAll;
 		readonly IDataModelQuerySingleCommand<TModel, SqlConnection, TModel> _create;
@@ -86,6 +86,7 @@ WHERE {2} = @identity";
 		{
 			Contract.Requires<ArgumentNullException>(mapping != null);
 			Contract.Requires<ArgumentException>(mapping.Strategy == MappingStrategy.OneClassOneTable);
+
 			_columns = mapping.Columns.Select(c => mapping.QuoteObjectNameForSQL(c.TargetName)).ToArray();
 			_offsets = Enumerable.Range(0, _columns.Length).ToArray();
 
@@ -94,10 +95,31 @@ WHERE {2} = @identity";
 			{
 				var idCol = mapping.QuoteObjectNameForSQL(mapping.Identity.Columns[0].TargetName);
 				var columnList = String.Join(String.Concat(",", Environment.NewLine, "       "), _columns);
-				var selectAll = String.Format(SelectAllFormat, mapping.DbObjectReference, columnList);
+
+				var writer = new SqlWriter();
+				var i = 0;
+				var tableRef = mapping.QuoteObjectNameForSQL("self");
+				writer.Append("SELECT ");
+				foreach (var c in _columns)
+				{
+					if (i++ > 0)
+					{
+						writer.NewLine().Append(tableRef).Append('.').Append(c).Append(',');
+					}
+					else
+					{
+						writer.Append(tableRef).Append('.').Append(c).Append(',');
+						writer.Indent();
+					}
+				}
+				writer.Outdent().NewLine()
+					.Append("FROM ").Append(mapping.DbObjectReference)
+					.Append(" AS ").Append(tableRef);
+
+				_selectSql = writer.ToString();
 				var selectPage = String.Format(SelectPageFormat, mapping.DbObjectReference, columnList, idCol);
 
-				_selectAll = new SingleKeySelectManyCommand<TModel, TModelImpl>(selectAll, selectPage, _offsets);
+				_selectAll = new SingleKeySelectManyCommand<TModel, TModelImpl>(_selectSql, selectPage, _offsets);
 				var create = (mapping.Columns.Any(c => c.IsTimestampOnInsert || c.IsTimestampOnUpdate))
  					? String.Format(GeneratedTimestamp, CreateFormat, mapping.DbObjectReference, columnList, idCol).Replace("$(columns)", "{0}").Replace("$(values)", "{1}")
 					: String.Format(CreateFormat, mapping.DbObjectReference, columnList, idCol).Replace("$(columns)", "{0}").Replace("$(values)", "{1}");
@@ -217,7 +239,7 @@ WHERE {2} = @identity";
 		
 		public override IDataModelCommandBuilder<TModel, SqlConnection, TCriteria> MakeQueryCommand<TCriteria>(TCriteria input)
 		{
-			return new SqlDataModelCommandBuilder<TModel, TModelImpl, TCriteria>(this.Mapping);
+			return new SqlDataModelCommandBuilder<TModel, TModelImpl, TCriteria>(this.Mapping, this._selectSql);
 		}
 	}
 }

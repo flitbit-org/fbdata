@@ -14,9 +14,12 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
 using FlitBit.Data.DataModel;
+using FlitBit.Data.Expressions;
 using FlitBit.Data.Meta;
 using FlitBit.Emit;
 using FlitBit.Core;
+using System.Linq.Expressions;
+using Microsoft.Win32;
 
 namespace FlitBit.Data
 {
@@ -336,6 +339,48 @@ WHERE TABLE_CATALOG = '{0}'
 		public virtual void EmitCreateSchema(StringBuilder batch, string schemaName)
 		{
 			throw new NotImplementedException();	
+		}
+
+		public virtual string TranslateComparison(ExpressionType exprType, ValueReference left, ValueReference right)
+		{
+			
+			switch (exprType)
+			{
+				case ExpressionType.Equal:
+					if (left.Kind == ValueReferenceKind.Null)
+					{
+						if (right.Kind == ValueReferenceKind.Null)
+						{
+							return "1 = 1"; // dumb, but writer expects a condition and writing such an expression is likewise.
+						}
+						return String.Concat(right.Value, " IS NULL");
+					}
+					return right.Kind == ValueReferenceKind.Null 
+						? String.Concat(left.Value, " IS NULL") 
+						: String.Concat(left.Value, " = ", right.Value);
+				case ExpressionType.GreaterThan:
+					return String.Concat(left.Value, " > ", right.Value);
+				case ExpressionType.GreaterThanOrEqual:
+					return String.Concat(left.Value, " >= ", right.Value);
+				case ExpressionType.LessThan:
+					return String.Concat(left.Value, " < ", right.Value);
+				case ExpressionType.LessThanOrEqual:
+					return String.Concat(left.Value, " <= ", right.Value);
+				case ExpressionType.NotEqual:
+					if (left.Kind == ValueReferenceKind.Null)
+					{
+						if (right.Kind == ValueReferenceKind.Null)
+						{
+							return "0 = 1"; // dumb, but writer expects a condition and writing such an expression is likewise.
+						}
+						return String.Concat(right.Value, " IS NOT NULL");
+					}
+					return right.Kind == ValueReferenceKind.Null 
+						? String.Concat(left.Value, " IS NOT NULL") 
+						: String.Concat(left.Value, " <> ", right.Value);
+				}
+			throw new ArgumentOutOfRangeException("exprType");
+
 		}
 	}
 }
