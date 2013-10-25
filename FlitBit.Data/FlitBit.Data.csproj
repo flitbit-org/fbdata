@@ -169,6 +169,7 @@
     <Compile Include="Expressions\Constraints.cs" />
     <Compile Include="Expressions\Join.cs" />
     <Compile Include="Expressions\OrCondition.cs" />
+    <Compile Include="Expressions\Parameter.cs" />
     <Compile Include="Expressions\SqlWriter.cs" />
     <Compile Include="Expressions\ValueReference.cs" />
     <Compile Include="Expressions\ValueReferenceKind.cs" />
@@ -176,7 +177,6 @@
     <Compile Include="IHierarchyMappings.cs" />
     <Compile Include="SqlServer\MultiKeySelectManyCommand.cs" />
     <Compile Include="SqlServer\OneClassOneTableEmitter.cs" />
-    <Compile Include="SqlServer\Parameter.cs" />
     <Compile Include="SqlServer\SingleUpdateQueryCommand.cs" />
     <Compile Include="SqlServer\SingleResultQueryCommand.cs" />
     <Compile Include="SqlServer\SingleKeySelectManyCommand.cs" />
