@@ -8,11 +8,11 @@ using FlitBit.Data.SPI;
 namespace FlitBit.Data.SqlServer
 {
 	/// <summary>
-	/// Basic select many for a type that has a single primary key column.
+	/// Basic query for selecting and paging over models without criteria.
 	/// </summary>
 	/// <typeparam name="TModel">the data model type TModel</typeparam>
 	/// <typeparam name="TImpl">the implementation type TImpl</typeparam>
-	public class SingleKeySelectManyCommand<TModel, TImpl> : IDataModelQueryManyCommand<TModel, SqlConnection>
+	public class DataModelQueryManyCommand<TModel, TImpl> : IDataModelQueryManyCommand<TModel, SqlConnection>
 		where TImpl : TModel, IDataModel, new()
 	{
 		readonly string _selectAll;
@@ -22,7 +22,7 @@ namespace FlitBit.Data.SqlServer
 		/// <summary>
 		/// Creates a new instance.
 		/// </summary>
-		public SingleKeySelectManyCommand(string selectAll, string selectPage, int[] offsets)
+		public DataModelQueryManyCommand(string selectAll, string selectPage, int[] offsets)
 		{
 			if (selectAll == null)
 			{
@@ -41,6 +41,13 @@ namespace FlitBit.Data.SqlServer
 			_offsets = offsets;
 		}
 
+		/// <summary>
+		/// Executes the query on the specified connection according to the specified behavior (possibly paging).
+		/// </summary>
+		/// <param name="cx">the db context</param>
+		/// <param name="cn">a db connection used to execute the command</param>
+		/// <param name="behavior">behaviors, possibly paging</param>
+		/// <returns>a data model query result</returns>
 		public IDataModelQueryResult<TModel> ExecuteMany(IDbContext cx, SqlConnection cn, QueryBehavior behavior)
 		{
 			var paging = behavior.IsPaging;
@@ -48,7 +55,6 @@ namespace FlitBit.Data.SqlServer
 			var page = behavior.Page;
 			var res = new List<TModel>();
 			var pageCount = 0;
-			QueryBehavior outbehavior = null;
 			cn.EnsureConnectionIsOpen();
 			var query = (limited) ? _selectPage : _selectAll;
 

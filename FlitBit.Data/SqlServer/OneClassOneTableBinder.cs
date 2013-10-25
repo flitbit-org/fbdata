@@ -119,7 +119,7 @@ WHERE {2} = @identity";
 				_selectSql = writer.ToString();
 				var selectPage = String.Format(SelectPageFormat, mapping.DbObjectReference, columnList, idCol);
 
-				_selectAll = new SingleKeySelectManyCommand<TModel, TModelImpl>(_selectSql, selectPage, _offsets);
+				_selectAll = new DataModelQueryManyCommand<TModel, TModelImpl>(_selectSql, selectPage, _offsets);
 				var create = (mapping.Columns.Any(c => c.IsTimestampOnInsert || c.IsTimestampOnUpdate))
  					? String.Format(GeneratedTimestamp, CreateFormat, mapping.DbObjectReference, columnList, idCol).Replace("$(columns)", "{0}").Replace("$(values)", "{1}")
 					: String.Format(CreateFormat, mapping.DbObjectReference, columnList, idCol).Replace("$(columns)", "{0}").Replace("$(values)", "{1}");
@@ -143,7 +143,7 @@ WHERE {2} = @identity";
 
 		public override void BuildDdlBatch(StringBuilder batch, IList<Type> members)
 		{
-			var mapping = this.Mapping;
+			var mapping = Mapping;
 			if (!members.Contains(mapping.RuntimeType))
 			{
 				members.Add(mapping.RuntimeType);

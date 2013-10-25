@@ -13,7 +13,7 @@ namespace FlitBit.Data.SqlServer
 			: base(mapping, @select) {
 			}
 
-		protected override IDataModelQueryManyCommand<TDataModel, SqlConnection, TCriteria> ConstructCommandOnConstraints(Constraints constraints)
+		protected override IDataModelQueryCommand<TDataModel, SqlConnection, TCriteria> ConstructCommandOnConstraints(Constraints constraints)
 		{
 			throw new NotImplementedException();
 		}

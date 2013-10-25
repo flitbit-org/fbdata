@@ -310,7 +310,7 @@ WHERE [ID] = @IMappedType_ID
 		}
 	}
 
-	public class ReadMappedTypeByIdCommand : SingleResultQueryCommand<IMappedType, IMappedTypeDataModel, int>
+	public class ReadMappedTypeByIdCommand : SqlDataModelQuerySingleCommand<IMappedType, IMappedTypeDataModel, int>
 	{
 		public ReadMappedTypeByIdCommand()
 			: base(@"
@@ -339,7 +339,7 @@ WHERE [ID] = @ID
 		}
 	}
 
-	public class ReadMappedTypeByRuntimeTypeCommand  : SingleResultQueryCommand<IMappedType, IMappedTypeDataModel, Type>
+	public class ReadMappedTypeByRuntimeTypeCommand  : SqlDataModelQuerySingleCommand<IMappedType, IMappedTypeDataModel, Type>
 	{
 		public ReadMappedTypeByRuntimeTypeCommand()
 			: base(@"

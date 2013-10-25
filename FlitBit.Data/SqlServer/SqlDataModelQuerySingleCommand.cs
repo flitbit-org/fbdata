@@ -10,8 +10,8 @@ namespace FlitBit.Data.SqlServer
 	/// </summary>
 	/// <typeparam name="TDataModel"></typeparam>
 	/// <typeparam name="TImpl"></typeparam>
-	/// <typeparam name="TParams"></typeparam>
-	public abstract class SingleResultQueryCommand<TDataModel, TImpl, TParams> : IDataModelQuerySingleCommand<TDataModel, SqlConnection, TParams>
+	/// <typeparam name="TCriteria"></typeparam>
+	public abstract class SqlDataModelQuerySingleCommand<TDataModel, TImpl, TCriteria> : IDataModelQuerySingleCommand<TDataModel, SqlConnection, TCriteria>
 		where TImpl : TDataModel, IDataModel, new()
 	{
 		readonly string _commandText;
@@ -22,33 +22,32 @@ namespace FlitBit.Data.SqlServer
 		/// </summary>
 		/// <param name="commandText">Initial command text.</param>
 		/// <param name="offsets">column offsets within the results returned by the command</param>
-		protected SingleResultQueryCommand(string commandText, int[] offsets)
+		protected SqlDataModelQuerySingleCommand(string commandText, int[] offsets)
 		{
 			_commandText = commandText;
-			this._offsets = offsets;
+			_offsets = offsets;
 		} 
 		
 		/// <summary>
-		/// Executes the command with the specified parameters. 
+		/// Executes the command with the specified criteria. 
 		/// </summary>
 		/// <param name="cx">A db context.</param>
 		/// <param name="cn">A db connection.</param>
-		/// <param name="parameters">the parameters for the command.</param>
+		/// <param name="criteria">the criteria for the command.</param>
 		/// <returns>A single data model result.</returns>
 		/// <exception cref="DuplicateObjectException">thrown when the command results in more than one data model.</exception>
-		public TDataModel ExecuteSingle(IDbContext cx, SqlConnection cn, TParams parameters)
+		public TDataModel ExecuteSingle(IDbContext cx, SqlConnection cn, TCriteria criteria)
 		{
 			TImpl res = default(TImpl);
 			using (var cmd = cn.CreateCommand(_commandText, CommandType.Text))
 			{
-				BindCommand((SqlCommand)cmd, parameters, this._offsets);
-				cmd.Prepare();
+				BindCommand((SqlCommand)cmd, criteria, _offsets);
 				using (var reader = cmd.ExecuteReader())
 				{
 					if (reader.Read())
 					{
 						res = new TImpl();
-						res.LoadFromDataReader(reader, this._offsets);
+						res.LoadFromDataReader(reader, _offsets);
 					}
 					if (reader.Read()) throw new DuplicateObjectException();
 				}
@@ -57,11 +56,11 @@ namespace FlitBit.Data.SqlServer
 		}
 
 		/// <summary>
-		/// Implemented by specialized classes to bind the parameters to the command.
+		/// Implemented by specialized classes to bind the criteria to the command.
 		/// </summary>
 		/// <param name="cmd"></param>
-		/// <param name="parameters"></param>
+		/// <param name="criteria"></param>
 		/// <param name="offsets"></param>
-		protected abstract void BindCommand(SqlCommand cmd, TParams parameters, int[] offsets);
+		protected abstract void BindCommand(SqlCommand cmd, TCriteria criteria, int[] offsets);
 	}
 }

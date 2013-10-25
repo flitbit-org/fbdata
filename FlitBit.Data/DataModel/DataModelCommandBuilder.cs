@@ -24,7 +24,7 @@ namespace FlitBit.Data.DataModel
 			_select = select;
 		}
 
-		public IDataModelQueryManyCommand<TDataModel, TDbConnection, TCriteria> Where(
+		public IDataModelQueryCommand<TDataModel, TDbConnection, TCriteria> Where(
 			Expression<Func<TDataModel, TCriteria, bool>> expression)
 		{
 			return
@@ -34,7 +34,7 @@ namespace FlitBit.Data.DataModel
 																			 : expression));
 		}
 
-		protected abstract IDataModelQueryManyCommand<TDataModel, TDbConnection, TCriteria> ConstructCommandOnConstraints(
+		protected abstract IDataModelQueryCommand<TDataModel, TDbConnection, TCriteria> ConstructCommandOnConstraints(
 			Constraints constraints);
 
 		Constraints PrepareTranslateExpression(Expression expr)

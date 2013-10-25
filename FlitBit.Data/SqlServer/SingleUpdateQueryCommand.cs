@@ -26,7 +26,7 @@ namespace FlitBit.Data.SqlServer
 		protected SingleUpdateQueryCommand(string commandText, int[] offsets)
 		{
 			_commandText = commandText;
-			this._offsets = offsets;
+			_offsets = offsets;
 		} 
 		
 		/// <summary>

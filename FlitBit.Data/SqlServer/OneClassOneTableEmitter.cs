@@ -334,7 +334,7 @@ namespace FlitBit.Data.SqlServer
 				Contract.Requires<InvalidOperationException>(mapping.HasBinder);
 				Contract.Ensures(Contract.Result<Type>() != null);
 
-				var baseType = typeof(SingleResultQueryCommand<TDataModel, TImpl, TIdentityKey>);
+				var baseType = typeof(SqlDataModelQuerySingleCommand<TDataModel, TImpl, TIdentityKey>);
 				var builder = module.DefineClass(typeName, EmittedClass.DefaultTypeAttributes,
 					baseType, null);
 				builder.Attributes = TypeAttributes.Sealed | TypeAttributes.Public | TypeAttributes.BeforeFieldInit;

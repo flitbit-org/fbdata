@@ -159,6 +159,7 @@
     <Compile Include="DataModel\DataModelQueryResult.cs" />
     <Compile Include="DataModel\IDataModelCommandBuilder.cs" />
     <Compile Include="DataModel\IDataModelNonQueryCommand.cs" />
+    <Compile Include="DataModel\IDataModelQueryCommand.cs" />
     <Compile Include="DataModel\IDataModelQueryManyCommand.cs" />
     <Compile Include="DataModel\IDataModelQuerySingleCommand.cs" />
     <Compile Include="DbTypeDetails.cs" />
@@ -178,9 +179,10 @@
     <Compile Include="SqlServer\MultiKeySelectManyCommand.cs" />
     <Compile Include="SqlServer\OneClassOneTableEmitter.cs" />
     <Compile Include="SqlServer\SingleUpdateQueryCommand.cs" />
-    <Compile Include="SqlServer\SingleResultQueryCommand.cs" />
-    <Compile Include="SqlServer\SingleKeySelectManyCommand.cs" />
+    <Compile Include="SqlServer\SqlDataModelQuerySingleCommand.cs" />
+    <Compile Include="SqlServer\DataModelQueryManyCommand.cs" />
     <Compile Include="SqlServer\SqlDataModelCommandBuilder.cs" />
+    <Compile Include="SqlServer\SqlDataModelQueryCommand.cs" />
     <Compile Include="SqlServer\SqlDbTypeEmitter.cs" />
     <Compile Include="SqlServer\SqlMappedInt32Emitter.cs" />
     <Compile Include="SqlServer\SqlMappedInt64Emitter.cs" />
