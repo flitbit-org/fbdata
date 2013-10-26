@@ -153,7 +153,7 @@ namespace FlitBit.Data.Meta
 
 		public CollectionMapping<TModel> Collection(Expression<Func<TModel, object>> expression)
 		{
-			Contract.Requires(expression != null);
+			Contract.Requires<ArgumentNullException>(expression != null);
 
 			var member = expression.GetMemberFromExpression();
 			Contract.Assert(member != null, "Expression must reference a field or property member");

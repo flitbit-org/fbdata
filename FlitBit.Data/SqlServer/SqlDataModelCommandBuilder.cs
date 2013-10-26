@@ -9,9 +9,10 @@ namespace FlitBit.Data.SqlServer
 	public class SqlDataModelCommandBuilder<TDataModel, TImpl, TCriteria> :
 		DataModelCommandBuilder<TDataModel, SqlConnection, TCriteria>
 	{
-		public SqlDataModelCommandBuilder(Mapping<TDataModel> mapping, string @select)
-			: base(mapping, @select) {
-			}
+		public SqlDataModelCommandBuilder(DataModelSqlWriter<TDataModel> sqlWriter)
+			: base(sqlWriter)
+		{
+		}
 
 		protected override IDataModelQueryCommand<TDataModel, SqlConnection, TCriteria> ConstructCommandOnConstraints(Constraints constraints)
 		{

@@ -72,6 +72,7 @@ namespace FlitBit.Data.DataModel
 		int Revision { get; }
 
 		MappedDbTypeEmitter GetEmitterFor(ColumnMapping columnMapping);
+		DbProviderHelper GetDbProviderHelper();
 	}
 
 	public interface IMapping<out M> : IMapping

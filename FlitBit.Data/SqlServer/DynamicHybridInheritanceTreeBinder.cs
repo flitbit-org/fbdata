@@ -195,7 +195,7 @@ namespace FlitBit.Data.SqlServer
 
 		public override IDataModelCommandBuilder<TModel, SqlConnection, TInput> MakeQueryCommand<TInput>(TInput input)
 		{
-			return new SqlDataModelCommandBuilder<TModel, TModelImpl, TInput>(this.Mapping, null);
+			return new SqlDataModelCommandBuilder<TModel, TModelImpl, TInput>(new DataModelSqlWriter<TModel>());
 		}
 
 		public override void Initialize()

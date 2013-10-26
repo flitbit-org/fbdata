@@ -6,22 +6,19 @@ using System.Linq.Expressions;
 using FlitBit.Core;
 using FlitBit.Data.Expressions;
 using FlitBit.Data.Meta;
+using FlitBit.Data.SqlServer;
 
 namespace FlitBit.Data.DataModel
 {
 	public abstract class DataModelCommandBuilder<TDataModel, TDbConnection, TCriteria> :
 		IDataModelCommandBuilder<TDataModel, TDbConnection, TCriteria>
 	{
-		readonly Mapping<TDataModel> _mapping;
-		readonly string _select;
+		readonly DataModelSqlWriter<TDataModel> _sqlWriter;
 
-		public DataModelCommandBuilder(Mapping<TDataModel> mapping, string select)
+		public DataModelCommandBuilder(DataModelSqlWriter<TDataModel> sqlWriter)
 		{
-			Contract.Requires<ArgumentNullException>(mapping != null);
-			Contract.Requires<ArgumentNullException>(select != null);
-			Contract.Requires<ArgumentException>(select.Length > 0);
-			_mapping = mapping;
-			_select = select;
+			Contract.Requires<ArgumentNullException>(sqlWriter != null);
+			_sqlWriter = sqlWriter;
 		}
 
 		public IDataModelQueryCommand<TDataModel, TDbConnection, TCriteria> Where(
@@ -40,93 +37,13 @@ namespace FlitBit.Data.DataModel
 		Constraints PrepareTranslateExpression(Expression expr)
 		{
 			var cns = new Constraints();
-			cns.Writer.Append(_select);
+			cns.Writer.Append(_sqlWriter.Select);
 
 			var binary = expr as BinaryExpression;
 			if (binary == null) throw new NotSupportedException(String.Concat("Expression not supported: ", expr.NodeType));
 			cns.Conditions = HandleBinaryExpression(binary, cns);
-			// Perform necessary joins and write join clauses...
-			foreach (var join in cns.Joins.Values.OrderBy(j => j.Ordinal))
-			{
-				var stack = new Stack<Tuple<Condition, bool>>();
-				ProcessConditionsFor(join, cns.Conditions, stack);
-				MapJoinFrom(_mapping, join, cns);
-			}
-			// Write the primary statement's conditions...
-			PrepareWhereStatement(cns);
+			_sqlWriter.PrepareFromAndWhereStatement(cns, cns.Writer);
 			return cns;
-		}
-
-		private void PrepareWhereStatement(Constraints cns)
-		{
-			var helper = _mapping.GetDbProviderHelper();
-			var writer = cns.Writer; 
-			var c = cns.Conditions;
-			if (c != null && !c.IsLifted)
-			{
-				writer.NewLine().Indent().Append("WHERE ");
-				c.WriteConditions(helper, writer);
-				writer.Outdent();
-			}
-		}
-
-		void MapJoinFrom(IMapping mapping, Join join, Constraints cns)
-		{
-			var writer = cns.Writer;
-			var jj = join;
-			var joins = new Stack<Join>();
-			while (jj != null)
-			{
-				joins.Push(jj);
-				jj = jj.Path;
-			}
-			var helper = _mapping.GetDbProviderHelper();
-			IMapping fromMapping = mapping;
-			var fromRef = helper.QuoteObjectName("self");
-			foreach (var j in joins)
-			{
-				var toMapping = j.Mapping;
-				var fromCol = fromMapping.Columns.Single(c => c.Member == j.Member);
-				var toRef = helper.QuoteObjectName(Convert.ToString(j.Ordinal));
-				var toCol = toMapping.Columns.Single(c => c.Member == fromCol.ReferenceTargetMember);
-				if (!j.IsJoined)
-				{
-					writer.Indent()
-						.NewLine().Append("JOIN ").Append(toMapping.DbObjectReference).Append(" AS ").Append(toRef)
-						.Indent().NewLine().Append("ON ").Append(toRef).Append(helper.QuoteObjectName(toCol.TargetName)).Append(" = ")
-						.Append(fromRef).Append('.').Append(helper.QuoteObjectName(fromCol.TargetName));
-					var conditions = join.Conditions;
-					if (conditions != null)
-					{
-						writer.Indent().NewLine().Append("AND ");
-						conditions.WriteConditions(helper, writer);
-						writer.Outdent();
-					}
-					writer.Outdent().Outdent();
-					j.IsJoined = true;
-				}
-				fromMapping = toMapping;
-				fromRef = toRef;
-			}
-		}
-
-		void ProcessConditionsFor(Join join, Condition condition, Stack<Tuple<Condition, bool>> path)
-		{
-			if (condition != null)
-			{
-				if (condition.IsLiftCandidateFor(join))
-				{
-					join.AddCondition(condition);
-				}
-				else
-				{
-					if (condition.Kind == ConditionKind.AndAlso)
-					{
-						ProcessConditionsFor(join, ((AndCondition) condition).Left, path);
-						ProcessConditionsFor(join, ((AndCondition) condition).Right, path);
-					}
-				}
-			}
 		}
 
 		Condition HandleBinaryExpression(BinaryExpression binary, Constraints cns)
@@ -190,14 +107,15 @@ namespace FlitBit.Data.DataModel
 
 		ComparisonCondition ProcessComparison(BinaryExpression binary, Constraints cns)
 		{
-			var helper = _mapping.GetDbProviderHelper();
-			var lhs = FormatValueReference(binary.Left, cns, helper);
-			var rhs = FormatValueReference(binary.Right, cns, helper);
+			var lhs = FormatValueReference(binary.Left, cns);
+			var rhs = FormatValueReference(binary.Right, cns);
 			return new ComparisonCondition(binary.NodeType, lhs, rhs);
 		}
 
-		ValueReference FormatValueReference(Expression expr, Constraints cns, DbProviderHelper helper)
+		ValueReference FormatValueReference(Expression expr, Constraints cns)
 		{
+			var mapping = Mapping<TDataModel>.Instance;
+			var helper = mapping.GetDbProviderHelper();
 			ValueReference res;
 			if (expr.NodeType == ExpressionType.MemberAccess)
 			{
@@ -207,12 +125,12 @@ namespace FlitBit.Data.DataModel
 					var j = AddJoinPaths(expr, cns.Joins);
 					if (j == null)
 					{
-						var col = _mapping.Columns.Single(c => c.Member == m);
+						var col = mapping.Columns.Single(c => c.Member == m);
 						res = new ValueReference
 						{
 							Kind = ValueReferenceKind.Self,
-							Value = String.Concat(helper.QuoteObjectName("self"), '.',
-								helper.QuoteObjectName(col.TargetName))
+							Value = String.Concat(mapping.QuoteObjectNameForSQL("self"), '.',
+								mapping.QuoteObjectNameForSQL(col.TargetName))
 						};
 					}
 					else
@@ -224,8 +142,8 @@ namespace FlitBit.Data.DataModel
 							Join = j,
 							Member = m,
 							Value =
-								String.Concat(helper.QuoteObjectName(Convert.ToString(j.Ordinal)), ".",
-									helper.QuoteObjectName(foreignColumn.TargetName))
+								String.Concat(mapping.QuoteObjectNameForSQL(Convert.ToString(j.Ordinal)), ".",
+									mapping.QuoteObjectNameForSQL(foreignColumn.TargetName))
 						};
 					}
 				}
@@ -250,7 +168,7 @@ namespace FlitBit.Data.DataModel
 				}
 				else
 				{
-					var emitter = helper.GetDbTypeEmitter(_mapping, expr.Type);
+					var emitter = helper.GetDbTypeEmitter(mapping, expr.Type);
 					if (emitter == null)
 					{
 						throw new NotSupportedException(String.Concat("No emitter found for type: ", expr.Type));
@@ -308,7 +226,7 @@ namespace FlitBit.Data.DataModel
 				throw new NotSupportedException();
 			var key = "";
 			var outer = default(Join);
-			IMapping fromMapping = _mapping;
+			IMapping fromMapping = Mapping<TDataModel>.Instance;
 			foreach (var it in stack)
 			{
 				var m = it.Member;

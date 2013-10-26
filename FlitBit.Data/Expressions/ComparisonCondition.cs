@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq.Expressions;
+using FlitBit.Data.DataModel;
 
 namespace FlitBit.Data.Expressions
 {
@@ -28,10 +29,11 @@ namespace FlitBit.Data.Expressions
 						&& this.Right.IsLiftCandidateFor(j);
 		}
 
-		public override void WriteConditions(DbProviderHelper helper, SqlWriter builder)
+		public override void WriteConditions(IMapping mapping, SqlWriter builder)
 		{
 			if (String.IsNullOrEmpty(this.Text))
 			{
+				var helper = mapping.GetDbProviderHelper();
 				builder.Append(helper.TranslateComparison(this.ExprType, this.Left, this.Right));
 			}
 			else

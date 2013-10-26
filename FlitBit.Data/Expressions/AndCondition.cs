@@ -1,4 +1,6 @@
-﻿namespace FlitBit.Data.Expressions
+﻿using FlitBit.Data.DataModel;
+
+namespace FlitBit.Data.Expressions
 {
 	public class AndCondition : Condition
 	{
@@ -17,11 +19,11 @@
 			return this.Left.IsLiftCandidateFor(j) && this.Right.IsLiftCandidateFor(j);
 		}
 
-		public override void WriteConditions(DbProviderHelper helper, SqlWriter builder)
+		public override void WriteConditions(IMapping mapping, SqlWriter builder)
 		{
-			this.Left.WriteConditions(helper, builder);
+			this.Left.WriteConditions(mapping, builder);
 			builder.NewLine().Append("AND ");
-			this.Right.WriteConditions(helper, builder);
+			this.Right.WriteConditions(mapping, builder);
 		}
 	}
 }

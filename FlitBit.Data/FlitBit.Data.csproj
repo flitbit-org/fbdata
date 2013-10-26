@@ -178,6 +178,7 @@
     <Compile Include="IHierarchyMappings.cs" />
     <Compile Include="SqlServer\MultiKeySelectManyCommand.cs" />
     <Compile Include="SqlServer\OneClassOneTableEmitter.cs" />
+    <Compile Include="SqlServer\DataModelSqlWriter.cs" />
     <Compile Include="SqlServer\SingleUpdateQueryCommand.cs" />
     <Compile Include="SqlServer\SqlDataModelQuerySingleCommand.cs" />
     <Compile Include="SqlServer\DataModelQueryManyCommand.cs" />

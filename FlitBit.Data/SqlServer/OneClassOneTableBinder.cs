@@ -239,7 +239,7 @@ WHERE {2} = @identity";
 		
 		public override IDataModelCommandBuilder<TModel, SqlConnection, TCriteria> MakeQueryCommand<TCriteria>(TCriteria input)
 		{
-			return new SqlDataModelCommandBuilder<TModel, TModelImpl, TCriteria>(this.Mapping, this._selectSql);
+			return new SqlDataModelCommandBuilder<TModel, TModelImpl, TCriteria>(new DataModelSqlWriter<TModel>());
 		}
 	}
 }

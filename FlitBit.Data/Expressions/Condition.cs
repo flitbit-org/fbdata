@@ -1,4 +1,6 @@
-﻿namespace FlitBit.Data.Expressions
+﻿using FlitBit.Data.DataModel;
+
+namespace FlitBit.Data.Expressions
 {
 	public class Condition
 	{
@@ -34,7 +36,7 @@
 			return new OrCondition(this, right);
 		}
 
-		public virtual void WriteConditions(DbProviderHelper helper, SqlWriter builder)
+		public virtual void WriteConditions(IMapping mapping, SqlWriter builder)
 		{
 		}
 	}

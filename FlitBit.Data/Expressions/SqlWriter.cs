@@ -75,6 +75,12 @@ namespace FlitBit.Data.Expressions
 			return this;
 		}
 
+		public SqlWriter NewLine(string text)
+		{
+			NewLine();
+			return Append(text);
+		}
+
 		/// <summary>
 		/// Returns a string that represents the current object.
 		/// </summary>
