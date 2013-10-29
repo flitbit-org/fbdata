@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Linq.Expressions;
@@ -10,39 +11,54 @@ using FlitBit.Data.SqlServer;
 
 namespace FlitBit.Data.DataModel
 {
-	public abstract class DataModelCommandBuilder<TDataModel, TDbConnection, TCriteria> :
-		IDataModelCommandBuilder<TDataModel, TDbConnection, TCriteria>
+	/// <summary>
+	/// Builds SQL commands over a data model.
+	/// </summary>
+	/// <typeparam name="TDataModel">data model's type</typeparam>
+	/// <typeparam name="TDbConnection">db connection type</typeparam>
+	/// <typeparam name="TParam"></typeparam>
+	public abstract class DataModelCommandBuilder<TDataModel, TDbConnection, TParam> :
+		IDataModelCommandBuilder<TDataModel, TDbConnection, TParam>
 	{
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 		readonly DataModelSqlWriter<TDataModel> _sqlWriter;
 
-		public DataModelCommandBuilder(DataModelSqlWriter<TDataModel> sqlWriter)
+		/// <summary>
+		/// Creates a new instance.
+		/// </summary>
+		/// <param name="sqlWriter">a writer</param>
+		protected DataModelCommandBuilder(DataModelSqlWriter<TDataModel> sqlWriter)
 		{
 			Contract.Requires<ArgumentNullException>(sqlWriter != null);
 			_sqlWriter = sqlWriter;
 		}
 
-		public IDataModelQueryCommand<TDataModel, TDbConnection, TCriteria> Where(
-			Expression<Func<TDataModel, TCriteria, bool>> expression)
-		{
-			return
-				ConstructCommandOnConstraints(
-																		 PrepareTranslateExpression((expression.NodeType == ExpressionType.Lambda)
-																			 ? expression.Body
-																			 : expression));
-		}
+		public DataModelSqlWriter<TDataModel> Writer { get { return _sqlWriter; } }
 
-		protected abstract IDataModelQueryCommand<TDataModel, TDbConnection, TCriteria> ConstructCommandOnConstraints(
-			Constraints constraints);
-
-		Constraints PrepareTranslateExpression(Expression expr)
+		public IDataModelQueryCommand<TDataModel, TDbConnection, TParam> Where(
+			Expression<Func<TDataModel, TParam, bool>> expression)
 		{
 			var cns = new Constraints();
+			var lambda = (LambdaExpression) expression;
+			var i = 0;
+			cns.Arguments = lambda.Parameters.Select(p => new ParameterValueReference(p.Name, i++, p.Type));
+			
+			return ConstructCommandOnConstraints(
+																		 PrepareTranslateExpression(cns, lambda.Body)
+																		 );
+		}
+
+		protected abstract IDataModelQueryCommand<TDataModel, TDbConnection, TParam> ConstructCommandOnConstraints(
+			Constraints constraints);
+
+		Constraints PrepareTranslateExpression(Constraints cns, Expression expr)
+		{
 			cns.Writer.Append(_sqlWriter.Select);
 
 			var binary = expr as BinaryExpression;
 			if (binary == null) throw new NotSupportedException(String.Concat("Expression not supported: ", expr.NodeType));
 			cns.Conditions = HandleBinaryExpression(binary, cns);
-			_sqlWriter.PrepareFromAndWhereStatement(cns, cns.Writer);
+			_sqlWriter.PrepareFromAndWhereStatement(_sqlWriter.SelfRef, cns, cns.Writer);
 			return cns;
 		}
 
@@ -126,33 +142,27 @@ namespace FlitBit.Data.DataModel
 					if (j == null)
 					{
 						var col = mapping.Columns.Single(c => c.Member == m);
-						res = new ValueReference
-						{
-							Kind = ValueReferenceKind.Self,
-							Value = String.Concat(mapping.QuoteObjectNameForSQL("self"), '.',
-								mapping.QuoteObjectNameForSQL(col.TargetName))
+						res = new ValueReference(ValueReferenceKind.Self) {
+							Value = String.Concat(mapping.QuoteObjectName("self"), '.',
+								mapping.QuoteObjectName(col.TargetName))
 						};
 					}
 					else
 					{
 						var foreignColumn = j.Mapping.Columns.Single(c => c.Member == m);
-						res = new ValueReference
-						{
-							Kind = ValueReferenceKind.Join,
+						res = new MemberValueReference(ValueReferenceKind.Join, m) {
 							Join = j,
-							Member = m,
 							Value =
-								String.Concat(mapping.QuoteObjectNameForSQL(Convert.ToString(j.Ordinal)), ".",
-									mapping.QuoteObjectNameForSQL(foreignColumn.TargetName))
+								String.Concat(mapping.QuoteObjectName(Convert.ToString(j.Ordinal)), ".",
+									mapping.QuoteObjectName(foreignColumn.TargetName))
 						};
 					}
 				}
 				else
 				{
-					res = new ValueReference
+					res = new ValueReference(ValueReferenceKind.Param)
 					{
-						Kind = ValueReferenceKind.Param,
-						Value = helper.FormatParameterName(AddParameter((MemberExpression) expr, cns.Parameters))
+						Value = helper.FormatParameterName(AddParameter(expr, cns))
 					};
 				}
 			}
@@ -161,10 +171,7 @@ namespace FlitBit.Data.DataModel
 				var c = (ConstantExpression) expr;
 				if (c.Type.IsClass && c.Value == null)
 				{
-					res = new ValueReference
-					{
-						Kind = ValueReferenceKind.Null
-					};
+					res = new ValueReference(ValueReferenceKind.Null);
 				}
 				else
 				{
@@ -173,12 +180,18 @@ namespace FlitBit.Data.DataModel
 					{
 						throw new NotSupportedException(String.Concat("No emitter found for type: ", expr.Type));
 					}
-					res = new ValueReference
+					res = new ValueReference(ValueReferenceKind.Constant) 
 					{
-						Kind = ValueReferenceKind.Constant,
 						Value = emitter.PrepareConstantValueForSql(c.Value)
 					};
 				}
+			}
+			else if (expr.NodeType == ExpressionType.Parameter)
+			{
+				res = new ValueReference(ValueReferenceKind.Param)
+				{
+					Value = helper.FormatParameterName(AddParameter(expr, cns))
+				};
 			}
 			else
 			{
@@ -187,18 +200,22 @@ namespace FlitBit.Data.DataModel
 			return res;
 		}
 
-		string AddParameter(MemberExpression expr, Dictionary<string, Parameter> parms)
+		string AddParameter(Expression expr, Constraints cns)
 		{
 			var stack = new Stack<MemberExpression>();
+			var parms = cns.Parameters;
 			Expression it = expr;
 			while (it.NodeType == ExpressionType.MemberAccess)
 			{
 				stack.Push((MemberExpression) it);
 				it = ((MemberExpression) it).Expression;
 			}
-			if (it.NodeType != ExpressionType.Parameter)
+			var parmExpr = it as ParameterExpression;
+			if (parmExpr == null)
 				throw new NotSupportedException(String.Concat("Expression not supported as a parameter source: ", it.NodeType));
-			var name = stack.Aggregate(((ParameterExpression) it).Name,
+
+			var arg = cns.Arguments.Single(a => a.Name == parmExpr.Name);
+			var name = stack.Aggregate(parmExpr.Name,
 				(current, m) => String.Concat(current, '_', m.Member.Name));
 			Parameter p;
 			if (!parms.TryGetValue(name, out p))
@@ -206,7 +223,8 @@ namespace FlitBit.Data.DataModel
 				parms.Add(name, new Parameter()
 				{
 					Name = name,
-					Member = expr
+					Argument = arg,
+					Members = stack.Select(m => m.Member).ToArray()
 				});
 			}
 			return name;

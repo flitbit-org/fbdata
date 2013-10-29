@@ -162,6 +162,7 @@
     <Compile Include="DataModel\IDataModelQueryCommand.cs" />
     <Compile Include="DataModel\IDataModelQueryManyCommand.cs" />
     <Compile Include="DataModel\IDataModelQuerySingleCommand.cs" />
+    <Compile Include="DataModel\TParam.cs" />
     <Compile Include="DbTypeDetails.cs" />
     <Compile Include="Expressions\AndCondition.cs" />
     <Compile Include="Expressions\ComparisonCondition.cs" />
@@ -170,12 +171,16 @@
     <Compile Include="Expressions\Constraints.cs" />
     <Compile Include="Expressions\Join.cs" />
     <Compile Include="Expressions\OrCondition.cs" />
+    <Compile Include="Expressions\OrderBy.cs" />
     <Compile Include="Expressions\Parameter.cs" />
     <Compile Include="Expressions\SqlWriter.cs" />
     <Compile Include="Expressions\ValueReference.cs" />
     <Compile Include="Expressions\ValueReferenceKind.cs" />
     <Compile Include="IHierarchyMapping.cs" />
     <Compile Include="IHierarchyMappings.cs" />
+    <Compile Include="Meta\MappedSortColumn.cs" />
+    <Compile Include="Meta\SortOrderKind.cs" />
+    <Compile Include="SqlServer\DynamicSql.cs" />
     <Compile Include="SqlServer\MultiKeySelectManyCommand.cs" />
     <Compile Include="SqlServer\OneClassOneTableEmitter.cs" />
     <Compile Include="SqlServer\DataModelSqlWriter.cs" />

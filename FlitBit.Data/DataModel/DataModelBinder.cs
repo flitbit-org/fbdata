@@ -32,7 +32,8 @@ namespace FlitBit.Data.DataModel
 		protected virtual void AddGeneratorMethodsForLcgColumns(Mapping<TModel> mapping, StringBuilder sql)
 		{
 			var lcgColumns = mapping.Identity.Columns
-				.Where(c => c.Behaviors.HasFlag(ColumnBehaviors.LinearCongruentGenerated));
+				.Where(c => c.Column.Behaviors.HasFlag(ColumnBehaviors.LinearCongruentGenerated))
+				.Select(c => c.Column);
 
 			foreach (var col in lcgColumns)
 			{
@@ -92,7 +93,7 @@ namespace FlitBit.Data.DataModel
 					{
 						sql.Append(", ");
 					}
-					sql.Append(mapping.QuoteObjectNameForSQL(col.TargetName))
+					sql.Append(mapping.QuoteObjectName(col.TargetName))
 						.Append(" ")
 						.Append(def.Order.ToString()
 							.ToUpper());
@@ -116,7 +117,7 @@ namespace FlitBit.Data.DataModel
 						{
 							sql.Append(", ");
 						}
-						sql.Append(mapping.QuoteObjectNameForSQL(col.TargetName));
+						sql.Append(mapping.QuoteObjectName(col.TargetName));
 					}
 					sql.Append(")");
 				}
@@ -185,7 +186,7 @@ namespace FlitBit.Data.DataModel
 						{
 							sql.Append(", ");
 						}
-						sql.Append(mapping.QuoteObjectNameForSQL(col.TargetName))
+						sql.Append(mapping.QuoteObjectName(col.TargetName))
 							.Append(" ")
 							.Append(def.Order.ToString()
 								.ToUpper());
@@ -252,5 +253,56 @@ namespace FlitBit.Data.DataModel
 		/// Initializes the binder.
 		/// </summary>
 		public abstract void Initialize();
+
+
+		public virtual IDataModelCommandBuilder<TModel, TDbConnection, TParam> MakeQueryCommand<TParam>()
+		{
+			throw new NotImplementedException();
+		}
+
+		public virtual IDataModelCommandBuilder<TModel, TDbConnection, TParam, TParam1> MakeQueryCommand<TParam, TParam1>()
+		{
+			throw new NotImplementedException();
+		}
+
+		public virtual IDataModelCommandBuilder<TModel, TDbConnection, TParam, TParam1> MakeQueryCommand<TParam, TParam1, TParam2>()
+		{
+			throw new NotImplementedException();
+		}
+
+		public virtual IDataModelCommandBuilder<TModel, TDbConnection, TParam, TParam1, TParam2, TParam3> MakeQueryCommand<TParam, TParam1, TParam2, TParam3>()
+		{
+			throw new NotImplementedException();
+		}
+
+		public virtual IDataModelCommandBuilder<TModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4> MakeQueryCommand<TParam, TParam1, TParam2, TParam3, TParam4>()
+		{
+			throw new NotImplementedException();
+		}
+
+		public virtual IDataModelCommandBuilder<TModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5> MakeQueryCommand<TParam, TParam1, TParam2, TParam3, TParam4, TParam5>()
+		{
+			throw new NotImplementedException();
+		}
+
+		public virtual IDataModelCommandBuilder<TModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6> MakeQueryCommand<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6>()
+		{
+			throw new NotImplementedException();
+		}
+
+		public virtual IDataModelCommandBuilder<TModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7> MakeQueryCommand<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7>()
+		{
+			throw new NotImplementedException();
+		}
+
+		public virtual IDataModelCommandBuilder<TModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8> MakeQueryCommand<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8>()
+		{
+			throw new NotImplementedException();
+		}
+
+		public virtual IDataModelCommandBuilder<TModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9> MakeQueryCommand<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>()
+		{
+			throw new NotImplementedException();
+		}
 	}
 }

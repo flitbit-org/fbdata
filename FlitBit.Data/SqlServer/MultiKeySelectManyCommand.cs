@@ -31,43 +31,12 @@ namespace FlitBit.Data.SqlServer
 				{
 					columnList.Append(",").Append(Environment.NewLine).Append("       ");
 				}
-				columnList.Append(mapping.QuoteObjectNameForSQL(columns[i].TargetName)).Append(" AS ").Append(columns[i].Emitter.GetDbTypeDetails(columns[i]).BindingName);
+				columnList.Append(mapping.QuoteObjectName(columns[i].TargetName)).Append(" AS ").Append(columns[i].Emitter.GetDbTypeDetails(columns[i]).BindingName);
 			}
 			var builder = new StringBuilder(400);
 			builder.Append("SELECT ").Append(columnList);
 			builder.Append(Environment.NewLine).Append("FROM ").Append(mapping.DbObjectReference);
 			this._selectAll = builder.ToString();
-
-
-			var orderBy = new StringBuilder("ORDER BY ", 200);
-			var inverseOrderBy = new StringBuilder("ORDER BY ", 200);
-			i = 0;
-			foreach (var id in idCols)
-			{
-				if (i++ > 0)
-				{
-					orderBy.Append(", ");
-					inverseOrderBy.Append(", ");
-				}
-				orderBy.Append(mapping.QuoteObjectNameForSQL(id.TargetName));
-				inverseOrderBy.Append(mapping.QuoteObjectNameForSQL(id.TargetName)).Append(" DESC");
-			}
-			builder.Clear();
-			builder.Append(@"DECLARE @endRow INT = @startRow + (@limit - 1)
-;WITH Cols
-AS
-(
-SELECT ").Append(columnList)
-				.Append(',').Append(Environment.NewLine).Append("ROW_NUMBER() OVER(").Append(orderBy).Append(") as Seq")
-				.Append(',').Append(Environment.NewLine).Append("ROW_NUMBER() OVER(").Append(inverseOrderBy).Append(") as Inv")
-				.Append(Environment.NewLine).Append("FROM ").Append(mapping.DbObjectReference)
-				.Append(Environment.NewLine).Append(@"
-)
-SELECT TOP (@limit) ").Append(columnList)
-				.Append(@"       Inv + Seq - 1 AS TotalRows
-FROM Cols
-WHERE Seq >= @startRow
-ORDER BY Seq");
 
 			this._selectPage = builder.ToString();
 		}

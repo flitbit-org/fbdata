@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Data;
 using System.Data.SqlClient;
 using FlitBit.Core.Collections;
 using FlitBit.Data.DataModel;
@@ -15,17 +14,17 @@ namespace FlitBit.Data.SqlServer
 	public abstract class SingleUpdateQueryCommand<TDataModel, TImpl> : IDataModelQuerySingleCommand<TDataModel, SqlConnection, TDataModel>
 		where TImpl : class, TDataModel, IDataModel, new()
 	{
-		readonly string _commandText;
+		readonly DynamicSql _sql;
 		readonly int[] _offsets;
 
 		/// <summary>
 		/// Creates a new instance.
 		/// </summary>
-		/// <param name="commandText"></param>
+		/// <param name="sql"></param>
 		/// <param name="offsets"></param>
-		protected SingleUpdateQueryCommand(string commandText, int[] offsets)
+		protected SingleUpdateQueryCommand(DynamicSql sql, int[] offsets)
 		{
-			_commandText = commandText;
+			_sql = sql;
 			_offsets = offsets;
 		} 
 		
@@ -50,11 +49,10 @@ namespace FlitBit.Data.SqlServer
 			{
 				return model;
 			} 
-			TImpl res = default(TImpl);
-			using (var cmd = cn.CreateCommand(_commandText, CommandType.Text))
+			var res = default(TImpl);
+			using (var cmd = cn.CreateCommand())
 			{
-				BindCommand((SqlCommand)cmd, impl, dirty, _offsets);
-				cmd.Prepare();
+				BindCommand(cmd, _sql, impl, dirty, _offsets);
 				using (var reader = cmd.ExecuteReader())
 				{
 					if (reader.Read())
@@ -72,9 +70,10 @@ namespace FlitBit.Data.SqlServer
 		/// Implemented by specialized classes to bind the command.
 		/// </summary>
 		/// <param name="cmd"></param>
+		/// <param name="sql"></param>
 		/// <param name="model"></param>
 		/// <param name="dirty"></param>
 		/// <param name="offsets"></param>
-		protected abstract void BindCommand(SqlCommand cmd, TImpl model, BitVector dirty, int[] offsets);
+		protected abstract void BindCommand(SqlCommand cmd, DynamicSql sql, TImpl model, BitVector dirty, int[] offsets);
 	}
 }

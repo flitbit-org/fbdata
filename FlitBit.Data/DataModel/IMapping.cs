@@ -61,20 +61,21 @@ namespace FlitBit.Data.DataModel
 		/// </summary>
 		string TargetSchema { get; }
 
-		IMapping Completed(Action action);
-		IDataModelBinder GetBinder();
-
-		void NotifySubtype(IMapping mapping);
-		string QuoteObjectNameForSQL(string name);
-
 		Type IdentityKeyType { get; }
 
 		int Revision { get; }
 
-		MappedDbTypeEmitter GetEmitterFor(ColumnMapping columnMapping);
+		IMapping Completed(Action action);
+		IDataModelBinder GetBinder();
+
+		void NotifySubtype(IMapping mapping);
+		string QuoteObjectName(string name);
+
+		MappedDbTypeEmitter GetEmitterFor(ColumnMapping column);
 		DbProviderHelper GetDbProviderHelper();
 	}
 
 	public interface IMapping<out M> : IMapping
-	{}
+	{
+	}
 }

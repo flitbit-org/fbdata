@@ -18,54 +18,57 @@ namespace FlitBit.Data.SqlServer
 			switch (dbType)
 			{
 				case SqlDbType.VarChar:
-					this.DbType = DbType.AnsiString;
-					this.LengthRequirements = DbTypeLengthRequirements.Length;
+					DbType = DbType.AnsiString;
+					LengthRequirements = DbTypeLengthRequirements.Length;
 					break;
 				case SqlDbType.NVarChar:
-					this.DbType = DbType.String;
-					this.LengthRequirements = DbTypeLengthRequirements.Length;
+					DbType = DbType.String;
+					LengthRequirements = DbTypeLengthRequirements.Length;
 					break;
 				case SqlDbType.Char:
-					this.DbType = DbType.AnsiStringFixedLength;
-					this.LengthRequirements = DbTypeLengthRequirements.Length;
+					DbType = DbType.AnsiStringFixedLength;
+					LengthRequirements = DbTypeLengthRequirements.Length;
 					break;
 				case SqlDbType.NChar:
-					this.DbType = DbType.StringFixedLength;
-					this.LengthRequirements = DbTypeLengthRequirements.Length;
+					DbType = DbType.StringFixedLength;
+					LengthRequirements = DbTypeLengthRequirements.Length;
 					break;
 				default:
 					throw new ArgumentOutOfRangeException("dbType");
 			}
-			this.TreatMissingLengthAsMaximum = true;
-			this.LengthMaximum = "MAX";
+			TreatMissingLengthAsMaximum = true;
+			LengthMaximum = "MAX";
 		}
 
 		/// <summary>
-		/// Emits MSIL that loads a value from a DbDataReader, translates it to the RuntimeType, and leaves the value on the stack.
+		///   Emits MSIL that loads a value from a DbDataReader, translates it to the RuntimeType, and leaves the value on the
+		///   stack.
 		/// </summary>
 		/// <param name="method">the method under construction.</param>
 		/// <param name="reader">a reference to the reader.</param>
 		/// <param name="columnIndex">a reference to the column's index within the reader.</param>
 		/// <param name="details"></param>
-		public override void LoadValueFromDbReader(MethodBuilder method, IValueRef reader, IValueRef columnIndex, DbTypeDetails details)
+		public override void LoadValueFromDbReader(MethodBuilder method, IValueRef reader, IValueRef columnIndex,
+			DbTypeDetails details)
 		{
-			var il = method.GetILGenerator();
+			ILGenerator il = method.GetILGenerator();
 			reader.LoadValue(il);
 			columnIndex.LoadValue(il);
-			il.CallVirtual<DbDataReader>("GetString", typeof(int));
+			il.CallVirtual<DbDataReader>("GetString", typeof (int));
 			EmitTranslateDbType(il);
 		}
 
-		internal protected virtual void EmitTranslateRuntimeType(ILGenerator il)
+		protected internal virtual void EmitTranslateRuntimeType(ILGenerator il)
 		{
-			il.NewObj(typeof(SqlString).GetConstructor(new Type[] {typeof(string)}));
-			il.Box(typeof(SqlString));
+			il.NewObj(typeof (SqlString).GetConstructor(new[] {typeof (string)}));
+			il.Box(typeof (SqlString));
 		}
 
-		internal protected override void EmitDbParameterSetValue(ILGenerator il, ColumnMapping column, LocalBuilder parm, LocalBuilder local, LocalBuilder flag)
+		protected internal override void EmitDbParameterSetValue(ILGenerator il, ColumnMapping column, LocalBuilder parm,
+			LocalBuilder local, LocalBuilder flag)
 		{
-			var fin = il.DefineLabel();
-			var ifelse = il.DefineLabel();
+			Label fin = il.DefineLabel();
+			Label ifelse = il.DefineLabel();
 			il.LoadLocal(local);
 			il.LoadNull();
 			il.CompareEqual();
@@ -75,7 +78,7 @@ namespace FlitBit.Data.SqlServer
 			il.LoadLocal(flag);
 			il.BranchIfTrue(ifelse);
 			il.LoadLocal(parm);
-			il.LoadField(typeof(DBNull).GetField("Value", BindingFlags.Static | BindingFlags.Public));
+			il.LoadField(typeof (DBNull).GetField("Value", BindingFlags.Static | BindingFlags.Public));
 			il.CallVirtual<SqlParameter>("set_SqlValue");
 			il.Branch(fin);
 			il.MarkLabel(ifelse);

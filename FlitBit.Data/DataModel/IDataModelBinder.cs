@@ -96,5 +96,114 @@ namespace FlitBit.Data.DataModel
 		/// <returns></returns>
 		IDataModelCommandBuilder<TModel, TDbConnection, TCriteria> MakeQueryCommand<TCriteria>(
 			TCriteria criteria);
+		
+		/// <summary>
+		/// Makes a query command that binds to the specified parameter types.
+		/// </summary>
+		/// <typeparam name="TParam"></typeparam>
+		/// <returns></returns>
+		IDataModelCommandBuilder<TModel, TDbConnection, TParam> MakeQueryCommand<TParam>();
+
+		/// <summary>
+		/// Makes a query command that binds to the specified parameter types.
+		/// </summary>
+		/// <typeparam name="TParam"></typeparam>
+		/// <typeparam name="TParam1"></typeparam>
+		/// <returns></returns>
+		IDataModelCommandBuilder<TModel, TDbConnection, TParam, TParam1> MakeQueryCommand<TParam, TParam1>();
+		/// <summary>
+		/// Makes a query command that binds to the specified parameter types.
+		/// </summary>
+		/// <typeparam name="TParam"></typeparam>
+		/// <typeparam name="TParam1"></typeparam>
+		/// <typeparam name="TParam2"></typeparam>
+		/// <returns></returns>
+		IDataModelCommandBuilder<TModel, TDbConnection, TParam, TParam1> MakeQueryCommand<TParam, TParam1, TParam2>();
+		/// <summary>
+		/// Makes a query command that binds to the specified parameter types.
+		/// </summary>
+		/// <typeparam name="TParam"></typeparam>
+		/// <typeparam name="TParam1"></typeparam>
+		/// <typeparam name="TParam2"></typeparam>
+		/// <typeparam name="TParam3"></typeparam>
+		/// <returns></returns>
+		IDataModelCommandBuilder<TModel, TDbConnection, TParam, TParam1, TParam2, TParam3> MakeQueryCommand<TParam, TParam1, TParam2, TParam3>();
+		/// <summary>
+		/// Makes a query command that binds to the specified parameter types.
+		/// </summary>
+		/// <typeparam name="TParam"></typeparam>
+		/// <typeparam name="TParam1"></typeparam>
+		/// <typeparam name="TParam2"></typeparam>
+		/// <typeparam name="TParam3"></typeparam>
+		/// <typeparam name="TParam4"></typeparam>
+		/// <returns></returns>
+		IDataModelCommandBuilder<TModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4> MakeQueryCommand<TParam, TParam1, TParam2, TParam3, TParam4>();
+		/// <summary>
+		/// Makes a query command that binds to the specified parameter types.
+		/// </summary>
+		/// <typeparam name="TParam"></typeparam>
+		/// <typeparam name="TParam1"></typeparam>
+		/// <typeparam name="TParam2"></typeparam>
+		/// <typeparam name="TParam3"></typeparam>
+		/// <typeparam name="TParam4"></typeparam>
+		/// <typeparam name="TParam5"></typeparam>
+		/// <returns></returns>
+		IDataModelCommandBuilder<TModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5> MakeQueryCommand<TParam, TParam1, TParam2, TParam3, TParam4, TParam5>();
+		/// <summary>
+		/// Makes a query command that binds to the specified parameter types.
+		/// </summary>
+		/// <typeparam name="TParam"></typeparam>
+		/// <typeparam name="TParam1"></typeparam>
+		/// <typeparam name="TParam2"></typeparam>
+		/// <typeparam name="TParam3"></typeparam>
+		/// <typeparam name="TParam4"></typeparam>
+		/// <typeparam name="TParam5"></typeparam>
+		/// <typeparam name="TParam6"></typeparam>
+		/// <returns></returns>
+		IDataModelCommandBuilder<TModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6> MakeQueryCommand<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6>();
+		/// <summary>
+		/// Makes a query command that binds to the specified parameter types.
+		/// </summary>
+		/// <typeparam name="TParam"></typeparam>
+		/// <typeparam name="TParam1"></typeparam>
+		/// <typeparam name="TParam2"></typeparam>
+		/// <typeparam name="TParam3"></typeparam>
+		/// <typeparam name="TParam4"></typeparam>
+		/// <typeparam name="TParam5"></typeparam>
+		/// <typeparam name="TParam6"></typeparam>
+		/// <typeparam name="TParam7"></typeparam>
+		/// <returns></returns>
+		IDataModelCommandBuilder<TModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7> MakeQueryCommand<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7>();
+		/// <summary>
+		/// Makes a query command that binds to the specified parameter types.
+		/// </summary>
+		/// <typeparam name="TParam"></typeparam>
+		/// <typeparam name="TParam1"></typeparam>
+		/// <typeparam name="TParam2"></typeparam>
+		/// <typeparam name="TParam3"></typeparam>
+		/// <typeparam name="TParam4"></typeparam>
+		/// <typeparam name="TParam5"></typeparam>
+		/// <typeparam name="TParam6"></typeparam>
+		/// <typeparam name="TParam7"></typeparam>
+		/// <typeparam name="TParam8"></typeparam>
+		/// <returns></returns>
+		IDataModelCommandBuilder<TModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8> MakeQueryCommand<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8>();
+
+		/// <summary>
+		/// Makes a query command that binds to the specified parameter types.
+		/// </summary>
+		/// <typeparam name="TParam"></typeparam>
+		/// <typeparam name="TParam1"></typeparam>
+		/// <typeparam name="TParam2"></typeparam>
+		/// <typeparam name="TParam3"></typeparam>
+		/// <typeparam name="TParam4"></typeparam>
+		/// <typeparam name="TParam5"></typeparam>
+		/// <typeparam name="TParam6"></typeparam>
+		/// <typeparam name="TParam7"></typeparam>
+		/// <typeparam name="TParam8"></typeparam>
+		/// <typeparam name="TParam9"></typeparam>
+		/// <returns></returns>
+		IDataModelCommandBuilder<TModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9> MakeQueryCommand<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>();
+
 	}
 }

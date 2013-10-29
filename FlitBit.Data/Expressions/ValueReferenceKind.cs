@@ -11,6 +11,8 @@ namespace FlitBit.Data.Expressions
 		Join = Ref | 1 << 2,
 		Param = 1 << 3,
 		Constant = 1 << 4,
-		Null = Constant | 1 << 5
+		Null = Constant | 1 << 5,
+		Member,
+		Parameter
 	}
 }

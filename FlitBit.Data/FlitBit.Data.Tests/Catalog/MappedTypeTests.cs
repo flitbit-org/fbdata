@@ -43,8 +43,8 @@ namespace FlitBit.Data.Tests.Catalog
 			var create = binder.GetCreateCommand();
 			var update = binder.GetUpdateCommand();
 			var readByType = binder
-				.MakeQueryCommand(new {RuntimeType = default(Type)})
-				.Where((m, p) => m.RuntimeType == p.RuntimeType);
+				.MakeQueryCommand<Type>()
+				.Where((model, runtimeType) => model.RuntimeType == runtimeType);
 
 			using (var cx = DbContext.NewContext())
 			{
@@ -54,7 +54,7 @@ namespace FlitBit.Data.Tests.Catalog
 					Assert.IsNotNull(them);
 					Assert.IsTrue(them.Succeeded);
 
-					var existing = readByType.ExecuteMany(cx, cn, QueryBehavior.Default, new {RuntimeType = typeof(IMappedType) });
+					var existing = readByType.ExecuteMany(cx, cn, QueryBehavior.Default, typeof(IMappedType));
 					var res = existing.Results.SingleOrDefault();
 					if (res != null)
 					{

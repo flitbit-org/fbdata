@@ -22,17 +22,18 @@ namespace FlitBit.Data.Tests.Catalog.Models
 	public class CreateMappedTypeCommand : SingleUpdateQueryCommand<IMappedType, IMappedTypeDataModel>
 	{
 		// Methods
-		public CreateMappedTypeCommand(string commandText, int[] offsets) : base(commandText, offsets)
+		public CreateMappedTypeCommand(DynamicSql sql, int[] offsets)
+			: base(sql, offsets)
 		{
 		}
 
-		protected override void BindCommand(SqlCommand cmd, IMappedTypeDataModel model, BitVector dirty, int[] offsets)
+		protected override void BindCommand(SqlCommand cmd, DynamicSql sql, IMappedTypeDataModel model, BitVector dirty, int[] offsets)
 		{
 			List<string> columnsList = new List<string> {"[DateCreated]", "[DateUpdated]"};
 			List<string> valueList = new List<string>
 			{
-				"@generated_timestamp",
-				"@generated_timestamp"
+				sql.CalculatedTimestampVar,
+				sql.CalculatedTimestampVar
 			};
 			if (dirty[offsets[3]])
 			{
@@ -200,34 +201,12 @@ namespace FlitBit.Data.Tests.Catalog.Models
 
 	public class UpdateMappedTypeCommand : SingleUpdateQueryCommand<IMappedType, IMappedTypeDataModel>
 	{
-		public UpdateMappedTypeCommand()
-			: base(@"
-DECLARE @generated_timestamp DATETIME2 = GETUTCDATE()
-
-UPDATE [OrmCatalog].[MappedType] 
-	SET {0}
-WHERE [ID] = @IMappedType_ID
-
-SELECT 	
-	[Catalog]
-	, [DateCreated]
-	, [DateUpdated]
-	, [ID]
-	, [LatestVersion]
-	, [MappedBaseType]
-	, [MappedTable]
-	, [OriginalVersion]
-	, [ReadObjectName]
-	, [RuntimeType]
-	, [Schema]
-	, [Strategy]
-FROM [OrmCatalog].[MappedType]
-WHERE [ID] = @IMappedType_ID
-", new int[] {0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11})
+		public UpdateMappedTypeCommand(DynamicSql sql, int[] offsets)
+			: base(sql, offsets)
 		{
 		}
 
-		protected override void BindCommand(SqlCommand cmd, IMappedTypeDataModel model, BitVector dirty, int[] offsets)
+		protected override void BindCommand(SqlCommand cmd, DynamicSql sql, IMappedTypeDataModel model, BitVector dirty, int[] offsets)
 		{
 			var parm = new SqlParameter("@IMappedType_ID", SqlDbType.Int);
 			parm.Value = new SqlInt32(model.ID);

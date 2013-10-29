@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Text;
 
@@ -6,11 +7,11 @@ namespace FlitBit.Data.Expressions
 {
 	public class SqlWriter
 	{
-		const int DefaultWriteBufferSize = 400;
-		readonly string _newLine;
-		readonly string _indentString;
-		readonly StringBuilder _builder;
-		int _indent;
+		private const int DefaultWriteBufferSize = 400;
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)] private readonly StringBuilder _builder;
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)] private readonly string _indentString;
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)] private readonly string _newLine;
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)] private int _indent;
 
 		public SqlWriter()
 			: this(DefaultWriteBufferSize, Environment.NewLine, "\t")
@@ -29,48 +30,53 @@ namespace FlitBit.Data.Expressions
 
 		public SqlWriter(int bufferSize, string newLine, string indent)
 		{
-			this._builder = new StringBuilder(bufferSize);
-			this._newLine = newLine;
-			this._indentString = indent;
+			_builder = new StringBuilder(bufferSize);
+			_newLine = newLine;
+			_indentString = indent;
+		}
+
+		public string Text
+		{
+			get { return _builder.ToString(); }
 		}
 
 		public SqlWriter Indent()
 		{
-			this._indent++;
+			_indent++;
 			return this;
 		}
 
 		public SqlWriter Indent(int i)
 		{
 			Contract.Requires<ArgumentOutOfRangeException>(i >= 0);
-			this._indent+=i;
+			_indent += i;
 			return this;
 		}
 
 		public SqlWriter Outdent()
 		{
-			this._indent--;
+			_indent--;
 			return this;
 		}
 
 		public SqlWriter Append(string text)
 		{
-			this._builder.Append(text);
+			_builder.Append(text);
 			return this;
 		}
 
 		public SqlWriter Append(char text)
 		{
-			this._builder.Append(text);
+			_builder.Append(text);
 			return this;
 		}
 
 		public SqlWriter NewLine()
 		{
-			this._builder.Append(this._newLine);
-			for (var i = 0; i < this._indent; i++)
+			_builder.Append(_newLine);
+			for (int i = 0; i < _indent; i++)
 			{
-				this._builder.Append(this._indentString);
+				_builder.Append(_indentString);
 			}
 			return this;
 		}
@@ -82,14 +88,14 @@ namespace FlitBit.Data.Expressions
 		}
 
 		/// <summary>
-		/// Returns a string that represents the current object.
+		///   Returns a string that represents the current object.
 		/// </summary>
 		/// <returns>
-		/// A string that represents the current object.
+		///   A string that represents the current object.
 		/// </returns>
 		public override string ToString()
 		{
-			return this._builder.ToString();
+			return _builder.ToString();
 		}
 	}
 }

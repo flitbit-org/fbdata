@@ -1,8 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Linq;
-using System.Text;
+using FlitBit.Core;
 using FlitBit.Data.DataModel;
 using FlitBit.Data.Expressions;
 using FlitBit.Data.Meta;
@@ -13,10 +14,20 @@ namespace FlitBit.Data.SqlServer
 	{
 		public static readonly string DefaultSelfName = "self";
 		public static readonly string DefaultIndent = "  ";
-		readonly Mapping<TDataModel> _mapping = Mapping<TDataModel>.Instance;
-		readonly string _indent;
-		readonly int _bufferLength;
-		readonly string _selfRef;
+
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)] private readonly int _bufferLength;
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)] private readonly bool _hasTimestamp;
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)] private readonly ColumnMapping _idCol;
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)] private readonly string _indent;
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)] private readonly Mapping<TDataModel> _mapping =
+			Mapping<TDataModel>.Instance;
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)] private readonly string _selfRef;
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)] private bool _hasSyntheticId;
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)] private bool _hasTimestampOnUpdate;
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)] private OrderBy _primaryKeyOrder;
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)] private Tuple<int, string[]> _quotedColumnNames;
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
+		private readonly string _dbObjectReference;
 
 		public DataModelSqlWriter()
 			: this(DefaultSelfName, DefaultIndent)
@@ -28,23 +39,56 @@ namespace FlitBit.Data.SqlServer
 			Contract.Requires<ArgumentNullException>(selfName != null);
 			Contract.Requires<ArgumentException>(selfName.Length > 0);
 			Contract.Requires<ArgumentNullException>(indent != null);
-			_selfRef = Mapping.QuoteObjectNameForSQL(selfName);
+			_selfRef = Mapping.QuoteObjectName(selfName);
+			_dbObjectReference = Mapping.DbObjectReference;
 			_indent = indent;
 			_bufferLength = _mapping.Columns.Count()*40;
-		} 
+			_idCol = _mapping.Identity.Columns[0].Column;
+			_hasTimestamp = _mapping.Columns.Any(c => c.IsTimestampOnInsert || c.IsTimestampOnUpdate);
+			_hasTimestampOnUpdate = _mapping.Columns.Any(c => c.IsTimestampOnUpdate);
+			_hasSyntheticId = _mapping.Columns.Any(c => c.IsSynthetic);
+		}
 
-		public IMapping<TDataModel> Mapping { get { return _mapping; } }
+		public IMapping<TDataModel> Mapping
+		{
+			get { return _mapping; }
+		}
+
+		public string SelfRef
+		{
+			get { return _selfRef; }
+		}
+
+		public string[] QuotedColumnNames
+		{
+			get
+			{
+				IMapping<TDataModel> m = Mapping;
+				if (_quotedColumnNames == null || _quotedColumnNames.Item1 < m.Revision)
+				{
+					var helper = m.GetDbProviderHelper();
+					_quotedColumnNames = Tuple.Create(m.Revision,
+						m.Columns
+							.OrderBy(c => c.Ordinal)
+							.Select(c => helper.QuoteObjectName(c.TargetName)).ToArray()
+						);
+				}
+				return _quotedColumnNames.Item2;
+			}
+		}
 
 		public string Select
 		{
 			get
 			{
-				var mapping = Mapping;
+				IMapping<TDataModel> mapping = Mapping;
+				var helper = mapping.GetDbProviderHelper();
 				var writer = new SqlWriter(_bufferLength, Environment.NewLine, _indent);
 				writer.Append("SELECT ");
-				AppendColumns(writer, mapping.Columns.OrderBy(c => c.Ordinal), c => String.Concat(_selfRef, ".", mapping.QuoteObjectNameForSQL(c.TargetName)));
+				AppendColumns(writer, mapping.Columns.OrderBy(c => c.Ordinal),
+					c => String.Concat(_selfRef, ".", helper.QuoteObjectName(c.TargetName)));
 				writer.Outdent().NewLine()
-					.Append("FROM ").Append(mapping.DbObjectReference)
+					.Append("FROM ").Append(_dbObjectReference)
 					.Append(" AS ").Append(_selfRef);
 				return writer.ToString();
 			}
@@ -54,61 +98,137 @@ namespace FlitBit.Data.SqlServer
 		{
 			get
 			{
-				var writer = new SqlWriter(_bufferLength, Environment.NewLine, _indent)
-					.Append(Select);
-				AppendOrderByPrimaryKey(writer);
+				SqlWriter writer = new SqlWriter(_bufferLength, Environment.NewLine, _indent)
+					.Append(Select)
+					.NewLine();
+				PrimaryKeyOrder.WriteOrderBy(Mapping, writer, _selfRef, false);
 				return writer.ToString();
 			}
 		}
 
 		public string SelectInPrimaryKeyOrderWithPaging
 		{
+			get { return WriteSelectWithPaging(null, null); }
+		}
+
+		public OrderBy PrimaryKeyOrder
+		{
 			get
 			{
-				return WriteSelectWithPaging(null, null);
+				return Util.NonBlockingLazyInitializeVolatile(ref _primaryKeyOrder, () =>
+				{
+					var res = new OrderBy();
+					foreach (MappedSortColumn id in Mapping.Identity.Columns)
+					{
+						res.Add(id.Column, id.Kind);
+					}
+					return res;
+				});
 			}
 		}
 
-		string WriteSelectWithPaging(Constraints cns, IEnumerable<Tuple<ColumnMapping, bool>> orderBy)
+		public DynamicSql DynamicInsertStatement
 		{
-			var mapping = Mapping;
+			get
+			{
+				Contract.Ensures(Contract.Result<DynamicSql>() != null);
+				var mapping = Mapping;
+				var helper = mapping.GetDbProviderHelper();
+				var idStr = helper.FormatParameterName("@identity");
+				var res = new DynamicSql() {SyntheticIdentityVar = idStr};
+				var writer = new SqlWriter(_bufferLength, Environment.NewLine, _indent);
+				if (_hasTimestamp)
+				{
+					res.CalculatedTimestampVar = "@generated_timestamp";
+					writer.NewLine("DECLARE @generated_timestamp DATETIME2 = GETUTCDATE()");
+				}
+				writer.NewLine();
+				_idCol.Emitter.DeclareScriptVariable(writer, _idCol, helper, idStr);
+				writer.NewLine();
+				writer.NewLine("INSERT INTO ").Append(_dbObjectReference).Append(" (").Indent();
+				writer.NewLine("{0}");
+				writer.Outdent().NewLine(")").NewLine("VALUES (").Indent();
+				writer.NewLine("{1}");
+				writer.Outdent().NewLine(")")
+					.NewLine("SET ").Append(idStr).Append(" = SCOPE_IDENTITY()")
+					.NewLine(Select)
+					.NewLine("WHERE ").Append(_selfRef).Append(".").Append(helper.QuoteObjectName(_idCol.TargetName)).Append(" = ").Append(idStr);
+				res.Text = writer.ToString();
+				return res;
+			}
+		}
+
+		public DynamicSql DynamicUpdateStatement
+		{
+			get
+			{
+				Contract.Ensures(Contract.Result<DynamicSql>() != null);
+				
+				var helper = Mapping.GetDbProviderHelper();
+				var idStr = helper.FormatParameterName(_idCol.DbTypeDetails.BindingName);
+				var res = new DynamicSql() { SyntheticIdentityVar = idStr };
+				var writer = new SqlWriter(_bufferLength, Environment.NewLine, _indent);
+				if (_hasTimestamp)
+				{
+					res.CalculatedTimestampVar = "@generated_timestamp";
+					writer.NewLine("DECLARE @generated_timestamp DATETIME2 = GETUTCDATE()");
+				}
+				writer.NewLine();
+				writer.NewLine("UPDATE ").Append(_dbObjectReference).Indent()
+					.NewLine("SET {0}");
+				writer
+					.NewLine("WHERE ").Append(helper.QuoteObjectName(_idCol.TargetName)).Append(" = ").Append(idStr)
+					.NewLine()
+					.NewLine(Select)
+					.NewLine("WHERE ").Append(_selfRef).Append(".").Append(helper.QuoteObjectName(_idCol.TargetName)).Append(" = ").Append(idStr);
+				res.Text = writer.ToString();
+				return res;
+			}
+		}
+
+		public DynamicSql SelectByPrimaryKey
+		{
+			get
+			{
+				var helper = Mapping.GetDbProviderHelper();
+				var idStr = helper.FormatParameterName(_idCol.DbTypeDetails.BindingName);
+				var res = new DynamicSql() { BindIdentityParameter = idStr };
+				var writer = new SqlWriter(_bufferLength, Environment.NewLine, _indent)
+					.Append(Select)
+					.NewLine("WHERE ").Append(helper.QuoteObjectName(_idCol.TargetName)).Append(" = ").Append(idStr);
+				res.Text = writer.ToString();
+				return res;
+			}
+		}
+
+		public string WriteSelectWithPaging(Constraints cns, OrderBy orderBy)
+		{
+			IMapping<TDataModel> mapping = Mapping;
+			var helper = Mapping.GetDbProviderHelper();
 			// Default to PK order...
-			var order = (orderBy ?? mapping.Identity.Columns.Select(c => Tuple.Create(c, false))).ToArray();
+			OrderBy order = orderBy ?? PrimaryKeyOrder;
+
 			var writer = new SqlWriter(_bufferLength, Environment.NewLine, _indent);
-			
+			string[] colList = QuotedColumnNames.Select(c => String.Concat(_selfRef, ".", c)).ToArray();
+
 			writer.Append("DECLARE @endRow INT = @startRow + (@pageSize - 1);")
 				.NewLine("WITH dataset AS(").Indent()
 				.NewLine("SELECT ");
-			AppendColumns(writer, mapping.Columns.OrderBy(c => c.Ordinal), c => String.Concat(_selfRef, ".", mapping.QuoteObjectNameForSQL(c.TargetName)));
-			writer.NewLine("ROW_NUMBER() OVER(ORDER BY ");
-			var i = 0;
-			var orderByStatement = new StringBuilder();
-			var orderByStatementRev = new StringBuilder();
-			foreach (var o in order)
-			{
-				if (i++ > 0)
-				{
-					orderByStatement.Append(", ").Append(_selfRef).Append('.').Append(o.Item1.TargetName);
-					orderByStatement.Append(", ").Append(_selfRef).Append('.').Append(o.Item1.TargetName);
-				}
-				else
-				{
-					orderByStatement.Append(_selfRef).Append('.').Append(o.Item1.TargetName);
-					orderByStatement.Append(_selfRef).Append('.').Append(o.Item1.TargetName);
-				}
-				orderByStatement.Append(o.Item2 ? " ASC": " DESC");
-				orderByStatement.Append(o.Item2 ? " DESC": " ASC");
-			}
-
+			AppendColumns(writer, colList);
+			writer.NewLine("ROW_NUMBER() OVER(");
+			var orderByStatement = new SqlWriter();
+			var inverseOrderByStatement = new SqlWriter();
+			order.WriteOrderBy(mapping, orderByStatement, _selfRef, false);
+			order.WriteOrderBy(mapping, inverseOrderByStatement, _selfRef, true);
 			writer.Append(orderByStatement.ToString()).Append(") AS seq,")
-				.NewLine("ROW_NUMBER() OVER(ORDER BY ")
-				.Append(orderByStatementRev.ToString())
+				.NewLine("ROW_NUMBER() OVER(")
+				.Append(inverseOrderByStatement.ToString())
 				.Append(") AS rev_seq,")
-				.Outdent().NewLine("FROM ").Append(mapping.DbObjectReference).Append(" AS ").Append(_selfRef)
+				.Outdent().NewLine("FROM ").Append(_dbObjectReference).Append(" AS ").Append(_selfRef)
 				.NewLine(")")
 				.NewLine(@"SELECT TOP (@pageSize) ");
-			AppendColumns(writer, mapping.Columns.OrderBy(c => c.Ordinal), c => String.Concat(_selfRef, ".", mapping.QuoteObjectNameForSQL(c.TargetName)));
-			writer.Append(",").NewLine("rev_seq + seq -1 as TotalRows")
+			AppendColumns(writer, colList);
+			writer.Append(",").NewLine("rev_seq + seq -1 as [RowCount]")
 				.Outdent().NewLine("FROM dataset AS [self]")
 				.NewLine("WHERE seq >= @startRow")
 				.NewLine("ORDER BY seq");
@@ -116,10 +236,30 @@ namespace FlitBit.Data.SqlServer
 			return writer.ToString();
 		}
 
-		private void AppendColumns(SqlWriter writer, IEnumerable<ColumnMapping> columns, Func<ColumnMapping, string> eaColumn)
+		public string WriteSelect(Constraints cns, OrderBy orderBy)
 		{
-			var i = 0;
-			foreach (var c in columns.Select(eaColumn))
+			return WriteSelect(_selfRef, cns, orderBy);
+		}
+
+		public string WriteSelect(string refName, Constraints cns, OrderBy orderBy)
+		{
+			IMapping<TDataModel> mapping = Mapping;
+			var writer = new SqlWriter(_bufferLength, Environment.NewLine, _indent);
+			writer.Append("SELECT ");
+			AppendColumns(writer, QuotedColumnNames.Select(c => String.Concat(refName, ".", c)));
+			writer.Outdent();
+			PrepareFromAndWhereStatement(refName, cns, writer);
+			if (orderBy != null)
+			{
+				orderBy.WriteOrderBy(mapping, writer, refName, false);
+			}
+			return writer.ToString();
+		}
+
+		private void AppendColumns(SqlWriter writer, IEnumerable<string> colums)
+		{
+			int i = 0;
+			foreach (string c in colums)
 			{
 				if (i++ > 0)
 				{
@@ -133,37 +273,34 @@ namespace FlitBit.Data.SqlServer
 			}
 		}
 
-		void AppendOrderByPrimaryKey(SqlWriter writer)
+		private void AppendColumns(SqlWriter writer, IEnumerable<ColumnMapping> columns, Func<ColumnMapping, string> eaColumn)
 		{
-			var mapping = Mapping;
-			writer.NewLine().Append("ORDER BY ");
-			var i = 0;
-			foreach (var c in mapping.Identity.Columns)
+			int i = 0;
+			foreach (string c in columns.Select(eaColumn))
 			{
 				if (i++ > 0)
 				{
-					writer.Append(',').NewLine().Append(_selfRef).Append('.').Append(c.TargetName);
+					writer.Append(',').NewLine(c);
 				}
 				else
 				{
-					writer.Append(_selfRef).Append('.').Append(c.TargetName);
+					writer.Append(c);
 					writer.Indent();
 				}
 			}
-			writer.Outdent();
 		}
 
-		public void PrepareFromAndWhereStatement(Constraints cns, SqlWriter writer)
+		public void PrepareFromAndWhereStatement(string refName, Constraints cns, SqlWriter writer)
 		{
 			// Perform necessary joins and write join clauses...
-			foreach (var join in cns.Joins.Values.OrderBy(j => j.Ordinal))
+			foreach (Join join in cns.Joins.Values.OrderBy(j => j.Ordinal))
 			{
 				var stack = new Stack<Tuple<Condition, bool>>();
 				ProcessConditionsFor(join, cns.Conditions, stack);
-				MapJoinFrom(join, cns);
+				MapJoinFrom(refName, join, cns);
 			}
 			// Write the primary statement's conditions...
-			var c = cns.Conditions;
+			Condition c = cns.Conditions;
 			if (c != null && !c.IsLifted)
 			{
 				writer.NewLine().Indent().Append("WHERE ");
@@ -172,7 +309,7 @@ namespace FlitBit.Data.SqlServer
 			}
 		}
 
-		void ProcessConditionsFor(Join join, Condition condition, Stack<Tuple<Condition, bool>> path)
+		private void ProcessConditionsFor(Join join, Condition condition, Stack<Tuple<Condition, bool>> path)
 		{
 			if (condition != null)
 			{
@@ -184,39 +321,44 @@ namespace FlitBit.Data.SqlServer
 				{
 					if (condition.Kind == ConditionKind.AndAlso)
 					{
-						ProcessConditionsFor(join, ((AndCondition)condition).Left, path);
-						ProcessConditionsFor(join, ((AndCondition)condition).Right, path);
+						ProcessConditionsFor(join, ((AndCondition) condition).Left, path);
+						ProcessConditionsFor(join, ((AndCondition) condition).Right, path);
 					}
 				}
 			}
 		}
 
-		void MapJoinFrom(Join join, Constraints cns)
+		private void MapJoinFrom(string refName, Join join, Constraints cns)
 		{
-			var writer = cns.Writer;
-			var jj = join;
+			SqlWriter writer = cns.Writer;
+			Join jj = join;
 			var joins = new Stack<Join>();
 			while (jj != null)
 			{
 				joins.Push(jj);
 				jj = jj.Path;
 			}
-			var mapping = Mapping<TDataModel>.Instance;
+			Mapping<TDataModel> mapping = Mapping<TDataModel>.Instance;
 			IMapping fromMapping = mapping;
-			var fromRef = mapping.QuoteObjectNameForSQL("self");
-			foreach (var j in joins)
+			string fromRef = refName;
+			foreach (Join j in joins)
 			{
-				var toMapping = j.Mapping;
-				var fromCol = fromMapping.Columns.Single(c => c.Member == j.Member);
-				var toRef = mapping.QuoteObjectNameForSQL(Convert.ToString(j.Ordinal));
-				var toCol = toMapping.Columns.Single(c => c.Member == fromCol.ReferenceTargetMember);
+				IMapping toMapping = j.Mapping;
+				ColumnMapping fromCol = fromMapping.Columns.Single(c => c.Member == j.Member);
+				string toRef = mapping.QuoteObjectName(Convert.ToString(j.Ordinal));
+				ColumnMapping toCol = toMapping.Columns.Single(c => c.Member == fromCol.ReferenceTargetMember);
 				if (!j.IsJoined)
 				{
 					writer.Indent()
-						.NewLine().Append("JOIN ").Append(toMapping.DbObjectReference).Append(" AS ").Append(toRef)
-						.Indent().NewLine().Append("ON ").Append(toRef).Append(mapping.QuoteObjectNameForSQL(toCol.TargetName)).Append(" = ")
-						.Append(fromRef).Append('.').Append(mapping.QuoteObjectNameForSQL(fromCol.TargetName));
-					var conditions = join.Conditions;
+						.NewLine().Append("JOIN ").Append(_dbObjectReference).Append(" AS ").Append(toRef)
+						.Indent()
+						.NewLine()
+						.Append("ON ")
+						.Append(toRef)
+						.Append(mapping.QuoteObjectName(toCol.TargetName))
+						.Append(" = ")
+						.Append(fromRef).Append('.').Append(mapping.QuoteObjectName(fromCol.TargetName));
+					Condition conditions = join.Conditions;
 					if (conditions != null)
 					{
 						writer.Indent().NewLine().Append("AND ");

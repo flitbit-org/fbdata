@@ -8,6 +8,7 @@ using System.Text;
 using FlitBit.Core;
 using FlitBit.Data.DataModel;
 using FlitBit.Data.Meta;
+using FlitBit.Data.SPI;
 
 namespace FlitBit.Data.SqlServer
 {
@@ -19,7 +20,7 @@ namespace FlitBit.Data.SqlServer
 	/// <typeparam name="TModelImpl"></typeparam>
 	public class DynamicHybridInheritanceTreeBinder<TModel, TIdentityKey, TModelImpl> :
 		DataModelBinder<TModel, TIdentityKey, SqlConnection>
-		where TModelImpl : class, TModel, new()
+		where TModelImpl : class, IDataModel, TModel, new()
 	{
 		bool _initialized;
 
@@ -63,7 +64,7 @@ namespace FlitBit.Data.SqlServer
 						.Append('(');
 
 				var i = -1;
-				var idcol = mapping.Identity.Columns.SingleOrDefault();
+				var idcol = mapping.Identity.Columns.Select(c => c.Column).SingleOrDefault();
 				if (idcol == null)
 				{
 					throw new MappingException(
@@ -114,8 +115,7 @@ namespace FlitBit.Data.SqlServer
 				AddIndexesForTable(mapping, batch);
 				if (mapping.Behaviors.HasFlag(EntityBehaviors.MapEnum))
 				{
-					var idenum = mapping.Identity.Columns.Single(c => c.RuntimeType.IsEnum);
-					if (idenum == null)
+					if (!idcol.RuntimeType.IsEnum)
 					{
 						throw new MappingException(String.Concat("Model type '", typeof(TModel).Name,
 																										"' declares behavior EntityBehaviors.MapEnum but the enum type cannot be determined. Specify an identity column of enum type."));
@@ -127,17 +127,17 @@ namespace FlitBit.Data.SqlServer
 																										" declares behavior EntityBehaviors.MapEnum but a column to hold the enum name cannot be determined. Specify a string column with alternate key behavior."));
 					}
 
-					var enumNames = Enum.GetNames(idenum.RuntimeType);
-					var enumValues = Enum.GetValues(idenum.RuntimeType);
+					var enumNames = Enum.GetNames(idcol.RuntimeType);
+					var enumValues = Enum.GetValues(idcol.RuntimeType);
 					for (var j = 0; j < enumNames.Length; j++)
 					{
 						batch.Append(Environment.NewLine)
 								.Append("INSERT INTO ")
 								.Append(mapping.DbObjectReference)
 								.Append(" (")
-								.Append(mapping.QuoteObjectNameForSQL(idenum.TargetName))
+								.Append(mapping.QuoteObjectName(idcol.TargetName))
 								.Append(", ")
-								.Append(mapping.QuoteObjectNameForSQL(namecol.TargetName))
+								.Append(mapping.QuoteObjectName(namecol.TargetName))
 								.Append(") VALUES (")
 								.Append(Convert.ToInt32(enumValues.GetValue(j)))
 								.Append(", '")

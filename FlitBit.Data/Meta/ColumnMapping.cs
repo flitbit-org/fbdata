@@ -47,7 +47,7 @@ namespace FlitBit.Data.Meta
 		}
 
 		public ColumnBehaviors Behaviors { get; internal set; }
-		public string DbObjectReference { get { return String.Concat(Mapping.DbObjectReference, '.', Mapping.QuoteObjectNameForSQL(TargetName)); } }
+		public string DbObjectReference { get { return String.Concat(Mapping.DbObjectReference, '.', Mapping.QuoteObjectName(TargetName)); } }
 
 		public bool IsAlternateKey { get { return Behaviors.HasFlag(ColumnBehaviors.AlternateKey); } }
 

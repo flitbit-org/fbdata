@@ -10,7 +10,7 @@ namespace FlitBit.Data
 	public sealed class QueryBehavior
 	{
 		/// <summary>
-		/// Indicates default query behaviors.
+		///   Indicates default query behaviors.
 		/// </summary>
 		public static QueryBehavior Default = new QueryBehavior(QueryBehaviors.Default);
 
@@ -23,11 +23,12 @@ namespace FlitBit.Data
 		/// <param name="behaviors"></param>
 		public QueryBehavior(QueryBehaviors behaviors)
 		{
-			this._behaviors = behaviors;
+			_behaviors = behaviors;
+			Page = 1;
 		}
 
 		/// <summary>
-		/// Creates a new instance.
+		///   Creates a new instance.
 		/// </summary>
 		/// <param name="behaviors"></param>
 		/// <param name="limit"></param>
@@ -35,12 +36,13 @@ namespace FlitBit.Data
 		{
 			Contract.Requires<ArgumentException>(behaviors.HasFlag(QueryBehaviors.Limited));
 			Contract.Requires<ArgumentOutOfRangeException>(limit > 0);
-			this._behaviors = behaviors;
-			this._limit = limit;
+			_behaviors = behaviors;
+			_limit = limit;
+			Page = 1;
 		}
 
 		/// <summary>
-		/// Creates a new instance.
+		///   Creates a new instance.
 		/// </summary>
 		/// <param name="behaviors"></param>
 		/// <param name="pageSize"></param>
@@ -50,14 +52,15 @@ namespace FlitBit.Data
 		{
 			Contract.Requires<ArgumentException>(behaviors.HasFlag(QueryBehaviors.Limited));
 			Contract.Requires<ArgumentOutOfRangeException>(pageSize > 0);
-			this._behaviors = behaviors;
-			this._limit = pageSize;
-			this.Page = page;
-			this.PageCount = pageCount;
+			Contract.Requires<ArgumentOutOfRangeException>(page > 0, "Page must be 1 based; (Page >= 1).");
+			_behaviors = behaviors;
+			_limit = pageSize;
+			Page = page;
+			PageCount = pageCount;
 		}
 
 		/// <summary>
-		/// Creates a new instance.
+		///   Creates a new instance.
 		/// </summary>
 		/// <param name="behaviors"></param>
 		/// <param name="pageSize"></param>
@@ -68,39 +71,57 @@ namespace FlitBit.Data
 		{
 			Contract.Requires<ArgumentException>(behaviors.HasFlag(QueryBehaviors.Limited));
 			Contract.Requires<ArgumentOutOfRangeException>(pageSize > 0);
-			this._behaviors = behaviors;
-			this._limit = pageSize;
-			this.Page = page;
-			this.PageCorrelationKey = correlationKey;
-			this.Backward = backward;
+			Contract.Requires<ArgumentOutOfRangeException>(page > 0, "Page must be 1 based; (Page >= 1).");
+
+			_behaviors = behaviors;
+			_limit = pageSize;
+			Page = page;
+			PageCorrelationKey = correlationKey;
+			Backward = backward;
 		}
 
 		/// <summary>
-		/// Indicates the query's behaviors.
+		///   Indicates the query's behaviors.
 		/// </summary>
-		public QueryBehaviors Behaviors { get { return _behaviors; } }
+		public QueryBehaviors Behaviors
+		{
+			get { return _behaviors; }
+		}
 
 		/// <summary>
-		/// Indicates that the cache should be bypassed.
+		///   Indicates that the cache should be bypassed.
 		/// </summary>
-		public bool BypassCache { get { return _behaviors.HasFlag(QueryBehaviors.NoCache); } }
+		public bool BypassCache
+		{
+			get { return _behaviors.HasFlag(QueryBehaviors.NoCache); }
+		}
 
 		/// <summary>
-		/// Indicates the query's results should be limited (range or TOP).
+		///   Indicates the query's results should be limited (range or TOP).
 		/// </summary>
-		public bool IsLimited { get { return _behaviors.HasFlag(QueryBehaviors.Limited); } }
-		/// <summary>
-		/// Indicates the query's results should be paged.
-		/// </summary>
-		public bool IsPaging { get { return _behaviors.HasFlag(QueryBehaviors.Paged); } }
+		public bool IsLimited
+		{
+			get { return _behaviors.HasFlag(QueryBehaviors.Limited); }
+		}
 
 		/// <summary>
-		/// Indicates the query's limit.
+		///   Indicates the query's results should be paged.
 		/// </summary>
-		public int Limit { get { return _limit; } }
+		public bool IsPaging
+		{
+			get { return _behaviors.HasFlag(QueryBehaviors.Paged); }
+		}
 
 		/// <summary>
-		/// Indicates a query's current page when paging.
+		///   Indicates the query's limit.
+		/// </summary>
+		public int Limit
+		{
+			get { return _limit; }
+		}
+
+		/// <summary>
+		///   Indicates a query's current page when paging.
 		/// </summary>
 		public int Page { get; private set; }
 
@@ -110,19 +131,21 @@ namespace FlitBit.Data
 		public object PageCorrelationKey { get; internal set; }
 
 		/// <summary>
-		/// Indicates the total number of pages in the query.
+		///   Indicates the total number of pages in the query.
 		/// </summary>
 		public int PageCount { get; internal set; }
 
 		/// <summary>
-		/// Indicates the query's page size.
+		///   Indicates the query's page size.
 		/// </summary>
-		public int PageSize { get { return _limit; } }
+		public int PageSize
+		{
+			get { return _limit; }
+		}
 
 		/// <summary>
-		/// Indicates whether the query is paging backwards.
+		///   Indicates whether the query is paging backwards.
 		/// </summary>
 		public bool Backward { get; set; }
-
 	}
 }
