@@ -1,6 +1,9 @@
-﻿using System.Data;
+﻿using System;
+using System.Data;
 using System.Data.SqlClient;
+using System.Reflection;
 using System.Reflection.Emit;
+using System.Text;
 using FlitBit.Data.Meta;
 using FlitBit.Emit;
 

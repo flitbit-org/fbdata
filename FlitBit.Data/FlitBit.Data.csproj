@@ -190,6 +190,9 @@
     <Compile Include="SqlServer\SqlDataModelCommandBuilder.cs" />
     <Compile Include="SqlServer\SqlDataModelQueryCommand.cs" />
     <Compile Include="SqlServer\SqlDbTypeEmitter.cs" />
+    <Compile Include="SqlServer\SqlMappedEmumAsInt16Emitter.cs" />
+    <Compile Include="SqlServer\SqlMappedEmumAsInt32Emitter.cs" />
+    <Compile Include="SqlServer\SqlMappedInt16Emitter.cs" />
     <Compile Include="SqlServer\SqlMappedInt32Emitter.cs" />
     <Compile Include="SqlServer\SqlMappedInt64Emitter.cs" />
     <Compile Include="Terminology\IUITerminologyService.cs" />

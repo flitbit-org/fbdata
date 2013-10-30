@@ -166,6 +166,16 @@ WHERE name = @schema"
 			return result;
 		}
 
+		protected override Type MakeEnumAsInt16Emitter(Type enumType)
+		{
+			return typeof (SqlMappedEmumAsInt16Emitter<>).MakeGenericType(enumType);
+		}
+
+		protected override Type MakeEnumAsInt32Emitter(Type enumType)
+		{
+			return typeof(SqlMappedEmumAsInt32Emitter<>).MakeGenericType(enumType);
+		}
+
 		public override string GetServerName(DbConnection connection)
 		{
 			if (connection == null)

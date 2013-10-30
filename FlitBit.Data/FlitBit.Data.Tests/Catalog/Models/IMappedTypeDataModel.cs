@@ -60,25 +60,28 @@ namespace FlitBit.Data.Tests.Catalog.Models
 		{
 		}
 
-		protected override void BindCommand(SqlCommand cmd, DynamicSql sql, IMappedTypeDataModel model, BitVector dirty, int[] offsets)
+		protected override void BindCommand(SqlCommand cmd, DynamicSql sql, IMappedTypeDataModel model, BitVector dirty,
+			int[] offsets)
 		{
-			var columnsList = new List<string>();
+			SqlParameter parameter;
+			var colList = new List<string>();
 			var valueList = new List<string>();
 
+			colList.Add("[DateCreated]");
+			colList.Add("@generated_timestamp");
+			colList.Add("[DateUpdated]");
+			colList.Add("@generated_timestamp");
 
-			columnsList.Add("[DateCreated]");
-			valueList.Add("@generated_timestamp");
-			columnsList.Add("[DateUpdated]");
-			valueList.Add("@generated_timestamp");
 
 			if (dirty[offsets[3]])
 			{
-				columnsList.Add("[Catalog]");
+				colList.Add("[Catalog]");
 				valueList.Add("@IMappedType_Catalog");
-				var parameter = new SqlParameter();
+				parameter = new SqlParameter();
 				parameter.ParameterName = "@IMappedType_Catalog";
 				parameter.SqlDbType = SqlDbType.NVarChar;
 				parameter.Size = 0x80;
+
 				cmd.Parameters.Add(parameter);
 				string catalog = model.Catalog;
 				if (catalog == null)
@@ -90,11 +93,149 @@ namespace FlitBit.Data.Tests.Catalog.Models
 					parameter.SqlValue = new SqlString(catalog);
 				}
 			}
-			
-			cmd.CommandText = string.Format(sql.Text, string.Join("\r\n\t", columnsList), string.Join("\r\n\t", valueList));
+			if (dirty[offsets[4]])
+			{
+				colList.Add("[LatestVersion]");
+				valueList.Add("@IMappedType_LatestVersion");
+				parameter = new SqlParameter();
+				parameter.ParameterName = "@IMappedType_LatestVersion";
+				parameter.SqlDbType = SqlDbType.NVarChar;
+				parameter.Size = 0x80;
+				cmd.Parameters.Add(parameter);
+				string latestVersion = model.LatestVersion;
+				if (latestVersion == null)
+				{
+					parameter.SqlValue = DBNull.Value;
+				}
+				else
+				{
+					parameter.SqlValue = new SqlString(latestVersion);
+				}
+			}
+			if (dirty[offsets[5]])
+			{
+				colList.Add("[MappedBaseType]");
+				valueList.Add("@IMappedType_MappedBaseType");
+				parameter = new SqlParameter();
+				parameter.ParameterName = "@IMappedType_MappedBaseType";
+				parameter.SqlDbType = SqlDbType.Int;
+				cmd.Parameters.Add(parameter);
+				int referentID = model.GetReferentID<int>("MappedBaseType");
+				parameter.SqlValue = new SqlInt32(referentID);
+			}
+			if (dirty[offsets[6]])
+			{
+				colList.Add("[MappedTable]");
+				valueList.Add("@IMappedType_MappedTable");
+				parameter = new SqlParameter();
+				parameter.ParameterName = "@IMappedType_MappedTable";
+				parameter.SqlDbType = SqlDbType.NVarChar;
+				parameter.Size = 0x80;
+				cmd.Parameters.Add(parameter);
+				string mappedTable = model.MappedTable;
+				if (mappedTable == null)
+				{
+					parameter.SqlValue = DBNull.Value;
+				}
+				else
+				{
+					parameter.SqlValue = new SqlString(mappedTable);
+				}
+			}
+			if (dirty[offsets[7]])
+			{
+				colList.Add("[OriginalVersion]");
+				valueList.Add("@IMappedType_OriginalVersion");
+				parameter = new SqlParameter();
+				parameter.ParameterName = "@IMappedType_OriginalVersion";
+				parameter.SqlDbType = SqlDbType.NVarChar;
+				parameter.Size = 40;
+				cmd.Parameters.Add(parameter);
+				string originalVersion = model.OriginalVersion;
+				if (originalVersion == null)
+				{
+					parameter.SqlValue = DBNull.Value;
+				}
+				else
+				{
+					parameter.SqlValue = new SqlString(originalVersion);
+				}
+			}
+			if (dirty[offsets[8]])
+			{
+				colList.Add("[ReadObjectName]");
+				valueList.Add("@IMappedType_ReadObjectName");
+				parameter = new SqlParameter();
+				parameter.ParameterName = "@IMappedType_ReadObjectName";
+				parameter.SqlDbType = SqlDbType.NVarChar;
+				parameter.Size = 0x80;
+
+				cmd.Parameters.Add(parameter);
+				string readObjectName = model.ReadObjectName;
+				if (readObjectName == null)
+				{
+					parameter.SqlValue = DBNull.Value;
+				}
+				else
+				{
+					parameter.SqlValue = new SqlString(readObjectName);
+				}
+			}
+			if (dirty[offsets[9]])
+			{
+				colList.Add("[RuntimeType]");
+				valueList.Add("@IMappedType_RuntimeType");
+				parameter = new SqlParameter();
+				parameter.ParameterName = "@IMappedType_RuntimeType";
+				parameter.SqlDbType = SqlDbType.NVarChar;
+				parameter.Size = 400;
+
+				cmd.Parameters.Add(parameter);
+				Type runtimeType = model.RuntimeType;
+				if (runtimeType == null)
+				{
+					parameter.SqlValue = DBNull.Value;
+				}
+				else
+				{
+					parameter.SqlValue = new SqlString(runtimeType.FullName);
+				}
+			}
+			if (dirty[offsets[10]])
+			{
+				colList.Add("[Schema]");
+				valueList.Add("@IMappedType_Schema");
+				parameter = new SqlParameter();
+				parameter.ParameterName = "@IMappedType_Schema";
+				parameter.SqlDbType = SqlDbType.NVarChar;
+				parameter.Size = 0x80;
+
+				cmd.Parameters.Add(parameter);
+				string schema = model.Schema;
+				if (schema == null)
+				{
+					parameter.SqlValue = DBNull.Value;
+				}
+				else
+				{
+					parameter.SqlValue = new SqlString(schema);
+				}
+			}
+			if (dirty[offsets[11]])
+			{
+				colList.Add("[Strategy]");
+				valueList.Add("@IMappedType_Strategy");
+				parameter = new SqlParameter();
+				parameter.ParameterName = "@IMappedType_Strategy";
+				parameter.SqlDbType = SqlDbType.Int;
+
+				cmd.Parameters.Add(parameter);
+				MappingStrategy strategy = model.Strategy;
+				parameter.SqlValue = new SqlInt32((int)strategy);
+			}
+			cmd.CommandText = string.Format(sql.Text, string.Join(",\r\n\t", colList), string.Join(",\r\n\t", valueList));
 		}
 	}
-
 
 	public class UpdateMappedTypeCommand : SingleUpdateQueryCommand<IMappedType, IMappedTypeDataModel>
 	{
