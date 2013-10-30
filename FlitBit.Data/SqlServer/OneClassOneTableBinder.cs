@@ -169,14 +169,14 @@ namespace FlitBit.Data.SqlServer
 			return _update.Item2;
 		}
 		
-		public override IDataModelCommandBuilder<TModel, SqlConnection, TCriteria> MakeQueryCommand<TCriteria>(TCriteria input)
+		public override IDataModelCommandBuilder<TModel, SqlConnection, TCriteria> MakeQueryCommand<TCriteria>(string queryKey, TCriteria input)
 		{
-			return new SqlDataModelCommandBuilder<TModel, TModelImpl, TCriteria>(_sqlWriter);
+			return new SqlDataModelCommandBuilder<TModel, TModelImpl, TCriteria>(queryKey, _sqlWriter);
 		}
 
-		public override IDataModelCommandBuilder<TModel, SqlConnection, TParam> MakeQueryCommand<TParam>()
+		public override IDataModelCommandBuilder<TModel, SqlConnection, TParam> MakeQueryCommand<TParam>(string queryKey)
 		{
-			return new SqlDataModelCommandBuilder<TModel, TModelImpl, TParam>(_sqlWriter);
+			return new SqlDataModelCommandBuilder<TModel, TModelImpl, TParam>(queryKey, _sqlWriter);
 		}
 
 	}

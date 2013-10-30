@@ -27,9 +27,12 @@ namespace FlitBit.Data.DataModel
 		/// Creates a new instance.
 		/// </summary>
 		/// <param name="sqlWriter">a writer</param>
-		protected DataModelCommandBuilder(DataModelSqlWriter<TDataModel> sqlWriter)
+		protected DataModelCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
 		{
+			Contract.Requires<ArgumentNullException>(queryKey != null);
+			Contract.Requires<ArgumentException>(queryKey.Length > 0);
 			Contract.Requires<ArgumentNullException>(sqlWriter != null);
+			QueryKey = queryKey;
 			_sqlWriter = sqlWriter;
 		}
 
@@ -307,5 +310,6 @@ namespace FlitBit.Data.DataModel
 						&& it.Type == typeof(TDataModel);
 		}
 
+		public string QueryKey { get; private set; }
 	}
 }

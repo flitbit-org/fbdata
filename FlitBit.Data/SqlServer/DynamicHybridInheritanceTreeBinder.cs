@@ -193,9 +193,9 @@ namespace FlitBit.Data.SqlServer
 			throw new NotImplementedException();
 		}
 
-		public override IDataModelCommandBuilder<TModel, SqlConnection, TInput> MakeQueryCommand<TInput>(TInput input)
+		public override IDataModelCommandBuilder<TModel, SqlConnection, TInput> MakeQueryCommand<TInput>(string queryKey, TInput input)
 		{
-			return new SqlDataModelCommandBuilder<TModel, TModelImpl, TInput>(new DataModelSqlWriter<TModel>());
+			return new SqlDataModelCommandBuilder<TModel, TModelImpl, TInput>(queryKey, new DataModelSqlWriter<TModel>());
 		}
 
 		public override void Initialize()

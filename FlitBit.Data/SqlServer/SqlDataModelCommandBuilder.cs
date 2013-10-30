@@ -12,14 +12,14 @@ namespace FlitBit.Data.SqlServer
 		where TImpl: class, IDataModel, TDataModel, new()
 	{
 
-		public SqlDataModelCommandBuilder(DataModelSqlWriter<TDataModel> sqlWriter)
-			: base(sqlWriter)
+		public SqlDataModelCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
+			: base(queryKey, sqlWriter)
 		{
 		}
 
 		protected override IDataModelQueryCommand<TDataModel, SqlConnection, TParam> ConstructCommandOnConstraints(Constraints constraints)
 		{
-			Type cmd = OneClassOneTableEmitter.MakeQueryCommand<TDataModel, TImpl, TParam>(Mapping<TDataModel>.Instance, "key", constraints);
+			Type cmd = OneClassOneTableEmitter.MakeQueryCommand<TDataModel, TImpl, TParam>(Mapping<TDataModel>.Instance, QueryKey, constraints);
 			return
 				(IDataModelQueryCommand<TDataModel, SqlConnection, TParam>)
 					Activator.CreateInstance(cmd, constraints.Writer.Text, Writer.WriteSelectWithPaging(constraints, null), Writer.ColumnOffsets);

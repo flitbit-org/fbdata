@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Data;
 using System.Diagnostics.Contracts;
 using FlitBit.Data.DataModel;
@@ -138,8 +137,6 @@ WHERE [{0}].[Peeps].[ID] = @ID";
 
 		protected override Peep CreateInstance() { return new Peep(); }
 		protected override string MakeUpdateCommand(Peep model) { return UpdateCommand; }
-
-		protected override IEnumerable<Peep> PerformDirectQueryBy<TItemKey>(IDbContext context, string command, Action<TItemKey, IDataParameterBinder> binder, TItemKey key) { return base.PerformDirectQueryBy<TItemKey>(context, command, binder, key); }
 
 		protected override void PopulateInstance(IDbContext context, Peep model, IDataRecord reader, object state)
 		{

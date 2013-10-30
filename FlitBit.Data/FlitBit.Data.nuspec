@@ -10,7 +10,7 @@
     <projectUrl>https://github.com/flitbit/FlitBit.Data/</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Exotic data access and object-relational mapping for c#</description>
-    <releaseNotes>Published nuget package; moved code repo to CodePlex.</releaseNotes>
+    <releaseNotes>Incremental work towards release 3.</releaseNotes>
     <copyright>Copyright 2013</copyright>
   </metadata>
 </package>

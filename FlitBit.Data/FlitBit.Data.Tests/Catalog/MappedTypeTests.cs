@@ -43,7 +43,7 @@ namespace FlitBit.Data.Tests.Catalog
 			var create = binder.GetCreateCommand();
 			var update = binder.GetUpdateCommand();
 			var readByType = binder
-				.MakeQueryCommand<Type>()
+				.MakeQueryCommand<Type>("ByRuntimeType")
 				.Where((model, runtimeType) => model.RuntimeType == runtimeType);
 
 			using (var cx = DbContext.NewContext())
