@@ -131,9 +131,10 @@ namespace FlitBit.Data.SqlServer
 			var mapping = Mapping;
 			if (_create == null || _create.Item1 < mapping.Revision)
 			{
+				var createStatement = _sqlWriter.DynamicInsertStatement;
 				_create = Tuple.Create(mapping.Revision,
 					(IDataModelQuerySingleCommand<TModel, SqlConnection, TModel>)
-						Activator.CreateInstance(OneClassOneTableEmitter.CreateCommand<TModel, TModelImpl>(mapping), _sqlWriter.DynamicInsertStatement, _offsets));
+						Activator.CreateInstance(OneClassOneTableEmitter.CreateCommand<TModel, TModelImpl>(mapping, createStatement), createStatement, _offsets));
 			}
 			return _create.Item2;
 		}
@@ -160,9 +161,10 @@ namespace FlitBit.Data.SqlServer
 			var mapping = Mapping;
 			if (_update == null || _update.Item1 < mapping.Revision)
 			{
+				var updateStatement = _sqlWriter.DynamicUpdateStatement;
 				_update = Tuple.Create(mapping.Revision,
 					(IDataModelQuerySingleCommand<TModel, SqlConnection, TModel>)
-						Activator.CreateInstance(OneClassOneTableEmitter.UpdateCommand<TModel, TModelImpl>(mapping), _sqlWriter.DynamicUpdateStatement, _offsets));
+						Activator.CreateInstance(OneClassOneTableEmitter.UpdateCommand<TModel, TModelImpl>(mapping, updateStatement), updateStatement, _offsets));
 			}
 			return _update.Item2;
 		}

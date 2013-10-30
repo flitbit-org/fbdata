@@ -25,14 +25,14 @@ namespace FlitBit.Data.SqlServer
 			new Lazy<EmittedModule>(() => RuntimeAssemblies.DynamicAssembly.DefineModule("SqlServerMapping", null),
 				LazyThreadSafetyMode.ExecutionAndPublication
 				);
-		
+
 		static EmittedModule Module
 		{
 			get { return LazyModule.Value; }
 		}
 
 		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
-		internal static Type CreateCommand<TDataModel, TImpl>(Mapping<TDataModel> mapping)
+		internal static Type CreateCommand<TDataModel, TImpl>(Mapping<TDataModel> mapping, DynamicSql sql)
 			where TImpl : class, IDataModel, TDataModel, new()
 		{
 			Contract.Ensures(Contract.Result<Type>() != null);
@@ -44,13 +44,13 @@ namespace FlitBit.Data.SqlServer
 			lock (module)
 			{
 				var type = module.Builder.GetType(typeName, false, false) ??
-									EmitImplementation<TDataModel, TImpl>.BuildCreateCommand(module, typeName, mapping);
+									EmitImplementation<TDataModel, TImpl>.BuildCreateCommand(module, typeName, mapping, sql);
 				return type;
 			}
 		}
 
 		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
-		internal static Type UpdateCommand<TDataModel, TImpl>(Mapping<TDataModel> mapping)
+		internal static Type UpdateCommand<TDataModel, TImpl>(Mapping<TDataModel> mapping, DynamicSql sql)
 			where TImpl : class, IDataModel, TDataModel, new()
 		{
 			Contract.Ensures(Contract.Result<Type>() != null);
@@ -62,7 +62,7 @@ namespace FlitBit.Data.SqlServer
 			lock (module)
 			{
 				var type = module.Builder.GetType(typeName, false, false) ??
-									EmitImplementation<TDataModel, TImpl>.BuildUpdateCommand(module, typeName, mapping);
+									EmitImplementation<TDataModel, TImpl>.BuildUpdateCommand(module, typeName, mapping, sql);
 				return type;
 			}
 		}
@@ -106,7 +106,7 @@ namespace FlitBit.Data.SqlServer
 		static class EmitImplementation<TDataModel, TImpl>
 			where TImpl : class, IDataModel, TDataModel, new()
 		{
-			internal static Type BuildCreateCommand(EmittedModule module, string typeName, Mapping<TDataModel> mapping)
+			internal static Type BuildCreateCommand(EmittedModule module, string typeName, Mapping<TDataModel> mapping, DynamicSql sql)
 			{
 				Contract.Requires<ArgumentNullException>(module != null);
 				Contract.Requires<ArgumentNullException>(typeName != null);
@@ -129,13 +129,13 @@ namespace FlitBit.Data.SqlServer
 					il.Call(baseType.GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic, null, new Type[] { typeof(DynamicSql), typeof(int[]) }, null));
 				});
 
-				ImplementCreateBindCommand(builder, baseType, mapping);
+				ImplementCreateBindCommand(builder, baseType, mapping, sql);
 
 				builder.Compile();
 				return builder.Ref.Target;
 			}
 
-			static void ImplementCreateBindCommand(EmittedClass builder, Type baseType, Mapping<TDataModel> mapping)
+			static void ImplementCreateBindCommand(EmittedClass builder, Type baseType, Mapping<TDataModel> mapping, DynamicSql sql)
 			{
 				var method =
 					builder.DefineOverrideMethod(baseType.GetMethod("BindCommand", BindingFlags.NonPublic | BindingFlags.Instance));
@@ -153,29 +153,32 @@ namespace FlitBit.Data.SqlServer
 				{
 					var columnList = il.DeclareLocal(typeof(List<string>));
 					var valueList = il.DeclareLocal(typeof(List<string>));
+					var parm = il.DeclareLocal(typeof(SqlParameter));
 					var flag = il.DeclareLocal(typeof(bool));
+
 					il.New<List<string>>();
 					il.StoreLocal(columnList);
 					il.New<List<string>>();
 					il.StoreLocal(valueList);
+
 					foreach (var column in mapping.Columns)
 					{
-						var col = column;
 						if (column.IsTimestampOnInsert || column.IsTimestampOnUpdate)
 						{
 							il.LoadLocal(columnList);
 							il.LoadValue(mapping.QuoteObjectName(column.TargetName));
 							il.CallVirtual<List<string>>("Add");
 							il.LoadLocal(valueList);
-							il.LoadValue("@generated_timestamp");
+							il.LoadValue(sql.CalculatedTimestampVar);
 							il.CallVirtual<List<string>>("Add");
 						}
 						else if (!column.IsCalculated)
 						{
+							var col = column;
 							var emitter = column.Emitter;
 							var bindingName = helper.FormatParameterName(column.DbTypeDetails.BindingName);
 							var next = il.DefineLabel();
-							il.LoadArg(args.dirty);
+							il.LoadArgAddress(args.dirty);
 							il.LoadArg(args.offsets);
 							il.LoadValue(column.Ordinal);
 							il.Emit(OpCodes.Ldelem_I4);
@@ -195,6 +198,7 @@ namespace FlitBit.Data.SqlServer
 							{
 								var reftype = col.ReferenceTargetMember.GetTypeOfValue();
 								emitter.BindParameterOnDbCommand<SqlParameter>(method.Builder, column, bindingName,
+									parm,
 									gen => gen.LoadArg(args.cmd),
 									gen => gen.LoadArg(args.model),
 									gen =>
@@ -208,6 +212,7 @@ namespace FlitBit.Data.SqlServer
 							else
 							{
 								emitter.BindParameterOnDbCommand<SqlParameter>(method.Builder, column, bindingName,
+									parm,
 									gen => gen.LoadArg(args.cmd),
 									gen => gen.LoadArg(args.model),
 									gen => gen.CallVirtual(((PropertyInfo)col.Member).GetGetMethod()),
@@ -216,21 +221,22 @@ namespace FlitBit.Data.SqlServer
 							il.MarkLabel(next);
 						}
 					}
+
 					il.LoadArg(args.cmd);
-					il.LoadArg(args.cmd);
-					il.CallVirtual<DbCommand>("get_CommandText");
-					il.LoadValue("\r\n\t");
+					il.LoadArg(args.sql);
+					il.CallVirtual<DynamicSql>("get_Text");
+					il.LoadValue(",\r\n\t");
 					il.LoadLocal(columnList);
 					il.Call<String>("Join", BindingFlags.Static | BindingFlags.Public, typeof(string), typeof(IEnumerable<string>));
-					il.LoadValue("\r\n\t");
+					il.LoadValue(",\r\n\t");
 					il.LoadLocal(valueList);
 					il.Call<String>("Join", BindingFlags.Static | BindingFlags.Public, typeof(string), typeof(IEnumerable<string>));
 					il.Call<String>("Format", BindingFlags.Static | BindingFlags.Public, typeof(string), typeof(object), typeof(object));
-					il.CallVirtual<DbCommand>("set_CommandText");
+					il.CallVirtual<DbCommand>("set_CommandText", typeof(string));
 				});
 			}
 
-			internal static Type BuildUpdateCommand(EmittedModule module, string typeName, Mapping<TDataModel> mapping)
+			internal static Type BuildUpdateCommand(EmittedModule module, string typeName, Mapping<TDataModel> mapping, DynamicSql sql)
 			{
 				Contract.Requires<ArgumentNullException>(module != null);
 				Contract.Requires<ArgumentNullException>(typeName != null);
@@ -254,13 +260,13 @@ namespace FlitBit.Data.SqlServer
 					il.Call(baseType.GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic, null, new Type[] { typeof(DynamicSql), typeof(int[]) }, null));
 				});
 
-				ImplementUpdateBindCommand(builder, baseType, mapping);
+				ImplementUpdateBindCommand(builder, baseType, mapping, sql);
 
 				builder.Compile();
 				return builder.Ref.Target;
 			}
 
-			static void ImplementUpdateBindCommand(EmittedClass builder, Type baseType, Mapping<TDataModel> mapping)
+			static void ImplementUpdateBindCommand(EmittedClass builder, Type baseType, Mapping<TDataModel> mapping, DynamicSql sql)
 			{
 				var method =
 					builder.DefineOverrideMethod(baseType.GetMethod("BindCommand", BindingFlags.NonPublic | BindingFlags.Instance));
@@ -279,24 +285,38 @@ namespace FlitBit.Data.SqlServer
 					var columnList = il.DeclareLocal(typeof(List<string>));
 					var parm = il.DeclareLocal(typeof(SqlParameter));
 					var flag = il.DeclareLocal(typeof(bool));
+					var idcol = mapping.Identity.Columns[0].Column;
+					var emitter = idcol.Emitter;
+					var bindingName = sql.BindIdentityParameter;
+
 					il.New<List<string>>();
 					il.StoreLocal(columnList);
+
+					emitter.BindParameterOnDbCommand<SqlParameter>(method.Builder, idcol, bindingName,
+						parm,
+						gen => gen.LoadArg(args.cmd),
+						gen => gen.LoadArg(args.model),
+						gen => gen.CallVirtual(((PropertyInfo)idcol.Member).GetGetMethod()),
+						flag);
+					
 					foreach (var column in mapping.Columns)
 					{
 						if (column.IsTimestampOnUpdate)
 						{
 							il.LoadLocal(columnList);
-							il.LoadValue(String.Concat(mapping.QuoteObjectName(column.TargetName), " = @generated_timestamp"));
+							il.LoadValue(String.Concat(mapping.QuoteObjectName(column.TargetName), " = ", sql.CalculatedTimestampVar));
 							il.CallVirtual<List<string>>("Add");
 						}
 						else if (!column.IsCalculated)
 						{
 							var col = column;
-							var emitter = column.Emitter;
-							var bindingName = helper.FormatParameterName(column.DbTypeDetails.BindingName);
+							emitter = column.Emitter;
+							bindingName = helper.FormatParameterName(column.DbTypeDetails.BindingName);
 							var next = il.DefineLabel();
-							il.LoadArg(args.dirty);
+							il.LoadArgAddress(args.dirty);
+							il.LoadArg(args.offsets);
 							il.LoadValue(column.Ordinal);
+							il.Emit(OpCodes.Ldelem_I4);
 							il.Call<BitVector>("get_Item");
 							il.LoadValue(0);
 							il.CompareEqual();
@@ -310,6 +330,7 @@ namespace FlitBit.Data.SqlServer
 							{
 								var reftype = col.ReferenceTargetMember.GetTypeOfValue();
 								emitter.BindParameterOnDbCommand<SqlParameter>(method.Builder, column, bindingName,
+									parm,
 									gen => gen.LoadArg(args.cmd),
 									gen => gen.LoadArg(args.model),
 									gen =>
@@ -323,29 +344,24 @@ namespace FlitBit.Data.SqlServer
 							else
 							{
 								emitter.BindParameterOnDbCommand<SqlParameter>(method.Builder, column, bindingName,
+									parm,
 									gen => gen.LoadArg(args.cmd),
 									gen => gen.LoadArg(args.model),
-									gen => gen.CallVirtual(((PropertyInfo)col.Member).GetGetMethod()),
+									gen => gen.CallVirtual(((PropertyInfo) col.Member).GetGetMethod()),
 									flag);
 							}
 							il.MarkLabel(next);
 						}
 					}
-					var idcol = mapping.Identity.Columns[0].Column;
-					var idemit = idcol.Emitter;
-					idemit.BindParameterOnDbCommand<SqlParameter>(method.Builder, idcol, "@identity",
-									gen => gen.LoadArg(args.cmd),
-									gen => gen.LoadArg(args.model),
-									gen => gen.CallVirtual(((PropertyInfo)idcol.Member).GetGetMethod()),
-									flag);
+
 					il.LoadArg(args.cmd);
-					il.LoadArg(args.cmd);
-					il.CallVirtual<DbCommand>("get_CommandText");
-					il.LoadValue("\r\n\t");
+					il.LoadArg(args.sql);
+					il.CallVirtual<DynamicSql>("get_Text");
+					il.LoadValue(",\r\n\t");
 					il.LoadLocal(columnList);
 					il.Call<String>("Join", BindingFlags.Static | BindingFlags.Public, typeof(string), typeof(IEnumerable<string>));
-					il.Call<String>("Format", BindingFlags.Static | BindingFlags.Public, typeof(string), typeof(object), typeof(object));
-					il.CallVirtual<DbCommand>("set_CommandText");
+					il.Call<String>("Format", BindingFlags.Static | BindingFlags.Public, typeof(string), typeof(object));
+					il.CallVirtual<DbCommand>("set_CommandText", typeof(string));
 				});
 			}
 
@@ -379,7 +395,8 @@ namespace FlitBit.Data.SqlServer
 				return builder.Ref.Target;
 			}
 
-			static void ImplementReadByIdBindCommand<TIdentityKey>(EmittedClass builder, Type baseType, Mapping<TDataModel> mapping)
+			static void ImplementReadByIdBindCommand<TIdentityKey>(EmittedClass builder, Type baseType,
+				Mapping<TDataModel> mapping)
 			{
 				var method =
 					builder.DefineOverrideMethod(baseType.GetMethod("BindCommand", BindingFlags.NonPublic | BindingFlags.Instance));
@@ -393,16 +410,18 @@ namespace FlitBit.Data.SqlServer
 				};
 				method.ContributeInstructions((m, il) =>
 				{
+					var parm = il.DeclareLocal(typeof(SqlParameter));
 					var flag = il.DeclareLocal(typeof(bool));
 					var column = mapping.Identity.Columns[0].Column;
 					var emitter = column.Emitter;
 					var bindingName = helper.FormatParameterName(column.DbTypeDetails.BindingName);
 
 					emitter.BindParameterOnDbCommand<SqlParameter>(method.Builder, column, bindingName,
-									gen => gen.LoadArg(args.cmd),
-									gen => gen.LoadArg(args.parm),
-									gen => { },
-									flag);
+						parm,
+						gen => gen.LoadArg(args.cmd),
+						gen => gen.LoadArg(args.parm),
+						gen => { },
+						flag);
 				});
 			}
 
@@ -450,10 +469,10 @@ namespace FlitBit.Data.SqlServer
 					cmd = 1,
 					offsets = 2
 				};
-				const int paramOffset = 3;
-
+				const int paramOffset = 2;
 				method.ContributeInstructions((m, il) =>
 				{
+					var parm = il.DeclareLocal(typeof(SqlParameter));
 					var flag = il.DeclareLocal(typeof(bool));
 					foreach (var p in cns.Parameters.Values)
 					{
@@ -471,6 +490,17 @@ namespace FlitBit.Data.SqlServer
 								// TODO: test for null and if so fallout to bind DBNull
 								loadSource = stream => stream.LoadLocal(dotted);
 							}
+						}
+						else
+						{
+							var emitter = p.Column.Emitter;
+							emitter.BindParameterOnDbCommand<SqlParameter>(method.Builder, p.Column, helper.FormatParameterName(arg.Name),
+								parm,
+								gen => gen.LoadArg(args.cmd),
+								loadSource,
+								gen => { },
+								flag
+								);
 						}
 					}
 				});

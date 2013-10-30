@@ -125,6 +125,20 @@ namespace FlitBit.Data.DataModel
 		{
 			var lhs = FormatValueReference(binary.Left, cns);
 			var rhs = FormatValueReference(binary.Right, cns);
+			// Ensure that bound values are pinned to a column comparand.
+			var lcol = lhs.Column;
+			var rcol = rhs.Column;
+			if (lcol == null)
+			{
+				if (rcol != null)
+				{
+					lhs.AssociateColumn(rcol);
+				}
+			}
+			else if (rcol == null)
+			{
+				rhs.AssociateColumn(lcol);
+			} 
 			return new ComparisonCondition(binary.NodeType, lhs, rhs);
 		}
 
@@ -146,6 +160,7 @@ namespace FlitBit.Data.DataModel
 							Value = String.Concat(mapping.QuoteObjectName("self"), '.',
 								mapping.QuoteObjectName(col.TargetName))
 						};
+						res.AssociateColumn(col);
 					}
 					else
 					{
@@ -156,13 +171,16 @@ namespace FlitBit.Data.DataModel
 								String.Concat(mapping.QuoteObjectName(Convert.ToString(j.Ordinal)), ".",
 									mapping.QuoteObjectName(foreignColumn.TargetName))
 						};
+						res.AssociateColumn(foreignColumn);
 					}
 				}
 				else
 				{
+					var p = AddParameter(expr, cns);
 					res = new ValueReference(ValueReferenceKind.Param)
 					{
-						Value = helper.FormatParameterName(AddParameter(expr, cns))
+						Parameter = p,
+						Value = helper.FormatParameterName(p.Name)
 					};
 				}
 			}
@@ -188,9 +206,11 @@ namespace FlitBit.Data.DataModel
 			}
 			else if (expr.NodeType == ExpressionType.Parameter)
 			{
+				var p = AddParameter(expr, cns);
 				res = new ValueReference(ValueReferenceKind.Param)
 				{
-					Value = helper.FormatParameterName(AddParameter(expr, cns))
+					Parameter = p,
+					Value = helper.FormatParameterName(p.Name)
 				};
 			}
 			else
@@ -200,7 +220,7 @@ namespace FlitBit.Data.DataModel
 			return res;
 		}
 
-		string AddParameter(Expression expr, Constraints cns)
+		Parameter AddParameter(Expression expr, Constraints cns)
 		{
 			var stack = new Stack<MemberExpression>();
 			var parms = cns.Parameters;
@@ -220,14 +240,14 @@ namespace FlitBit.Data.DataModel
 			Parameter p;
 			if (!parms.TryGetValue(name, out p))
 			{
-				parms.Add(name, new Parameter()
+				parms.Add(name, p = new Parameter()
 				{
 					Name = name,
 					Argument = arg,
 					Members = stack.Select(m => m.Member).ToArray()
 				});
 			}
-			return name;
+			return p;
 		}
 
 		Join AddJoinPaths(Expression expr, Dictionary<string, Join> joins)

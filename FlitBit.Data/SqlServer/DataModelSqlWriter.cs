@@ -25,9 +25,11 @@ namespace FlitBit.Data.SqlServer
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)] private bool _hasSyntheticId;
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)] private bool _hasTimestampOnUpdate;
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)] private OrderBy _primaryKeyOrder;
-		[DebuggerBrowsable(DebuggerBrowsableState.Never)] private Tuple<int, string[]> _quotedColumnNames;
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
-		private readonly string _dbObjectReference;
+		private Tuple<int, string[]> _quotedColumnNames;
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
+		private Tuple<int, int[]> _columnOffsets;
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]private readonly string _dbObjectReference;
 
 		public DataModelSqlWriter()
 			: this(DefaultSelfName, DefaultIndent)
@@ -57,6 +59,22 @@ namespace FlitBit.Data.SqlServer
 		public string SelfRef
 		{
 			get { return _selfRef; }
+		}
+
+		public int[] ColumnOffsets
+		{
+			get
+			{
+				IMapping<TDataModel> m = Mapping;
+				if (_columnOffsets == null || _columnOffsets.Item1 < m.Revision)
+				{
+					var helper = m.GetDbProviderHelper();
+					_columnOffsets = Tuple.Create(m.Revision,
+						Enumerable.Range(0, m.Columns.Count()).ToArray()
+						);
+				}
+				return _columnOffsets.Item2;
+			}
 		}
 
 		public string[] QuotedColumnNames
@@ -106,7 +124,7 @@ namespace FlitBit.Data.SqlServer
 			}
 		}
 
-		public string SelectInPrimaryKeyOrderWithPaging
+		public DynamicSql SelectInPrimaryKeyOrderWithPaging
 		{
 			get { return WriteSelectWithPaging(null, null); }
 		}
@@ -166,7 +184,7 @@ namespace FlitBit.Data.SqlServer
 				
 				var helper = Mapping.GetDbProviderHelper();
 				var idStr = helper.FormatParameterName(_idCol.DbTypeDetails.BindingName);
-				var res = new DynamicSql() { SyntheticIdentityVar = idStr };
+				var res = new DynamicSql() { BindIdentityParameter = idStr };
 				var writer = new SqlWriter(_bufferLength, Environment.NewLine, _indent);
 				if (_hasTimestamp)
 				{
@@ -178,7 +196,7 @@ namespace FlitBit.Data.SqlServer
 					.NewLine("SET {0}");
 				writer
 					.NewLine("WHERE ").Append(helper.QuoteObjectName(_idCol.TargetName)).Append(" = ").Append(idStr)
-					.NewLine()
+					.NewLine().Outdent()
 					.NewLine(Select)
 					.NewLine("WHERE ").Append(_selfRef).Append(".").Append(helper.QuoteObjectName(_idCol.TargetName)).Append(" = ").Append(idStr);
 				res.Text = writer.ToString();
@@ -201,12 +219,16 @@ namespace FlitBit.Data.SqlServer
 			}
 		}
 
-		public string WriteSelectWithPaging(Constraints cns, OrderBy orderBy)
+		public DynamicSql WriteSelectWithPaging(Constraints cns, OrderBy orderBy)
 		{
 			IMapping<TDataModel> mapping = Mapping;
 			var helper = Mapping.GetDbProviderHelper();
 			// Default to PK order...
 			OrderBy order = orderBy ?? PrimaryKeyOrder;
+
+			var res = new DynamicSql();
+			res.BindLimitParameter = "@limit";
+			res.BindStartRowParameter = "@startRow";
 
 			var writer = new SqlWriter(_bufferLength, Environment.NewLine, _indent);
 			string[] colList = QuotedColumnNames.Select(c => String.Concat(_selfRef, ".", c)).ToArray();
@@ -233,7 +255,8 @@ namespace FlitBit.Data.SqlServer
 				.NewLine("WHERE seq >= @startRow")
 				.NewLine("ORDER BY seq");
 
-			return writer.ToString();
+			res.Text = writer.Text;
+			return res;
 		}
 
 		public string WriteSelect(Constraints cns, OrderBy orderBy)

@@ -488,55 +488,52 @@ namespace FlitBit.Data
 		}
 
 		public virtual void BindParameterOnDbCommand<TDbParameter>(MethodBuilder method, ColumnMapping column,
-			string bindingName, Action<ILGenerator> loadCmd, Action<ILGenerator> loadModel, Action<ILGenerator> loadProp,
+			string bindingName, LocalBuilder parm, Action<ILGenerator> loadCmd, Action<ILGenerator> loadModel, Action<ILGenerator> loadProp,
 			LocalBuilder flag)
 			where TDbParameter : DbParameter
 		{
 			ILGenerator il = method.GetILGenerator();
 			DbTypeDetails details = column.DbTypeDetails;
-			LocalBuilder parm = il.DeclareLocal(typeof (TDbParameter));
 
-			il.LoadValue(bindingName);
-			il.LoadValue(SpecializedDbTypeValue);
-			il.NewObj(typeof (TDbParameter).GetConstructor(Type.EmptyTypes));
+			il.NewObj(typeof(TDbParameter).GetConstructor(Type.EmptyTypes));
 			il.StoreLocal(parm);
 			il.LoadLocal(parm);
 			il.LoadValue(bindingName);
-			il.CallVirtual<TDbParameter>("set_ParameterName");
+			il.CallVirtual<TDbParameter>("set_ParameterName", typeof(string));
+			
 			EmitDbParameterSetDbType(il, parm);
+			
 			if (IsLengthRequired)
 			{
 				il.LoadLocal(parm);
 				il.LoadValue(details.Length.Value);
-				il.CallVirtual<TDbParameter>("set_Size");
+				il.CallVirtual<TDbParameter>("set_Size", typeof(int));
 			}
 			else if (IsPrecisionRequired)
 			{
 				il.LoadLocal(parm);
 				il.LoadValue(details.Length.Value);
-				il.CallVirtual<TDbParameter>("set_Precision");
+				il.CallVirtual<TDbParameter>("set_Precision", typeof(byte));
 				if (IsScaleRequired || (IsScaleOptional && details.Scale.HasValue))
 				{
 					il.LoadLocal(parm);
 					il.LoadValue(details.Scale.Value);
-					il.CallVirtual<TDbParameter>("set_Scale");
+					il.CallVirtual<TDbParameter>("set_Scale", typeof(byte));
 				}
 			}
+			
+			loadCmd(il);
+			il.CallVirtual<DbCommand>("get_Parameters");
+			il.LoadLocal(parm);
+			il.CallVirtual<DbParameterCollection>("Add", typeof(DbParameter));
+			il.Pop();
 
 			LocalBuilder local = il.DeclareLocal(column.RuntimeType);
 
 			loadModel(il);
 			loadProp(il);
 			il.StoreLocal(local);
-			il.LoadLocal(local);
-
 			EmitDbParameterSetValue(il, column, parm, local, flag);
-
-			loadCmd(il);
-			il.CallVirtual<DbCommand>("get_Parameters");
-			il.LoadLocal(parm);
-			il.CallVirtual<DbParameterCollection>("Add", typeof (DbParameter));
-			il.Pop();
 		}
 
 		protected internal virtual void EmitDbParameterSetValue(ILGenerator il, ColumnMapping column, LocalBuilder parm,
@@ -583,7 +580,7 @@ namespace FlitBit.Data
 		{
 			il.LoadLocal(parm);
 			il.LoadValue(DbType);
-			il.CallVirtual<DbParameter>("set_DbType");
+			il.CallVirtual<DbParameter>("set_DbType", typeof(DbType));
 		}
 
 		public virtual string PrepareConstantValueForSql(object value)

@@ -19,9 +19,10 @@ namespace FlitBit.Data.SqlServer
 			il.Call<Type>("GetType", BindingFlags.Static | BindingFlags.Public, typeof(string));
 		}
 
-		internal protected override void EmitTranslateRuntimeType(ILGenerator il)
+		protected internal override void EmitTranslateRuntimeType(ILGenerator il)
 		{
 			il.CallVirtual<Type>("get_FullName");
+			base.EmitTranslateRuntimeType(il);
 		}
 
 		public override DbTypeDetails GetDbTypeDetails(ColumnMapping column)

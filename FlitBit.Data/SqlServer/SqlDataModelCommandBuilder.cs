@@ -22,7 +22,7 @@ namespace FlitBit.Data.SqlServer
 			Type cmd = OneClassOneTableEmitter.MakeQueryCommand<TDataModel, TImpl, TParam>(Mapping<TDataModel>.Instance, "key", constraints);
 			return
 				(IDataModelQueryCommand<TDataModel, SqlConnection, TParam>)
-					Activator.CreateInstance(cmd, constraints.Writer.Text, Writer.WriteSelectWithPaging(constraints, null));
+					Activator.CreateInstance(cmd, constraints.Writer.Text, Writer.WriteSelectWithPaging(constraints, null), Writer.ColumnOffsets);
 		}
 	}
 

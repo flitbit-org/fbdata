@@ -16,57 +16,38 @@ namespace FlitBit.Data.SqlServer
 		where TImpl : TModel, IDataModel, new()
 	{
 		readonly string _selectAll;
-		readonly string _selectPage;
+		readonly DynamicSql _selectPage;
 		readonly int[] _offsets;
 
 		/// <summary>
 		/// Creates a new instance.
 		/// </summary>
-		public DataModelQueryManyCommand(string selectAll, string selectPage, int[] offsets)
+		public DataModelQueryManyCommand(string all, DynamicSql page, int[] offsets)
 		{
-			if (selectAll == null)
-			{
-				throw new ArgumentNullException("selectAll");
-			}
-			if (selectPage == null)
-			{
-				throw new ArgumentNullException("selectPage");
-			}
-			if (offsets == null)
-			{
-				throw new ArgumentNullException("offsets");
-			}
-			_selectAll = selectAll;
-			_selectPage = selectPage;
+			_selectAll = all;
+			_selectPage = page;
 			_offsets = offsets;
 		}
 
-		/// <summary>
-		/// Executes the query on the specified connection according to the specified behavior (possibly paging).
-		/// </summary>
-		/// <param name="cx">the db context</param>
-		/// <param name="cn">a db connection used to execute the command</param>
-		/// <param name="behavior">behaviors, possibly paging</param>
-		/// <returns>a data model query result</returns>
 		public IDataModelQueryResult<TModel> ExecuteMany(IDbContext cx, SqlConnection cn, QueryBehavior behavior)
 		{
 			var paging = behavior.IsPaging;
 			var limited = behavior.IsLimited;
-			var page = behavior.Page;
+			var page = behavior.Page - 1;
 			var res = new List<TModel>();
 			var pageCount = 0;
 			cn.EnsureConnectionIsOpen();
-			var query = (limited) ? _selectPage : _selectAll;
+			var query = (limited) ? _selectPage.Text : _selectAll;
 
 			using (var cmd = cn.CreateCommand(query, CommandType.Text))
 			{
 				if (limited)
 				{
-					var limitParam = new SqlParameter("@limit", SqlDbType.Int) {Value = behavior.PageSize};
+					var limitParam = new SqlParameter(_selectPage.BindLimitParameter, SqlDbType.Int) {Value = behavior.PageSize};
 					cmd.Parameters.Add(limitParam);
 					if (paging)
 					{
-						var startRowParam = new SqlParameter("@startRow", SqlDbType.Int) {Value = (page - 1)*behavior.PageSize};
+						var startRowParam = new SqlParameter(_selectPage.BindStartRowParameter, SqlDbType.Int) {Value = (page*behavior.PageSize)};
 						cmd.Parameters.Add(startRowParam);
 					}
 				}

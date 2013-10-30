@@ -85,7 +85,7 @@ namespace FlitBit.Data.SqlServer
 			il.LoadLocal(parm);
 			il.LoadLocal(local);
 			EmitTranslateRuntimeType(il);
-			il.CallVirtual<SqlParameter>("set_SqlValue");
+			il.CallVirtual<SqlParameter>("set_SqlValue", typeof(object));
 			il.MarkLabel(fin);
 		}
 	}

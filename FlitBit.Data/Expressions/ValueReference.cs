@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reflection;
+using FlitBit.Data.Meta;
 
 namespace FlitBit.Data.Expressions
 {
@@ -19,6 +20,22 @@ namespace FlitBit.Data.Expressions
 			return join == null || join.Ordinal <= j.Ordinal;
 		}
 
+		public ColumnMapping Column { get; private set; }
+
+		public Parameter Parameter { get; set; }
+
+		public ValueReference AssociateColumn(ColumnMapping col)
+		{
+			if (Column == null)
+			{
+				Column = col;
+				if (Parameter != null && Parameter.Column == null)
+				{
+					Parameter.Column = col;
+				}
+			}
+			return this;
+		}
 	}
 
 	public class MemberValueReference : ValueReference
