@@ -157,11 +157,13 @@
     <Compile Include="DataModel\DataModelBinder.cs" />
     <Compile Include="DataModel\DataModelCommandBuilder.cs" />
     <Compile Include="DataModel\DataModelQueryResult.cs" />
+    <Compile Include="DataModel\DataModelRepository.cs" />
     <Compile Include="DataModel\IDataModelCommandBuilder.cs" />
     <Compile Include="DataModel\IDataModelNonQueryCommand.cs" />
     <Compile Include="DataModel\IDataModelQueryCommand.cs" />
     <Compile Include="DataModel\IDataModelQueryManyCommand.cs" />
     <Compile Include="DataModel\IDataModelQuerySingleCommand.cs" />
+    <Compile Include="DataModel\IDataModelRepository.cs" />
     <Compile Include="DataModel\TParam.cs" />
     <Compile Include="DbTypeDetails.cs" />
     <Compile Include="Expressions\AndCondition.cs" />
@@ -326,9 +328,6 @@
     <Compile Include="IDbExecutable.cs" />
     <Compile Include="IDbExecutableExtensions.cs">
       <DependentUpon>IDbExecutable.cs</DependentUpon>
-    </Compile>
-    <Compile Include="MappedDataRepository.cs">
-      <DependentUpon>IDataRepository.cs</DependentUpon>
     </Compile>
     <Compile Include="Meta\CollectionMapping.cs" />
     <Compile Include="Meta\ColumnMapping.cs" />

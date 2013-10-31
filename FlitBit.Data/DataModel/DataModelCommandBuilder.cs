@@ -15,10 +15,7 @@ namespace FlitBit.Data.DataModel
 	/// Builds SQL commands over a data model.
 	/// </summary>
 	/// <typeparam name="TDataModel">data model's type</typeparam>
-	/// <typeparam name="TDbConnection">db connection type</typeparam>
-	/// <typeparam name="TParam"></typeparam>
-	public abstract class DataModelCommandBuilder<TDataModel, TDbConnection, TParam> :
-		IDataModelCommandBuilder<TDataModel, TDbConnection, TParam>
+	public class DataModelCommandBuilder<TDataModel>
 	{
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 		readonly DataModelSqlWriter<TDataModel> _sqlWriter;
@@ -26,6 +23,7 @@ namespace FlitBit.Data.DataModel
 		/// <summary>
 		/// Creates a new instance.
 		/// </summary>
+		/// <param name="queryKey">the query's key.</param>
 		/// <param name="sqlWriter">a writer</param>
 		protected DataModelCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
 		{
@@ -36,25 +34,24 @@ namespace FlitBit.Data.DataModel
 			_sqlWriter = sqlWriter;
 		}
 
+		/// <summary>
+		/// Gets the builder's sql writer.
+		/// </summary>
 		public DataModelSqlWriter<TDataModel> Writer { get { return _sqlWriter; } }
 
-		public IDataModelQueryCommand<TDataModel, TDbConnection, TParam> Where(
-			Expression<Func<TDataModel, TParam, bool>> expression)
-		{
-			var cns = new Constraints();
-			var lambda = (LambdaExpression) expression;
-			var i = 0;
-			cns.Arguments = lambda.Parameters.Select(p => new ParameterValueReference(p.Name, i++, p.Type));
-			
-			return ConstructCommandOnConstraints(
-																		 PrepareTranslateExpression(cns, lambda.Body)
-																		 );
-		}
+		/// <summary>
+		/// The query's key.
+		/// </summary>
+		public string QueryKey { get; private set; }
 
-		protected abstract IDataModelQueryCommand<TDataModel, TDbConnection, TParam> ConstructCommandOnConstraints(
-			Constraints constraints);
-
-		Constraints PrepareTranslateExpression(Constraints cns, Expression expr)
+		/// <summary>
+		/// Evaluates the provided expression and builds query constraints.
+		/// </summary>
+		/// <param name="cns"></param>
+		/// <param name="expr"></param>
+		/// <returns></returns>
+		/// <exception cref="NotSupportedException"></exception>
+		protected virtual Constraints PrepareTranslateExpression(Constraints cns, Expression expr)
 		{
 			cns.Writer.Append(_sqlWriter.Select);
 
@@ -243,7 +240,7 @@ namespace FlitBit.Data.DataModel
 			Parameter p;
 			if (!parms.TryGetValue(name, out p))
 			{
-				parms.Add(name, p = new Parameter()
+				parms.Add(name, p = new Parameter
 				{
 					Name = name,
 					Argument = arg,
@@ -309,7 +306,500 @@ namespace FlitBit.Data.DataModel
 			return it.NodeType == ExpressionType.Parameter
 						&& it.Type == typeof(TDataModel);
 		}
+	}
 
-		public string QueryKey { get; private set; }
+	/// <summary>
+	/// Builds SQL commands over a data model.
+	/// </summary>
+	/// <typeparam name="TDataModel">data model's type</typeparam>
+	/// <typeparam name="TDbConnection">db connection type</typeparam>
+	/// <typeparam name="TParam"></typeparam>
+	public abstract class DataModelCommandBuilder<TDataModel, TDbConnection, TParam> :  DataModelCommandBuilder<TDataModel>,
+		IDataModelCommandBuilder<TDataModel, TDbConnection, TParam>
+	{
+		/// <summary>
+		/// Creates a new instance.
+		/// </summary>
+		/// <param name="queryKey">the query's key</param>
+		/// <param name="sqlWriter">a writer</param>
+		protected DataModelCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter) : base(queryKey, sqlWriter)
+		{
+		}
+
+		/// <summary>
+		/// Specifies constraints on the data model. The expression must evaluate like a predicate in order to be translated to SQL.
+		/// </summary>
+		/// <param name="predicate">a predicate expression</param>
+		/// <returns></returns>
+		public IDataModelQueryCommand<TDataModel, TDbConnection, TParam> Where(
+			Expression<Func<TDataModel, TParam, bool>> predicate)
+		{
+			var cns = new Constraints();
+			var lambda = (LambdaExpression) predicate;
+			var i = 0;
+			cns.Arguments = lambda.Parameters.Select(p => new ParameterValueReference(p.Name, i++, p.Type));
+
+			return ConstructCommandOnConstraints(
+				PrepareTranslateExpression(cns, lambda.Body)
+				);
+		}
+
+		/// <summary>
+		/// Builds a query command with the specified constraints.
+		/// </summary>
+		/// <param name="constraints"></param>
+		/// <returns></returns>
+		protected abstract IDataModelQueryCommand<TDataModel, TDbConnection, TParam> ConstructCommandOnConstraints(
+			Constraints constraints);
+	}
+	/// <summary>
+	/// Builds SQL commands over a data model.
+	/// </summary>
+	/// <typeparam name="TDataModel">data model's type</typeparam>
+	/// <typeparam name="TDbConnection">db connection type</typeparam>
+	/// <typeparam name="TParam"></typeparam>
+	/// <typeparam name="TParam1"></typeparam>
+	public abstract class DataModelCommandBuilder<TDataModel, TDbConnection, TParam, TParam1> : DataModelCommandBuilder<TDataModel>,
+		IDataModelCommandBuilder<TDataModel, TDbConnection, TParam, TParam1>
+	{
+		/// <summary>
+		/// Creates a new instance.
+		/// </summary>
+		/// <param name="queryKey">the query's key</param>
+		/// <param name="sqlWriter">a writer</param>
+		protected DataModelCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
+			: base(queryKey, sqlWriter)
+		{
+		}
+
+		/// <summary>
+		/// Specifies constraints on the data model. The expression must evaluate like a predicate in order to be translated to SQL.
+		/// </summary>
+		/// <param name="predicate">a predicate expression</param>
+		/// <returns></returns>
+		public IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1> Where(
+			Expression<Func<TDataModel, TParam, TParam1, bool>> predicate)
+		{
+			var cns = new Constraints();
+			var lambda = (LambdaExpression)predicate;
+			var i = 0;
+			cns.Arguments = lambda.Parameters.Select(p => new ParameterValueReference(p.Name, i++, p.Type));
+
+			return ConstructCommandOnConstraints(
+				PrepareTranslateExpression(cns, lambda.Body)
+				);
+		}
+
+		/// <summary>
+		/// Builds a query command with the specified constraints.
+		/// </summary>
+		/// <param name="constraints"></param>
+		/// <returns></returns>
+		protected abstract IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1> ConstructCommandOnConstraints(
+			Constraints constraints);
+	}
+	/// <summary>
+	/// Builds SQL commands over a data model.
+	/// </summary>
+	/// <typeparam name="TDataModel">data model's type</typeparam>
+	/// <typeparam name="TDbConnection">db connection type</typeparam>
+	/// <typeparam name="TParam"></typeparam>
+	/// <typeparam name="TParam1"></typeparam>
+	/// <typeparam name="TParam2"></typeparam>
+	public abstract class DataModelCommandBuilder<TDataModel, TDbConnection, TParam, TParam1, TParam2> : DataModelCommandBuilder<TDataModel>,
+		IDataModelCommandBuilder<TDataModel, TDbConnection, TParam, TParam1, TParam2>
+	{
+		/// <summary>
+		/// Creates a new instance.
+		/// </summary>
+		/// <param name="queryKey">the query's key</param>
+		/// <param name="sqlWriter">a writer</param>
+		protected DataModelCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
+			: base(queryKey, sqlWriter)
+		{
+		}
+
+		/// <summary>
+		/// Specifies constraints on the data model. The expression must evaluate like a predicate in order to be translated to SQL.
+		/// </summary>
+		/// <param name="predicate">a predicate expression</param>
+		/// <returns></returns>
+		public IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2> Where(
+			Expression<Func<TDataModel, TParam, TParam1, TParam2, bool>> predicate)
+		{
+			var cns = new Constraints();
+			var lambda = (LambdaExpression)predicate;
+			var i = 0;
+			cns.Arguments = lambda.Parameters.Select(p => new ParameterValueReference(p.Name, i++, p.Type));
+
+			return ConstructCommandOnConstraints(
+				PrepareTranslateExpression(cns, lambda.Body)
+				);
+		}
+
+		/// <summary>
+		/// Builds a query command with the specified constraints.
+		/// </summary>
+		/// <param name="constraints"></param>
+		/// <returns></returns>
+		protected abstract IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2> ConstructCommandOnConstraints(
+			Constraints constraints);
+	}
+	/// <summary>
+	/// Builds SQL commands over a data model.
+	/// </summary>
+	/// <typeparam name="TDataModel">data model's type</typeparam>
+	/// <typeparam name="TDbConnection">db connection type</typeparam>
+	/// <typeparam name="TParam"></typeparam>
+	/// <typeparam name="TParam1"></typeparam>
+	/// <typeparam name="TParam2"></typeparam>
+	/// <typeparam name="TParam3"></typeparam>
+	public abstract class DataModelCommandBuilder<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3> : DataModelCommandBuilder<TDataModel>,
+		IDataModelCommandBuilder<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3>
+	{
+		/// <summary>
+		/// Creates a new instance.
+		/// </summary>
+		/// <param name="queryKey">the query's key</param>
+		/// <param name="sqlWriter">a writer</param>
+		protected DataModelCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
+			: base(queryKey, sqlWriter)
+		{
+		}
+
+		/// <summary>
+		/// Specifies constraints on the data model. The expression must evaluate like a predicate in order to be translated to SQL.
+		/// </summary>
+		/// <param name="predicate">a predicate expression</param>
+		/// <returns></returns>
+		public IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3> Where(
+			Expression<Func<TDataModel, TParam, TParam1, TParam2, TParam3, bool>> predicate)
+		{
+			var cns = new Constraints();
+			var lambda = (LambdaExpression)predicate;
+			var i = 0;
+			cns.Arguments = lambda.Parameters.Select(p => new ParameterValueReference(p.Name, i++, p.Type));
+
+			return ConstructCommandOnConstraints(
+				PrepareTranslateExpression(cns, lambda.Body)
+				);
+		}
+
+		/// <summary>
+		/// Builds a query command with the specified constraints.
+		/// </summary>
+		/// <param name="constraints"></param>
+		/// <returns></returns>
+		protected abstract IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3> ConstructCommandOnConstraints(
+			Constraints constraints);
+	}
+	/// <summary>
+	/// Builds SQL commands over a data model.
+	/// </summary>
+	/// <typeparam name="TDataModel">data model's type</typeparam>
+	/// <typeparam name="TDbConnection">db connection type</typeparam>
+	/// <typeparam name="TParam"></typeparam>
+	/// <typeparam name="TParam1"></typeparam>
+	/// <typeparam name="TParam2"></typeparam>
+	/// <typeparam name="TParam3"></typeparam>
+	/// <typeparam name="TParam4"></typeparam>
+	public abstract class DataModelCommandBuilder<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4> : DataModelCommandBuilder<TDataModel>,
+		IDataModelCommandBuilder<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4>
+	{
+		/// <summary>
+		/// Creates a new instance.
+		/// </summary>
+		/// <param name="queryKey">the query's key</param>
+		/// <param name="sqlWriter">a writer</param>
+		protected DataModelCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
+			: base(queryKey, sqlWriter)
+		{
+		}
+
+		/// <summary>
+		/// Specifies constraints on the data model. The expression must evaluate like a predicate in order to be translated to SQL.
+		/// </summary>
+		/// <param name="predicate">a predicate expression</param>
+		/// <returns></returns>
+		public IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4> Where(
+			Expression<Func<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, bool>> predicate)
+		{
+			var cns = new Constraints();
+			var lambda = (LambdaExpression)predicate;
+			var i = 0;
+			cns.Arguments = lambda.Parameters.Select(p => new ParameterValueReference(p.Name, i++, p.Type));
+
+			return ConstructCommandOnConstraints(
+				PrepareTranslateExpression(cns, lambda.Body)
+				);
+		}
+
+		/// <summary>
+		/// Builds a query command with the specified constraints.
+		/// </summary>
+		/// <param name="constraints"></param>
+		/// <returns></returns>
+		protected abstract IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4> ConstructCommandOnConstraints(
+			Constraints constraints);
+	}
+	/// <summary>
+	/// Builds SQL commands over a data model.
+	/// </summary>
+	/// <typeparam name="TDataModel">data model's type</typeparam>
+	/// <typeparam name="TDbConnection">db connection type</typeparam>
+	/// <typeparam name="TParam"></typeparam>
+	/// <typeparam name="TParam1"></typeparam>
+	/// <typeparam name="TParam2"></typeparam>
+	/// <typeparam name="TParam3"></typeparam>
+	/// <typeparam name="TParam4"></typeparam>
+	/// <typeparam name="TParam5"></typeparam>
+	public abstract class DataModelCommandBuilder<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5> : DataModelCommandBuilder<TDataModel>,
+		IDataModelCommandBuilder<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5>
+	{
+		/// <summary>
+		/// Creates a new instance.
+		/// </summary>
+		/// <param name="queryKey">the query's key</param>
+		/// <param name="sqlWriter">a writer</param>
+		protected DataModelCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
+			: base(queryKey, sqlWriter)
+		{
+		}
+
+		/// <summary>
+		/// Specifies constraints on the data model. The expression must evaluate like a predicate in order to be translated to SQL.
+		/// </summary>
+		/// <param name="predicate">a predicate expression</param>
+		/// <returns></returns>
+		public IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5> Where(
+			Expression<Func<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, bool>> predicate)
+		{
+			var cns = new Constraints();
+			var lambda = (LambdaExpression)predicate;
+			var i = 0;
+			cns.Arguments = lambda.Parameters.Select(p => new ParameterValueReference(p.Name, i++, p.Type));
+
+			return ConstructCommandOnConstraints(
+				PrepareTranslateExpression(cns, lambda.Body)
+				);
+		}
+
+		/// <summary>
+		/// Builds a query command with the specified constraints.
+		/// </summary>
+		/// <param name="constraints"></param>
+		/// <returns></returns>
+		protected abstract IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5> ConstructCommandOnConstraints(
+			Constraints constraints);
+	}
+	/// <summary>
+	/// Builds SQL commands over a data model.
+	/// </summary>
+	/// <typeparam name="TDataModel">data model's type</typeparam>
+	/// <typeparam name="TDbConnection">db connection type</typeparam>
+	/// <typeparam name="TParam"></typeparam>
+	/// <typeparam name="TParam1"></typeparam>
+	/// <typeparam name="TParam2"></typeparam>
+	/// <typeparam name="TParam3"></typeparam>
+	/// <typeparam name="TParam4"></typeparam>
+	/// <typeparam name="TParam5"></typeparam>
+	/// <typeparam name="TParam6"></typeparam>
+	public abstract class DataModelCommandBuilder<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6> : DataModelCommandBuilder<TDataModel>,
+		IDataModelCommandBuilder<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6>
+	{
+		/// <summary>
+		/// Creates a new instance.
+		/// </summary>
+		/// <param name="queryKey">the query's key</param>
+		/// <param name="sqlWriter">a writer</param>
+		protected DataModelCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
+			: base(queryKey, sqlWriter)
+		{
+		}
+
+		/// <summary>
+		/// Specifies constraints on the data model. The expression must evaluate like a predicate in order to be translated to SQL.
+		/// </summary>
+		/// <param name="predicate">a predicate expression</param>
+		/// <returns></returns>
+		public IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6> Where(
+			Expression<Func<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, bool>> predicate)
+		{
+			var cns = new Constraints();
+			var lambda = (LambdaExpression)predicate;
+			var i = 0;
+			cns.Arguments = lambda.Parameters.Select(p => new ParameterValueReference(p.Name, i++, p.Type));
+
+			return ConstructCommandOnConstraints(
+				PrepareTranslateExpression(cns, lambda.Body)
+				);
+		}
+
+		/// <summary>
+		/// Builds a query command with the specified constraints.
+		/// </summary>
+		/// <param name="constraints"></param>
+		/// <returns></returns>
+		protected abstract IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6> ConstructCommandOnConstraints(
+			Constraints constraints);
+	}
+	/// <summary>
+	/// Builds SQL commands over a data model.
+	/// </summary>
+	/// <typeparam name="TDataModel">data model's type</typeparam>
+	/// <typeparam name="TDbConnection">db connection type</typeparam>
+	/// <typeparam name="TParam"></typeparam>
+	/// <typeparam name="TParam1"></typeparam>
+	/// <typeparam name="TParam2"></typeparam>
+	/// <typeparam name="TParam3"></typeparam>
+	/// <typeparam name="TParam4"></typeparam>
+	/// <typeparam name="TParam5"></typeparam>
+	/// <typeparam name="TParam6"></typeparam>
+	/// <typeparam name="TParam7"></typeparam>
+	public abstract class DataModelCommandBuilder<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7> : DataModelCommandBuilder<TDataModel>,
+		IDataModelCommandBuilder<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7>
+	{
+		/// <summary>
+		/// Creates a new instance.
+		/// </summary>
+		/// <param name="queryKey">the query's key</param>
+		/// <param name="sqlWriter">a writer</param>
+		protected DataModelCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
+			: base(queryKey, sqlWriter)
+		{
+		}
+
+		/// <summary>
+		/// Specifies constraints on the data model. The expression must evaluate like a predicate in order to be translated to SQL.
+		/// </summary>
+		/// <param name="predicate">a predicate expression</param>
+		/// <returns></returns>
+		public IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7> Where(
+			Expression<Func<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, bool>> predicate)
+		{
+			var cns = new Constraints();
+			var lambda = (LambdaExpression)predicate;
+			var i = 0;
+			cns.Arguments = lambda.Parameters.Select(p => new ParameterValueReference(p.Name, i++, p.Type));
+
+			return ConstructCommandOnConstraints(
+				PrepareTranslateExpression(cns, lambda.Body)
+				);
+		}
+
+		/// <summary>
+		/// Builds a query command with the specified constraints.
+		/// </summary>
+		/// <param name="constraints"></param>
+		/// <returns></returns>
+		protected abstract IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7> ConstructCommandOnConstraints(
+			Constraints constraints);
+	}
+	/// <summary>
+	/// Builds SQL commands over a data model.
+	/// </summary>
+	/// <typeparam name="TDataModel">data model's type</typeparam>
+	/// <typeparam name="TDbConnection">db connection type</typeparam>
+	/// <typeparam name="TParam"></typeparam>
+	/// <typeparam name="TParam1"></typeparam>
+	/// <typeparam name="TParam2"></typeparam>
+	/// <typeparam name="TParam3"></typeparam>
+	/// <typeparam name="TParam4"></typeparam>
+	/// <typeparam name="TParam5"></typeparam>
+	/// <typeparam name="TParam6"></typeparam>
+	/// <typeparam name="TParam7"></typeparam>
+	/// <typeparam name="TParam8"></typeparam>
+	public abstract class DataModelCommandBuilder<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8> : DataModelCommandBuilder<TDataModel>,
+		IDataModelCommandBuilder<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8>
+	{
+		/// <summary>
+		/// Creates a new instance.
+		/// </summary>
+		/// <param name="queryKey">the query's key</param>
+		/// <param name="sqlWriter">a writer</param>
+		protected DataModelCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
+			: base(queryKey, sqlWriter)
+		{
+		}
+
+		/// <summary>
+		/// Specifies constraints on the data model. The expression must evaluate like a predicate in order to be translated to SQL.
+		/// </summary>
+		/// <param name="predicate">a predicate expression</param>
+		/// <returns></returns>
+		public IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8> Where(
+			Expression<Func<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, bool>> predicate)
+		{
+			var cns = new Constraints();
+			var lambda = (LambdaExpression)predicate;
+			var i = 0;
+			cns.Arguments = lambda.Parameters.Select(p => new ParameterValueReference(p.Name, i++, p.Type));
+
+			return ConstructCommandOnConstraints(
+				PrepareTranslateExpression(cns, lambda.Body)
+				);
+		}
+
+		/// <summary>
+		/// Builds a query command with the specified constraints.
+		/// </summary>
+		/// <param name="constraints"></param>
+		/// <returns></returns>
+		protected abstract IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8> ConstructCommandOnConstraints(
+			Constraints constraints);
+	}
+	/// <summary>
+	/// Builds SQL commands over a data model.
+	/// </summary>
+	/// <typeparam name="TDataModel">data model's type</typeparam>
+	/// <typeparam name="TDbConnection">db connection type</typeparam>
+	/// <typeparam name="TParam"></typeparam>
+	/// <typeparam name="TParam1"></typeparam>
+	/// <typeparam name="TParam2"></typeparam>
+	/// <typeparam name="TParam3"></typeparam>
+	/// <typeparam name="TParam4"></typeparam>
+	/// <typeparam name="TParam5"></typeparam>
+	/// <typeparam name="TParam6"></typeparam>
+	/// <typeparam name="TParam7"></typeparam>
+	/// <typeparam name="TParam8"></typeparam>
+	/// <typeparam name="TParam9"></typeparam>
+	public abstract class DataModelCommandBuilder<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9> : DataModelCommandBuilder<TDataModel>,
+		IDataModelCommandBuilder<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>
+	{
+		/// <summary>
+		/// Creates a new instance.
+		/// </summary>
+		/// <param name="queryKey">the query's key</param>
+		/// <param name="sqlWriter">a writer</param>
+		protected DataModelCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
+			: base(queryKey, sqlWriter)
+		{
+		}
+
+		/// <summary>
+		/// Specifies constraints on the data model. The expression must evaluate like a predicate in order to be translated to SQL.
+		/// </summary>
+		/// <param name="predicate">a predicate expression</param>
+		/// <returns></returns>
+		public IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9> Where(
+			Expression<Func<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9, bool>> predicate)
+		{
+			var cns = new Constraints();
+			var lambda = (LambdaExpression)predicate;
+			var i = 0;
+			cns.Arguments = lambda.Parameters.Select(p => new ParameterValueReference(p.Name, i++, p.Type));
+
+			return ConstructCommandOnConstraints(
+				PrepareTranslateExpression(cns, lambda.Body)
+				);
+		}
+
+		/// <summary>
+		/// Builds a query command with the specified constraints.
+		/// </summary>
+		/// <param name="constraints"></param>
+		/// <returns></returns>
+		protected abstract IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9> ConstructCommandOnConstraints(
+			Constraints constraints);
 	}
 }

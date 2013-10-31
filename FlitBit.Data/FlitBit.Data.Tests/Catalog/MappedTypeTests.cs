@@ -39,6 +39,8 @@ namespace FlitBit.Data.Tests.Catalog
 			Assert.IsNotNull(mapping.ConcreteType);
 			Assert.IsNotNull(sql);
 
+
+
 			var all = binder.GetAllCommand();
 			var create = binder.GetCreateCommand();
 			var update = binder.GetUpdateCommand();
