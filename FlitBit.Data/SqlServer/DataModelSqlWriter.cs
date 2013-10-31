@@ -7,6 +7,7 @@ using FlitBit.Core;
 using FlitBit.Data.DataModel;
 using FlitBit.Data.Expressions;
 using FlitBit.Data.Meta;
+using FlitBit.Data.Meta.DDL;
 
 namespace FlitBit.Data.SqlServer
 {

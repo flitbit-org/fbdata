@@ -156,6 +156,8 @@
     <Compile Include="Configuration\MapConnectionStringsConfigurationElementCollection.cs" />
     <Compile Include="DataModel\DataModelBinder.cs" />
     <Compile Include="DataModel\DataModelCommandBuilder.cs" />
+    <Compile Include="DataModel\DataModelUpdateCommandBuilder.cs" />
+    <Compile Include="DataModel\DataModelQueryCommandBuilder.cs" />
     <Compile Include="DataModel\DataModelQueryResult.cs" />
     <Compile Include="DataModel\DataModelRepository.cs" />
     <Compile Include="DataModel\IDataModelCommandBuilder.cs" />
@@ -164,6 +166,7 @@
     <Compile Include="DataModel\IDataModelQueryManyCommand.cs" />
     <Compile Include="DataModel\IDataModelQuerySingleCommand.cs" />
     <Compile Include="DataModel\IDataModelRepository.cs" />
+    <Compile Include="DataModel\IDataModelUpdateCommandBuilder.cs" />
     <Compile Include="DataModel\TParam.cs" />
     <Compile Include="DbTypeDetails.cs" />
     <Compile Include="Expressions\AndCondition.cs" />
@@ -187,10 +190,13 @@
     <Compile Include="SqlServer\OneClassOneTableEmitter.cs" />
     <Compile Include="SqlServer\DataModelSqlWriter.cs" />
     <Compile Include="SqlServer\SingleUpdateQueryCommand.cs" />
+    <Compile Include="SqlServer\SqlDataModelCommand.cs" />
     <Compile Include="SqlServer\SqlDataModelQuerySingleCommand.cs" />
     <Compile Include="SqlServer\DataModelQueryManyCommand.cs" />
     <Compile Include="SqlServer\SqlDataModelCommandBuilder.cs" />
     <Compile Include="SqlServer\SqlDataModelQueryCommand.cs" />
+    <Compile Include="SqlServer\SqlDataModelUpdateCommand.cs" />
+    <Compile Include="SqlServer\SqlDataModelUpdateCommandBuilder.cs" />
     <Compile Include="SqlServer\SqlDbTypeEmitter.cs" />
     <Compile Include="SqlServer\SqlMappedEmumAsInt16Emitter.cs" />
     <Compile Include="SqlServer\SqlMappedEmumAsInt32Emitter.cs" />

@@ -94,7 +94,7 @@ namespace FlitBit.Data.DataModel
 		/// <param name="criteria"></param>
 		/// <typeparam name="TCriteria"></typeparam>
 		/// <returns></returns>
-		IDataModelCommandBuilder<TModel, TDbConnection, TCriteria> MakeQueryCommand<TCriteria>(string queryKey,
+		IDataModelQueryCommandBuilder<TModel, TDbConnection, TCriteria> MakeQueryCommand<TCriteria>(string queryKey,
 			TCriteria criteria);
 		
 		/// <summary>
@@ -103,7 +103,7 @@ namespace FlitBit.Data.DataModel
 		/// <typeparam name="TParam"></typeparam>
 		/// <param name="queryKey">unique key identifying the query</param>
 		/// <returns></returns>
-		IDataModelCommandBuilder<TModel, TDbConnection, TParam> MakeQueryCommand<TParam>(string queryKey);
+		IDataModelQueryCommandBuilder<TModel, TDbConnection, TParam> MakeQueryCommand<TParam>(string queryKey);
 
 		/// <summary>
 		/// Makes a query command that binds to the specified parameter types.

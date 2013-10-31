@@ -3,13 +3,13 @@ using System.Linq.Expressions;
 
 namespace FlitBit.Data.DataModel
 {
-	/// <summary>
+    /// <summary>
 	/// Builds a data model command, binding parameters of the specified types.
 	/// </summary>
 	/// <typeparam name="TDataModel"></typeparam>
 	/// <typeparam name="TDbConnection"></typeparam>
 	/// <typeparam name="TParam"></typeparam>
-	public interface IDataModelCommandBuilder<TDataModel, in TDbConnection, TParam>
+	public interface IDataModelQueryCommandBuilder<TDataModel, in TDbConnection, TParam>
 	{
 		/// <summary>
 		/// Specifies constraints on the data model. The expression must evaluate like a predicate in order to be translated to SQL.

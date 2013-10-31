@@ -7,12 +7,12 @@ using FlitBit.Data.SPI;
 
 namespace FlitBit.Data.SqlServer
 {
-	public class SqlDataModelCommandBuilder<TDataModel, TImpl, TParam> :
-		DataModelCommandBuilder<TDataModel, SqlConnection, TParam>
+	public class SqlDataModelQueryCommandBuilder<TDataModel, TImpl, TParam> :
+		DataModelQueryCommandBuilder<TDataModel, SqlConnection, TParam>
 		where TImpl: class, IDataModel, TDataModel, new()
 	{
 
-		public SqlDataModelCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
+		public SqlDataModelQueryCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
 			: base(queryKey, sqlWriter)
 		{
 		}
@@ -25,6 +25,7 @@ namespace FlitBit.Data.SqlServer
 					Activator.CreateInstance(cmd, constraints.Writer.Text, Writer.WriteSelectWithPaging(constraints, null), Writer.ColumnOffsets);
 		}
 	}
+
 	/// <summary>
 	/// Data model command builder for SQL Server.
 	/// </summary>
@@ -32,8 +33,8 @@ namespace FlitBit.Data.SqlServer
 	/// <typeparam name="TImpl"></typeparam>
 	/// <typeparam name="TParam"></typeparam>
 	/// <typeparam name="TParam1"></typeparam>
-	public class SqlDataModelCommandBuilder<TDataModel, TImpl, TParam, TParam1> :
-		DataModelCommandBuilder<TDataModel, SqlConnection, TParam, TParam1>
+	public class SqlDataModelQueryCommandBuilder<TDataModel, TImpl, TParam, TParam1> :
+		DataModelQueryCommandBuilder<TDataModel, SqlConnection, TParam, TParam1>
 		where TImpl : class, IDataModel, TDataModel, new()
 	{
 		/// <summary>
@@ -41,7 +42,7 @@ namespace FlitBit.Data.SqlServer
 		/// </summary>
 		/// <param name="queryKey"></param>
 		/// <param name="sqlWriter"></param>
-		public SqlDataModelCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
+		public SqlDataModelQueryCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
 			: base(queryKey, sqlWriter)
 		{
 		}
@@ -67,8 +68,8 @@ namespace FlitBit.Data.SqlServer
 	/// <typeparam name="TParam"></typeparam>
 	/// <typeparam name="TParam1"></typeparam>
 	/// <typeparam name="TParam2"></typeparam>
-	public class SqlDataModelCommandBuilder<TDataModel, TImpl, TParam, TParam1, TParam2> :
-		DataModelCommandBuilder<TDataModel, SqlConnection, TParam, TParam1, TParam2>
+	public class SqlDataModelQueryCommandBuilder<TDataModel, TImpl, TParam, TParam1, TParam2> :
+		DataModelQueryCommandBuilder<TDataModel, SqlConnection, TParam, TParam1, TParam2>
 		where TImpl : class, IDataModel, TDataModel, new()
 	{
 		/// <summary>
@@ -76,7 +77,7 @@ namespace FlitBit.Data.SqlServer
 		/// </summary>
 		/// <param name="queryKey"></param>
 		/// <param name="sqlWriter"></param>
-		public SqlDataModelCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
+		public SqlDataModelQueryCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
 			: base(queryKey, sqlWriter)
 		{
 		}
@@ -103,8 +104,8 @@ namespace FlitBit.Data.SqlServer
 	/// <typeparam name="TParam1"></typeparam>
 	/// <typeparam name="TParam2"></typeparam>
 	/// <typeparam name="TParam3"></typeparam>
-	public class SqlDataModelCommandBuilder<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3> :
-		DataModelCommandBuilder<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3>
+	public class SqlDataModelQueryCommandBuilder<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3> :
+		DataModelQueryCommandBuilder<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3>
 		where TImpl : class, IDataModel, TDataModel, new()
 	{
 		/// <summary>
@@ -112,7 +113,7 @@ namespace FlitBit.Data.SqlServer
 		/// </summary>
 		/// <param name="queryKey"></param>
 		/// <param name="sqlWriter"></param>
-		public SqlDataModelCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
+		public SqlDataModelQueryCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
 			: base(queryKey, sqlWriter)
 		{
 		}
@@ -140,8 +141,8 @@ namespace FlitBit.Data.SqlServer
 	/// <typeparam name="TParam2"></typeparam>
 	/// <typeparam name="TParam3"></typeparam>
 	/// <typeparam name="TParam4"></typeparam>
-	public class SqlDataModelCommandBuilder<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3, TParam4> :
-		DataModelCommandBuilder<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4>
+	public class SqlDataModelQueryCommandBuilder<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3, TParam4> :
+		DataModelQueryCommandBuilder<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4>
 		where TImpl : class, IDataModel, TDataModel, new()
 	{
 		/// <summary>
@@ -149,7 +150,7 @@ namespace FlitBit.Data.SqlServer
 		/// </summary>
 		/// <param name="queryKey"></param>
 		/// <param name="sqlWriter"></param>
-		public SqlDataModelCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
+		public SqlDataModelQueryCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
 			: base(queryKey, sqlWriter)
 		{
 		}
@@ -178,8 +179,8 @@ namespace FlitBit.Data.SqlServer
 	/// <typeparam name="TParam3"></typeparam>
 	/// <typeparam name="TParam4"></typeparam>
 	/// <typeparam name="TParam5"></typeparam>
-	public class SqlDataModelCommandBuilder<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5> :
-		DataModelCommandBuilder<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5>
+	public class SqlDataModelQueryCommandBuilder<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5> :
+		DataModelQueryCommandBuilder<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5>
 		where TImpl : class, IDataModel, TDataModel, new()
 	{
 		/// <summary>
@@ -187,7 +188,7 @@ namespace FlitBit.Data.SqlServer
 		/// </summary>
 		/// <param name="queryKey"></param>
 		/// <param name="sqlWriter"></param>
-		public SqlDataModelCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
+		public SqlDataModelQueryCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
 			: base(queryKey, sqlWriter)
 		{
 		}
@@ -217,8 +218,8 @@ namespace FlitBit.Data.SqlServer
 	/// <typeparam name="TParam4"></typeparam>
 	/// <typeparam name="TParam5"></typeparam>
 	/// <typeparam name="TParam6"></typeparam>
-	public class SqlDataModelCommandBuilder<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6> :
-		DataModelCommandBuilder<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6>
+	public class SqlDataModelQueryCommandBuilder<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6> :
+		DataModelQueryCommandBuilder<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6>
 		where TImpl : class, IDataModel, TDataModel, new()
 	{
 		/// <summary>
@@ -226,7 +227,7 @@ namespace FlitBit.Data.SqlServer
 		/// </summary>
 		/// <param name="queryKey"></param>
 		/// <param name="sqlWriter"></param>
-		public SqlDataModelCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
+		public SqlDataModelQueryCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
 			: base(queryKey, sqlWriter)
 		{
 		}
@@ -257,8 +258,8 @@ namespace FlitBit.Data.SqlServer
 	/// <typeparam name="TParam5"></typeparam>
 	/// <typeparam name="TParam6"></typeparam>
 	/// <typeparam name="TParam7"></typeparam>
-	public class SqlDataModelCommandBuilder<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7> :
-		DataModelCommandBuilder<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7>
+	public class SqlDataModelQueryCommandBuilder<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7> :
+		DataModelQueryCommandBuilder<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7>
 		where TImpl : class, IDataModel, TDataModel, new()
 	{
 		/// <summary>
@@ -266,7 +267,7 @@ namespace FlitBit.Data.SqlServer
 		/// </summary>
 		/// <param name="queryKey"></param>
 		/// <param name="sqlWriter"></param>
-		public SqlDataModelCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
+		public SqlDataModelQueryCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
 			: base(queryKey, sqlWriter)
 		{
 		}
@@ -298,8 +299,8 @@ namespace FlitBit.Data.SqlServer
 	/// <typeparam name="TParam6"></typeparam>
 	/// <typeparam name="TParam7"></typeparam>
 	/// <typeparam name="TParam8"></typeparam>
-	public class SqlDataModelCommandBuilder<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8> :
-		DataModelCommandBuilder<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8>
+	public class SqlDataModelQueryCommandBuilder<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8> :
+		DataModelQueryCommandBuilder<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8>
 		where TImpl : class, IDataModel, TDataModel, new()
 	{
 		/// <summary>
@@ -307,7 +308,7 @@ namespace FlitBit.Data.SqlServer
 		/// </summary>
 		/// <param name="queryKey"></param>
 		/// <param name="sqlWriter"></param>
-		public SqlDataModelCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
+		public SqlDataModelQueryCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
 			: base(queryKey, sqlWriter)
 		{
 		}
@@ -340,8 +341,8 @@ namespace FlitBit.Data.SqlServer
 	/// <typeparam name="TParam7"></typeparam>
 	/// <typeparam name="TParam8"></typeparam>
 	/// <typeparam name="TParam9"></typeparam>
-	public class SqlDataModelCommandBuilder<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9> :
-		DataModelCommandBuilder<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>
+	public class SqlDataModelQueryCommandBuilder<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9> :
+		DataModelQueryCommandBuilder<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>
 		where TImpl : class, IDataModel, TDataModel, new()
 	{
 		/// <summary>
@@ -349,7 +350,7 @@ namespace FlitBit.Data.SqlServer
 		/// </summary>
 		/// <param name="queryKey"></param>
 		/// <param name="sqlWriter"></param>
-		public SqlDataModelCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
+		public SqlDataModelQueryCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
 			: base(queryKey, sqlWriter)
 		{
 		}

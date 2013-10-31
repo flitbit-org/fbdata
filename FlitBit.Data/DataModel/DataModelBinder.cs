@@ -246,7 +246,7 @@ namespace FlitBit.Data.DataModel
 		/// <typeparam name="TCriteria">the match's type</typeparam>
 		/// <param name="criteria">an match specification</param>
 		/// <returns></returns>
-		public abstract IDataModelCommandBuilder<TModel, TDbConnection, TCriteria> MakeQueryCommand<TCriteria>(string queryKey,
+		public abstract IDataModelQueryCommandBuilder<TModel, TDbConnection, TCriteria> MakeQueryCommand<TCriteria>(string queryKey,
 			TCriteria criteria);
 		
 		/// <summary>
@@ -255,7 +255,7 @@ namespace FlitBit.Data.DataModel
 		public abstract void Initialize();
 
 
-		public abstract IDataModelCommandBuilder<TModel, TDbConnection, TParam> MakeQueryCommand<TParam>(string queryKey);
+		public abstract IDataModelQueryCommandBuilder<TModel, TDbConnection, TParam> MakeQueryCommand<TParam>(string queryKey);
 
 		public abstract IDataModelCommandBuilder<TModel, TDbConnection, TParam, TParam1> MakeQueryCommand<TParam, TParam1>(
 			string queryKey);

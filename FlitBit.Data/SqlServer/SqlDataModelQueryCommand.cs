@@ -6,44 +6,13 @@ using FlitBit.Data.SPI;
 
 namespace FlitBit.Data.SqlServer
 {
-	/// <summary>
-	/// Basic data model query command for queries with one parameter.
-	/// </summary>
-	public abstract class SqlDataModelQueryCommand
-	{
-		/// <summary>
-		/// Creates a new instance.
-		/// </summary>
-		protected SqlDataModelQueryCommand(string all, DynamicSql page, int[] offsets)
-		{
-			AllQuery = all;
-			PagingQuery = page;
-			Offsets = offsets;
-		}
-
-		/// <summary>
-		/// The query's text.
-		/// </summary>
-		protected string AllQuery { get; private set; }
-
-		/// <summary>
-		/// The paging query.
-		/// </summary>
-		protected DynamicSql PagingQuery { get; private set; }
-
-		/// <summary>
-		/// An array of offsets.
-		/// </summary>
-		protected int[] Offsets { get; private set; }
-	}
-
-	/// <summary>
+    /// <summary>
 	/// Basic data model query command for queries with one parameter.
 	/// </summary>
 	/// <typeparam name="TDataModel">the data model type TModel</typeparam>
 	/// <typeparam name="TImpl">the implementation type TImpl</typeparam>
 	/// <typeparam name="TParam">typeof of param zero bound to the command</typeparam>
-	public abstract class SqlDataModelQueryCommand<TDataModel, TImpl, TParam> : SqlDataModelQueryCommand,
+	public abstract class SqlDataModelQueryCommand<TDataModel, TImpl, TParam> : SqlDataModelCommand,
 		IDataModelQueryCommand<TDataModel, SqlConnection, TParam>
 		where TImpl : IDataModel, TDataModel, new()
 	{
@@ -155,7 +124,7 @@ namespace FlitBit.Data.SqlServer
 	/// <typeparam name="TImpl">the implementation type TImpl</typeparam>
 	/// <typeparam name="TParam">typeof of param zero bound to the command</typeparam>
 	/// <typeparam name="TParam1"></typeparam>
-	public abstract class SqlDataModelQueryCommand<TDataModel, TImpl, TParam, TParam1> : SqlDataModelQueryCommand,
+	public abstract class SqlDataModelQueryCommand<TDataModel, TImpl, TParam, TParam1> : SqlDataModelCommand,
 		IDataModelQueryCommand<TDataModel, SqlConnection, TParam, TParam1>
 		where TImpl : IDataModel, TDataModel, new()
 	{
@@ -272,7 +241,7 @@ namespace FlitBit.Data.SqlServer
 	/// <typeparam name="TParam">typeof of param zero bound to the command</typeparam>
 	/// <typeparam name="TParam1"></typeparam>
 	/// <typeparam name="TParam2"></typeparam>
-	public abstract class SqlDataModelQueryCommand<TDataModel, TImpl, TParam, TParam1, TParam2> : SqlDataModelQueryCommand,
+	public abstract class SqlDataModelQueryCommand<TDataModel, TImpl, TParam, TParam1, TParam2> : SqlDataModelCommand,
 		IDataModelQueryCommand<TDataModel, SqlConnection, TParam, TParam1, TParam2>
 		where TImpl : IDataModel, TDataModel, new()
 	{
@@ -392,7 +361,7 @@ namespace FlitBit.Data.SqlServer
 	/// <typeparam name="TParam1"></typeparam>
 	/// <typeparam name="TParam2"></typeparam>
 	/// <typeparam name="TParam3"></typeparam>
-	public abstract class SqlDataModelQueryCommand<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3> : SqlDataModelQueryCommand,
+	public abstract class SqlDataModelQueryCommand<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3> : SqlDataModelCommand,
 		IDataModelQueryCommand<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3>
 		where TImpl : IDataModel, TDataModel, new()
 	{
@@ -516,7 +485,7 @@ namespace FlitBit.Data.SqlServer
 	/// <typeparam name="TParam2"></typeparam>
 	/// <typeparam name="TParam3"></typeparam>
 	/// <typeparam name="TParam4"></typeparam>
-	public abstract class SqlDataModelQueryCommand<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3, TParam4> : SqlDataModelQueryCommand,
+	public abstract class SqlDataModelQueryCommand<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3, TParam4> : SqlDataModelCommand,
 		IDataModelQueryCommand<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4>
 		where TImpl : IDataModel, TDataModel, new()
 	{
@@ -644,7 +613,7 @@ namespace FlitBit.Data.SqlServer
 	/// <typeparam name="TParam3"></typeparam>
 	/// <typeparam name="TParam4"></typeparam>
 	/// <typeparam name="TParam5"></typeparam>
-	public abstract class SqlDataModelQueryCommand<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5> : SqlDataModelQueryCommand,
+	public abstract class SqlDataModelQueryCommand<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5> : SqlDataModelCommand,
 		IDataModelQueryCommand<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5>
 		where TImpl : IDataModel, TDataModel, new()
 	{
@@ -777,7 +746,7 @@ namespace FlitBit.Data.SqlServer
 	/// <typeparam name="TParam4"></typeparam>
 	/// <typeparam name="TParam5"></typeparam>
 	/// <typeparam name="TParam6"></typeparam>
-	public abstract class SqlDataModelQueryCommand<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6> : SqlDataModelQueryCommand,
+	public abstract class SqlDataModelQueryCommand<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6> : SqlDataModelCommand,
 		IDataModelQueryCommand<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6>
 		where TImpl : IDataModel, TDataModel, new()
 	{
@@ -913,7 +882,7 @@ namespace FlitBit.Data.SqlServer
 	/// <typeparam name="TParam5"></typeparam>
 	/// <typeparam name="TParam6"></typeparam>
 	/// <typeparam name="TParam7"></typeparam>
-	public abstract class SqlDataModelQueryCommand<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7> : SqlDataModelQueryCommand,
+	public abstract class SqlDataModelQueryCommand<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7> : SqlDataModelCommand,
 		IDataModelQueryCommand<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7>
 		where TImpl : IDataModel, TDataModel, new()
 	{
@@ -1054,7 +1023,7 @@ namespace FlitBit.Data.SqlServer
 	/// <typeparam name="TParam6"></typeparam>
 	/// <typeparam name="TParam7"></typeparam>
 	/// <typeparam name="TParam8"></typeparam>
-	public abstract class SqlDataModelQueryCommand<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8> : SqlDataModelQueryCommand,
+	public abstract class SqlDataModelQueryCommand<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8> : SqlDataModelCommand,
 		IDataModelQueryCommand<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8>
 		where TImpl : IDataModel, TDataModel, new()
 	{
@@ -1198,7 +1167,7 @@ namespace FlitBit.Data.SqlServer
 	/// <typeparam name="TParam7"></typeparam>
 	/// <typeparam name="TParam8"></typeparam>
 	/// <typeparam name="TParam9"></typeparam>
-	public abstract class SqlDataModelQueryCommand<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9> : SqlDataModelQueryCommand,
+	public abstract class SqlDataModelQueryCommand<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9> : SqlDataModelCommand,
 		IDataModelQueryCommand<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>
 		where TImpl : IDataModel, TDataModel, new()
 	{

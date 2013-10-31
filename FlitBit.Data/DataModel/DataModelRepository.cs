@@ -12,7 +12,7 @@ namespace FlitBit.Data.DataModel
 		AbstractCachingRepository<TDataModel, TIdentityKey>,
 		IDataModelRepository<TDataModel, TIdentityKey, TDbConnection>
 		where TModelImpl : class, IDataModel, TDataModel, new()
-		where TDbConnection : DbConnection, new()
+		where TDbConnection : DbConnection, new() 
 	{
 		private readonly IDataModelBinder<TDataModel, TIdentityKey, TDbConnection> _binder;
 		private readonly Mapping<TDataModel> _mapping;
