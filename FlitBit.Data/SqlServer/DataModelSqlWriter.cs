@@ -205,6 +205,40 @@ namespace FlitBit.Data.SqlServer
 			}
 		}
 
+		public DynamicSql WriteUpdate(Constraints cns)
+		{
+			Contract.Ensures(Contract.Result<DynamicSql>() != null);
+
+			var helper = Mapping.GetDbProviderHelper();
+			var idStr = helper.FormatParameterName(_idCol.DbTypeDetails.BindingName);
+			var res = new DynamicSql() { BindIdentityParameter = idStr };
+			var writer = new SqlWriter(_bufferLength, Environment.NewLine, _indent);
+			if (_hasTimestamp)
+			{
+				res.CalculatedTimestampVar = "@generated_timestamp";
+				writer.NewLine("DECLARE @generated_timestamp DATETIME2 = GETUTCDATE()");
+			}
+			writer.NewLine();
+			writer.NewLine("UPDATE ").Append(_dbObjectReference).Indent()
+				.NewLine("SET {0}");
+			writer
+				.NewLine("WHERE ").Append(helper.QuoteObjectName(_idCol.TargetName)).Append(" = ").Append(idStr);
+			res.Text = writer.ToString();
+			return res;
+		}
+
+		public DynamicSql WriteDeleteWhere(Constraints cns)
+		{
+			Contract.Ensures(Contract.Result<DynamicSql>() != null);
+
+			var res = new DynamicSql();
+			var writer = new SqlWriter(_bufferLength, Environment.NewLine, _indent);
+			writer.NewLine("DELETE ");
+			PrepareFromAndWhereStatement(_selfRef, cns, writer);
+			res.Text = writer.ToString();
+			return res;
+		}
+
 		public DynamicSql SelectByPrimaryKey
 		{
 			get
@@ -247,8 +281,9 @@ namespace FlitBit.Data.SqlServer
 				.NewLine("ROW_NUMBER() OVER(")
 				.Append(inverseOrderByStatement.ToString())
 				.Append(") AS rev_seq,")
-				.Outdent().NewLine("FROM ").Append(_dbObjectReference).Append(" AS ").Append(_selfRef)
-				.NewLine(")")
+				.Outdent();
+			PrepareFromAndWhereStatement(_selfRef, cns, writer);
+			writer.Outdent().NewLine(")")
 				.NewLine(@"SELECT TOP (@pageSize) ");
 			AppendColumns(writer, colList);
 			writer.Append(",").NewLine("rev_seq + seq -1 as [RowCount]")

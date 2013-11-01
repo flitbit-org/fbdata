@@ -10,8 +10,8 @@ namespace FlitBit.Data.SqlServer
 	/// </summary>
 	/// <typeparam name="TDataModel"></typeparam>
 	/// <typeparam name="TImpl"></typeparam>
-	/// <typeparam name="TCriteria"></typeparam>
-	public abstract class SqlDataModelQuerySingleCommand<TDataModel, TImpl, TCriteria> : IDataModelQuerySingleCommand<TDataModel, SqlConnection, TCriteria>
+	/// <typeparam name="TParam"></typeparam>
+	public abstract class SqlDataModelQuerySingleCommand<TDataModel, TImpl, TParam> : IDataModelQuerySingleCommand<TDataModel, SqlConnection, TParam>
 		where TImpl : TDataModel, IDataModel, new()
 	{
 		readonly string _commandText;
@@ -33,15 +33,15 @@ namespace FlitBit.Data.SqlServer
 		/// </summary>
 		/// <param name="cx">A db context.</param>
 		/// <param name="cn">A db connection.</param>
-		/// <param name="criteria">the criteria for the command.</param>
+		/// <param name="param">the criteria for the command.</param>
 		/// <returns>A single data model result.</returns>
 		/// <exception cref="DuplicateObjectException">thrown when the command results in more than one data model.</exception>
-		public TDataModel ExecuteSingle(IDbContext cx, SqlConnection cn, TCriteria criteria)
+		public TDataModel ExecuteSingle(IDbContext cx, SqlConnection cn, TParam param)
 		{
 			TImpl res = default(TImpl);
 			using (var cmd = cn.CreateCommand(_commandText, CommandType.Text))
 			{
-				BindCommand((SqlCommand)cmd, criteria, _offsets);
+				BindCommand((SqlCommand)cmd, param, _offsets);
 				using (var reader = cmd.ExecuteReader())
 				{
 					if (reader.Read())
@@ -59,8 +59,8 @@ namespace FlitBit.Data.SqlServer
 		/// Implemented by specialized classes to bind the criteria to the command.
 		/// </summary>
 		/// <param name="cmd"></param>
-		/// <param name="criteria"></param>
+		/// <param name="param"></param>
 		/// <param name="offsets"></param>
-		protected abstract void BindCommand(SqlCommand cmd, TCriteria criteria, int[] offsets);
+		protected abstract void BindCommand(SqlCommand cmd, TParam param, int[] offsets);
 	}
 }

@@ -1,17 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Data.Common;
 using System.Data.SqlClient;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
-using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
-using System.Text;
 using System.Threading;
 using FlitBit.Core.Collections;
-using FlitBit.Data.DataModel;
 using FlitBit.Data.Expressions;
 using FlitBit.Data.Meta;
 using FlitBit.Data.SPI;
@@ -284,6 +280,277 @@ namespace FlitBit.Data.SqlServer
 									EmitImplementation<TDataModel, TImpl>.BuildQueryCommand(module, typeName, mapping, cns, typeof(SqlDataModelQueryCommand<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>));
 				return type;
 			}
+		}
+		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
+		internal static Type MakeUpdateCommand<TDataModel, TParam>(Mapping<TDataModel> mapping, string queryKey, Constraints cns)
+		{
+			Contract.Requires<ArgumentNullException>(queryKey != null);
+			Contract.Requires<ArgumentException>(queryKey.Length > 0);
+			Contract.Requires<ArgumentNullException>(cns != null);
+			Contract.Ensures(Contract.Result<Type>() != null);
+
+			var targetType = typeof(TDataModel);
+			var typeName = RuntimeAssemblies.PrepareTypeName(targetType, queryKey);
+
+			var module = Module;
+			lock (module)
+			{
+				var type = module.Builder.GetType(typeName, false, false) ??
+									EmitImplementation<TDataModel>.BuildUpdateCommand(module, typeName, mapping, cns, typeof(SqlDataModelUpdateCommand<TDataModel, TParam>));
+				return type;
+			}
+		}
+		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
+		internal static Type MakeUpdateCommand<TDataModel, TParam, TParam1>(Mapping<TDataModel> mapping, string queryKey, Constraints cns)
+		{
+			Contract.Requires<ArgumentNullException>(queryKey != null);
+			Contract.Requires<ArgumentException>(queryKey.Length > 0);
+			Contract.Requires<ArgumentNullException>(cns != null);
+			Contract.Ensures(Contract.Result<Type>() != null);
+
+			var targetType = typeof(TDataModel);
+			var typeName = RuntimeAssemblies.PrepareTypeName(targetType, queryKey);
+
+			var module = Module;
+			lock (module)
+			{
+				var type = module.Builder.GetType(typeName, false, false) ??
+									EmitImplementation<TDataModel>.BuildUpdateCommand(module, typeName, mapping, cns, typeof(SqlDataModelUpdateCommand<TDataModel, TParam, TParam1>));
+				return type;
+			}
+		}
+		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
+		internal static Type MakeUpdateCommand<TDataModel, TParam, TParam1, TParam2>(Mapping<TDataModel> mapping, string queryKey, Constraints cns)
+		{
+			Contract.Requires<ArgumentNullException>(queryKey != null);
+			Contract.Requires<ArgumentException>(queryKey.Length > 0);
+			Contract.Requires<ArgumentNullException>(cns != null);
+			Contract.Ensures(Contract.Result<Type>() != null);
+
+			var targetType = typeof(TDataModel);
+			var typeName = RuntimeAssemblies.PrepareTypeName(targetType, queryKey);
+
+			var module = Module;
+			lock (module)
+			{
+				var type = module.Builder.GetType(typeName, false, false) ??
+									EmitImplementation<TDataModel>.BuildUpdateCommand(module, typeName, mapping, cns, typeof(SqlDataModelUpdateCommand<TDataModel, TParam, TParam1, TParam2>));
+				return type;
+			}
+		}
+		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
+		internal static Type MakeUpdateCommand<TDataModel, TParam, TParam1, TParam2, TParam3>(Mapping<TDataModel> mapping, string queryKey, Constraints cns)
+		{
+			Contract.Requires<ArgumentNullException>(queryKey != null);
+			Contract.Requires<ArgumentException>(queryKey.Length > 0);
+			Contract.Requires<ArgumentNullException>(cns != null);
+			Contract.Ensures(Contract.Result<Type>() != null);
+
+			var targetType = typeof(TDataModel);
+			var typeName = RuntimeAssemblies.PrepareTypeName(targetType, queryKey);
+
+			var module = Module;
+			lock (module)
+			{
+				var type = module.Builder.GetType(typeName, false, false) ??
+									EmitImplementation<TDataModel>.BuildUpdateCommand(module, typeName, mapping, cns, typeof(SqlDataModelUpdateCommand<TDataModel, TParam, TParam1, TParam2, TParam3>));
+				return type;
+			}
+		}
+		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
+		internal static Type MakeUpdateCommand<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4>(Mapping<TDataModel> mapping, string queryKey, Constraints cns)
+		{
+			Contract.Requires<ArgumentNullException>(queryKey != null);
+			Contract.Requires<ArgumentException>(queryKey.Length > 0);
+			Contract.Requires<ArgumentNullException>(cns != null);
+			Contract.Ensures(Contract.Result<Type>() != null);
+
+			var targetType = typeof(TDataModel);
+			var typeName = RuntimeAssemblies.PrepareTypeName(targetType, queryKey);
+
+			var module = Module;
+			lock (module)
+			{
+				var type = module.Builder.GetType(typeName, false, false) ??
+									EmitImplementation<TDataModel>.BuildUpdateCommand(module, typeName, mapping, cns, typeof(SqlDataModelUpdateCommand<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4>));
+				return type;
+			}
+		}
+		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
+		internal static Type MakeUpdateCommand<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5>(Mapping<TDataModel> mapping, string queryKey, Constraints cns)
+		{
+			Contract.Requires<ArgumentNullException>(queryKey != null);
+			Contract.Requires<ArgumentException>(queryKey.Length > 0);
+			Contract.Requires<ArgumentNullException>(cns != null);
+			Contract.Ensures(Contract.Result<Type>() != null);
+
+			var targetType = typeof(TDataModel);
+			var typeName = RuntimeAssemblies.PrepareTypeName(targetType, queryKey);
+
+			var module = Module;
+			lock (module)
+			{
+				var type = module.Builder.GetType(typeName, false, false) ??
+									EmitImplementation<TDataModel>.BuildUpdateCommand(module, typeName, mapping, cns, typeof(SqlDataModelUpdateCommand<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5>));
+				return type;
+			}
+		}
+		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
+		internal static Type MakeUpdateCommand<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6>(Mapping<TDataModel> mapping, string queryKey, Constraints cns)
+		{
+			Contract.Requires<ArgumentNullException>(queryKey != null);
+			Contract.Requires<ArgumentException>(queryKey.Length > 0);
+			Contract.Requires<ArgumentNullException>(cns != null);
+			Contract.Ensures(Contract.Result<Type>() != null);
+
+			var targetType = typeof(TDataModel);
+			var typeName = RuntimeAssemblies.PrepareTypeName(targetType, queryKey);
+
+			var module = Module;
+			lock (module)
+			{
+				var type = module.Builder.GetType(typeName, false, false) ??
+									EmitImplementation<TDataModel>.BuildUpdateCommand(module, typeName, mapping, cns, typeof(SqlDataModelUpdateCommand<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6>));
+				return type;
+			}
+		}
+		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
+		internal static Type MakeUpdateCommand<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7>(Mapping<TDataModel> mapping, string queryKey, Constraints cns)
+		{
+			Contract.Requires<ArgumentNullException>(queryKey != null);
+			Contract.Requires<ArgumentException>(queryKey.Length > 0);
+			Contract.Requires<ArgumentNullException>(cns != null);
+			Contract.Ensures(Contract.Result<Type>() != null);
+
+			var targetType = typeof(TDataModel);
+			var typeName = RuntimeAssemblies.PrepareTypeName(targetType, queryKey);
+
+			var module = Module;
+			lock (module)
+			{
+				var type = module.Builder.GetType(typeName, false, false) ??
+									EmitImplementation<TDataModel>.BuildUpdateCommand(module, typeName, mapping, cns, typeof(SqlDataModelUpdateCommand<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7>));
+				return type;
+			}
+		}
+		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
+		internal static Type MakeUpdateCommand<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8>(Mapping<TDataModel> mapping, string queryKey, Constraints cns)
+		{
+			Contract.Requires<ArgumentNullException>(queryKey != null);
+			Contract.Requires<ArgumentException>(queryKey.Length > 0);
+			Contract.Requires<ArgumentNullException>(cns != null);
+			Contract.Ensures(Contract.Result<Type>() != null);
+
+			var targetType = typeof(TDataModel);
+			var typeName = RuntimeAssemblies.PrepareTypeName(targetType, queryKey);
+
+			var module = Module;
+			lock (module)
+			{
+				var type = module.Builder.GetType(typeName, false, false) ??
+									EmitImplementation<TDataModel>.BuildUpdateCommand(module, typeName, mapping, cns, typeof(SqlDataModelUpdateCommand<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8>));
+				return type;
+			}
+		}
+		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
+		internal static Type MakeUpdateCommand<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>(Mapping<TDataModel> mapping, string queryKey, Constraints cns)
+		{
+			Contract.Requires<ArgumentNullException>(queryKey != null);
+			Contract.Requires<ArgumentException>(queryKey.Length > 0);
+			Contract.Requires<ArgumentNullException>(cns != null);
+			Contract.Ensures(Contract.Result<Type>() != null);
+
+			var targetType = typeof(TDataModel);
+			var typeName = RuntimeAssemblies.PrepareTypeName(targetType, queryKey);
+
+			var module = Module;
+			lock (module)
+			{
+				var type = module.Builder.GetType(typeName, false, false) ??
+									EmitImplementation<TDataModel>.BuildUpdateCommand(module, typeName, mapping, cns, typeof(SqlDataModelUpdateCommand<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>));
+				return type;
+			}
+		}
+
+		private static class EmitImplementation<TDataModel>
+		{
+			public static Type BuildUpdateCommand(EmittedModule module, string typeName, Mapping<TDataModel> mapping, Constraints cns, Type baseType)
+			{
+				Contract.Requires<ArgumentNullException>(module != null);
+				Contract.Requires<ArgumentNullException>(typeName != null);
+				Contract.Requires<ArgumentException>(typeName.Length > 0);
+				Contract.Requires<InvalidOperationException>(mapping.HasBinder);
+				Contract.Ensures(Contract.Result<Type>() != null);
+
+				var builder = module.DefineClass(typeName, EmittedClass.DefaultTypeAttributes,
+					baseType, null);
+				builder.Attributes = TypeAttributes.Sealed | TypeAttributes.Public | TypeAttributes.BeforeFieldInit;
+
+				var ctor = builder.DefineCtor();
+				ctor.DefineParameter("update", typeof(DynamicSql));
+				ctor.DefineParameter("offsets", typeof(int[]));
+				ctor.ContributeInstructions((m, il) =>
+				{
+					il.LoadArg_0();
+					il.LoadArg_1();
+					il.LoadArg_2();
+					il.Call(baseType.GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic, null, new[] { typeof(DynamicSql), typeof(int[]) }, null));
+				});
+
+				ImplementBindQueryCommand(builder, baseType, mapping, cns);
+
+				builder.Compile();
+				return builder.Ref.Target;
+			}
+
+			public static void ImplementBindQueryCommand(EmittedClass builder, Type baseType, Mapping<TDataModel> mapping, Constraints cns)
+			{
+				var method =
+					builder.DefineOverrideMethod(baseType.GetMethod("BindCommand", BindingFlags.NonPublic | BindingFlags.Instance));
+				var helper = mapping.GetDbProviderHelper();
+				var args = new
+				{
+					self = 0,
+					cmd = 1,
+					offsets = 2
+				};
+				const int paramOffset = 2;
+				method.ContributeInstructions((m, il) =>
+				{
+					var parm = il.DeclareLocal(typeof(SqlParameter));
+					var flag = il.DeclareLocal(typeof(bool));
+					foreach (var p in cns.Parameters.Values)
+					{
+						var arg = p.Argument;
+						Action<ILGenerator> loadSource = (stream) => stream.LoadArg(paramOffset + arg.Ordinal);
+						if (p.Members != null && p.Members.Length > 0)
+						{
+							// Optimization: Consider evaluating dotted notation to resolve properties to local variable only once when binding several.
+							foreach (PropertyInfo prop in p.Members)
+							{
+								loadSource(il);
+								var dotted = il.DeclareLocal(prop.GetTypeOfValue());
+								il.LoadValue(prop.GetGetMethod());
+								il.StoreLocal(dotted);
+								// TODO: test for null and if so fallout to bind DBNull
+								loadSource = stream => stream.LoadLocal(dotted);
+							}
+						}
+						else
+						{
+							var emitter = p.Column.Emitter;
+							emitter.BindParameterOnDbCommand<SqlParameter>(method.Builder, p.Column, helper.FormatParameterName(arg.Name),
+								parm,
+								gen => gen.LoadArg(args.cmd),
+								loadSource,
+								gen => { },
+								flag
+								);
+						}
+					}
+				});
+			}
+
 		}
 
 		static class EmitImplementation<TDataModel, TImpl>
@@ -634,59 +901,14 @@ namespace FlitBit.Data.SqlServer
 					il.Call(baseType.GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic, null, new[] { typeof(string), typeof(DynamicSql), typeof(int[]) }, null));
 				});
 
-				ImplementBindQueryCommand(builder, baseType, mapping, cns);
+				EmitImplementation<TDataModel>.ImplementBindQueryCommand(builder, baseType, mapping, cns);
 
 				builder.Compile();
 				return builder.Ref.Target;
 			}
 
-			static void ImplementBindQueryCommand(EmittedClass builder, Type baseType, Mapping<TDataModel> mapping, Constraints cns)
-			{
-				var method =
-					builder.DefineOverrideMethod(baseType.GetMethod("BindCommand", BindingFlags.NonPublic | BindingFlags.Instance));
-				var helper = mapping.GetDbProviderHelper();
-				var args = new
-				{
-					self = 0,
-					cmd = 1,
-					offsets = 2
-				};
-				const int paramOffset = 2;
-				method.ContributeInstructions((m, il) =>
-				{
-					var parm = il.DeclareLocal(typeof(SqlParameter));
-					var flag = il.DeclareLocal(typeof(bool));
-					foreach (var p in cns.Parameters.Values)
-					{
-						var arg = p.Argument;
-						Action<ILGenerator> loadSource = (stream) => stream.LoadArg(paramOffset + arg.Ordinal);
-						if (p.Members != null && p.Members.Length > 0)
-						{
-							// Optimization: Consider evaluating dotted notation to resolve properties to local variable only once when binding several.
-							foreach (PropertyInfo prop in p.Members)
-							{
-								loadSource(il);
-								var dotted = il.DeclareLocal(prop.GetTypeOfValue());
-								il.LoadValue(prop.GetGetMethod());
-								il.StoreLocal(dotted);
-								// TODO: test for null and if so fallout to bind DBNull
-								loadSource = stream => stream.LoadLocal(dotted);
-							}
-						}
-						else
-						{
-							var emitter = p.Column.Emitter;
-							emitter.BindParameterOnDbCommand<SqlParameter>(method.Builder, p.Column, helper.FormatParameterName(arg.Name),
-								parm,
-								gen => gen.LoadArg(args.cmd),
-								loadSource,
-								gen => { },
-								flag
-								);
-						}
-					}
-				});
-			}
 		}
+
+		
 	}
 }

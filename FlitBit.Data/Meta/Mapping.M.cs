@@ -89,12 +89,8 @@ namespace FlitBit.Data.Meta
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 		string _targetSchema;
 
-		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
-		Tuple<int, MappedDbTypeEmitter> _emitter;
-
 		internal Mapping()
 		{
-			_emitter = Tuple.Create(_revision, default(MappedDbTypeEmitter));
 			_hierarchyMapping = new HierarchyMapping<TModel>();
 			_hierarchyMapping.OnChanged += (sender, e) => Interlocked.Increment(ref _revision);
 			_identityKey = FactoryProvider.Factory.CreateInstance<IdentityKey<TModel>>();
@@ -793,7 +789,7 @@ namespace FlitBit.Data.Meta
 		{
 			var ht = typeof(IHierarchyMapping<TModel>).MatchGenericMethod("NotifySubtype", 1, typeof(void), typeof(IMapping<>))
 																								.MakeGenericMethod(mapping.RuntimeType);
-			ht.Invoke(Mapping<TModel>.Instance.Hierarchy, new object[] {mapping});
+			ht.Invoke(Instance.Hierarchy, new object[] {mapping});
 		}
 
 		#endregion

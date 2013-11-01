@@ -29,9 +29,9 @@
 		/// </summary>
 		/// <param name="cx">the db context</param>
 		/// <param name="cn">a db connection used to execute the command</param>
-		/// <param name="arg0"></param>
+		/// <param name="param"></param>
 		/// <returns>zero or one model (implicitly single-or-default)</returns>
-		TModel ExecuteSingle(IDbContext cx, TDbConnection cn, TParam arg0);
+		TModel ExecuteSingle(IDbContext cx, TDbConnection cn, TParam param);
 	}
 	/// <summary>
 	/// Interface for querying a single model by specified criteria.

@@ -33,12 +33,12 @@ namespace FlitBit.Data.SqlServer
 		/// </summary>
 		/// <param name="cx"></param>
 		/// <param name="cn"></param>
-		/// <param name="model"></param>
+		/// <param name="param"></param>
 		/// <returns></returns>
 		/// <exception cref="InvalidOperationException"></exception>
-		public TDataModel ExecuteSingle(IDbContext cx, SqlConnection cn, TDataModel model)
+		public TDataModel ExecuteSingle(IDbContext cx, SqlConnection cn, TDataModel param)
 		{
-			var impl = model as TImpl;
+			var impl = param as TImpl;
 			if (impl == null)
 			{	
 				throw new InvalidOperationException("You must transform the instance to the mapped concrete type before saving.");
@@ -47,7 +47,7 @@ namespace FlitBit.Data.SqlServer
 			BitVector dirty = impl.GetDirtyFlags();
 			if (dirty.TrueFlagCount == 0)
 			{
-				return model;
+				return param;
 			} 
 			var res = default(TImpl);
 			using (var cmd = cn.CreateCommand())
