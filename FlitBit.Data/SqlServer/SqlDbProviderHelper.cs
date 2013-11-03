@@ -11,7 +11,6 @@ using System.Data.SqlClient;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
-using FlitBit.Core;
 using FlitBit.Data.DataModel;
 using FlitBit.Data.Meta;
 
@@ -162,7 +161,19 @@ WHERE name = @schema"
 					throw new ArgumentOutOfRangeException();
 			}
 			
-			return (IDataModelBinder<TModel, Id>)Activator.CreateInstance(binderType, mapping);
+			var result = (IDataModelBinder<TModel, Id>)Activator.CreateInstance(binderType, mapping);
+			result.Initialize();
+			return result;
+		}
+
+		protected override Type MakeEnumAsInt16Emitter(Type enumType)
+		{
+			return typeof (SqlMappedEmumAsInt16Emitter<>).MakeGenericType(enumType);
+		}
+
+		protected override Type MakeEnumAsInt32Emitter(Type enumType)
+		{
+			return typeof(SqlMappedEmumAsInt32Emitter<>).MakeGenericType(enumType);
 		}
 
 		public override string GetServerName(DbConnection connection)

@@ -123,7 +123,7 @@ namespace FlitBit.Data.Meta
 			}
 			if (column.Behaviors.HasFlag(ColumnBehaviors.Identity))
 			{
-				mapping.Identity.AddColumn(column);
+				mapping.Identity.AddColumn(column, SortOrderKind.Asc);
 			}
 			if (p.PropertyType == mapping.RuntimeType)
 			{

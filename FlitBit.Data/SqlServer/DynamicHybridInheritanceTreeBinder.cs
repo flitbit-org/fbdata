@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Data.SqlClient;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
 using FlitBit.Core;
 using FlitBit.Data.DataModel;
 using FlitBit.Data.Meta;
+using FlitBit.Data.SPI;
 
 namespace FlitBit.Data.SqlServer
 {
@@ -17,10 +19,17 @@ namespace FlitBit.Data.SqlServer
 	/// <typeparam name="TIdentityKey"></typeparam>
 	/// <typeparam name="TModelImpl"></typeparam>
 	public class DynamicHybridInheritanceTreeBinder<TModel, TIdentityKey, TModelImpl> :
-		DataModelBinder<TModel, TIdentityKey>
-		where TModelImpl : class, TModel, new()
+		DataModelBinder<TModel, TIdentityKey, SqlConnection>
+		where TModelImpl : class, IDataModel, TModel, new()
 	{
 		bool _initialized;
+		private readonly DataModelSqlWriter<TModel> _sqlWriter; 
+		readonly int[] _offsets;
+
+		Tuple<int, IDataModelQueryManyCommand<TModel, SqlConnection>> _selectAll;
+		Tuple<int, IDataModelQuerySingleCommand<TModel, SqlConnection, TModel>> _create;
+		Tuple<int, IDataModelQuerySingleCommand<TModel, SqlConnection, TModel>> _update;
+		Tuple<int, IDataModelQuerySingleCommand<TModel, SqlConnection, TIdentityKey>> _read;
 
 		/// <summary>
 		///   Creates a new instance.
@@ -31,9 +40,12 @@ namespace FlitBit.Data.SqlServer
 		{
 			Contract.Requires<ArgumentNullException>(mapping != null);
 			Contract.Requires<ArgumentException>(mapping.Strategy == MappingStrategy.DynamicHybridInheritanceTree);
+
+			_sqlWriter = new DataModelSqlWriter<TModel>(mapping.QuoteObjectName("self"), "  ");
+			_offsets = Enumerable.Range(0, _sqlWriter.QuotedColumnNames.Length).ToArray();
 		}
 
-		public override void BuildDDLBatch(StringBuilder batch, IList<Type> members)
+		public override void BuildDdlBatch(StringBuilder batch, IList<Type> members)
 		{
 			var mapping = this.Mapping;
 
@@ -50,7 +62,7 @@ namespace FlitBit.Data.SqlServer
 				{
 					var dmap = Mappings.AccessMappingFor(dep.Target.RuntimeType);
 					var binder = dmap.GetBinder();
-					binder.BuildDDLBatch(batch, members);
+					binder.BuildDdlBatch(batch, members);
 					batch.Append(Environment.NewLine)
 							.Append("GO")
 							.Append(Environment.NewLine);
@@ -62,7 +74,7 @@ namespace FlitBit.Data.SqlServer
 						.Append('(');
 
 				var i = -1;
-				var idcol = mapping.Identity.Columns.SingleOrDefault();
+				var idcol = mapping.Identity.Columns.Select(c => c.Column).SingleOrDefault();
 				if (idcol == null)
 				{
 					throw new MappingException(
@@ -113,8 +125,7 @@ namespace FlitBit.Data.SqlServer
 				AddIndexesForTable(mapping, batch);
 				if (mapping.Behaviors.HasFlag(EntityBehaviors.MapEnum))
 				{
-					var idenum = mapping.Identity.Columns.Single(c => c.RuntimeType.IsEnum);
-					if (idenum == null)
+					if (!idcol.RuntimeType.IsEnum)
 					{
 						throw new MappingException(String.Concat("Model type '", typeof(TModel).Name,
 																										"' declares behavior EntityBehaviors.MapEnum but the enum type cannot be determined. Specify an identity column of enum type."));
@@ -126,17 +137,17 @@ namespace FlitBit.Data.SqlServer
 																										" declares behavior EntityBehaviors.MapEnum but a column to hold the enum name cannot be determined. Specify a string column with alternate key behavior."));
 					}
 
-					var enumNames = Enum.GetNames(idenum.RuntimeType);
-					var enumValues = Enum.GetValues(idenum.RuntimeType);
+					var enumNames = Enum.GetNames(idcol.RuntimeType);
+					var enumValues = Enum.GetValues(idcol.RuntimeType);
 					for (var j = 0; j < enumNames.Length; j++)
 					{
 						batch.Append(Environment.NewLine)
 								.Append("INSERT INTO ")
 								.Append(mapping.DbObjectReference)
 								.Append(" (")
-								.Append(mapping.QuoteObjectNameForSQL(idenum.TargetName))
+								.Append(mapping.QuoteObjectName(idcol.TargetName))
 								.Append(", ")
-								.Append(mapping.QuoteObjectNameForSQL(namecol.TargetName))
+								.Append(mapping.QuoteObjectName(namecol.TargetName))
 								.Append(") VALUES (")
 								.Append(Convert.ToInt32(enumValues.GetValue(j)))
 								.Append(", '")
@@ -151,7 +162,7 @@ namespace FlitBit.Data.SqlServer
 		///   Gets a model command for selecting all models of the type TModel.
 		/// </summary>
 		/// <returns></returns>
-		public override IDataModelQueryManyCommand<TModel, DbConnection> GetAllCommand()
+		public override IDataModelQueryManyCommand<TModel, SqlConnection> GetAllCommand()
 		{
 			throw new NotImplementedException();
 		}
@@ -160,7 +171,7 @@ namespace FlitBit.Data.SqlServer
 		///   Gets a create command.
 		/// </summary>
 		/// <returns></returns>
-		public override IDataModelQuerySingleCommand<TModel, DbConnection, TModel> GetCreateCommand()
+		public override IDataModelQuerySingleCommand<TModel, SqlConnection, TModel> GetCreateCommand()
 		{
 			throw new NotImplementedException();
 		}
@@ -169,7 +180,7 @@ namespace FlitBit.Data.SqlServer
 		///   Gets a delete (by ID) command.
 		/// </summary>
 		/// <returns></returns>
-		public override IDataModelNonQueryCommand<TModel, DbConnection, TIdentityKey> GetDeleteCommand()
+		public override IDataModelNonQueryCommand<TModel, SqlConnection, TIdentityKey> GetDeleteCommand()
 		{
 			throw new NotImplementedException();
 		}
@@ -178,7 +189,7 @@ namespace FlitBit.Data.SqlServer
 		///   Gets a read (by ID) command.
 		/// </summary>
 		/// <returns></returns>
-		public override IDataModelQuerySingleCommand<TModel, DbConnection, TIdentityKey> GetReadCommand()
+		public override IDataModelQuerySingleCommand<TModel, SqlConnection, TIdentityKey> GetReadCommand()
 		{
 			throw new NotImplementedException();
 		}
@@ -187,39 +198,66 @@ namespace FlitBit.Data.SqlServer
 		///   Gets an update command.
 		/// </summary>
 		/// <returns></returns>
-		public override IDataModelQuerySingleCommand<TModel, DbConnection, TModel> GetUpdateCommand()
+		public override IDataModelQuerySingleCommand<TModel, SqlConnection, TModel> GetUpdateCommand()
 		{
 			throw new NotImplementedException();
 		}
 
-		/// <summary>
-		///   Makes a delete-match command.
-		/// </summary>
-		/// <typeparam name="TMatch">the match's type</typeparam>
-		/// <param name="match">an match specification</param>
-		/// <returns></returns>
-		public override IDataModelNonQueryCommand<TModel, DbConnection, TMatch> MakeDeleteMatchCommand<TMatch>(TMatch match)
+		public override IDataModelQueryCommandBuilder<TModel, SqlConnection, TCriteria> MakeQueryCommand<TCriteria>(string queryKey, TCriteria input)
 		{
-			throw new NotImplementedException();
+			return new SqlDataModelQueryCommandBuilder<TModel, TModelImpl, TCriteria>(queryKey, _sqlWriter);
+		}
+		public override IDataModelQueryCommandBuilder<TModel, SqlConnection, TParam> MakeQueryCommand<TParam>(string queryKey)
+		{
+			return new SqlDataModelQueryCommandBuilder<TModel, TModelImpl, TParam>(queryKey, _sqlWriter);
+		}
+		public override IDataModelCommandBuilder<TModel, SqlConnection, TParam, TParam1> MakeQueryCommand
+			<TParam, TParam1>(string queryKey)
+		{
+			return new SqlDataModelQueryCommandBuilder<TModel, TModelImpl, TParam, TParam1>(queryKey, _sqlWriter);
+		}
+		public override IDataModelCommandBuilder<TModel, SqlConnection, TParam, TParam1, TParam2> MakeQueryCommand
+			<TParam, TParam1, TParam2>(string queryKey)
+		{
+			return new SqlDataModelQueryCommandBuilder<TModel, TModelImpl, TParam, TParam1, TParam2>(queryKey, _sqlWriter);
+		}
+		public override IDataModelCommandBuilder<TModel, SqlConnection, TParam, TParam1, TParam2, TParam3> MakeQueryCommand
+			<TParam, TParam1, TParam2, TParam3>(string queryKey)
+		{
+			return new SqlDataModelQueryCommandBuilder<TModel, TModelImpl, TParam, TParam1, TParam2, TParam3>(queryKey, _sqlWriter);
+		}
+		public override IDataModelCommandBuilder<TModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4> MakeQueryCommand
+			<TParam, TParam1, TParam2, TParam3, TParam4>(string queryKey)
+		{
+			return new SqlDataModelQueryCommandBuilder<TModel, TModelImpl, TParam, TParam1, TParam2, TParam3, TParam4>(queryKey, _sqlWriter);
+		}
+		public override IDataModelCommandBuilder<TModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5> MakeQueryCommand
+			<TParam, TParam1, TParam2, TParam3, TParam4, TParam5>(string queryKey)
+		{
+			return new SqlDataModelQueryCommandBuilder<TModel, TModelImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5>(queryKey, _sqlWriter);
+		}
+		public override IDataModelCommandBuilder<TModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6> MakeQueryCommand
+			<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6>(string queryKey)
+		{
+			return new SqlDataModelQueryCommandBuilder<TModel, TModelImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6>(queryKey, _sqlWriter);
+		}
+		public override IDataModelCommandBuilder<TModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7> MakeQueryCommand
+			<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7>(string queryKey)
+		{
+			return new SqlDataModelQueryCommandBuilder<TModel, TModelImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7>(queryKey, _sqlWriter);
+		}
+		public override IDataModelCommandBuilder<TModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8> MakeQueryCommand
+			<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8>(string queryKey)
+		{
+			return new SqlDataModelQueryCommandBuilder<TModel, TModelImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8>(queryKey, _sqlWriter);
+		}
+		public override IDataModelCommandBuilder<TModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9> MakeQueryCommand
+			<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>(string queryKey)
+		{
+			return new SqlDataModelQueryCommandBuilder<TModel, TModelImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>(queryKey, _sqlWriter);
 		}
 
-		/// <summary>
-		///   Makes a read-match command.
-		/// </summary>
-		/// <typeparam name="TMatch">the match's type</typeparam>
-		/// <param name="match">an match specification</param>
-		/// <returns></returns>
-		public override IDataModelQueryManyCommand<TModel, DbConnection, TMatch> MakeReadMatchCommand<TMatch>(TMatch match)
-		{
-			throw new NotImplementedException();
-		}
-
-		public override IDataModelNonQueryCommand<TModel, DbConnection, TMatch, TUpdate> MakeUpdateMatchCommand<TMatch, TUpdate>(TMatch match, TUpdate update)
-		{
-			throw new NotImplementedException();
-		}
-
-		void Initialize()
+		public override void Initialize()
 		{
 			if (!_initialized)
 			{

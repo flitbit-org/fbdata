@@ -8,7 +8,7 @@ namespace FlitBit.Data.Tests.Meta.Models
 		[MapColumn(ColumnBehaviors.Nullable)]
 		IPerson PrimaryContact { get; set; }
 
-		[MapInplaceColumns("Organization:ContactEmail", "ID")]
-		IEmailAddress ContactEmail { get; }
+		//[MapInplaceColumns("Organization:ContactEmail", "ID")]
+		//IEmailAddress ContactEmail { get; }
 	}
 }

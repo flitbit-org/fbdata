@@ -1,7 +1,10 @@
 ﻿using System;
 using System.Data;
 using System.Data.Common;
+using System.Data.SqlClient;
+using System.Data.SqlTypes;
 using System.Linq;
+using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
 using FlitBit.Data.Meta;
@@ -9,11 +12,13 @@ using FlitBit.Emit;
 
 namespace FlitBit.Data.SqlServer
 {
-	internal class SqlMappedGuidEmitter : MappedDbTypeEmitter<Guid, SqlDbType>
+	internal class SqlMappedGuidEmitter : SqlDbTypeEmitter<Guid>
 	{
 		internal SqlMappedGuidEmitter()
-			: base(default(DbType), SqlDbType.UniqueIdentifier)
-		{	
+			: base(DbType.Guid, SqlDbType.UniqueIdentifier)
+		{
+			this.IsQuoteRequired = true;
+			this.QuoteChars = "'";
 		}
 		public override void LoadValueFromDbReader(MethodBuilder method, IValueRef reader, IValueRef columnIndex, DbTypeDetails details)
 		{
@@ -36,47 +41,19 @@ namespace FlitBit.Data.SqlServer
 			}
 			base.EmitColumnConstraintsDDL(buffer, mapping, col, tableConstraints);
 		}
-	}
-	internal class SqlMappedInt32Emitter : MappedDbTypeEmitter<int, SqlDbType>
-	{
-		internal SqlMappedInt32Emitter()
-			: base(default(DbType), SqlDbType.Int)
+
+		/// <summary>
+		///   Emits IL to translate the runtime type to the dbtype.
+		/// </summary>
+		/// <param name="il"></param>
+		/// <remarks>
+		///   At the time of the call the runtime value is on top of the stack.
+		///   When the method returns the translated type must be on the top of the stack.
+		/// </remarks>
+		protected override void EmitTranslateRuntimeType(ILGenerator il)
 		{
-		}
-		public override void LoadValueFromDbReader(MethodBuilder method, IValueRef reader, IValueRef columnIndex, DbTypeDetails details)
-		{
-			var il = method.GetILGenerator();
-			reader.LoadValue(il);
-			columnIndex.LoadValue(il);
-			il.CallVirtual<DbDataReader>("GetInt32", typeof(int));
-		}
-		public override void EmitColumnInitializationDDL<TModel>(StringBuilder buffer, Mapping<TModel> mapping, ColumnMapping<TModel> col)
-		{
-			if (col.IsSynthetic)
-			{
-				buffer.Append(" IDENTITY(1, 1)");
-			}
-		}
-	}
-	internal class SqlMappedInt64Emitter : MappedDbTypeEmitter<int, SqlDbType>
-	{
-		internal SqlMappedInt64Emitter()
-			: base(default(DbType), SqlDbType.BigInt)
-		{
-		}
-		public override void LoadValueFromDbReader(MethodBuilder method, IValueRef reader, IValueRef columnIndex, DbTypeDetails details)
-		{
-			var il = method.GetILGenerator();
-			reader.LoadValue(il);
-			columnIndex.LoadValue(il);
-			il.CallVirtual<DbDataReader>("GetInt64", typeof(int));
-		}
-		public override void EmitColumnInitializationDDL<TModel>(StringBuilder buffer, Mapping<TModel> mapping, ColumnMapping<TModel> col)
-		{
-			if (col.IsSynthetic)
-			{
-				buffer.Append(" IDENTITY(1, 1)");
-			}
+			il.NewObj(typeof(SqlGuid).GetConstructor(new[] { typeof(Guid) }));
+			il.Box(typeof(SqlGuid));
 		}
 	}
 }

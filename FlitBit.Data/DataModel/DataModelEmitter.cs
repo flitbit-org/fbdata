@@ -161,10 +161,10 @@ namespace FlitBit.Data.DataModel
 					{
 						if (prop.IsObservableCollection)
 						{}
-						else
+						else if (prop.IsColumn)
 						{
-							var mappedColumn = mapping.Columns.FirstOrDefault(c => c.Member == prop.Source);
-							Debug.Assert(mappedColumn != null, "mappedColumn != null");
+							var mappedColumn = mapping.Columns.First(c => c.Member == prop.Source);
+							
 							var isnull = il.DefineLabel();
 							var store = il.DefineLabel();
 							il.LoadArg(offsets);
@@ -434,14 +434,15 @@ namespace FlitBit.Data.DataModel
 				cctor.ContributeInstructions((m, il) =>
 				{
 					var arr = il.DeclareLocal(typeof(String[]));
+					var cols = props.Where(ea => !ea.IsObservableCollection).ToArray();
 
-					il.NewArr(typeof(string), props.Count);
+					il.NewArr(typeof(string), cols.Length);
 					il.StoreLocal(arr);
-					for (var i = 0; i < props.Count; i++)
+					for (var i = 0; i < cols.Length; i++)
 					{
 						il.LoadLocal(arr);
 						il.LoadValue(i);
-						il.LoadValue(props[i].Source.Name);
+						il.LoadValue(cols[i].Source.Name);
 						il.Emit(OpCodes.Stelem, typeof(string));
 					}
 					il.LoadLocal(arr);
@@ -769,7 +770,7 @@ namespace FlitBit.Data.DataModel
 			{
 				var rec = PropertyRec.Create(intf, builder, property);
 
-				rec.Index = props.Count;
+				rec.Index = props.Count(ea => !ea.IsObservableCollection);
 				props.Add(rec);
 
 				rec.EmittedProperty.AddGetter()
@@ -1286,6 +1287,8 @@ namespace FlitBit.Data.DataModel
 				public int Index { get; set; }
 				public bool IsObservableCollection { get; private set; }
 				public bool IsReference { get; private set; }
+				public bool IsColumn { get; private set; }
+				public bool IsLifted { get; private set; }
 				public IMapping Mapping { get; private set; }
 				public PropertyInfo Source { get; private set; }
 
@@ -1320,10 +1323,14 @@ namespace FlitBit.Data.DataModel
 							res.FieldType = typeof(ObservableCollection<>).MakeGenericType(genericArgType);
 						}
 					}
+					res.IsColumn = info.IsDefined(typeof(MapColumnAttribute), true);
+					res.IsLifted = info.IsDefined(typeof(MapLiftedColumnAttribute), true);
 					res.EmittedProperty = builder.DefinePropertyFromPropertyInfo(info);
 					res.EmittedField = builder.DefineField(fieldName, res.FieldType);
 					return res;
 				}
+
+				
 			}
 		}
 	}

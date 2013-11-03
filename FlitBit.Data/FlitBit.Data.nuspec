@@ -6,11 +6,11 @@
     <title>$title$</title>
     <authors>Phillip Clark</authors>
     <owners>$author$</owners>
-    <licenseUrl>http://fbdata.codeplex.com/license</licenseUrl>
-    <projectUrl>http://fbdata.codeplex.com/</projectUrl>
+    <licenseUrl>https://raw.github.com/flitbit/FlitBit.Data/master/LICENSE</licenseUrl>
+    <projectUrl>https://github.com/flitbit/FlitBit.Data/</projectUrl>
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
-    <description>Data-access-layer utilities and abstractions.</description>
-    <releaseNotes>Published nuget package; moved code repo to CodePlex.</releaseNotes>
+    <description>Exotic data access and object-relational mapping for c#</description>
+    <releaseNotes>Incremental work towards release 3.</releaseNotes>
     <copyright>Copyright 2013</copyright>
   </metadata>
 </package>

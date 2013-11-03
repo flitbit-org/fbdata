@@ -38,7 +38,7 @@ namespace FlitBit.Data.Meta.Tests
 			// We established ID as the identity column...
 			Assert.AreEqual(1, people.Identity.Columns.Count());
 			var identity = people.Identity.Columns.First();
-			Assert.AreEqual("ID", identity.TargetName);
+			Assert.AreEqual("ID", identity.Column.TargetName);
 
 			// Since no natural key was specified, identity is the preferred reference column...
 			Assert.AreEqual(identity, people.GetPreferredReferenceColumn());
@@ -116,11 +116,11 @@ namespace FlitBit.Data.Meta.Tests
 			Assert.IsNotNull(ddl);
 			Assert.IsNotNull(ddl.Name);
 
-			var binder = new DynamicHybridInheritanceTreeBinder<TestPerson, int, TestPerson>(people);
-			var builder = new StringBuilder(2000);
-			binder.BuildDdlBatch(builder);
-			var sql = builder.ToString();
-			Assert.IsNotNull(sql);
+			//var binder = new DynamicHybridInheritanceTreeBinder<TestPerson, int, TestPerson>(people);
+			//var builder = new StringBuilder(2000);
+			//binder.BuildDdlBatch(builder);
+			//var sql = builder.ToString();
+			//Assert.IsNotNull(sql);
 		}
 	}
 }

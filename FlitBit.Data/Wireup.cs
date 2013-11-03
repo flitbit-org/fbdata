@@ -7,11 +7,12 @@
 using System.Data.SqlClient;
 using FlitBit.Data;
 using FlitBit.Data.Catalog;
+using FlitBit.Data.Meta;
 using FlitBit.Data.SqlServer;
 using FlitBit.Wireup;
 using FlitBit.Wireup.Meta;
 
-[assembly: HookWirupCoordinatorTask]
+[assembly: HookWirupCoordinatorsTask]
 [assembly: Wireup(typeof(FlitBit.Data.AssemblyWireup))]
 
 namespace FlitBit.Data
@@ -38,12 +39,12 @@ namespace FlitBit.Data
 	/// <summary>
 	///   Wires this module.
 	/// </summary>
-	public class HookWirupCoordinatorTask : WireupTaskAttribute
+	public class HookWirupCoordinatorsTask : WireupTaskAttribute
 	{
 		/// <summary>
 		///   Creates a new instance.
 		/// </summary>
-		public HookWirupCoordinatorTask()
+		public HookWirupCoordinatorsTask()
 			: base(WireupPhase.BeforeTasks) { }
 
 		/// <summary>
@@ -52,8 +53,10 @@ namespace FlitBit.Data
 		/// </summary>
 		protected override void PerformTask(IWireupCoordinator coordinator, Wireup.Recording.WireupContext context)
 		{
-			// Attach the root container as a wireup observer...
+			// Attach the DataModelAttribute observer...
 			coordinator.RegisterObserver(StaticCatalog.Observer);
+			// Attach the MapEntityAttribute observer...
+			coordinator.RegisterObserver(EntityWireupObserver.Observer);
 		}
 	}
 }

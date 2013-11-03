@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Data.SqlClient;
+using System.Linq;
 using System.Text;
+using FlitBit.Core;
 using FlitBit.Data.Catalog;
 using FlitBit.Data.DataModel;
 using FlitBit.Data.Meta;
@@ -23,25 +25,26 @@ namespace FlitBit.Data.Tests.Catalog
 		}
 
 		[TestMethod]
-		public void TestMethod1()
+		public void OneTypeOneTableMappingTest()
 		{
 			var mapping = Mappings.Instance.ForType<IMappedType>();
-			mapping.ConnectionName = "test-data";
 
 			Assert.IsNotNull(mapping);
 			Assert.IsNotNull(mapping.Columns);
 
-			var binder = mapping.GetBinder();
+			var binder = (IDataModelBinder<IMappedType,int, SqlConnection>)mapping.GetBinder();
 			var builder = new StringBuilder(2000);
 			binder.BuildDdlBatch(builder);
 			var sql = builder.ToString();
 			Assert.IsNotNull(mapping.ConcreteType);
 			Assert.IsNotNull(sql);
 
-			var all = new AllMappedTypeCommand();
-			var create = new CreateMappedTypeCommand();
-			var update = new UpdateMappedTypeCommand();
-			var readByType = new ReadMappedTypeByRuntimeTypeCommand();
+			var all = binder.GetAllCommand();
+			var create = binder.GetCreateCommand();
+			var update = binder.GetUpdateCommand();
+			var readByType = binder
+				.MakeQueryCommand<Type>("ByRuntimeType")
+				.Where((model, runtimeType) => model.RuntimeType == runtimeType);
 
 			using (var cx = DbContext.NewContext())
 			{
@@ -51,25 +54,26 @@ namespace FlitBit.Data.Tests.Catalog
 					Assert.IsNotNull(them);
 					Assert.IsTrue(them.Succeeded);
 
-					var existing = readByType.ExecuteSingle(cx, cn, typeof(IMappedType));
-					if (existing != null)
+					var existing = readByType.ExecuteMany(cx, cn, QueryBehavior.Default, typeof(IMappedType));
+					var res = existing.Results.SingleOrDefault();
+					if (res != null)
 					{
 						var ver = typeof(IMappedType).Assembly
 																				.GetName()
 																				.Version;
-						if (existing.LatestVersion == ver.ToString(3))
+						if (res.LatestVersion == ver.ToString(3))
 						{
-							existing.LatestVersion = new Version(ver.Major, ver.Minor, ver.Build + 1).ToString();
+							res.LatestVersion = new Version(ver.Major, ver.Minor, ver.Build + 1).ToString();
 						}
 						else
 						{
-							existing.LatestVersion = ver.ToString(3);
+							res.LatestVersion = ver.ToString(3);
 						}
-						update.ExecuteSingle(cx, cn, existing);
+						update.ExecuteSingle(cx, cn, res);
 					}
-					else 
+					else
 					{
-						var model = new IMappedTypeDataModel();
+						var model = FactoryProvider.Factory.CreateInstance<IMappedType>();
 						model.Catalog = "unitest";
 						model.LatestVersion = typeof(IMappedType).Assembly.GetName()
 																										.Version.ToString(3);
@@ -83,6 +87,8 @@ namespace FlitBit.Data.Tests.Catalog
 						var created = create.ExecuteSingle(cx, cn, model);
 						Assert.IsNotNull(created);
 					}
+
+
 				}
 			}
 		}

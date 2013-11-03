@@ -1,10 +1,12 @@
 using System;
 using System.Collections.Generic;
+using System.ComponentModel;
 using System.Data.Common;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
 using FlitBit.Data.Meta;
+using System.Linq.Expressions;
 
 namespace FlitBit.Data.DataModel
 {
@@ -13,7 +15,10 @@ namespace FlitBit.Data.DataModel
 	/// </summary>
 	/// <typeparam name="TModel"></typeparam>
 	/// <typeparam name="TIdentityKey"></typeparam>
-	public abstract class DataModelBinder<TModel, TIdentityKey> : IDataModelBinder<TModel, TIdentityKey>
+	/// <typeparam name="TDbConnection"></typeparam>
+	public abstract class DataModelBinder<TModel, TIdentityKey, TDbConnection> :
+		IDataModelBinder<TModel, TIdentityKey, TDbConnection>
+		where TDbConnection : DbConnection
 	{
 		readonly Mapping<TModel> _mapping;
 
@@ -27,7 +32,8 @@ namespace FlitBit.Data.DataModel
 		protected virtual void AddGeneratorMethodsForLcgColumns(Mapping<TModel> mapping, StringBuilder sql)
 		{
 			var lcgColumns = mapping.Identity.Columns
-															.Where(c => c.Behaviors.HasFlag(ColumnBehaviors.LinearCongruentGenerated));
+				.Where(c => c.Column.Behaviors.HasFlag(ColumnBehaviors.LinearCongruentGenerated))
+				.Select(c => c.Column);
 
 			foreach (var col in lcgColumns)
 			{
@@ -50,7 +56,7 @@ namespace FlitBit.Data.DataModel
 			var includedColumns = index.GetIncludedColumns(typeof(TModel));
 			var columns = includedColumns as string[] ?? includedColumns.ToArray();
 			if (any || (!index.Behaviors.HasFlag(IndexBehaviors.Unique)
-				|| columns.Any()))
+									|| columns.Any()))
 			{
 				sql.Append(Environment.NewLine)
 					.Append("CREATE ");
@@ -69,7 +75,7 @@ namespace FlitBit.Data.DataModel
 					if (col == null)
 					{
 						throw new MappingException(String.Concat("Index on model type ", typeof(TModel).Name,
-																										" names a property that was not found: ", def.Column));
+							" names a property that was not found: ", def.Column));
 					}
 
 					sql.Append(col.TargetName);
@@ -87,10 +93,10 @@ namespace FlitBit.Data.DataModel
 					{
 						sql.Append(", ");
 					}
-					sql.Append(mapping.QuoteObjectNameForSQL(col.TargetName))
+					sql.Append(mapping.QuoteObjectName(col.TargetName))
 						.Append(" ")
 						.Append(def.Order.ToString()
-											.ToUpper());
+							.ToUpper());
 				}
 				sql.Append(")");
 				if (columns.Any())
@@ -104,14 +110,14 @@ namespace FlitBit.Data.DataModel
 						if (col == null)
 						{
 							throw new MappingException(String.Concat("Index on model type ", typeof(TModel).Name,
-																											" names a property that was not found: ", n));
+								" names a property that was not found: ", n));
 						}
 
 						if (j++ > 0)
 						{
 							sql.Append(", ");
 						}
-						sql.Append(mapping.QuoteObjectNameForSQL(col.TargetName));
+						sql.Append(mapping.QuoteObjectName(col.TargetName));
 					}
 					sql.Append(")");
 				}
@@ -142,7 +148,7 @@ namespace FlitBit.Data.DataModel
 			foreach (MapIndexAttribute index in typeof(TModel).GetCustomAttributes(typeof(MapIndexAttribute), false))
 			{
 				if (index.Behaviors.HasFlag(IndexBehaviors.Unique)
-					&& String.IsNullOrEmpty(index.Include))
+						&& String.IsNullOrEmpty(index.Include))
 				{
 					sql.Append(',');
 					if (tableConstraints++ == 0)
@@ -164,7 +170,7 @@ namespace FlitBit.Data.DataModel
 						if (col == null)
 						{
 							throw new MappingException(String.Concat("Index on model ", typeof(TModel).Name,
-																											" names a property that was not found: '", def.Column, "'"));
+								" names a property that was not found: '", def.Column, "'"));
 						}
 
 						sql.Append(col.TargetName);
@@ -180,77 +186,110 @@ namespace FlitBit.Data.DataModel
 						{
 							sql.Append(", ");
 						}
-						sql.Append(mapping.QuoteObjectNameForSQL(col.TargetName))
+						sql.Append(mapping.QuoteObjectName(col.TargetName))
 							.Append(" ")
 							.Append(def.Order.ToString()
-												.ToUpper());
+								.ToUpper());
 					}
 					sql.Append(")");
 				}
 			}
 		}
 
-		#region IModelBinder<TModel,TIdentityKey> Members
-		
-		public IMapping UntypedMapping { get { return this._mapping; } }
+		public IMapping UntypedMapping
+		{
+			get { return this._mapping; }
+		}
 
 		public MappingStrategy Strategy { get; private set; }
 
-		public abstract void BuildDDLBatch(StringBuilder batch, IList<Type> members);
+		public abstract void BuildDdlBatch(StringBuilder batch, IList<Type> members);
 
-		public Mapping<TModel> Mapping { get { return this._mapping; } }
+		public Mapping<TModel> Mapping
+		{
+			get { return this._mapping; }
+		}
 
 		/// <summary>
 		///   Gets a model command for selecting all models of the type TModel.
 		/// </summary>
 		/// <returns></returns>
-		public abstract IDataModelQueryManyCommand<TModel, DbConnection> GetAllCommand();
+		public abstract IDataModelQueryManyCommand<TModel, TDbConnection> GetAllCommand();
 
 		/// <summary>
 		///   Gets a create command.
 		/// </summary>
 		/// <returns></returns>
-		public abstract IDataModelQuerySingleCommand<TModel, DbConnection, TModel> GetCreateCommand();
+		public abstract IDataModelQuerySingleCommand<TModel, TDbConnection, TModel> GetCreateCommand();
 
 		/// <summary>
 		///   Gets a delete (by ID) command.
 		/// </summary>
 		/// <returns></returns>
-		public abstract IDataModelNonQueryCommand<TModel, DbConnection, TIdentityKey> GetDeleteCommand();
+		public abstract IDataModelNonQueryCommand<TModel, TDbConnection, TIdentityKey> GetDeleteCommand();
 
 		/// <summary>
 		///   Gets a read (by ID) command.
 		/// </summary>
 		/// <returns></returns>
-		public abstract IDataModelQuerySingleCommand<TModel, DbConnection, TIdentityKey> GetReadCommand();
+		public abstract IDataModelQuerySingleCommand<TModel, TDbConnection, TIdentityKey> GetReadCommand();
 
 		/// <summary>
 		///   Gets an update command.
 		/// </summary>
 		/// <returns></returns>
-		public abstract IDataModelQuerySingleCommand<TModel, DbConnection, TModel> GetUpdateCommand();
-
-		/// <summary>
-		///   Makes a delete-match command.
-		/// </summary>
-		/// <typeparam name="TMatch">the match's type</typeparam>
-		/// <param name="match">an match specification</param>
-		/// <returns></returns>
-		public abstract IDataModelNonQueryCommand<TModel, DbConnection, TMatch> MakeDeleteMatchCommand<TMatch>(TMatch match) where TMatch : class;
+		public abstract IDataModelQuerySingleCommand<TModel, TDbConnection, TModel> GetUpdateCommand();
 
 		/// <summary>
 		///   Makes a read-match command.
 		/// </summary>
-		/// <typeparam name="TMatch">the match's type</typeparam>
-		/// <param name="match">an match specification</param>
+		/// <typeparam name="TCriteria">the match's type</typeparam>
+		/// <param name="criteria">an match specification</param>
 		/// <returns></returns>
-		public abstract IDataModelQueryManyCommand<TModel, DbConnection, TMatch> MakeReadMatchCommand<TMatch>(TMatch match) where TMatch : class;
+		public abstract IDataModelQueryCommandBuilder<TModel, TDbConnection, TCriteria> MakeQueryCommand<TCriteria>(string queryKey,
+			TCriteria criteria);
+		
+		/// <summary>
+		/// Initializes the binder.
+		/// </summary>
+		public abstract void Initialize();
 
-		public abstract IDataModelNonQueryCommand<TModel, DbConnection, TMatch, TUpdate> MakeUpdateMatchCommand<TMatch, TUpdate>(
-			TMatch match, TUpdate update)
-			where TMatch : class
-			where TUpdate : class;
 
-		#endregion
+		public abstract IDataModelQueryCommandBuilder<TModel, TDbConnection, TParam> MakeQueryCommand<TParam>(string queryKey);
+
+		public abstract IDataModelCommandBuilder<TModel, TDbConnection, TParam, TParam1> MakeQueryCommand<TParam, TParam1>(
+			string queryKey);
+
+		public abstract IDataModelCommandBuilder<TModel, TDbConnection, TParam, TParam1, TParam2> MakeQueryCommand
+			<TParam, TParam1, TParam2>(string queryKey);
+
+		public abstract IDataModelCommandBuilder<TModel, TDbConnection, TParam, TParam1, TParam2, TParam3> MakeQueryCommand
+			<TParam, TParam1, TParam2, TParam3>(string queryKey);
+
+		public abstract IDataModelCommandBuilder<TModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4>
+			MakeQueryCommand<TParam, TParam1, TParam2, TParam3, TParam4>(string queryKey);
+
+		public abstract IDataModelCommandBuilder<TModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5>
+			MakeQueryCommand<TParam, TParam1, TParam2, TParam3, TParam4, TParam5>(string queryKey);
+
+		public abstract
+			IDataModelCommandBuilder<TModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6>
+			MakeQueryCommand<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6>(string queryKey);
+
+		public abstract
+			IDataModelCommandBuilder
+				<TModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7> MakeQueryCommand
+			<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7>(string queryKey);
+
+		public abstract
+			IDataModelCommandBuilder
+				<TModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8>
+			MakeQueryCommand<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8>(string queryKey);
+
+		public abstract
+			IDataModelCommandBuilder
+				<TModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>
+			MakeQueryCommand<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>(
+			string queryKey);
 	}
 }

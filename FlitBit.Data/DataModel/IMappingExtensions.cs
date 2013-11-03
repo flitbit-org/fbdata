@@ -56,7 +56,7 @@ namespace FlitBit.Data.DataModel
 				var bottom = stack.Pop();
 				if (!ReferenceEquals(bottom, mapping))
 				{
-					LogSink.OnTraceEvent(TraceEventType.Warning,
+					LogSink.OnTraceEvent(typeof(IMappingExtensions), TraceEventType.Warning,
 															String.Concat(
 																					 "GetDdlBatch encountered an error in the stack while generating DDL; stack contained {0} instead of {1} on exit.",
 																					bottom.GetType()

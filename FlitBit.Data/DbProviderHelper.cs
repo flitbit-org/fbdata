@@ -14,9 +14,12 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
 using FlitBit.Data.DataModel;
+using FlitBit.Data.Expressions;
 using FlitBit.Data.Meta;
 using FlitBit.Emit;
 using FlitBit.Core;
+using System.Linq.Expressions;
+using Microsoft.Win32;
 
 namespace FlitBit.Data
 {
@@ -84,6 +87,7 @@ namespace FlitBit.Data
 		public abstract string FormatParameterName(string rawParameterName);
 
 		public abstract IDataModelBinder<TModel, Id> GetModelBinder<TModel, Id>(Mapping<TModel> mapping);
+
 		public abstract string GetServerName(DbConnection connection);
 
 		public abstract IDataParameterBinder MakeParameterBinder();
@@ -288,37 +292,101 @@ WHERE TABLE_CATALOG = '{0}'
 		
 		internal MappedDbTypeEmitter GetDbTypeEmitter(IMapping mapping, ColumnMapping column)
 		{
-			MappedDbTypeEmitter emitter;
 			var type = column.RuntimeType;
 			if (column.IsReference && column.ReferenceTargetMember != null)
 			{
 				type = column.ReferenceTargetMember.GetTypeOfValue();
 			}
+			return GetDbTypeEmitter(mapping, type);
+		}
+
+		internal MappedDbTypeEmitter GetDbTypeEmitter(IMapping mapping, Type type)
+		{
+			MappedDbTypeEmitter emitter;
 			if (!_emitters.TryGetValue(type, out emitter))
 			{
 				if (type.IsEnum)
 				{
-					type = Enum.GetUnderlyingType(type);
-					var emitterType = type == typeof(short) 
-						? typeof(MappedEmumAsInt16Emitter<>).MakeGenericType(type) 
-						: typeof(MappedEmumAsInt32Emitter<>).MakeGenericType(type);
-					return (MappedDbTypeEmitter) Activator.CreateInstance(emitterType, true);
+					var etype = Enum.GetUnderlyingType(type);
+					Type emitterType;
+					switch (Type.GetTypeCode(etype))
+					{
+						case TypeCode.Int16:
+							emitterType = MakeEnumAsInt16Emitter(type);
+							break;
+						case TypeCode.Int32:
+							emitterType = MakeEnumAsInt32Emitter(type);
+							break;
+						default:
+							throw new NotSupportedException(String.Concat("Unable to map enum type ", type.GetReadableSimpleName(), " to DbType due to unsupported underlying type: ", etype.GetReadableSimpleName(), "."));
+					}
+					return (MappedDbTypeEmitter)Activator.CreateInstance(emitterType, true);
 				}
-				emitter = GetMissingDbTypeEmitter(mapping, column, type);
+				emitter = GetMissingDbTypeEmitter(mapping, type);
 			}
 			return emitter;
 		}
+
+		protected virtual Type MakeEnumAsInt32Emitter(Type enumType)
+		{
+			return typeof (MappedEmumAsInt32Emitter<>).MakeGenericType(enumType);
+		}
+
+		protected virtual Type MakeEnumAsInt16Emitter(Type enumType)
+		{
+			return typeof(MappedEmumAsInt16Emitter<>).MakeGenericType(enumType);
+		}
 		
-		protected virtual MappedDbTypeEmitter GetMissingDbTypeEmitter(IMapping mapping, ColumnMapping column, Type type)
+		protected virtual MappedDbTypeEmitter GetMissingDbTypeEmitter(IMapping mapping, Type type)
 		{
 			throw new NotImplementedException(String.Concat("There is no mapping for `", type.GetReadableFullName(), "` registered for the underlying DbProvider."));
 		}
 
 		public virtual void EmitCreateSchema(StringBuilder batch, string schemaName)
 		{
-			throw new NotImplementedException();
+			throw new NotImplementedException();	
+		}
+
+		public virtual string TranslateComparison(ExpressionType exprType, ValueReference left, ValueReference right)
+		{
 			
-			
+			switch (exprType)
+			{
+				case ExpressionType.Equal:
+					if (left.Kind == ValueReferenceKind.Null)
+					{
+						if (right.Kind == ValueReferenceKind.Null)
+						{
+							return "1 = 1"; // dumb, but writer expects a condition and writing such an expression is likewise.
+						}
+						return String.Concat(right.Value, " IS NULL");
+					}
+					return right.Kind == ValueReferenceKind.Null 
+						? String.Concat(left.Value, " IS NULL") 
+						: String.Concat(left.Value, " = ", right.Value);
+				case ExpressionType.GreaterThan:
+					return String.Concat(left.Value, " > ", right.Value);
+				case ExpressionType.GreaterThanOrEqual:
+					return String.Concat(left.Value, " >= ", right.Value);
+				case ExpressionType.LessThan:
+					return String.Concat(left.Value, " < ", right.Value);
+				case ExpressionType.LessThanOrEqual:
+					return String.Concat(left.Value, " <= ", right.Value);
+				case ExpressionType.NotEqual:
+					if (left.Kind == ValueReferenceKind.Null)
+					{
+						if (right.Kind == ValueReferenceKind.Null)
+						{
+							return "0 = 1"; // dumb, but writer expects a condition and writing such an expression is likewise.
+						}
+						return String.Concat(right.Value, " IS NOT NULL");
+					}
+					return right.Kind == ValueReferenceKind.Null 
+						? String.Concat(left.Value, " IS NOT NULL") 
+						: String.Concat(left.Value, " <> ", right.Value);
+				}
+			throw new ArgumentOutOfRangeException("exprType");
+
 		}
 	}
 }

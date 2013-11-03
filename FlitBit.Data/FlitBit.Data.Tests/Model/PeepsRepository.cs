@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Data;
+using System.Data.Common;
 using System.Diagnostics.Contracts;
 using FlitBit.Data.DataModel;
 
@@ -102,14 +102,27 @@ WHERE [{0}].[Peeps].[ID] = @ID";
 		{
 			Contract.Requires<ArgumentNullException>(context != null);
 
-			return ReadBy(context, ReadByNameCommand, (n, binder) => binder.DefineAndBindParameter("Name", n), CCacheKey_Name,
-										name);
+			return ReadBy(context, ReadByNameCommand,
+			    (cmd, n) =>
+			    {
+			        var binder = Helper.MakeParameterBinder(cmd);
+			        binder.DefineAndBindParameter("Name", n);
+			    }
+                , CCacheKey_Name, 
+                name
+                );
 		}
 
-		protected override void BindDeleteCommand(IDataParameterBinder binder, int id) { binder.DefineAndBindParameter("ID", id); }
+	    protected override void BindDeleteCommand(DbCommand cmd, int id)
+	    {
+            var binder = Helper.MakeParameterBinder(cmd);
+	        binder.DefineAndBindParameter("ID", id);
+	    }
 
-		protected override void BindInsertCommand(IDataParameterBinder binder, Peep model)
+        protected override void BindInsertCommand(DbCommand cmd, Peep model)
 		{
+            var binder = Helper.MakeParameterBinder(cmd);
+
 			if (model.Name == null)
 			{
 				binder.DefineAndSetDbNull<string>("Name");
@@ -128,18 +141,21 @@ WHERE [{0}].[Peeps].[ID] = @ID";
 			}
 		}
 
-		protected override void BindReadCommand(IDataParameterBinder binder, int id) { binder.DefineAndBindParameter("ID", id); }
+	    protected override void BindReadCommand(DbCommand cmd, int id)
+	    {
+            var binder = Helper.MakeParameterBinder(cmd);
+            binder.DefineAndBindParameter("ID", id);
+	    }
 
-		protected override void BindUpdateCommand(IDataParameterBinder binder, Peep model)
+        protected override void BindUpdateCommand(DbCommand cmd, Peep model)
 		{
+            var binder = Helper.MakeParameterBinder(cmd);
 			binder.DefineAndBindParameter("ID", model.ID);
-			BindInsertCommand(binder, model);
+			BindInsertCommand(cmd, model);
 		}
 
 		protected override Peep CreateInstance() { return new Peep(); }
 		protected override string MakeUpdateCommand(Peep model) { return UpdateCommand; }
-
-		protected override IEnumerable<Peep> PerformDirectQueryBy<TItemKey>(IDbContext context, string command, Action<TItemKey, IDataParameterBinder> binder, TItemKey key) { return base.PerformDirectQueryBy<TItemKey>(context, command, binder, key); }
 
 		protected override void PopulateInstance(IDbContext context, Peep model, IDataRecord reader, object state)
 		{

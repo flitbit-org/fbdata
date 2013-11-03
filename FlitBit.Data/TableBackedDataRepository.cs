@@ -3,13 +3,12 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics.Contracts;
-using System.Linq;
 using FlitBit.Data.DataModel;
 
 namespace FlitBit.Data
 {
-	public abstract class TableBackedRepository<TModel, Id> : AbstractCachingRepository<TModel, Id>
-	{
+    public abstract class TableBackedRepository<TModel, TIdentityKey> : AbstractCachingRepository<TModel, TIdentityKey>
+    {
 		public TableBackedRepository(string connectionName)
 			: base(connectionName)
 		{
@@ -22,31 +21,11 @@ namespace FlitBit.Data
 		protected string InsertCommand { get; set; }
 		protected string ReadCommand { get; set; }
 
-		public override int DeleteMatch<TMatch>(IDbContext context, TMatch match)
-		{
-			throw new NotImplementedException();
-		}
+        protected abstract void BindDeleteCommand(DbCommand cmd, TIdentityKey id);
 
-		public override IQueryable<TModel> Query()
-		{
-			throw new NotImplementedException();
-		}
-
-		public override IDataModelQueryResult<TModel> ReadMatch<TMatch>(IDbContext context, QueryBehavior behavior, TMatch match)
-		{
-			throw new NotImplementedException();
-		}
-
-		public override int UpdateMatch<TMatch, TUpdate>(IDbContext context, TMatch match, TUpdate update)
-		{
-			throw new NotImplementedException();
-		}
-
-		protected abstract void BindDeleteCommand(IDataParameterBinder binder, Id id);
-
-		protected abstract void BindInsertCommand(IDataParameterBinder binder, TModel model);
-		protected abstract void BindReadCommand(IDataParameterBinder binder, Id id);
-		protected abstract void BindUpdateCommand(IDataParameterBinder binder, TModel model);
+		protected abstract void BindInsertCommand(DbCommand cmd, TModel model);
+        protected abstract void BindReadCommand(DbCommand cmd, TIdentityKey id);
+        protected abstract void BindUpdateCommand(DbCommand cmd, TModel model);
 		protected abstract TModel CreateInstance();
 		protected abstract string MakeUpdateCommand(TModel model);
 
@@ -61,63 +40,63 @@ namespace FlitBit.Data
 		protected virtual object PrepareInsertCommand(IDbContext context, DbConnection cn, DbCommand cmd, TModel model)
 		{
 			cmd.CommandText = InsertCommand;
-			BindInsertCommand(Helper.MakeParameterBinder(cmd), model);
+			BindInsertCommand(cmd, model);
 			return null;
 		}
 
 		protected virtual object PrepareQueryByCommand<TItemKey>(IDbContext context, DbConnection cn, DbCommand cmd,
-			string command, Action<TItemKey, IDataParameterBinder> binder, TItemKey key)
+			string command, Action<DbCommand, TItemKey> binder, TItemKey key)
 		{
 			cmd.CommandText = command;
 			if (binder != null)
 			{
-				binder(key, Helper.MakeParameterBinder(cmd));
+				binder(cmd, key);
 			}
 			return null;
 		}
 
 		protected virtual object PrepareReadByCommand<TItemKey>(IDbContext context, DbConnection cn, DbCommand cmd,
-			string command, Action<TItemKey, IDataParameterBinder> binder, TItemKey key)
+			string command, Action<DbCommand, TItemKey> binder, TItemKey key)
 		{
 			cmd.CommandText = command;
 			if (binder != null)
 			{
-				binder(key, Helper.MakeParameterBinder(cmd));
+				binder(cmd, key);
 			}
 			return null;
 		}
 
-		protected virtual object PrepareReadCommand(IDbContext context, DbConnection cn, DbCommand cmd, Id id)
+		protected virtual object PrepareReadCommand(IDbContext context, DbConnection cn, DbCommand cmd, TIdentityKey id)
 		{
 			cmd.CommandText = ReadCommand;
-			BindReadCommand(Helper.MakeParameterBinder(cmd), id);
+			BindReadCommand(cmd, id);
 			return null;
 		}
 
 		protected virtual object PrepareUpdateCommand(IDbContext context, DbConnection cn, DbCommand cmd, TModel model)
 		{
 			cmd.CommandText = MakeUpdateCommand(model);
-			BindUpdateCommand(Helper.MakeParameterBinder(cmd), model);
+			BindUpdateCommand(cmd, model);
 			return null;
 		}
 
 		protected override IDataModelQueryResult<TModel> PerformAll(IDbContext context, QueryBehavior behavior)
 		{
 			var result = new List<TModel>();
-			var cn = context.SharedOrNewConnection(ConnectionName);
-			using (var cmd = cn.CreateCommand())
+			DbConnection cn = context.SharedOrNewConnection(ConnectionName);
+			using (DbCommand cmd = (DbCommand)cn.CreateCommand())
 			{
-				var state = PrepareAllCommand(context, cn, cmd);
+				object state = PrepareAllCommand(context, cn, cmd);
 				if (!cn.State.HasFlag(ConnectionState.Open))
 				{
 					cn.Open();
 				}
 				context.IncrementQueryCounter(1);
-				using (var reader = cmd.ExecuteReader())
+				using (DbDataReader reader = cmd.ExecuteReader())
 				{
 					while (reader.Read())
 					{
-						var model = CreateInstance();
+						TModel model = CreateInstance();
 						PopulateInstance(context, model, reader, state);
 						result.Add(model);
 					}
@@ -128,16 +107,16 @@ namespace FlitBit.Data
 
 		protected override TModel PerformCreate(IDbContext context, TModel model)
 		{
-			var res = default(TModel);
-			var cn = context.SharedOrNewConnection(ConnectionName);
+			TModel res = default(TModel);
+			DbConnection cn = context.SharedOrNewConnection(ConnectionName);
 			if (!cn.State.HasFlag(ConnectionState.Open))
 			{
 				cn.Open();
 			}
-			using (var cmd = cn.CreateCommand())
+			using (DbCommand cmd = (DbCommand)cn.CreateCommand())
 			{
-				var state = PrepareInsertCommand(context, cn, cmd, model);
-				using (var reader = cmd.ExecuteReader())
+				object state = PrepareInsertCommand(context, cn, cmd, model);
+				using (DbDataReader reader = cmd.ExecuteReader())
 				{
 					context.IncrementQueryCounter(1);
 					if (reader.Read())
@@ -150,16 +129,16 @@ namespace FlitBit.Data
 			return res;
 		}
 
-		protected override bool PerformDelete(IDbContext context, Id id)
+		protected override bool PerformDelete(IDbContext context, TIdentityKey id)
 		{
-			var result = false;
+			bool result = false;
 			var cn = context.SharedOrNewConnection(ConnectionName);
 			if (!cn.State.HasFlag(ConnectionState.Open))
 			{
 				cn.Open();
 			}
-			using (var cmd = cn.CreateCommand())
-			{
+            using (var cmd = (DbCommand)cn.CreateCommand())
+            {
 				PrepareDeleteCommand(context, cn, cmd, id);
 				result = (cmd.ExecuteNonQuery() > 0);
 				context.IncrementQueryCounter(1);
@@ -167,13 +146,14 @@ namespace FlitBit.Data
 			return result;
 		}
 
-		protected override IEnumerable<TModel> PerformDirectQueryBy<TItemKey>(IDbContext context, string command, Action<TItemKey, IDataParameterBinder> binder, TItemKey key)
+		protected override IEnumerable<TModel> PerformDirectQueryBy<TItemKey>(IDbContext context, string command,
+			Action<DbCommand, TItemKey> binder, TItemKey key)
 		{
 			var result = new List<TModel>();
 			var cn = context.SharedOrNewConnection(ConnectionName);
-			using (var cmd = cn.CreateCommand())
+            using (var cmd = (DbCommand)cn.CreateCommand())
 			{
-				var state = PrepareQueryByCommand(context, cn, cmd, command, binder, key);
+				object state = PrepareQueryByCommand(context, cn, cmd, command, binder, key);
 				if (!cn.State.HasFlag(ConnectionState.Open))
 				{
 					cn.Open();
@@ -193,7 +173,7 @@ namespace FlitBit.Data
 		}
 
 		protected override TModel PerformDirectReadBy<TItemKey>(IDbContext context, string command,
-			Action<TItemKey, IDataParameterBinder> binder, TItemKey key)
+			Action<DbCommand, TItemKey> binder, TItemKey key)
 		{
 			var result = default(TModel);
 			var cn = context.SharedOrNewConnection(ConnectionName);
@@ -201,9 +181,9 @@ namespace FlitBit.Data
 			{
 				cn.Open();
 			}
-			using (var cmd = cn.CreateCommand())
+			using (var cmd = (DbCommand)cn.CreateCommand())
 			{
-				var state = PrepareReadByCommand(context, cn, cmd, command, binder, key);
+				object state = PrepareReadByCommand(context, cn, cmd, command, binder, key);
 				using (var reader = cmd.ExecuteReader())
 				{
 					context.IncrementQueryCounter(1);
@@ -217,7 +197,7 @@ namespace FlitBit.Data
 			return result;
 		}
 
-		protected override TModel PerformRead(IDbContext context, Id id)
+		protected override TModel PerformRead(IDbContext context, TIdentityKey id)
 		{
 			var result = default(TModel);
 			var cn = context.SharedOrNewConnection(ConnectionName);
@@ -225,11 +205,11 @@ namespace FlitBit.Data
 			{
 				cn.Open();
 			}
-			using (var cmd = cn.CreateCommand())
+			using (var cmd = (DbCommand)cn.CreateCommand())
 			{
-				var state = PrepareReadCommand(context, cn, cmd, id);
+				object state = PrepareReadCommand(context, cn, cmd, id);
 				context.IncrementQueryCounter(1);
-				using (var reader = cmd.ExecuteReader())
+				using (DbDataReader reader = cmd.ExecuteReader())
 				{
 					if (reader.Read())
 					{
@@ -245,14 +225,14 @@ namespace FlitBit.Data
 		{
 			var res = default(TModel);
 			var cn = context.SharedOrNewConnection(ConnectionName);
-			using (var cmd = cn.CreateCommand())
+			using (var cmd = (DbCommand)cn.CreateCommand())
 			{
-				var state = PrepareUpdateCommand(context, cn, cmd, model);
+				object state = PrepareUpdateCommand(context, cn, cmd, model);
 				if (!cn.State.HasFlag(ConnectionState.Open))
 				{
 					cn.Open();
 				}
-				using (var reader = cmd.ExecuteReader())
+				using (DbDataReader reader = cmd.ExecuteReader())
 				{
 					context.IncrementQueryCounter(1);
 					if (reader.Read())
@@ -265,10 +245,10 @@ namespace FlitBit.Data
 			return res;
 		}
 
-		void PrepareDeleteCommand(IDbContext context, DbConnection cn, DbCommand cmd, Id id)
+		private void PrepareDeleteCommand(IDbContext context, DbConnection cn, DbCommand cmd, TIdentityKey id)
 		{
 			cmd.CommandText = DeleteCommand;
-			BindDeleteCommand(Helper.MakeParameterBinder(cmd), id);
+			BindDeleteCommand(cmd, id);
 		}
 	}
 }

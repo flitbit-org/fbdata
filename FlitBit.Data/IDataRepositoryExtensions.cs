@@ -42,32 +42,8 @@ namespace FlitBit.Data
 
 			using (var context = DbContext.SharedOrNewContext())
 			{
-				return repo.Read(context, id);
+				return repo.ReadByIdentity(context, id);
 			}
-		}
-
-		public static IDataModelQueryResult<TModel> ReadMatch<TModel, Id, TMatch>(this IDataRepository<TModel, Id> repo,
-			QueryBehavior behavior, TMatch match)
-			where TMatch : class
-		{
-			Contract.Requires<ArgumentNullException>(repo != null);
-			Contract.Requires<ArgumentNullException>(match != null);
-
-			using (var context = DbContext.SharedOrNewContext())
-			{
-				return repo.ReadMatch(context, behavior, match);
-			}
-		}
-
-		public static IDataModelQueryResult<TModel> ReadMatch<TModel, Id, TMatch>(this IDataRepository<TModel, Id> repo,
-			IDbContext context, TMatch match)
-			where TMatch : class
-		{
-			Contract.Requires<ArgumentNullException>(repo != null);
-			Contract.Requires<ArgumentNullException>(context != null);
-			Contract.Requires<ArgumentNullException>(match != null);
-
-			return repo.ReadMatch(context, QueryBehavior.Default, match);
 		}
 
 		public static TModel Update<TModel, Id>(this IDataRepository<TModel, Id> repo, TModel model)

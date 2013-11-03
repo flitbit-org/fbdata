@@ -9,10 +9,10 @@ namespace FlitBit.Data
 		string _name;
 		string _bindingName;
 		int? _length;
-		int? _scale;
+		byte? _scale;
 
 		public DbTypeDetails(string name, string bindingName, int? len,
-			int? scale)
+			byte? scale)
 		{
 			Contract.Requires<ArgumentNullException>(name != null);
 			this._name = name;
@@ -29,6 +29,6 @@ namespace FlitBit.Data
 
 		public int? Length { get { return this._length; } set { this._length = value; } }
 
-		public int? Scale { get { return this._scale; } set { this._scale = value; } }
+		public byte? Scale { get { return this._scale; } set { this._scale = value; } }
 	}
 }

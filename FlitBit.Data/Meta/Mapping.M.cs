@@ -89,12 +89,8 @@ namespace FlitBit.Data.Meta
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 		string _targetSchema;
 
-		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
-		Tuple<int, MappedDbTypeEmitter> _emitter;
-
 		internal Mapping()
 		{
-			_emitter = Tuple.Create(_revision, default(MappedDbTypeEmitter));
 			_hierarchyMapping = new HierarchyMapping<TModel>();
 			_hierarchyMapping.OnChanged += (sender, e) => Interlocked.Increment(ref _revision);
 			_identityKey = FactoryProvider.Factory.CreateInstance<IdentityKey<TModel>>();
@@ -153,7 +149,7 @@ namespace FlitBit.Data.Meta
 
 		public CollectionMapping<TModel> Collection(Expression<Func<TModel, object>> expression)
 		{
-			Contract.Requires(expression != null);
+			Contract.Requires<ArgumentNullException>(expression != null);
 
 			var member = expression.GetMemberFromExpression();
 			Contract.Assert(member != null, "Expression must reference a field or property member");
@@ -212,7 +208,7 @@ namespace FlitBit.Data.Meta
 				// Try to discover identity columns from column definitions.
 				foreach (var c in Columns.Where(c => c.Behaviors.HasFlag(ColumnBehaviors.Identity)))
 				{
-					Identity.AddColumn(c);
+					Identity.AddColumn(c, SortOrderKind.Asc);
 				}
 			}
 			this.MarkComplete();
@@ -460,9 +456,9 @@ namespace FlitBit.Data.Meta
 						_baseTypes.Add(baseMapping);
 						this.AddDependency(baseMapping, DependencyKind.Base, null);
 						_columns.AddRange(baseMapping.DeclaredColumns);
-						foreach (var idcol in baseMapping.Identity.Columns.Where(c => c.Member.DeclaringType == baseMapping.RuntimeType))
+						foreach (var idcol in baseMapping.Identity.Columns.Where(c => c.Column.Member.DeclaringType == baseMapping.RuntimeType))
 						{
-							this.Identity.AddColumn(idcol);
+							Identity.AddColumn(idcol.Column, SortOrderKind.Asc);
 						}
 					}
 					else
@@ -476,13 +472,13 @@ namespace FlitBit.Data.Meta
 			}
 			if (Behaviors.HasFlag(EntityBehaviors.MapEnum))
 			{
-				var idcol = this.Identity.Columns.SingleOrDefault(c => c.RuntimeType.IsEnum);
-				if (idcol == null)
+				var idcol = this.Identity.Columns[1].Column;
+				if (!idcol.RuntimeType.IsEnum)
 				{
 					throw new MappingException(String.Concat("Entity type ", typeof(TModel).Name,
 																									" declares behavior EntityBehaviors.MapEnum but the enum type cannot be determined. Specify an identity column of enum type."));
 				}
-				var namecol = this.Columns.FirstOrDefault(c => c.RuntimeType == typeof(String) && c.IsAlternateKey);
+				var namecol = Columns.FirstOrDefault(c => c.RuntimeType == typeof(String) && c.IsAlternateKey);
 				if (namecol == null)
 				{
 					throw new MappingException(String.Concat("Entity type ", typeof(TModel).Name,
@@ -556,7 +552,7 @@ namespace FlitBit.Data.Meta
 			}
 			if (column.Behaviors.HasFlag(ColumnBehaviors.Identity))
 			{
-				Identity.AddColumn(column);
+				Identity.AddColumn(column, SortOrderKind.Asc);
 			}
 
 			if (Mappings.ExistsFor(p.PropertyType))
@@ -651,8 +647,8 @@ namespace FlitBit.Data.Meta
 			get
 			{
 				return String.IsNullOrEmpty(TargetSchema)
-					? QuoteObjectNameForSQL(TargetObject)
-					: String.Concat(QuoteObjectNameForSQL(TargetSchema), '.', QuoteObjectNameForSQL(TargetObject));
+					? QuoteObjectName(TargetObject)
+					: String.Concat(QuoteObjectName(TargetSchema), '.', QuoteObjectName(TargetObject));
 			}
 		}
 
@@ -698,7 +694,7 @@ namespace FlitBit.Data.Meta
 		/// </summary>
 		public IEnumerable<CollectionMapping> DeclaredCollections { get { return _collections.Values.ToReadOnly(); } }
 
-		public string QuoteObjectNameForSQL(string name)
+		public string QuoteObjectName(string name)
 		{
 			Contract.Assert(name != null);
 			Contract.Assert(name.Length > 0);
@@ -793,7 +789,7 @@ namespace FlitBit.Data.Meta
 		{
 			var ht = typeof(IHierarchyMapping<TModel>).MatchGenericMethod("NotifySubtype", 1, typeof(void), typeof(IMapping<>))
 																								.MakeGenericMethod(mapping.RuntimeType);
-			ht.Invoke(Mapping<TModel>.Instance.Hierarchy, new object[] {mapping});
+			ht.Invoke(Instance.Hierarchy, new object[] {mapping});
 		}
 
 		#endregion

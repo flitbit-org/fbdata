@@ -42,7 +42,7 @@ namespace FlitBit.Data
 		public DbParamDefinition(string name, string bindName, DbType dbType, int length, ParameterDirection direction)
 		{
 			Contract.Requires<ArgumentNullException>(name != null);
-			Contract.Requires(name.Length > 0);
+			Contract.Requires<ArgumentException>(name.Length > 0);
 			this._name = name;
 			this._bindName = bindName;
 			this._direction = direction;
@@ -57,7 +57,7 @@ namespace FlitBit.Data
 			ParameterDirection direction)
 		{
 			Contract.Requires<ArgumentNullException>(name != null);
-			Contract.Requires(name.Length > 0);
+			Contract.Requires<ArgumentException>(name.Length > 0);
 
 			this._name = name;
 			this._bindName = bindName;
@@ -73,7 +73,7 @@ namespace FlitBit.Data
 			ParameterDirection direction)
 		{
 			Contract.Requires<ArgumentNullException>(name != null);
-			Contract.Requires(name.Length > 0);
+			Contract.Requires<ArgumentException>(name.Length > 0);
 			Contract.Requires<ArgumentNullException>(bindName != null);
 			Contract.Requires(bindName.Length > 0);
 
@@ -90,7 +90,7 @@ namespace FlitBit.Data
 		public DbParamDefinition(string name, string bindName, Type type, ParameterDirection direction)
 		{
 			Contract.Requires<ArgumentNullException>(name != null);
-			Contract.Requires(name.Length > 0);
+			Contract.Requires<ArgumentException>(name.Length > 0);
 			Contract.Requires<ArgumentNullException>(type != null);
 
 			this._name = name;
@@ -106,7 +106,7 @@ namespace FlitBit.Data
 		public DbParamDefinition(string name, string bindName, Type type, int length, ParameterDirection direction)
 		{
 			Contract.Requires<ArgumentNullException>(name != null);
-			Contract.Requires(name.Length > 0);
+			Contract.Requires<ArgumentException>(name.Length > 0);
 			Contract.Requires<ArgumentNullException>(type != null);
 
 			this._name = name;
