@@ -176,8 +176,12 @@ namespace FlitBit.Data.Meta
 		AnyMissingObject = 1,
 	}
 
+	[Flags]
 	public enum EntityBehaviors
 	{
+		/// <summary>
+		/// Maps according to declared metadata.
+		/// </summary>
 		Default = 0,
 
 		/// <summary>
@@ -190,17 +194,21 @@ namespace FlitBit.Data.Meta
 		///   Indicates the entity represents an enum (identity column must be
 		///   an enum type) and should be mapped as such.
 		/// </summary>
-		MapEnum = 2,
+		MapEnum = 1 << 1,
 
 		/// <summary>
 		///   Indicates the entity should be audited.
 		/// </summary>
-		Audited = 4,
+		Audited = 1 << 2,
+
+		/// <summary>
+		/// Indicates database objects are pluralized ('Person' becomes 'People').
+		/// </summary>
+		Pluralized = 1 << 3,
 
 		/// <summary>
 		///   Indicates that the entity should be mapped as defined. This means
-		///   any extension columns are not added to the type's data definition
-		///   (such as ETL columns).
+		///   any extension columns and mixins are not added to the type's definition.
 		/// </summary>
 		DefinedColumnsOnly = 0x40000000,
 	}
