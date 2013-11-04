@@ -264,5 +264,10 @@ namespace FlitBit.Data.SqlServer
 				_initialized = true;
 			}
 		}
+
+		public override IDataModelRepository<TModel, TIdentityKey, SqlConnection> MakeRepository()
+		{
+			throw new NotImplementedException();
+		}
 	}
 }

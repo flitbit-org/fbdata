@@ -73,6 +73,11 @@ namespace FlitBit.Data.DataModel
 
 		MappedDbTypeEmitter GetEmitterFor(ColumnMapping column);
 		DbProviderHelper GetDbProviderHelper();
+
+		/// <summary>
+		/// Indicates whether the mapping has a binder.
+		/// </summary>
+		bool HasBinder { get; }
 	}
 
 	public interface IMapping<out M> : IMapping

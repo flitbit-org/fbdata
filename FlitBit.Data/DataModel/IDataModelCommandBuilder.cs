@@ -9,7 +9,7 @@ namespace FlitBit.Data.DataModel
 	/// <typeparam name="TDataModel"></typeparam>
 	/// <typeparam name="TDbConnection"></typeparam>
 	/// <typeparam name="TParam"></typeparam>
-	public interface IDataModelQueryCommandBuilder<TDataModel, in TDbConnection, TParam>
+	public interface IDataModelQueryCommandBuilder<TDataModel, TDbConnection, TParam>
 	{
 		/// <summary>
 		/// Specifies constraints on the data model. The expression must evaluate like a predicate in order to be translated to SQL.
@@ -26,7 +26,7 @@ namespace FlitBit.Data.DataModel
 	/// <typeparam name="TDbConnection"></typeparam>
 	/// <typeparam name="TParam"></typeparam>
 	/// <typeparam name="TParam1"></typeparam>
-	public interface IDataModelCommandBuilder<TDataModel, in TDbConnection, TParam, TParam1>
+	public interface IDataModelCommandBuilder<TDataModel, TDbConnection, TParam, TParam1>
 	{
 		/// <summary>
 		/// Specifies constraints on the data model. The expression must evaluate like a predicate in order to be translated to SQL.
@@ -44,7 +44,7 @@ namespace FlitBit.Data.DataModel
 	/// <typeparam name="TParam"></typeparam>
 	/// <typeparam name="TParam1"></typeparam>
 	/// <typeparam name="TParam2"></typeparam>
-	public interface IDataModelCommandBuilder<TDataModel, in TDbConnection, TParam, TParam1, TParam2>
+	public interface IDataModelCommandBuilder<TDataModel, TDbConnection, TParam, TParam1, TParam2>
 	{
 		/// <summary>
 		/// Specifies constraints on the data model. The expression must evaluate like a predicate in order to be translated to SQL.
@@ -63,7 +63,7 @@ namespace FlitBit.Data.DataModel
 	/// <typeparam name="TParam1"></typeparam>
 	/// <typeparam name="TParam2"></typeparam>
 	/// <typeparam name="TParam3"></typeparam>
-	public interface IDataModelCommandBuilder<TDataModel, in TDbConnection, TParam, TParam1, TParam2, TParam3>
+	public interface IDataModelCommandBuilder<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3>
 	{
 		/// <summary>
 		/// Specifies constraints on the data model. The expression must evaluate like a predicate in order to be translated to SQL.
@@ -83,7 +83,7 @@ namespace FlitBit.Data.DataModel
 	/// <typeparam name="TParam2"></typeparam>
 	/// <typeparam name="TParam3"></typeparam>
 	/// <typeparam name="TParam4"></typeparam>
-	public interface IDataModelCommandBuilder<TDataModel, in TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4>
+	public interface IDataModelCommandBuilder<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4>
 	{
 		/// <summary>
 		/// Specifies constraints on the data model. The expression must evaluate like a predicate in order to be translated to SQL.
@@ -104,7 +104,7 @@ namespace FlitBit.Data.DataModel
 	/// <typeparam name="TParam3"></typeparam>
 	/// <typeparam name="TParam4"></typeparam>
 	/// <typeparam name="TParam5"></typeparam>
-	public interface IDataModelCommandBuilder<TDataModel, in TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5>
+	public interface IDataModelCommandBuilder<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5>
 	{
 		/// <summary>
 		/// Specifies constraints on the data model. The expression must evaluate like a predicate in order to be translated to SQL.
@@ -126,7 +126,7 @@ namespace FlitBit.Data.DataModel
 	/// <typeparam name="TParam4"></typeparam>
 	/// <typeparam name="TParam5"></typeparam>
 	/// <typeparam name="TParam6"></typeparam>
-	public interface IDataModelCommandBuilder<TDataModel, in TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6>
+	public interface IDataModelCommandBuilder<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6>
 	{
 		/// <summary>
 		/// Specifies constraints on the data model. The expression must evaluate like a predicate in order to be translated to SQL.
@@ -149,7 +149,7 @@ namespace FlitBit.Data.DataModel
 	/// <typeparam name="TParam5"></typeparam>
 	/// <typeparam name="TParam6"></typeparam>
 	/// <typeparam name="TParam7"></typeparam>
-	public interface IDataModelCommandBuilder<TDataModel, in TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7>
+	public interface IDataModelCommandBuilder<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7>
 	{
 		/// <summary>
 		/// Specifies constraints on the data model. The expression must evaluate like a predicate in order to be translated to SQL.
@@ -173,7 +173,7 @@ namespace FlitBit.Data.DataModel
 	/// <typeparam name="TParam6"></typeparam>
 	/// <typeparam name="TParam7"></typeparam>
 	/// <typeparam name="TParam8"></typeparam>
-	public interface IDataModelCommandBuilder<TDataModel, in TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8>
+	public interface IDataModelCommandBuilder<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8>
 	{
 		/// <summary>
 		/// Specifies constraints on the data model. The expression must evaluate like a predicate in order to be translated to SQL.
@@ -199,7 +199,7 @@ namespace FlitBit.Data.DataModel
 	/// <typeparam name="TParam7"></typeparam>
 	/// <typeparam name="TParam8"></typeparam>
 	/// <typeparam name="TParam9"></typeparam>
-	public interface IDataModelCommandBuilder<TDataModel, in TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>
+	public interface IDataModelCommandBuilder<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>
 	{
 		/// <summary>
 		/// Specifies constraints on the data model. The expression must evaluate like a predicate in order to be translated to SQL.

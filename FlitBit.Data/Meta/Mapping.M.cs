@@ -20,6 +20,7 @@ using FlitBit.Emit;
 using FlitBit.ObjectIdentity;
 using FlitBit.Wireup;
 using FlitBit.Wireup.Recording;
+using Inflector;
 
 namespace FlitBit.Data.Meta
 {
@@ -89,6 +90,9 @@ namespace FlitBit.Data.Meta
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 		string _targetSchema;
 
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
+		string _targetObject;
+
 		internal Mapping()
 		{
 			_hierarchyMapping = new HierarchyMapping<TModel>();
@@ -96,12 +100,7 @@ namespace FlitBit.Data.Meta
 			_identityKey = FactoryProvider.Factory.CreateInstance<IdentityKey<TModel>>();
 			_identity = new IdentityMapping<TModel>(this);
 			_naturalKey = new NaturalKeyMapping<TModel>(this);
-			var name = typeof(TModel).Name;
-			if (name.Length > 1 && name[0] == 'I' && Char.IsUpper(name[1]))
-			{
-				name = name.Substring(1);
-			}
-			this.TargetObject = name;
+			
 			this.InitFromMetadata();
 		}
 
@@ -221,13 +220,13 @@ namespace FlitBit.Data.Meta
 		/// <returns></returns>
 		public DbProviderHelper GetDbProviderHelper()
 		{
-			if (_helper == null)
+			if (_helper != null) return _helper;
+			if (String.IsNullOrEmpty(ConnectionName))
 			{
-				if (!String.IsNullOrEmpty(ConnectionName))
-				{
-					_helper = DbProviderHelpers.GetDbProviderHelperForDbConnection(ConnectionName);
-				}
+				throw new InvalidOperationException(String.Concat("ConnectionName missing on type: ",
+					RuntimeType.GetReadableSimpleName(), "."));
 			}
+			_helper = DbProviderHelpers.GetDbProviderHelperForDbConnection(ConnectionName);
 			return _helper;
 		}
 
@@ -615,9 +614,21 @@ namespace FlitBit.Data.Meta
 		public bool IsEnum { get { return Behaviors.HasFlag(EntityBehaviors.MapEnum); } }
 
 		/// <summary>
+		///   Indicates whether the entity's database object name is pluralized.
+		/// </summary>
+		public bool IsPluralized { get { return Behaviors.HasFlag(EntityBehaviors.Pluralized); } }
+
+		/// <summary>
 		///   The Db object to which type T maps; either a table or view.
 		/// </summary>
-		public string TargetObject { get; set; }
+		public string TargetObject
+		{
+			get { return _targetObject; }
+			set
+			{
+				_targetObject = (IsPluralized) ? value.Pluralize() : value;
+			}
+		}
 
 		/// <summary>
 		///   The Db schema where the target object resides.
@@ -662,6 +673,9 @@ namespace FlitBit.Data.Meta
 		/// </summary>
 		public IEnumerable<ColumnMapping> DeclaredColumns { get { return _declaredColumns.AsReadOnly(); } }
 
+		/// <summary>
+		/// Gets member info for each member participating in the database mapping.
+		/// </summary>
 		public IEnumerable<MemberInfo> ParticipatingMembers
 		{
 			get
@@ -694,6 +708,11 @@ namespace FlitBit.Data.Meta
 		/// </summary>
 		public IEnumerable<CollectionMapping> DeclaredCollections { get { return _collections.Values.ToReadOnly(); } }
 
+		/// <summary>
+		/// Gets the type's database object name quoted for the underlying database's script syntax.
+		/// </summary>
+		/// <param name="name"></param>
+		/// <returns></returns>
 		public string QuoteObjectName(string name)
 		{
 			Contract.Assert(name != null);
@@ -703,11 +722,8 @@ namespace FlitBit.Data.Meta
 			{
 				return name;
 			}
-			else
-			{
-				var helper = GetDbProviderHelper();
-				return (helper != null) ? helper.QuoteObjectName(name) : name;
-			}
+			var helper = GetDbProviderHelper();
+			return (helper != null) ? helper.QuoteObjectName(name) : name;
 		}
 
 		/// <summary>
@@ -764,20 +780,17 @@ namespace FlitBit.Data.Meta
 		/// <returns></returns>
 		public IDataModelBinder GetBinder()
 		{
-			if (_binder == null)
+			if (_binder != null) return _binder;
+			if (IdentityKeyType == null)
 			{
-				if (!String.IsNullOrEmpty(ConnectionName))
-				{
-					var helper = GetDbProviderHelper();
-					if (HasBinder)
-					{
-						var get = typeof(DbProviderHelper).MatchGenericMethod("GetModelBinder", 2, typeof(IDataModelBinder<,>),
-																																	typeof(Mapping<>))
-																							.MakeGenericMethod(typeof(TModel), IdentityKeyType);
-						_binder = (IDataModelBinder) get.Invoke(helper, new object[] {this});
-					}
-				}
+				throw new InvalidOperationException(String.Concat("IdentityKey not defined for type: ",
+					RuntimeType.GetReadableSimpleName(), "."));
 			}
+			var helper = GetDbProviderHelper();
+			var get = typeof (DbProviderHelper).MatchGenericMethod("GetModelBinder", 2, typeof (IDataModelBinder<,>),
+				typeof (Mapping<>))
+				.MakeGenericMethod(typeof (TModel), IdentityKeyType);
+			_binder = (IDataModelBinder) get.Invoke(helper, new object[] {this});
 			return _binder;
 		}
 

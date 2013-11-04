@@ -5,7 +5,7 @@
 	/// </summary>
 	/// <typeparam name="TModel"></typeparam>
 	/// <typeparam name="TDbConnection"></typeparam>
-	public interface IDataModelQuerySingleCommand<out TModel, in TDbConnection>
+	public interface IDataModelQuerySingleCommand<out TModel, TDbConnection>
 	{
 		/// <summary>
 		/// Executes the query on the specified connection.
@@ -22,7 +22,7 @@
 	/// <typeparam name="TModel"></typeparam>
 	/// <typeparam name="TDbConnection"></typeparam>
 	/// <typeparam name="TParam"></typeparam>
-	public interface IDataModelQuerySingleCommand<out TModel, in TDbConnection, in TParam>
+	public interface IDataModelQuerySingleCommand<out TModel, TDbConnection, in TParam>
 	{
 		/// <summary>
 		/// Executes the query on the specified connection.
@@ -40,7 +40,7 @@
 	/// <typeparam name="TDbConnection"></typeparam>
 	/// <typeparam name="TParam"></typeparam>
 	/// <typeparam name="TParam1"></typeparam>
-	public interface IDataModelQuerySingleCommand<out TModel, in TDbConnection, in TParam, in TParam1>
+	public interface IDataModelQuerySingleCommand<out TModel, TDbConnection, in TParam, in TParam1>
 	{
 		/// <summary>
 		/// Executes the query on the specified connection.
@@ -60,7 +60,7 @@
 	/// <typeparam name="TParam"></typeparam>
 	/// <typeparam name="TParam1"></typeparam>
 	/// <typeparam name="TParam2"></typeparam>
-	public interface IDataModelQuerySingleCommand<out TModel, in TDbConnection, in TParam, in TParam1, in TParam2>
+	public interface IDataModelQuerySingleCommand<out TModel, TDbConnection, in TParam, in TParam1, in TParam2>
 	{
 		/// <summary>
 		/// Executes the query on the specified connection.
@@ -82,7 +82,7 @@
 	/// <typeparam name="TParam1"></typeparam>
 	/// <typeparam name="TParam2"></typeparam>
 	/// <typeparam name="TParam3"></typeparam>
-	public interface IDataModelQuerySingleCommand<out TModel, in TDbConnection, in TParam, in TParam1, in TParam2, in TParam3>
+	public interface IDataModelQuerySingleCommand<out TModel, TDbConnection, in TParam, in TParam1, in TParam2, in TParam3>
 	{
 		/// <summary>
 		/// Executes the query on the specified connection.
@@ -106,7 +106,7 @@
 	/// <typeparam name="TParam2"></typeparam>
 	/// <typeparam name="TParam3"></typeparam>
 	/// <typeparam name="TParam4"></typeparam>
-	public interface IDataModelQuerySingleCommand<out TModel, in TDbConnection, in TParam, in TParam1, in TParam2, in TParam3, in TParam4>
+	public interface IDataModelQuerySingleCommand<out TModel, TDbConnection, in TParam, in TParam1, in TParam2, in TParam3, in TParam4>
 	{
 		/// <summary>
 		/// Executes the query on the specified connection.
@@ -132,7 +132,7 @@
 	/// <typeparam name="TParam3"></typeparam>
 	/// <typeparam name="TParam4"></typeparam>
 	/// <typeparam name="TParam5"></typeparam>
-	public interface IDataModelQuerySingleCommand<out TModel, in TDbConnection, in TParam, in TParam1, in TParam2, in TParam3, in TParam4, in TParam5>
+	public interface IDataModelQuerySingleCommand<out TModel, TDbConnection, in TParam, in TParam1, in TParam2, in TParam3, in TParam4, in TParam5>
 	{
 		/// <summary>
 		/// Executes the query on the specified connection.
@@ -161,7 +161,7 @@
 	/// <typeparam name="TParam4"></typeparam>
 	/// <typeparam name="TParam5"></typeparam>
 	/// <typeparam name="TParam6"></typeparam>
-	public interface IDataModelQuerySingleCommand<out TModel, in TDbConnection, in TParam, in TParam1, in TParam2, in TParam3, in TParam4, in TParam5, in TParam6>
+	public interface IDataModelQuerySingleCommand<out TModel, TDbConnection, in TParam, in TParam1, in TParam2, in TParam3, in TParam4, in TParam5, in TParam6>
 	{
 		/// <summary>
 		/// Executes the query on the specified connection.
@@ -192,7 +192,7 @@
 	/// <typeparam name="TParam5"></typeparam>
 	/// <typeparam name="TParam6"></typeparam>
 	/// <typeparam name="TParam7"></typeparam>
-	public interface IDataModelQuerySingleCommand<out TModel, in TDbConnection, in TParam, in TParam1, in TParam2, in TParam3, in TParam4, in TParam5, in TParam6, in TParam7>
+	public interface IDataModelQuerySingleCommand<out TModel, TDbConnection, in TParam, in TParam1, in TParam2, in TParam3, in TParam4, in TParam5, in TParam6, in TParam7>
 	{
 		/// <summary>
 		/// Executes the query on the specified connection.
@@ -225,7 +225,7 @@
 	/// <typeparam name="TParam6"></typeparam>
 	/// <typeparam name="TParam7"></typeparam>
 	/// <typeparam name="TParam8"></typeparam>
-	public interface IDataModelQuerySingleCommand<out TModel, in TDbConnection, in TParam, in TParam1, in TParam2, in TParam3, in TParam4, in TParam5, in TParam6, in TParam7, in TParam8>
+	public interface IDataModelQuerySingleCommand<out TModel, TDbConnection, in TParam, in TParam1, in TParam2, in TParam3, in TParam4, in TParam5, in TParam6, in TParam7, in TParam8>
 	{
 		/// <summary>
 		/// Executes the query on the specified connection.
@@ -260,7 +260,7 @@
 	/// <typeparam name="TParam7"></typeparam>
 	/// <typeparam name="TParam8"></typeparam>
 	/// <typeparam name="TParam9"></typeparam>
-	public interface IDataModelQuerySingleCommand<out TModel, in TDbConnection, in TParam, in TParam1, in TParam2, in TParam3, in TParam4, in TParam5, in TParam6, in TParam7, in TParam8, in TParam9>
+	public interface IDataModelQuerySingleCommand<out TModel, TDbConnection, in TParam, in TParam1, in TParam2, in TParam3, in TParam4, in TParam5, in TParam6, in TParam7, in TParam8, in TParam9>
 	{
 		/// <summary>
 		/// Executes the query on the specified connection.

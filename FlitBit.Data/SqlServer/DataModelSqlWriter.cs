@@ -8,6 +8,7 @@ using FlitBit.Data.DataModel;
 using FlitBit.Data.Expressions;
 using FlitBit.Data.Meta;
 using FlitBit.Data.Meta.DDL;
+using Microsoft.CSharp.RuntimeBinder;
 
 namespace FlitBit.Data.SqlServer
 {
@@ -187,7 +188,7 @@ namespace FlitBit.Data.SqlServer
 				var idStr = helper.FormatParameterName(_idCol.DbTypeDetails.BindingName);
 				var res = new DynamicSql() { BindIdentityParameter = idStr };
 				var writer = new SqlWriter(_bufferLength, Environment.NewLine, _indent);
-				if (_hasTimestamp)
+				if (_hasTimestampOnUpdate)
 				{
 					res.CalculatedTimestampVar = "@generated_timestamp";
 					writer.NewLine("DECLARE @generated_timestamp DATETIME2 = GETUTCDATE()");
@@ -213,7 +214,7 @@ namespace FlitBit.Data.SqlServer
 			var idStr = helper.FormatParameterName(_idCol.DbTypeDetails.BindingName);
 			var res = new DynamicSql() { BindIdentityParameter = idStr };
 			var writer = new SqlWriter(_bufferLength, Environment.NewLine, _indent);
-			if (_hasTimestamp)
+			if (_hasTimestampOnUpdate)
 			{
 				res.CalculatedTimestampVar = "@generated_timestamp";
 				writer.NewLine("DECLARE @generated_timestamp DATETIME2 = GETUTCDATE()");
@@ -254,6 +255,21 @@ namespace FlitBit.Data.SqlServer
 			}
 		}
 
+		public DynamicSql DeleteByPrimaryKey
+		{
+			get
+			{
+				var helper = Mapping.GetDbProviderHelper();
+				var idStr = helper.FormatParameterName(_idCol.DbTypeDetails.BindingName);
+				var res = new DynamicSql() { BindIdentityParameter = idStr };
+				var writer = new SqlWriter(_bufferLength, Environment.NewLine, _indent)
+					.Append("DELETE FROM ").Append(Mapping.DbObjectReference)
+					.NewLine("WHERE ").Append(helper.QuoteObjectName(_idCol.TargetName)).Append(" = ").Append(idStr);
+				res.Text = writer.ToString();
+				return res;
+			}
+		}
+
 		public DynamicSql WriteSelectWithPaging(Constraints cns, OrderBy orderBy)
 		{
 			IMapping<TDataModel> mapping = Mapping;
@@ -262,7 +278,7 @@ namespace FlitBit.Data.SqlServer
 			OrderBy order = orderBy ?? PrimaryKeyOrder;
 
 			var res = new DynamicSql();
-			res.BindLimitParameter = "@limit";
+			res.BindLimitParameter = "@pageSize";
 			res.BindStartRowParameter = "@startRow";
 
 			var writer = new SqlWriter(_bufferLength, Environment.NewLine, _indent);
@@ -272,7 +288,7 @@ namespace FlitBit.Data.SqlServer
 				.NewLine("WITH dataset AS(").Indent()
 				.NewLine("SELECT ");
 			AppendColumns(writer, colList);
-			writer.NewLine("ROW_NUMBER() OVER(");
+			writer.Append(",").NewLine("ROW_NUMBER() OVER(");
 			var orderByStatement = new SqlWriter();
 			var inverseOrderByStatement = new SqlWriter();
 			order.WriteOrderBy(mapping, orderByStatement, _selfRef, false);
@@ -280,7 +296,7 @@ namespace FlitBit.Data.SqlServer
 			writer.Append(orderByStatement.ToString()).Append(") AS seq,")
 				.NewLine("ROW_NUMBER() OVER(")
 				.Append(inverseOrderByStatement.ToString())
-				.Append(") AS rev_seq,")
+				.Append(") AS rev_seq")
 				.Outdent();
 			PrepareFromAndWhereStatement(_selfRef, cns, writer);
 			writer.Outdent().NewLine(")")
@@ -351,12 +367,18 @@ namespace FlitBit.Data.SqlServer
 
 		public void PrepareFromAndWhereStatement(string refName, Constraints cns, SqlWriter writer)
 		{
+			writer.NewLine("FROM ").Append(Mapping.DbObjectReference).Append(" AS ").Append(refName);
+			if (cns == null) return;
+
 			// Perform necessary joins and write join clauses...
-			foreach (Join join in cns.Joins.Values.OrderBy(j => j.Ordinal))
+			if (cns.Joins != null)
 			{
-				var stack = new Stack<Tuple<Condition, bool>>();
-				ProcessConditionsFor(join, cns.Conditions, stack);
-				MapJoinFrom(refName, join, cns);
+				foreach (Join join in cns.Joins.Values.OrderBy(j => j.Ordinal))
+				{
+					var stack = new Stack<Tuple<Condition, bool>>();
+					ProcessConditionsFor(@join, cns.Conditions, stack);
+					MapJoinFrom(refName, @join, cns);
+				}
 			}
 			// Write the primary statement's conditions...
 			Condition c = cns.Conditions;

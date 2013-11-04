@@ -4,22 +4,19 @@
 
 #endregion
 
+using FlitBit.Core;
+using FlitBit.Data.DataModel;
+using FlitBit.Data.Expressions;
+using FlitBit.Data.Meta;
+using FlitBit.Emit;
 using System;
 using System.Collections.Concurrent;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics.Contracts;
 using System.Linq;
-using System.Reflection;
-using System.Reflection.Emit;
-using System.Text;
-using FlitBit.Data.DataModel;
-using FlitBit.Data.Expressions;
-using FlitBit.Data.Meta;
-using FlitBit.Emit;
-using FlitBit.Core;
 using System.Linq.Expressions;
-using Microsoft.Win32;
+using System.Text;
 
 namespace FlitBit.Data
 {

@@ -118,7 +118,7 @@ namespace FlitBit.Data
 			public IDataModelQueryResult<TModel> All(IDbContext context, QueryBehavior behavior)
 			{
 				Contract.Requires<ArgumentNullException>(context != null);
-				Contract.Requires<ArgumentNullException>(context != null);
+				Contract.Requires<ArgumentNullException>(behavior != null);
 				Contract.Ensures(Contract.Result<IDataModelQueryResult<TModel>>() != null);
 
 				throw new NotImplementedException();

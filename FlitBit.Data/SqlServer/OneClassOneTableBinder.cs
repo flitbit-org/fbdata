@@ -1,45 +1,55 @@
-﻿using System;
+﻿using System.Diagnostics;
+using FlitBit.Data.DataModel;
+using FlitBit.Data.Meta;
+using FlitBit.Data.SPI;
+using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
-using FlitBit.Data.DataModel;
-using FlitBit.Data.Expressions;
-using FlitBit.Data.Meta;
-using FlitBit.Data.SPI;
 
 namespace FlitBit.Data.SqlServer
 {
 	/// <summary>
 	///   Binds a model using the dynamic hybrid inheritance tree strategy.
 	/// </summary>
-	/// <typeparam name="TModel"></typeparam>
+	/// <typeparam name="TDataModel"></typeparam>
 	/// <typeparam name="TIdentityKey"></typeparam>
 	/// <typeparam name="TModelImpl"></typeparam>
-	public class OneClassOneTableBinder<TModel, TIdentityKey, TModelImpl> : DataModelBinder<TModel, TIdentityKey, SqlConnection>
-		where TModelImpl : class, TModel, IDataModel, new()
+	public class OneClassOneTableBinder<TDataModel, TIdentityKey, TModelImpl> : DataModelBinder<TDataModel, TIdentityKey, SqlConnection>
+		where TModelImpl : class, TDataModel, IDataModel, new()
 	{
 		bool _initialized;
-		private readonly DataModelSqlWriter<TModel> _sqlWriter; 
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
+		readonly DataModelSqlWriter<TDataModel> _sqlWriter;
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 		readonly int[] _offsets;
 
-		Tuple<int, IDataModelQueryManyCommand<TModel, SqlConnection>> _selectAll;
-		Tuple<int, IDataModelQuerySingleCommand<TModel, SqlConnection, TModel>> _create;
-		Tuple<int, IDataModelQuerySingleCommand<TModel, SqlConnection, TModel>> _update;
-		Tuple<int, IDataModelQuerySingleCommand<TModel, SqlConnection, TIdentityKey>> _read;
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
+		Tuple<int, IDataModelQueryManyCommand<TDataModel, SqlConnection>> _selectAll;
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
+		Tuple<int, IDataModelQuerySingleCommand<TDataModel, SqlConnection, TDataModel>> _create;
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
+		Tuple<int, IDataModelQuerySingleCommand<TDataModel, SqlConnection, TDataModel>> _update;
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
+		Tuple<int, IDataModelQuerySingleCommand<TDataModel, SqlConnection, TIdentityKey>> _read;
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
+		Tuple<int, IDataModelNonQueryCommand<TDataModel, SqlConnection, TIdentityKey>> _delete;
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
+		Tuple<int, IDataModelRepository<TDataModel, TIdentityKey, SqlConnection>> _repository;
 
 		/// <summary>
 		///   Creates a new instance.
 		/// </summary>
 		/// <param name="mapping"></param>
-		public OneClassOneTableBinder(Mapping<TModel> mapping)
+		public OneClassOneTableBinder(Mapping<TDataModel> mapping)
 			: base(mapping, MappingStrategy.OneClassOneTable)
 		{
 			Contract.Requires<ArgumentNullException>(mapping != null);
 			Contract.Requires<ArgumentException>(mapping.Strategy == MappingStrategy.OneClassOneTable);
 
-			_sqlWriter = new DataModelSqlWriter<TModel>(mapping.QuoteObjectName("self"), "  ");
+			_sqlWriter = new DataModelSqlWriter<TDataModel>(mapping.QuoteObjectName("self"), "  ");
 			_offsets = Enumerable.Range(0, _sqlWriter.QuotedColumnNames.Length).ToArray();
 		}
 
@@ -76,9 +86,9 @@ namespace FlitBit.Data.SqlServer
 						.Append('(');
 
 				// Write each field's definition...
-				var columnsWithTableConstraints = new List<Tuple<ColumnMapping<TModel>, object>>();
+				var columnsWithTableConstraints = new List<Tuple<ColumnMapping<TDataModel>, object>>();
 				var i = -1;
-				foreach (ColumnMapping<TModel> col in mapping.Columns)
+				foreach (ColumnMapping<TDataModel> col in mapping.Columns)
 				{
 					var handback = col.Emitter.EmitColumnDDL(batch, ++i, mapping, col);
 					if (handback != null)
@@ -114,113 +124,135 @@ namespace FlitBit.Data.SqlServer
 			}
 		}
 
-		public override IDataModelQueryManyCommand<TModel, SqlConnection> GetAllCommand()
+		public override IDataModelQueryManyCommand<TDataModel, SqlConnection> GetAllCommand()
 		{
 			var mapping = Mapping;
 			if (_selectAll == null || _selectAll.Item1 < mapping.Revision)
 			{
 				_selectAll = Tuple.Create(mapping.Revision,
-					(IDataModelQueryManyCommand<TModel, SqlConnection>)
-					new DataModelQueryManyCommand<TModel, TModelImpl>(_sqlWriter.Select, _sqlWriter.SelectInPrimaryKeyOrderWithPaging, _offsets));
+					(IDataModelQueryManyCommand<TDataModel, SqlConnection>)
+					new DataModelQueryManyCommand<TDataModel, TModelImpl>(_sqlWriter.Select, _sqlWriter.SelectInPrimaryKeyOrderWithPaging, _offsets));
 			}
 			return _selectAll.Item2;
 		}
 
-		public override IDataModelQuerySingleCommand<TModel, SqlConnection, TModel> GetCreateCommand()
+		public override IDataModelQuerySingleCommand<TDataModel, SqlConnection, TDataModel> GetCreateCommand()
 		{
 			var mapping = Mapping;
 			if (_create == null || _create.Item1 < mapping.Revision)
 			{
 				var createStatement = _sqlWriter.DynamicInsertStatement;
 				_create = Tuple.Create(mapping.Revision,
-					(IDataModelQuerySingleCommand<TModel, SqlConnection, TModel>)
-						Activator.CreateInstance(OneClassOneTableEmitter.CreateCommand<TModel, TModelImpl>(mapping, createStatement), createStatement, _offsets));
+					(IDataModelQuerySingleCommand<TDataModel, SqlConnection, TDataModel>)
+						Activator.CreateInstance(OneClassOneTableEmitter.CreateCommand<TDataModel, TModelImpl>(mapping, createStatement), createStatement, _offsets));
 			}
 			return _create.Item2;
 		}
 
-		public override IDataModelNonQueryCommand<TModel, SqlConnection, TIdentityKey> GetDeleteCommand()
-		{
-			throw new NotImplementedException();
-		}
-
-		public override IDataModelQuerySingleCommand<TModel, SqlConnection, TIdentityKey> GetReadCommand()
+		public override IDataModelNonQueryCommand<TDataModel, SqlConnection, TIdentityKey> GetDeleteCommand()
 		{
 			var mapping = Mapping;
-			if (_update == null || _update.Item1 < mapping.Revision)
+			if (_delete == null || _delete.Item1 < mapping.Revision)
 			{
+				var deleteStatement = _sqlWriter.DeleteByPrimaryKey;
+
+				_delete = Tuple.Create(mapping.Revision,
+					(IDataModelNonQueryCommand<TDataModel, SqlConnection, TIdentityKey>)
+						Activator.CreateInstance(OneClassOneTableEmitter.DeleteCommand<TDataModel, TModelImpl, TIdentityKey>(mapping, deleteStatement), deleteStatement, _offsets));
+			}
+			return _delete.Item2;
+		}
+
+		public override IDataModelQuerySingleCommand<TDataModel, SqlConnection, TIdentityKey> GetReadCommand()
+		{
+			var mapping = Mapping;
+			if (_read == null || _read.Item1 < mapping.Revision)
+			{
+				var readStatement = _sqlWriter.SelectByPrimaryKey;
 				_read = Tuple.Create(mapping.Revision,
-					(IDataModelQuerySingleCommand<TModel, SqlConnection, TIdentityKey>)
-						Activator.CreateInstance(OneClassOneTableEmitter.ReadByIdCommand<TModel, TModelImpl, TIdentityKey>(mapping), _sqlWriter.SelectByPrimaryKey, _offsets));
+					(IDataModelQuerySingleCommand<TDataModel, SqlConnection, TIdentityKey>)
+						Activator.CreateInstance(OneClassOneTableEmitter.ReadByIdCommand<TDataModel, TModelImpl, TIdentityKey>(mapping, readStatement), readStatement, _offsets));
 			}
 			return _read.Item2;
 		}
 
-		public override IDataModelQuerySingleCommand<TModel, SqlConnection, TModel> GetUpdateCommand()
+		public override IDataModelQuerySingleCommand<TDataModel, SqlConnection, TDataModel> GetUpdateCommand()
 		{
 			var mapping = Mapping;
 			if (_update == null || _update.Item1 < mapping.Revision)
 			{
 				var updateStatement = _sqlWriter.DynamicUpdateStatement;
 				_update = Tuple.Create(mapping.Revision,
-					(IDataModelQuerySingleCommand<TModel, SqlConnection, TModel>)
-						Activator.CreateInstance(OneClassOneTableEmitter.UpdateCommand<TModel, TModelImpl>(mapping, updateStatement), updateStatement, _offsets));
+					(IDataModelQuerySingleCommand<TDataModel, SqlConnection, TDataModel>)
+						Activator.CreateInstance(OneClassOneTableEmitter.UpdateCommand<TDataModel, TModelImpl>(mapping, updateStatement), updateStatement, _offsets));
 			}
 			return _update.Item2;
 		}
+
+		public override IDataModelRepository<TDataModel, TIdentityKey, SqlConnection> MakeRepository()
+		{
+			var mapping = Mapping;
+			if (_repository == null || _repository.Item1 < mapping.Revision)
+			{
+				_repository = Tuple.Create(mapping.Revision,
+					(IDataModelRepository<TDataModel, TIdentityKey, SqlConnection>)
+						Activator.CreateInstance(OneClassOneTableEmitter.MakeRepositoryType<TDataModel, TModelImpl, TIdentityKey>(mapping), (IMapping<TDataModel>)mapping));
+			}
+			return _repository.Item2;
+		}
 		
-		public override IDataModelQueryCommandBuilder<TModel, SqlConnection, TCriteria> MakeQueryCommand<TCriteria>(string queryKey, TCriteria input)
+		public override IDataModelQueryCommandBuilder<TDataModel, SqlConnection, TCriteria> MakeQueryCommand<TCriteria>(string queryKey, TCriteria input)
 		{
-			return new SqlDataModelQueryCommandBuilder<TModel, TModelImpl, TCriteria>(queryKey, _sqlWriter);
+			return new SqlDataModelQueryCommandBuilder<TDataModel, TModelImpl, TCriteria>(queryKey, _sqlWriter);
 		}
-		public override IDataModelQueryCommandBuilder<TModel, SqlConnection, TParam> MakeQueryCommand<TParam>(string queryKey)
+		public override IDataModelQueryCommandBuilder<TDataModel, SqlConnection, TParam> MakeQueryCommand<TParam>(string queryKey)
 		{
-			return new SqlDataModelQueryCommandBuilder<TModel, TModelImpl, TParam>(queryKey, _sqlWriter);
+			return new SqlDataModelQueryCommandBuilder<TDataModel, TModelImpl, TParam>(queryKey, _sqlWriter);
 		}
-		public override IDataModelCommandBuilder<TModel, SqlConnection, TParam, TParam1> MakeQueryCommand
+		public override IDataModelCommandBuilder<TDataModel, SqlConnection, TParam, TParam1> MakeQueryCommand
 			<TParam, TParam1>(string queryKey)
 		{
-			return new SqlDataModelQueryCommandBuilder<TModel, TModelImpl, TParam, TParam1>(queryKey, _sqlWriter);
+			return new SqlDataModelQueryCommandBuilder<TDataModel, TModelImpl, TParam, TParam1>(queryKey, _sqlWriter);
 		}
-		public override IDataModelCommandBuilder<TModel, SqlConnection, TParam, TParam1, TParam2> MakeQueryCommand
+		public override IDataModelCommandBuilder<TDataModel, SqlConnection, TParam, TParam1, TParam2> MakeQueryCommand
 			<TParam, TParam1, TParam2>(string queryKey)
 		{
-			return new SqlDataModelQueryCommandBuilder<TModel, TModelImpl, TParam, TParam1, TParam2>(queryKey, _sqlWriter);
+			return new SqlDataModelQueryCommandBuilder<TDataModel, TModelImpl, TParam, TParam1, TParam2>(queryKey, _sqlWriter);
 		}
-		public override IDataModelCommandBuilder<TModel, SqlConnection, TParam, TParam1, TParam2, TParam3> MakeQueryCommand
+		public override IDataModelCommandBuilder<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3> MakeQueryCommand
 			<TParam, TParam1, TParam2, TParam3>(string queryKey)
 		{
-			return new SqlDataModelQueryCommandBuilder<TModel, TModelImpl, TParam, TParam1, TParam2, TParam3>(queryKey, _sqlWriter);
+			return new SqlDataModelQueryCommandBuilder<TDataModel, TModelImpl, TParam, TParam1, TParam2, TParam3>(queryKey, _sqlWriter);
 		}
-		public override IDataModelCommandBuilder<TModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4> MakeQueryCommand
+		public override IDataModelCommandBuilder<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4> MakeQueryCommand
 			<TParam, TParam1, TParam2, TParam3, TParam4>(string queryKey)
 		{
-			return new SqlDataModelQueryCommandBuilder<TModel, TModelImpl, TParam, TParam1, TParam2, TParam3, TParam4>(queryKey, _sqlWriter);
+			return new SqlDataModelQueryCommandBuilder<TDataModel, TModelImpl, TParam, TParam1, TParam2, TParam3, TParam4>(queryKey, _sqlWriter);
 		}
-		public override IDataModelCommandBuilder<TModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5> MakeQueryCommand
+		public override IDataModelCommandBuilder<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5> MakeQueryCommand
 			<TParam, TParam1, TParam2, TParam3, TParam4, TParam5>(string queryKey)
 		{
-			return new SqlDataModelQueryCommandBuilder<TModel, TModelImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5>(queryKey, _sqlWriter);
+			return new SqlDataModelQueryCommandBuilder<TDataModel, TModelImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5>(queryKey, _sqlWriter);
 		}
-		public override IDataModelCommandBuilder<TModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6> MakeQueryCommand
+		public override IDataModelCommandBuilder<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6> MakeQueryCommand
 			<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6>(string queryKey)
 		{
-			return new SqlDataModelQueryCommandBuilder<TModel, TModelImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6>(queryKey, _sqlWriter);
+			return new SqlDataModelQueryCommandBuilder<TDataModel, TModelImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6>(queryKey, _sqlWriter);
 		}
-		public override IDataModelCommandBuilder<TModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7> MakeQueryCommand
+		public override IDataModelCommandBuilder<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7> MakeQueryCommand
 			<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7>(string queryKey)
 		{
-			return new SqlDataModelQueryCommandBuilder<TModel, TModelImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7>(queryKey, _sqlWriter);
+			return new SqlDataModelQueryCommandBuilder<TDataModel, TModelImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7>(queryKey, _sqlWriter);
 		}
-		public override IDataModelCommandBuilder<TModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8> MakeQueryCommand
+		public override IDataModelCommandBuilder<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8> MakeQueryCommand
 			<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8>(string queryKey)
 		{
-			return new SqlDataModelQueryCommandBuilder<TModel, TModelImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8>(queryKey, _sqlWriter);
+			return new SqlDataModelQueryCommandBuilder<TDataModel, TModelImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8>(queryKey, _sqlWriter);
 		}
-		public override IDataModelCommandBuilder<TModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9> MakeQueryCommand
+		public override IDataModelCommandBuilder<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9> MakeQueryCommand
 			<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>(string queryKey)
 		{
-			return new SqlDataModelQueryCommandBuilder<TModel, TModelImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>(queryKey, _sqlWriter);
+			return new SqlDataModelQueryCommandBuilder<TDataModel, TModelImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>(queryKey, _sqlWriter);
 		}
 	}
 }

@@ -54,7 +54,7 @@ namespace FlitBit.Data.DataModel
 	/// <typeparam name="TModel">the model's type.</typeparam>
 	/// <typeparam name="TIdentityKey">the model's identity type</typeparam>
 	/// <typeparam name="TDbConnection">database connection type TDbConnection</typeparam>
-	public interface IDataModelBinder<TModel, in TIdentityKey, in TDbConnection> : IDataModelBinder<TModel, TIdentityKey>
+	public interface IDataModelBinder<TModel, TIdentityKey, TDbConnection> : IDataModelBinder<TModel, TIdentityKey>
 		where TDbConnection: DbConnection
 	{
 		/// <summary>
@@ -86,6 +86,12 @@ namespace FlitBit.Data.DataModel
 		/// </summary>
 		/// <returns></returns>
 		IDataModelQuerySingleCommand<TModel, TDbConnection, TModel> GetUpdateCommand();
+
+		/// <summary>
+		/// Makes a repository for the data model.
+		/// </summary>
+		/// <returns></returns>
+		IDataModelRepository<TModel, TIdentityKey, TDbConnection> MakeRepository();
 
 		/// <summary>
 		/// Creates a command builder for the specified criteria.

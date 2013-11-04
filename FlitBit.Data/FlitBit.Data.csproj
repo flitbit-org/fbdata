@@ -128,6 +128,9 @@
     <Reference Include="FlitBit.Wireup">
       <HintPath>..\packages\FlitBit.Wireup.3.0.3\lib\net40\FlitBit.Wireup.dll</HintPath>
     </Reference>
+    <Reference Include="Inflector">
+      <HintPath>..\..\ns\Accounts.DAL\packages\Inflector.1.0.0.0\lib\net40\Inflector.dll</HintPath>
+    </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\packages\Newtonsoft.Json.4.5.11\lib\net40\Newtonsoft.Json.dll</HintPath>
     </Reference>
@@ -156,10 +159,12 @@
     <Compile Include="Configuration\MapConnectionStringsConfigurationElementCollection.cs" />
     <Compile Include="DataModel\DataModelBinder.cs" />
     <Compile Include="DataModel\DataModelCommandBuilder.cs" />
+    <Compile Include="DataModel\DataModelRepositoryEmitter.cs" />
     <Compile Include="DataModel\DataModelUpdateCommandBuilder.cs" />
     <Compile Include="DataModel\DataModelQueryCommandBuilder.cs" />
     <Compile Include="DataModel\DataModelQueryResult.cs" />
     <Compile Include="DataModel\DataModelRepository.cs" />
+    <Compile Include="DataModel\DataModelRepositoryAutoImplementAttribute.cs" />
     <Compile Include="DataModel\IDataModelCommandBuilder.cs" />
     <Compile Include="DataModel\IDataModelNonQueryCommand.cs" />
     <Compile Include="DataModel\IDataModelQueryCommand.cs" />
@@ -191,6 +196,7 @@
     <Compile Include="SqlServer\DataModelSqlWriter.cs" />
     <Compile Include="SqlServer\SingleUpdateQueryCommand.cs" />
     <Compile Include="SqlServer\SqlDataModelCommand.cs" />
+    <Compile Include="SqlServer\SqlDataModelNonQueryCommand.cs" />
     <Compile Include="SqlServer\SqlDataModelQuerySingleCommand.cs" />
     <Compile Include="SqlServer\DataModelQueryManyCommand.cs" />
     <Compile Include="SqlServer\SqlDataModelCommandBuilder.cs" />
@@ -200,6 +206,7 @@
     <Compile Include="SqlServer\SqlDbTypeEmitter.cs" />
     <Compile Include="SqlServer\SqlMappedEmumAsInt16Emitter.cs" />
     <Compile Include="SqlServer\SqlMappedEmumAsInt32Emitter.cs" />
+    <Compile Include="SqlServer\SqlMappedBoolAsBitEmitter.cs" />
     <Compile Include="SqlServer\SqlMappedInt16Emitter.cs" />
     <Compile Include="SqlServer\SqlMappedInt32Emitter.cs" />
     <Compile Include="SqlServer\SqlMappedInt64Emitter.cs" />

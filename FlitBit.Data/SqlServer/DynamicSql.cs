@@ -1,14 +1,21 @@
 ﻿
+using System.Data;
+
 namespace FlitBit.Data.SqlServer
 {
 	public class DynamicSql
 	{
 		public DynamicSql()
+			: this(null, CommandType.Text)
 		{
 		}
-		public DynamicSql(string sql)
+		public DynamicSql(string sql) : this(sql, CommandType.Text)
+		{
+		}
+		public DynamicSql(string sql, CommandType cmdType)
 		{
 			Text = sql;
+			CommandType = cmdType;
 		}
 
 		public string SyntheticIdentityVar { get; set; }
@@ -27,5 +34,7 @@ namespace FlitBit.Data.SqlServer
 		public string BindLimitParameter { get; set; }
 
 		public string BindStartRowParameter { get; set; }
+
+		public CommandType CommandType { get; private set; }
 	}
 }

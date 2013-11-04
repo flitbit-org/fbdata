@@ -36,7 +36,9 @@ WHERE name = @schema"
 		protected override void Initialize()
 		{
 			base.Initialize();
+			MapRuntimeType<bool>(new SqlMappedBoolAsBitEmitter()); 
 			MapRuntimeType<DateTime>(new SqlMappedDateTimeEmitter(SqlDbType.DateTime2));
+			MapRuntimeType<Int16>(new SqlMappedInt16Emitter());
 			MapRuntimeType<Int32>(new SqlMappedInt32Emitter());
 			MapRuntimeType<Int64>(new SqlMappedInt64Emitter());
 			MapRuntimeType<string>(new SqlMappedStringEmitter(SqlDbType.NVarChar));
@@ -139,18 +141,18 @@ WHERE name = @schema"
 			return (name[0] == '@') ? name : String.Concat("@", name);
 		}
 
-		public override IDataModelBinder<TModel, Id> GetModelBinder<TModel, Id>(Mapping<TModel> mapping)
+		public override IDataModelBinder<TModel, TIdentityKey> GetModelBinder<TModel, TIdentityKey>(Mapping<TModel> mapping)
 		{
 			Type binderType;
 
 			switch (mapping.Strategy)
 			{
 				case MappingStrategy.Default:
-					binderType = typeof(DynamicHybridInheritanceTreeBinder<,,>).MakeGenericType(typeof(TModel), typeof(Id),
+					binderType = typeof(DynamicHybridInheritanceTreeBinder<,,>).MakeGenericType(typeof(TModel), typeof(TIdentityKey),
 																																													Mapping<TModel>.Instance.ConcreteType);
 					break;
 				case MappingStrategy.OneClassOneTable:
-					binderType = typeof(OneClassOneTableBinder<,,>).MakeGenericType(typeof(TModel), typeof(Id),
+					binderType = typeof(OneClassOneTableBinder<,,>).MakeGenericType(typeof(TModel), typeof(TIdentityKey),
 																																													Mapping<TModel>.Instance.ConcreteType);
 					break;
 				case MappingStrategy.OneInheritanceTreeOneTable:
@@ -160,15 +162,15 @@ WHERE name = @schema"
 				default:
 					throw new ArgumentOutOfRangeException();
 			}
-			
-			var result = (IDataModelBinder<TModel, Id>)Activator.CreateInstance(binderType, mapping);
+
+			var result = (IDataModelBinder<TModel, TIdentityKey>)Activator.CreateInstance(binderType, mapping);
 			result.Initialize();
 			return result;
 		}
 
 		protected override Type MakeEnumAsInt16Emitter(Type enumType)
 		{
-			return typeof (SqlMappedEmumAsInt16Emitter<>).MakeGenericType(enumType);
+			return typeof(SqlMappedEmumAsInt16Emitter<>).MakeGenericType(enumType);
 		}
 
 		protected override Type MakeEnumAsInt32Emitter(Type enumType)

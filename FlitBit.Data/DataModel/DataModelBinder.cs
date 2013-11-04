@@ -1,17 +1,15 @@
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
 using System.Data.Common;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
 using FlitBit.Data.Meta;
-using System.Linq.Expressions;
 
 namespace FlitBit.Data.DataModel
 {
 	/// <summary>
-	/// Basic abstract implementation of the IModelBinder&lt;TModel, TIdentityKey> interface.
+	///   Basic abstract implementation of the IModelBinder&lt;TModel, TIdentityKey> interface.
 	/// </summary>
 	/// <typeparam name="TModel"></typeparam>
 	/// <typeparam name="TIdentityKey"></typeparam>
@@ -20,185 +18,18 @@ namespace FlitBit.Data.DataModel
 		IDataModelBinder<TModel, TIdentityKey, TDbConnection>
 		where TDbConnection : DbConnection
 	{
-		readonly Mapping<TModel> _mapping;
+		private readonly Mapping<TModel> _mapping;
 
 		protected DataModelBinder(Mapping<TModel> mapping, MappingStrategy strategy)
 		{
 			Contract.Requires<ArgumentNullException>(mapping != null);
-			this._mapping = mapping;
-			this.Strategy = strategy;
-		}
-
-		protected virtual void AddGeneratorMethodsForLcgColumns(Mapping<TModel> mapping, StringBuilder sql)
-		{
-			var lcgColumns = mapping.Identity.Columns
-				.Where(c => c.Column.Behaviors.HasFlag(ColumnBehaviors.LinearCongruentGenerated))
-				.Select(c => c.Column);
-
-			foreach (var col in lcgColumns)
-			{
-				sql.Append(Environment.NewLine)
-					.Append("EXEC [SyntheticID].[GenerateSyntheticIDGenerator] ")
-					.Append(mapping.TargetSchema)
-					.Append(", '")
-					.Append(mapping.TargetObject)
-					.Append("', '")
-					.Append(col.TargetName)
-					.Append("', '")
-					.Append(col.VariableLength);
-				sql.Append(col.Behaviors.HasFlag(ColumnBehaviors.LinearCongruentGeneratedAsHexidecimal) ? "', 0" : "', 1");
-			}
-		}
-
-		protected virtual void AddIndex(Mapping<TModel> mapping, StringBuilder sql, string dbObjectName, string indexBaseName,
-			MapIndexAttribute index, bool any)
-		{
-			var includedColumns = index.GetIncludedColumns(typeof(TModel));
-			var columns = includedColumns as string[] ?? includedColumns.ToArray();
-			if (any || (!index.Behaviors.HasFlag(IndexBehaviors.Unique)
-									|| columns.Any()))
-			{
-				sql.Append(Environment.NewLine)
-					.Append("CREATE ");
-				if (index.Behaviors.HasFlag(IndexBehaviors.Unique))
-				{
-					sql.Append("UNIQUE ");
-				}
-				sql.Append(index.Behaviors.HasFlag(IndexBehaviors.Clustered) ? "CLUSTERED " : "NONCLUSTERED ");
-				sql.Append("INDEX ")
-					.Append(indexBaseName);
-				var columnDefs = index.GetColumnSpecs(typeof(TModel));
-				var columnSpecs = columnDefs as IndexColumnSpec[] ?? columnDefs.ToArray();
-				foreach (var def in columnSpecs)
-				{
-					var col = mapping.Columns.SingleOrDefault(c => c.Member.Name == def.Column);
-					if (col == null)
-					{
-						throw new MappingException(String.Concat("Index on model type ", typeof(TModel).Name,
-							" names a property that was not found: ", def.Column));
-					}
-
-					sql.Append(col.TargetName);
-				}
-				sql.Append(Environment.NewLine)
-					.Append("\tON ")
-					.Append(dbObjectName)
-					.Append(" (");
-
-				var j = 0;
-				foreach (var def in columnSpecs)
-				{
-					var col = mapping.Columns.Single(c => c.Member.Name == def.Column);
-					if (j++ > 0)
-					{
-						sql.Append(", ");
-					}
-					sql.Append(mapping.QuoteObjectName(col.TargetName))
-						.Append(" ")
-						.Append(def.Order.ToString()
-							.ToUpper());
-				}
-				sql.Append(")");
-				if (columns.Any())
-				{
-					sql.Append(Environment.NewLine)
-						.Append("\tINCLUDE(");
-					j = 0;
-					foreach (var n in columns)
-					{
-						var col = mapping.Columns.SingleOrDefault(c => c.Member.Name == n);
-						if (col == null)
-						{
-							throw new MappingException(String.Concat("Index on model type ", typeof(TModel).Name,
-								" names a property that was not found: ", n));
-						}
-
-						if (j++ > 0)
-						{
-							sql.Append(", ");
-						}
-						sql.Append(mapping.QuoteObjectName(col.TargetName));
-					}
-					sql.Append(")");
-				}
-			}
-		}
-
-		protected virtual void AddIndexesForTable(Mapping<TModel> mapping, StringBuilder sql)
-		{
-			var dbObjectName = mapping.DbObjectReference;
-			var indexBaseName = String.Concat("AK_", mapping.TargetSchema, mapping.TargetObject, "_");
-
-			foreach (MapIndexAttribute index in typeof(TModel).GetCustomAttributes(typeof(MapIndexAttribute), false))
-			{
-				AddIndex(mapping, sql, dbObjectName, indexBaseName, index, false);
-			}
-			foreach (var dep in mapping.Dependencies.Where(d => d.Kind == DependencyKind.ColumnContributor))
-			{
-				foreach (MapIndexAttribute index in dep.Target.RuntimeType.GetCustomAttributes(typeof(MapIndexAttribute), false))
-				{
-					AddIndex(mapping, sql, dbObjectName, indexBaseName, index, true);
-				}
-			}
-		}
-
-		protected virtual void AddTableConstraintsForIndexes(Mapping<TModel> mapping, StringBuilder sql)
-		{
-			var tableConstraints = 0;
-			foreach (MapIndexAttribute index in typeof(TModel).GetCustomAttributes(typeof(MapIndexAttribute), false))
-			{
-				if (index.Behaviors.HasFlag(IndexBehaviors.Unique)
-						&& String.IsNullOrEmpty(index.Include))
-				{
-					sql.Append(',');
-					if (tableConstraints++ == 0)
-					{
-						sql.Append(Environment.NewLine)
-							.Append(Environment.NewLine)
-							.Append("\t-- Table Constraints");
-					}
-					sql.Append(Environment.NewLine)
-						.Append("\tCONSTRAINT AK_")
-						.Append(mapping.TargetSchema)
-						.Append(mapping.TargetObject)
-						.Append('_');
-					var columnDefs = index.GetColumnSpecs(typeof(TModel));
-					var columnSpecs = columnDefs as IndexColumnSpec[] ?? columnDefs.ToArray();
-					foreach (var def in columnSpecs)
-					{
-						var col = mapping.Columns.SingleOrDefault(c => c.Member.Name == def.Column);
-						if (col == null)
-						{
-							throw new MappingException(String.Concat("Index on model ", typeof(TModel).Name,
-								" names a property that was not found: '", def.Column, "'"));
-						}
-
-						sql.Append(col.TargetName);
-					}
-					sql.Append(" UNIQUE");
-					sql.Append(index.Behaviors.HasFlag(IndexBehaviors.Clustered) ? " CLUSTERED (" : " NONCLUSTERED (");
-
-					var j = 0;
-					foreach (var def in columnSpecs)
-					{
-						var col = mapping.Columns.Single(c => c.Member.Name == def.Column);
-						if (j++ > 0)
-						{
-							sql.Append(", ");
-						}
-						sql.Append(mapping.QuoteObjectName(col.TargetName))
-							.Append(" ")
-							.Append(def.Order.ToString()
-								.ToUpper());
-					}
-					sql.Append(")");
-				}
-			}
+			_mapping = mapping;
+			Strategy = strategy;
 		}
 
 		public IMapping UntypedMapping
 		{
-			get { return this._mapping; }
+			get { return _mapping; }
 		}
 
 		public MappingStrategy Strategy { get; private set; }
@@ -207,7 +38,7 @@ namespace FlitBit.Data.DataModel
 
 		public Mapping<TModel> Mapping
 		{
-			get { return this._mapping; }
+			get { return _mapping; }
 		}
 
 		/// <summary>
@@ -244,13 +75,15 @@ namespace FlitBit.Data.DataModel
 		///   Makes a read-match command.
 		/// </summary>
 		/// <typeparam name="TCriteria">the match's type</typeparam>
+		/// <param name="queryKey">the query's key</param>
 		/// <param name="criteria">an match specification</param>
 		/// <returns></returns>
-		public abstract IDataModelQueryCommandBuilder<TModel, TDbConnection, TCriteria> MakeQueryCommand<TCriteria>(string queryKey,
+		public abstract IDataModelQueryCommandBuilder<TModel, TDbConnection, TCriteria> MakeQueryCommand<TCriteria>(
+			string queryKey,
 			TCriteria criteria);
-		
+
 		/// <summary>
-		/// Initializes the binder.
+		///   Initializes the binder.
 		/// </summary>
 		public abstract void Initialize();
 
@@ -291,5 +124,174 @@ namespace FlitBit.Data.DataModel
 				<TModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>
 			MakeQueryCommand<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>(
 			string queryKey);
+
+		protected virtual void AddGeneratorMethodsForLcgColumns(Mapping<TModel> mapping, StringBuilder sql)
+		{
+			IEnumerable<ColumnMapping> lcgColumns = mapping.Identity.Columns
+				.Where(c => c.Column.Behaviors.HasFlag(ColumnBehaviors.LinearCongruentGenerated))
+				.Select(c => c.Column);
+
+			foreach (ColumnMapping col in lcgColumns)
+			{
+				sql.Append(Environment.NewLine)
+					.Append("EXEC [SyntheticID].[GenerateSyntheticIDGenerator] ")
+					.Append(mapping.TargetSchema)
+					.Append(", '")
+					.Append(mapping.TargetObject)
+					.Append("', '")
+					.Append(col.TargetName)
+					.Append("', '")
+					.Append(col.VariableLength);
+				sql.Append(col.Behaviors.HasFlag(ColumnBehaviors.LinearCongruentGeneratedAsHexidecimal) ? "', 0" : "', 1");
+			}
+		}
+
+		protected virtual void AddIndex(Mapping<TModel> mapping, StringBuilder sql, string dbObjectName, string indexBaseName,
+			MapIndexAttribute index, bool any)
+		{
+			IEnumerable<string> includedColumns = index.GetIncludedColumns(typeof (TModel));
+			string[] columns = includedColumns as string[] ?? includedColumns.ToArray();
+			if (any || (!index.Behaviors.HasFlag(IndexBehaviors.Unique)
+			            || columns.Any()))
+			{
+				sql.Append(Environment.NewLine)
+					.Append("CREATE ");
+				if (index.Behaviors.HasFlag(IndexBehaviors.Unique))
+				{
+					sql.Append("UNIQUE ");
+				}
+				sql.Append(index.Behaviors.HasFlag(IndexBehaviors.Clustered) ? "CLUSTERED " : "NONCLUSTERED ");
+				sql.Append("INDEX ")
+					.Append(indexBaseName);
+				IEnumerable<IndexColumnSpec> columnDefs = index.GetColumnSpecs(typeof (TModel));
+				IndexColumnSpec[] columnSpecs = columnDefs as IndexColumnSpec[] ?? columnDefs.ToArray();
+				foreach (IndexColumnSpec def in columnSpecs)
+				{
+					ColumnMapping col = mapping.Columns.SingleOrDefault(c => c.Member.Name == def.Column);
+					if (col == null)
+					{
+						throw new MappingException(String.Concat("Index on model type ", typeof (TModel).Name,
+							" names a property that was not found: ", def.Column));
+					}
+
+					sql.Append(col.TargetName);
+				}
+				sql.Append(Environment.NewLine)
+					.Append("\tON ")
+					.Append(dbObjectName)
+					.Append(" (");
+
+				int j = 0;
+				foreach (IndexColumnSpec def in columnSpecs)
+				{
+					ColumnMapping col = mapping.Columns.Single(c => c.Member.Name == def.Column);
+					if (j++ > 0)
+					{
+						sql.Append(", ");
+					}
+					sql.Append(mapping.QuoteObjectName(col.TargetName))
+						.Append(" ")
+						.Append(def.Order.ToString()
+							.ToUpper());
+				}
+				sql.Append(")");
+				if (columns.Any())
+				{
+					sql.Append(Environment.NewLine)
+						.Append("\tINCLUDE(");
+					j = 0;
+					foreach (string n in columns)
+					{
+						ColumnMapping col = mapping.Columns.SingleOrDefault(c => c.Member.Name == n);
+						if (col == null)
+						{
+							throw new MappingException(String.Concat("Index on model type ", typeof (TModel).Name,
+								" names a property that was not found: ", n));
+						}
+
+						if (j++ > 0)
+						{
+							sql.Append(", ");
+						}
+						sql.Append(mapping.QuoteObjectName(col.TargetName));
+					}
+					sql.Append(")");
+				}
+			}
+		}
+
+		protected virtual void AddIndexesForTable(Mapping<TModel> mapping, StringBuilder sql)
+		{
+			string dbObjectName = mapping.DbObjectReference;
+			string indexBaseName = String.Concat("AK_", mapping.TargetSchema, mapping.TargetObject, "_");
+
+			foreach (MapIndexAttribute index in typeof (TModel).GetCustomAttributes(typeof (MapIndexAttribute), false))
+			{
+				AddIndex(mapping, sql, dbObjectName, indexBaseName, index, false);
+			}
+			foreach (Dependency dep in mapping.Dependencies.Where(d => d.Kind == DependencyKind.ColumnContributor))
+			{
+				foreach (MapIndexAttribute index in dep.Target.RuntimeType.GetCustomAttributes(typeof (MapIndexAttribute), false))
+				{
+					AddIndex(mapping, sql, dbObjectName, indexBaseName, index, true);
+				}
+			}
+		}
+
+		protected virtual void AddTableConstraintsForIndexes(Mapping<TModel> mapping, StringBuilder sql)
+		{
+			int tableConstraints = 0;
+			foreach (MapIndexAttribute index in typeof (TModel).GetCustomAttributes(typeof (MapIndexAttribute), false))
+			{
+				if (index.Behaviors.HasFlag(IndexBehaviors.Unique)
+				    && String.IsNullOrEmpty(index.Include))
+				{
+					sql.Append(',');
+					if (tableConstraints++ == 0)
+					{
+						sql.Append(Environment.NewLine)
+							.Append(Environment.NewLine)
+							.Append("\t-- Table Constraints");
+					}
+					sql.Append(Environment.NewLine)
+						.Append("\tCONSTRAINT AK_")
+						.Append(mapping.TargetSchema)
+						.Append(mapping.TargetObject)
+						.Append('_');
+					IEnumerable<IndexColumnSpec> columnDefs = index.GetColumnSpecs(typeof (TModel));
+					IndexColumnSpec[] columnSpecs = columnDefs as IndexColumnSpec[] ?? columnDefs.ToArray();
+					foreach (IndexColumnSpec def in columnSpecs)
+					{
+						ColumnMapping col = mapping.Columns.SingleOrDefault(c => c.Member.Name == def.Column);
+						if (col == null)
+						{
+							throw new MappingException(String.Concat("Index on model ", typeof (TModel).Name,
+								" names a property that was not found: '", def.Column, "'"));
+						}
+
+						sql.Append(col.TargetName);
+					}
+					sql.Append(" UNIQUE");
+					sql.Append(index.Behaviors.HasFlag(IndexBehaviors.Clustered) ? " CLUSTERED (" : " NONCLUSTERED (");
+
+					int j = 0;
+					foreach (IndexColumnSpec def in columnSpecs)
+					{
+						ColumnMapping col = mapping.Columns.Single(c => c.Member.Name == def.Column);
+						if (j++ > 0)
+						{
+							sql.Append(", ");
+						}
+						sql.Append(mapping.QuoteObjectName(col.TargetName))
+							.Append(" ")
+							.Append(def.Order.ToString()
+								.ToUpper());
+					}
+					sql.Append(")");
+				}
+			}
+		}
+
+		public abstract IDataModelRepository<TModel, TIdentityKey, TDbConnection> MakeRepository();
 	}
 }

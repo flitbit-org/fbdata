@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using System.Threading;
 using FlitBit.Core.Collections;
+using FlitBit.Data.DataModel;
 using FlitBit.Data.Expressions;
 using FlitBit.Data.Meta;
 using FlitBit.Data.SPI;
@@ -64,7 +65,7 @@ namespace FlitBit.Data.SqlServer
 		}
 
 		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
-		internal static Type ReadByIdCommand<TDataModel, TImpl, TIdentityKey>(Mapping<TDataModel> mapping)
+		internal static Type ReadByIdCommand<TDataModel, TImpl, TIdentityKey>(Mapping<TDataModel> mapping, DynamicSql sql)
 			where TImpl : class, IDataModel, TDataModel, new()
 		{
 			Contract.Ensures(Contract.Result<Type>() != null);
@@ -76,7 +77,43 @@ namespace FlitBit.Data.SqlServer
 			lock (module)
 			{
 				var type = module.Builder.GetType(typeName, false, false) ??
-									EmitImplementation<TDataModel, TImpl>.BuildReadByIdCommand<TIdentityKey>(module, typeName, mapping);
+									EmitImplementation<TDataModel, TImpl>.BuildReadByIdCommand<TIdentityKey>(module, typeName, mapping, sql);
+				return type;
+			}
+		}
+
+		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
+		internal static Type MakeRepositoryType<TDataModel, TImpl, TIdentityKey>(Mapping<TDataModel> mapping)
+			where TImpl : class, IDataModel, TDataModel, new()
+		{
+			Contract.Ensures(Contract.Result<Type>() != null);
+
+			var targetType = typeof(TDataModel);
+			var typeName = RuntimeAssemblies.PrepareTypeName(targetType, "Repository");
+
+			var module = Module;
+			lock (module)
+			{
+				var type = module.Builder.GetType(typeName, false, false) ??
+									EmitImplementation<TDataModel, TImpl>.BuildRepository<TIdentityKey>(module, typeName, mapping);
+				return type;
+			}
+		}
+
+		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
+		internal static Type DeleteCommand<TDataModel, TImpl, TIdentityKey>(Mapping<TDataModel> mapping, DynamicSql deleteStatement)
+			where TImpl : class, IDataModel, TDataModel, new()
+		{
+			Contract.Ensures(Contract.Result<Type>() != null);
+
+			var targetType = typeof(TDataModel);
+			var typeName = RuntimeAssemblies.PrepareTypeName(targetType, "DeleteCommand");
+
+			var module = Module;
+			lock (module)
+			{
+				var type = module.Builder.GetType(typeName, false, false) ??
+									EmitImplementation<TDataModel, TImpl>.BuildDeleteCommand<TIdentityKey>(module, typeName, mapping, deleteStatement);
 				return type;
 			}
 		}
@@ -815,7 +852,38 @@ namespace FlitBit.Data.SqlServer
 				});
 			}
 
-			internal static Type BuildReadByIdCommand<TIdentityKey>(EmittedModule module, string typeName, Mapping<TDataModel> mapping)
+			internal static Type BuildDeleteCommand<TIdentityKey>(EmittedModule module, string typeName, Mapping<TDataModel> mapping, DynamicSql sql)
+			{
+				Contract.Requires<ArgumentNullException>(module != null);
+				Contract.Requires<ArgumentNullException>(typeName != null);
+				Contract.Requires<ArgumentException>(typeName.Length > 0);
+				Contract.Requires<InvalidOperationException>(mapping.HasBinder);
+				Contract.Requires<ArgumentNullException>(sql != null);
+				Contract.Ensures(Contract.Result<Type>() != null);
+
+				var baseType = typeof(SqlDataModelNonQueryCommand<TDataModel, TIdentityKey>);
+				var builder = module.DefineClass(typeName, EmittedClass.DefaultTypeAttributes,
+					baseType, null);
+				builder.Attributes = TypeAttributes.Sealed | TypeAttributes.Public | TypeAttributes.BeforeFieldInit;
+
+				var ctor = builder.DefineCtor();
+				ctor.DefineParameter("sql", typeof(DynamicSql));
+				ctor.DefineParameter("offsets", typeof(int[]));
+				ctor.ContributeInstructions((m, il) =>
+				{
+					il.LoadArg_0();
+					il.LoadArg_1();
+					il.LoadArg_2();
+					il.Call(baseType.GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic, null, new Type[] { typeof(DynamicSql), typeof(int[]) }, null));
+				});
+
+				ImplementByIdBindCommand<TIdentityKey>(builder, baseType, mapping, sql);
+
+				builder.Compile();
+				return builder.Ref.Target;
+			}
+
+			internal static Type BuildReadByIdCommand<TIdentityKey>(EmittedModule module, string typeName, Mapping<TDataModel> mapping, DynamicSql sql)
 			{
 				Contract.Requires<ArgumentNullException>(module != null);
 				Contract.Requires<ArgumentNullException>(typeName != null);
@@ -839,14 +907,60 @@ namespace FlitBit.Data.SqlServer
 					il.Call(baseType.GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic, null, new Type[] { typeof(string), typeof(int[]) }, null));
 				});
 
-				ImplementReadByIdBindCommand<TIdentityKey>(builder, baseType, mapping);
+				ImplementByIdBindCommand<TIdentityKey>(builder, baseType, mapping, sql);
 
 				builder.Compile();
 				return builder.Ref.Target;
 			}
 
-			static void ImplementReadByIdBindCommand<TIdentityKey>(EmittedClass builder, Type baseType,
-				Mapping<TDataModel> mapping)
+			public static Type BuildRepository<TIdentityKey>(EmittedModule module, string typeName, Mapping<TDataModel> mapping)
+			{
+				Contract.Requires<ArgumentNullException>(module != null);
+				Contract.Requires<ArgumentNullException>(typeName != null);
+				Contract.Requires<ArgumentException>(typeName.Length > 0);
+				Contract.Requires<InvalidOperationException>(mapping.HasBinder);
+				Contract.Ensures(Contract.Result<Type>() != null);
+
+				var baseType = typeof(DataModelRepository<TDataModel, TIdentityKey, SqlConnection>);
+				var builder = module.DefineClass(typeName, EmittedClass.DefaultTypeAttributes,
+					baseType, null);
+				builder.Attributes = TypeAttributes.Sealed | TypeAttributes.Public | TypeAttributes.BeforeFieldInit;
+
+				var ctor = builder.DefineCtor();
+				ctor.DefineParameter("mapping", typeof(IMapping<TDataModel>));
+				ctor.ContributeInstructions((m, il) =>
+				{
+					il.LoadArg_0();
+					il.LoadArg_1();
+					il.Call(baseType.GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic, null, new[] { typeof(IMapping<TDataModel>) }, null));
+				});
+
+				ImplementGetIdentity<TIdentityKey>(builder, baseType, mapping);
+
+				builder.Compile();
+				return builder.Ref.Target;
+			}
+
+			private static void ImplementGetIdentity<TIdentityKey>(EmittedClass builder, Type baseType, Mapping<TDataModel> mapping)
+			{
+				var method = builder
+					.DefineOverrideMethod(baseType.GetMethod("GetIdentity", BindingFlags.Public | BindingFlags.Instance));
+				var args = new
+				{
+					self = 0,
+					model = 1
+				};
+				var column = mapping.Identity.Columns[0].Column;
+				Contract.Assert(column.Member is PropertyInfo);	
+				method.ContributeInstructions((m, il) =>
+				{
+					il.LoadArg(args.model);
+					il.CallVirtual(((PropertyInfo) column.Member).GetGetMethod());
+				});
+			}
+
+			static void ImplementByIdBindCommand<TIdentityKey>(EmittedClass builder, Type baseType,
+				Mapping<TDataModel> mapping, DynamicSql sql)
 			{
 				var method =
 					builder.DefineOverrideMethod(baseType.GetMethod("BindCommand", BindingFlags.NonPublic | BindingFlags.Instance));
@@ -864,7 +978,7 @@ namespace FlitBit.Data.SqlServer
 					var flag = il.DeclareLocal(typeof(bool));
 					var column = mapping.Identity.Columns[0].Column;
 					var emitter = column.Emitter;
-					var bindingName = helper.FormatParameterName(column.DbTypeDetails.BindingName);
+					var bindingName = helper.FormatParameterName(sql.BindIdentityParameter);
 
 					emitter.BindParameterOnDbCommand<SqlParameter>(method.Builder, column, bindingName,
 						parm,
@@ -909,6 +1023,5 @@ namespace FlitBit.Data.SqlServer
 
 		}
 
-		
 	}
 }
