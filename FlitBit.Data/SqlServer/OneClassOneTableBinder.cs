@@ -37,7 +37,7 @@ namespace FlitBit.Data.SqlServer
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 		Tuple<int, IDataModelNonQueryCommand<TDataModel, SqlConnection, TIdentityKey>> _delete;
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
-		Tuple<int, IDataModelRepository<TDataModel, TIdentityKey, SqlConnection>> _repository;
+		Tuple<int, IDataModelRepository<TDataModel, TIdentityKey>> _repository;
 
 		/// <summary>
 		///   Creates a new instance.
@@ -189,13 +189,13 @@ namespace FlitBit.Data.SqlServer
 			return _update.Item2;
 		}
 
-		public override IDataModelRepository<TDataModel, TIdentityKey, SqlConnection> MakeRepository()
+		public override IDataModelRepository<TDataModel, TIdentityKey> MakeRepository()
 		{
 			var mapping = Mapping;
 			if (_repository == null || _repository.Item1 < mapping.Revision)
 			{
 				_repository = Tuple.Create(mapping.Revision,
-					(IDataModelRepository<TDataModel, TIdentityKey, SqlConnection>)
+					(IDataModelRepository<TDataModel, TIdentityKey>)
 						Activator.CreateInstance(OneClassOneTableEmitter.MakeRepositoryType<TDataModel, TModelImpl, TIdentityKey>(mapping), (IMapping<TDataModel>)mapping));
 			}
 			return _repository.Item2;

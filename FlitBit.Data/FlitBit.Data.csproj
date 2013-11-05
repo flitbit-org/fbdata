@@ -129,7 +129,7 @@
       <HintPath>..\packages\FlitBit.Wireup.3.0.3\lib\net40\FlitBit.Wireup.dll</HintPath>
     </Reference>
     <Reference Include="Inflector">
-      <HintPath>..\..\ns\Accounts.DAL\packages\Inflector.1.0.0.0\lib\net40\Inflector.dll</HintPath>
+      <HintPath>..\packages\Inflector.1.0.0.0\lib\net40\Inflector.dll</HintPath>
     </Reference>
     <Reference Include="Newtonsoft.Json">
       <HintPath>..\packages\Newtonsoft.Json.4.5.11\lib\net40\Newtonsoft.Json.dll</HintPath>

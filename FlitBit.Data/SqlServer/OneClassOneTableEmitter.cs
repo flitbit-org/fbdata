@@ -897,14 +897,14 @@ namespace FlitBit.Data.SqlServer
 				builder.Attributes = TypeAttributes.Sealed | TypeAttributes.Public | TypeAttributes.BeforeFieldInit;
 
 				var ctor = builder.DefineCtor();
-				ctor.DefineParameter("commandText", typeof(String));
+				ctor.DefineParameter("sql", typeof(DynamicSql));
 				ctor.DefineParameter("offsets", typeof(int[]));
 				ctor.ContributeInstructions((m, il) =>
 				{
 					il.LoadArg_0();
 					il.LoadArg_1();
 					il.LoadArg_2();
-					il.Call(baseType.GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic, null, new Type[] { typeof(string), typeof(int[]) }, null));
+					il.Call(baseType.GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic, null, new Type[] { typeof(DynamicSql), typeof(int[]) }, null));
 				});
 
 				ImplementByIdBindCommand<TIdentityKey>(builder, baseType, mapping, sql);

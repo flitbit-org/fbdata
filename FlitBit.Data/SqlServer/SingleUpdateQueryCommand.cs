@@ -55,6 +55,7 @@ namespace FlitBit.Data.SqlServer
 				BindCommand(cmd, _sql, impl, dirty, _offsets);
 				using (var reader = cmd.ExecuteReader())
 				{
+					cx.IncrementQueryCounter();
 					if (reader.Read())
 					{
 						res = new TImpl();

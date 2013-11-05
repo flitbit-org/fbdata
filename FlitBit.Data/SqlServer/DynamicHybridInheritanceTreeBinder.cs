@@ -265,7 +265,7 @@ namespace FlitBit.Data.SqlServer
 			}
 		}
 
-		public override IDataModelRepository<TModel, TIdentityKey, SqlConnection> MakeRepository()
+		public override IDataModelRepository<TModel, TIdentityKey> MakeRepository()
 		{
 			throw new NotImplementedException();
 		}

@@ -58,7 +58,7 @@ namespace FlitBit.Data.DataModel
 			var binary = expr as BinaryExpression;
 			if (binary == null) throw new NotSupportedException(String.Concat("Expression not supported: ", expr.NodeType));
 			cns.Conditions = HandleBinaryExpression(binary, cns);
-			_sqlWriter.PrepareFromAndWhereStatement(_sqlWriter.SelfRef, cns, cns.Writer);
+			_sqlWriter.PrepareFromAndWhereStatement(_sqlWriter.SelfRef, false, cns, cns.Writer);
 			return cns;
 		}
 

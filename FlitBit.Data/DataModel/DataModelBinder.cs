@@ -292,6 +292,6 @@ namespace FlitBit.Data.DataModel
 			}
 		}
 
-		public abstract IDataModelRepository<TModel, TIdentityKey, TDbConnection> MakeRepository();
+		public abstract IDataModelRepository<TModel, TIdentityKey> MakeRepository();
 	}
 }

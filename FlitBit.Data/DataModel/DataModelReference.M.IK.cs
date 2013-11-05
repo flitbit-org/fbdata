@@ -94,7 +94,7 @@ namespace FlitBit.Data.DataModel
 		/// </summary>
 		public Exception Exception { get; private set; }
 
-		public bool HasModel { get { return !EqualityComparer<TModel>.Default.Equals(default(TModel), this._model); ; } }
+		public bool HasModel { get { return !EqualityComparer<TModel>.Default.Equals(default(TModel), this._model); } }
 
 		public bool HasIdentityKey { get { return !EqualityComparer<TIdentityKey>.Default.Equals(default(TIdentityKey), this.IdentityKey); } }
 
@@ -102,7 +102,7 @@ namespace FlitBit.Data.DataModel
 		{
 			get
 			{
-				if (!this.HasModel && this.HasModel)
+				if (!this.HasModel && this.HasIdentityKey)
 				{
 					if (this.IsFaulted)
 					{

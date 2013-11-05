@@ -132,7 +132,7 @@ namespace FlitBit.Data
 				long bytesRead;
 				do
 				{
-					bytesRead = reader.GetBytes(1, startIndex, buffer, 0, bufferSize);
+					bytesRead = reader.GetBytes(columnIndex, startIndex, buffer, 0, bufferSize);
 					stream.Write(buffer, 0, (int)bytesRead);
 					startIndex += bytesRead;
 				} while (bytesRead == bufferSize);

@@ -367,7 +367,15 @@ namespace FlitBit.Data.SqlServer
 
 		public void PrepareFromAndWhereStatement(string refName, Constraints cns, SqlWriter writer)
 		{
-			writer.NewLine("FROM ").Append(Mapping.DbObjectReference).Append(" AS ").Append(refName);
+			PrepareFromAndWhereStatement(refName, true, cns, writer);
+		}
+		
+		public void PrepareFromAndWhereStatement(string refName, bool writeInitialFromClause, Constraints cns, SqlWriter writer)
+		{
+			if (writeInitialFromClause)
+			{
+				writer.NewLine("FROM ").Append(Mapping.DbObjectReference).Append(" AS ").Append(refName);
+			}
 			if (cns == null) return;
 
 			// Perform necessary joins and write join clauses...

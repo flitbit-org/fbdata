@@ -56,8 +56,9 @@ namespace FlitBit.Data.SqlServer
 				}
 				var offsets = Offsets;
 				BindCommand((SqlCommand)cmd, offsets, param);
-				using (var reader = cmd.ExecuteReader(CommandBehavior.SequentialAccess))
+				using (var reader = cmd.ExecuteReader())
 				{
+					cx.IncrementQueryCounter();
 					while (reader.Read())
 					{
 						var model = new TImpl();
@@ -97,6 +98,7 @@ namespace FlitBit.Data.SqlServer
 				BindCommand((SqlCommand)cmd, offsets, param);
 				using (var reader = cmd.ExecuteReader())
 				{
+					cx.IncrementQueryCounter();
 					if (reader.Read())
 					{
 						res = new TImpl();
@@ -170,7 +172,7 @@ namespace FlitBit.Data.SqlServer
 				}
 				var offsets = Offsets;
 				BindCommand((SqlCommand)cmd, offsets, param, param1);
-				using (var reader = cmd.ExecuteReader(CommandBehavior.SequentialAccess))
+				using (var reader = cmd.ExecuteReader())
 				{
 					while (reader.Read())
 					{
@@ -287,7 +289,7 @@ namespace FlitBit.Data.SqlServer
 				}
 				var offsets = Offsets;
 				BindCommand((SqlCommand)cmd, offsets, param, param1, param2);
-				using (var reader = cmd.ExecuteReader(CommandBehavior.SequentialAccess))
+				using (var reader = cmd.ExecuteReader())
 				{
 					while (reader.Read())
 					{
@@ -408,7 +410,7 @@ namespace FlitBit.Data.SqlServer
 				}
 				var offsets = Offsets;
 				BindCommand((SqlCommand)cmd, offsets, param, param1, param2, param3);
-				using (var reader = cmd.ExecuteReader(CommandBehavior.SequentialAccess))
+				using (var reader = cmd.ExecuteReader())
 				{
 					while (reader.Read())
 					{
@@ -533,7 +535,7 @@ namespace FlitBit.Data.SqlServer
 				}
 				var offsets = Offsets;
 				BindCommand((SqlCommand)cmd, offsets, param, param1, param2, param3, param4);
-				using (var reader = cmd.ExecuteReader(CommandBehavior.SequentialAccess))
+				using (var reader = cmd.ExecuteReader())
 				{
 					while (reader.Read())
 					{
@@ -662,7 +664,7 @@ namespace FlitBit.Data.SqlServer
 				}
 				var offsets = Offsets;
 				BindCommand((SqlCommand)cmd, offsets, param, param1, param2, param3, param4, param5);
-				using (var reader = cmd.ExecuteReader(CommandBehavior.SequentialAccess))
+				using (var reader = cmd.ExecuteReader())
 				{
 					while (reader.Read())
 					{
@@ -796,7 +798,7 @@ namespace FlitBit.Data.SqlServer
 				}
 				var offsets = Offsets;
 				BindCommand((SqlCommand)cmd, offsets, param, param1, param2, param3, param4, param5, param6);
-				using (var reader = cmd.ExecuteReader(CommandBehavior.SequentialAccess))
+				using (var reader = cmd.ExecuteReader())
 				{
 					while (reader.Read())
 					{
@@ -933,7 +935,7 @@ namespace FlitBit.Data.SqlServer
 				}
 				var offsets = Offsets;
 				BindCommand((SqlCommand)cmd, offsets, param, param1, param2, param3, param4, param5, param6, param7);
-				using (var reader = cmd.ExecuteReader(CommandBehavior.SequentialAccess))
+				using (var reader = cmd.ExecuteReader())
 				{
 					while (reader.Read())
 					{
@@ -1075,7 +1077,7 @@ namespace FlitBit.Data.SqlServer
 				}
 				var offsets = Offsets;
 				BindCommand((SqlCommand)cmd, offsets, param, param1, param2, param3, param4, param5, param6, param7, param8);
-				using (var reader = cmd.ExecuteReader(CommandBehavior.SequentialAccess))
+				using (var reader = cmd.ExecuteReader())
 				{
 					while (reader.Read())
 					{
@@ -1221,7 +1223,7 @@ namespace FlitBit.Data.SqlServer
 				}
 				var offsets = Offsets;
 				BindCommand((SqlCommand)cmd, offsets, param, param1, param2, param3, param4, param5, param6, param7, param8, param9);
-				using (var reader = cmd.ExecuteReader(CommandBehavior.SequentialAccess))
+				using (var reader = cmd.ExecuteReader())
 				{
 					while (reader.Read())
 					{

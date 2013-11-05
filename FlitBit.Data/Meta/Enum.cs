@@ -207,6 +207,12 @@ namespace FlitBit.Data.Meta
 		Pluralized = 1 << 3,
 
 		/// <summary>
+		/// Indicates the type is a lookup list type and is eligible for long-term
+		/// memory caching.
+		/// </summary>
+		LookupList = 1 << 4,
+
+		/// <summary>
 		///   Indicates that the entity should be mapped as defined. This means
 		///   any extension columns and mixins are not added to the type's definition.
 		/// </summary>

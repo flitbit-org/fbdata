@@ -48,7 +48,7 @@ namespace FlitBit.Data
 		/// <param name="pageSize"></param>
 		/// <param name="page"></param>
 		/// <param name="pageCount"></param>
-		public QueryBehavior(QueryBehaviors behaviors, int pageSize, int page, int pageCount)
+		public QueryBehavior(QueryBehaviors behaviors, int pageSize, int page, long pageCount)
 		{
 			Contract.Requires<ArgumentException>(behaviors.HasFlag(QueryBehaviors.Limited));
 			Contract.Requires<ArgumentOutOfRangeException>(pageSize > 0);
@@ -133,7 +133,7 @@ namespace FlitBit.Data
 		/// <summary>
 		///   Indicates the total number of pages in the query.
 		/// </summary>
-		public int PageCount { get; internal set; }
+		public long PageCount { get; internal set; }
 
 		/// <summary>
 		///   Indicates the query's page size.

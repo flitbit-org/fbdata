@@ -11,18 +11,11 @@ namespace FlitBit.Data.DataModel
 	{
 		internal static TModel ResolveIdentityKey<TIdentityKey>(TIdentityKey id)
 		{
-			if (typeof(TIdentityKey) == Mapping<TModel>.Instance.IdentityKey.KeyType && Repository<TIdentityKey>.HasRepository(Mapping<TModel>.Instance))
-			{}
-			return default(TModel);
-		}
-
-		internal static class Repository<TIdentityKey>
-		{
-			public static bool HasRepository(Mapping<TModel> mapping)
-			{
-				return (!String.IsNullOrEmpty(mapping.ConnectionName))
-					&& DbProviderHelpers.GetDbProviderHelperForDbConnection(mapping.ConnectionName) != null;
-			}
+			var mapping = Mapping<TModel>.Instance;
+			if (typeof (TIdentityKey) != mapping.IdentityKey.KeyType || !mapping.HasBinder) return default(TModel);
+			var binder = (IDataModelBinder<TModel, TIdentityKey>)mapping.GetBinder();
+			var repo = binder.MakeRepository();
+			return repo.ReadByIdentity(DbContext.Current, id);
 		}
 	}
 }

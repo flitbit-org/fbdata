@@ -1,4 +1,5 @@
-﻿using FlitBit.Data.DataModel;
+﻿using FlitBit.Core.Parallel;
+using FlitBit.Data.DataModel;
 using System.Data.SqlClient;
 
 namespace FlitBit.Data.SqlServer
@@ -27,11 +28,14 @@ namespace FlitBit.Data.SqlServer
 
 		public int Execute(IDbContext cx, SqlConnection cn, TParam param)
 		{
+			var res = 0;
 			using (var cmd = cn.CreateCommand(_sql.Text, _sql.CommandType))
 			{
 				BindCommand((SqlCommand)cmd, param, _offsets);
-				return cmd.ExecuteNonQuery();
+				res = cmd.ExecuteNonQuery();
+				cx.IncrementQueryCounter();
 			}
+			return res;
 		}
 
 		/// <summary>

@@ -20,11 +20,11 @@ namespace FlitBit.Data.SqlServer
 		/// <summary>
 		/// Creates a new instance.
 		/// </summary>
-		/// <param name="commandText">Initial command text.</param>
+		/// <param name="sql">Initial command text.</param>
 		/// <param name="offsets">column offsets within the results returned by the command</param>
-		protected SqlDataModelQuerySingleCommand(string commandText, int[] offsets)
+		protected SqlDataModelQuerySingleCommand(DynamicSql sql, int[] offsets)
 		{
-			_commandText = commandText;
+			_commandText = sql.Text;
 			_offsets = offsets;
 		} 
 		
@@ -44,6 +44,7 @@ namespace FlitBit.Data.SqlServer
 				BindCommand((SqlCommand)cmd, param, _offsets);
 				using (var reader = cmd.ExecuteReader())
 				{
+					cx.IncrementQueryCounter();
 					if (reader.Read())
 					{
 						res = new TImpl();

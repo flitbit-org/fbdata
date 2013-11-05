@@ -10,7 +10,19 @@ namespace FlitBit.Data.DataModel
 	/// <typeparam name="TDataModel"></typeparam>
 	/// <typeparam name="TIdentityKey"></typeparam>
 	/// <typeparam name="TDbConnection"></typeparam>
-	public interface IDataModelRepository<TDataModel, TIdentityKey, TDbConnection> : IDataRepository<TDataModel, TIdentityKey>
+	public interface IDataModelRepository<TDataModel, TIdentityKey> :
+		IDataRepository<TDataModel, TIdentityKey>
+	{
+	}
+
+
+	/// <summary>
+	/// Repository over a data model.
+	/// </summary>
+	/// <typeparam name="TDataModel"></typeparam>
+	/// <typeparam name="TIdentityKey"></typeparam>
+	/// <typeparam name="TDbConnection"></typeparam>
+	public interface IDataModelRepository<TDataModel, TIdentityKey, TDbConnection> : IDataModelRepository<TDataModel, TIdentityKey>
 		where TDbConnection: DbConnection
 	{
 		/// <summary>

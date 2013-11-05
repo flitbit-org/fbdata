@@ -7,8 +7,8 @@ using FlitBit.Data.DataModel;
 
 namespace FlitBit.Data
 {
-    public abstract class TableBackedRepository<TModel, TIdentityKey> : AbstractCachingRepository<TModel, TIdentityKey>
-    {
+	public abstract class TableBackedRepository<TModel, TIdentityKey> : AbstractCachingRepository<TModel, TIdentityKey>
+	{
 		public TableBackedRepository(string connectionName)
 			: base(connectionName)
 		{
@@ -21,11 +21,11 @@ namespace FlitBit.Data
 		protected string InsertCommand { get; set; }
 		protected string ReadCommand { get; set; }
 
-        protected abstract void BindDeleteCommand(DbCommand cmd, TIdentityKey id);
+		protected abstract void BindDeleteCommand(DbCommand cmd, TIdentityKey id);
 
 		protected abstract void BindInsertCommand(DbCommand cmd, TModel model);
-        protected abstract void BindReadCommand(DbCommand cmd, TIdentityKey id);
-        protected abstract void BindUpdateCommand(DbCommand cmd, TModel model);
+		protected abstract void BindReadCommand(DbCommand cmd, TIdentityKey id);
+		protected abstract void BindUpdateCommand(DbCommand cmd, TModel model);
 		protected abstract TModel CreateInstance();
 		protected abstract string MakeUpdateCommand(TModel model);
 
@@ -94,6 +94,7 @@ namespace FlitBit.Data
 				context.IncrementQueryCounter(1);
 				using (DbDataReader reader = cmd.ExecuteReader())
 				{
+					context.IncrementQueryCounter();
 					while (reader.Read())
 					{
 						TModel model = CreateInstance();
@@ -118,7 +119,7 @@ namespace FlitBit.Data
 				object state = PrepareInsertCommand(context, cn, cmd, model);
 				using (DbDataReader reader = cmd.ExecuteReader())
 				{
-					context.IncrementQueryCounter(1);
+					context.IncrementQueryCounter();
 					if (reader.Read())
 					{
 						res = CreateInstance();
@@ -137,11 +138,11 @@ namespace FlitBit.Data
 			{
 				cn.Open();
 			}
-            using (var cmd = (DbCommand)cn.CreateCommand())
-            {
+			using (var cmd = (DbCommand)cn.CreateCommand())
+			{
 				PrepareDeleteCommand(context, cn, cmd, id);
 				result = (cmd.ExecuteNonQuery() > 0);
-				context.IncrementQueryCounter(1);
+				context.IncrementQueryCounter();
 			}
 			return result;
 		}
@@ -151,7 +152,7 @@ namespace FlitBit.Data
 		{
 			var result = new List<TModel>();
 			var cn = context.SharedOrNewConnection(ConnectionName);
-            using (var cmd = (DbCommand)cn.CreateCommand())
+			using (var cmd = (DbCommand)cn.CreateCommand())
 			{
 				object state = PrepareQueryByCommand(context, cn, cmd, command, binder, key);
 				if (!cn.State.HasFlag(ConnectionState.Open))
@@ -186,7 +187,7 @@ namespace FlitBit.Data
 				object state = PrepareReadByCommand(context, cn, cmd, command, binder, key);
 				using (var reader = cmd.ExecuteReader())
 				{
-					context.IncrementQueryCounter(1);
+					context.IncrementQueryCounter();
 					if (reader.Read())
 					{
 						result = CreateInstance();
@@ -208,7 +209,7 @@ namespace FlitBit.Data
 			using (var cmd = (DbCommand)cn.CreateCommand())
 			{
 				object state = PrepareReadCommand(context, cn, cmd, id);
-				context.IncrementQueryCounter(1);
+				context.IncrementQueryCounter();
 				using (DbDataReader reader = cmd.ExecuteReader())
 				{
 					if (reader.Read())
@@ -234,7 +235,7 @@ namespace FlitBit.Data
 				}
 				using (DbDataReader reader = cmd.ExecuteReader())
 				{
-					context.IncrementQueryCounter(1);
+					context.IncrementQueryCounter();
 					if (reader.Read())
 					{
 						res = CreateInstance();

@@ -33,5 +33,10 @@ namespace FlitBit.Data.SqlServer
 			il.NewObj(typeof(SqlBoolean).GetConstructor(new[] { typeof(bool) }));
 			il.Box(typeof(SqlBoolean));
 		}
+
+		protected override string TransformConstantValueToString(object value)
+		{
+			return (bool) value ? "1" : "0";
+		}
 	}
 }

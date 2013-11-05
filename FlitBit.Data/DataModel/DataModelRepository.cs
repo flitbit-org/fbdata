@@ -1,4 +1,5 @@
-﻿using FlitBit.Data.Meta;
+﻿using System.Collections.Generic;
+using FlitBit.Data.Meta;
 using System;
 using System.Data;
 using System.Data.Common;
@@ -7,14 +8,14 @@ using System.Linq.Expressions;
 
 namespace FlitBit.Data.DataModel
 {
-	public abstract class DataModelRepository<TDataModel, TIdentityKey, TDbConnection> :
-		IDataModelRepository<TDataModel, TIdentityKey, TDbConnection>
+	public abstract class DataModelRepository<TDataModel, TIdentityKey, TDbConnection> : AbstractCachingRepository<TDataModel, TIdentityKey>,
+	IDataModelRepository<TDataModel, TIdentityKey, TDbConnection>
 		where TDbConnection : DbConnection, new()
 	{
 		private readonly IDataModelBinder<TDataModel, TIdentityKey, TDbConnection> _binder;
 		private readonly IMapping<TDataModel> _mapping;
 
-		protected DataModelRepository(IMapping<TDataModel> mapping)
+		protected DataModelRepository(IMapping<TDataModel> mapping) : base(mapping.ConnectionName)
 		{
 			Contract.Requires<ArgumentNullException>(mapping != null);
 			Contract.Requires<ArgumentException>(mapping.HasBinder);
@@ -93,70 +94,12 @@ namespace FlitBit.Data.DataModel
 					queryKey).Where(predicate);
 		}
 
-		public IDataModelQueryResult<TDataModel> All(IDbContext context, QueryBehavior behavior)
-		{
-			var cmd = _binder.GetAllCommand();
-			var cn = context.SharedOrNewConnection<TDbConnection>(_mapping.ConnectionName);
-			if (!cn.State.HasFlag(ConnectionState.Open))
-			{
-				cn.Open();
-			}
-			return cmd.ExecuteMany(context, cn, behavior);
-		}
-
-		public TDataModel Create(IDbContext context, TDataModel model)
-		{
-			var cmd = _binder.GetCreateCommand();
-			var cn = context.SharedOrNewConnection<TDbConnection>(_mapping.ConnectionName);
-			if (!cn.State.HasFlag(ConnectionState.Open))
-			{
-				cn.Open();
-			}
-
-			return cmd.ExecuteSingle(context, cn, model);
-		}
-
-		public bool Delete(IDbContext context, TIdentityKey id)
-		{
-			var cmd = _binder.GetDeleteCommand();
-			var cn = context.SharedOrNewConnection<TDbConnection>(_mapping.ConnectionName);
-			if (!cn.State.HasFlag(ConnectionState.Open))
-			{
-				cn.Open();
-			}
-			return cmd.Execute(context, cn, id) == 1;
-		}
-
-		public abstract TIdentityKey GetIdentity(TDataModel model);
-
-		public TDataModel ReadByIdentity(IDbContext context, TIdentityKey id)
-		{
-			var cmd = _binder.GetReadCommand();
-			var cn = context.SharedOrNewConnection<TDbConnection>(_mapping.ConnectionName);
-			if (!cn.State.HasFlag(ConnectionState.Open))
-			{
-				cn.Open();
-			}
-			return cmd.ExecuteSingle(context, cn, id);
-		}
-
-		public TDataModel Update(IDbContext context, TDataModel model)
-		{
-			var cmd = _binder.GetUpdateCommand();
-			var cn = context.SharedOrNewConnection<TDbConnection>(_mapping.ConnectionName);
-			if (!cn.State.HasFlag(ConnectionState.Open))
-			{
-				cn.Open();
-			}
-			return cmd.ExecuteSingle(context, cn, model);
-		}
-
 		public TDataModel ExecuteSingle<TParam>(
 			IDataModelQuerySingleCommand<TDataModel, TDbConnection, TParam> cmd,
 			IDbContext cx,
 			TParam param)
 		{
-			var cn = cx.SharedOrNewConnection<TDbConnection>(_mapping.ConnectionName);
+			var cn = cx.SharedOrNewConnection<TDbConnection>(ConnectionName);
 			if (!cn.State.HasFlag(ConnectionState.Open))
 			{
 				cn.Open();
@@ -169,7 +112,7 @@ namespace FlitBit.Data.DataModel
 			IDbContext cx,
 			TParam param, TParam1 param1)
 		{
-			var cn = cx.SharedOrNewConnection<TDbConnection>(_mapping.ConnectionName);
+			var cn = cx.SharedOrNewConnection<TDbConnection>(ConnectionName);
 			if (!cn.State.HasFlag(ConnectionState.Open))
 			{
 				cn.Open();
@@ -182,7 +125,7 @@ namespace FlitBit.Data.DataModel
 			IDbContext cx,
 			TParam param, TParam1 param1, TParam2 param2)
 		{
-			var cn = cx.SharedOrNewConnection<TDbConnection>(_mapping.ConnectionName);
+			var cn = cx.SharedOrNewConnection<TDbConnection>(ConnectionName);
 			if (!cn.State.HasFlag(ConnectionState.Open))
 			{
 				cn.Open();
@@ -195,7 +138,7 @@ namespace FlitBit.Data.DataModel
 			IDbContext cx,
 			TParam param, TParam1 param1, TParam2 param2, TParam3 param3)
 		{
-			var cn = cx.SharedOrNewConnection<TDbConnection>(_mapping.ConnectionName);
+			var cn = cx.SharedOrNewConnection<TDbConnection>(ConnectionName);
 			if (!cn.State.HasFlag(ConnectionState.Open))
 			{
 				cn.Open();
@@ -208,7 +151,7 @@ namespace FlitBit.Data.DataModel
 			IDbContext cx,
 			TParam param, TParam1 param1, TParam2 param2, TParam3 param3, TParam4 param4)
 		{
-			var cn = cx.SharedOrNewConnection<TDbConnection>(_mapping.ConnectionName);
+			var cn = cx.SharedOrNewConnection<TDbConnection>(ConnectionName);
 			if (!cn.State.HasFlag(ConnectionState.Open))
 			{
 				cn.Open();
@@ -221,7 +164,7 @@ namespace FlitBit.Data.DataModel
 			IDbContext cx,
 			TParam param, TParam1 param1, TParam2 param2, TParam3 param3, TParam4 param4, TParam5 param5)
 		{
-			var cn = cx.SharedOrNewConnection<TDbConnection>(_mapping.ConnectionName);
+			var cn = cx.SharedOrNewConnection<TDbConnection>(ConnectionName);
 			if (!cn.State.HasFlag(ConnectionState.Open))
 			{
 				cn.Open();
@@ -234,7 +177,7 @@ namespace FlitBit.Data.DataModel
 			IDbContext cx,
 			TParam param, TParam1 param1, TParam2 param2, TParam3 param3, TParam4 param4, TParam5 param5, TParam6 param6)
 		{
-			var cn = cx.SharedOrNewConnection<TDbConnection>(_mapping.ConnectionName);
+			var cn = cx.SharedOrNewConnection<TDbConnection>(ConnectionName);
 			if (!cn.State.HasFlag(ConnectionState.Open))
 			{
 				cn.Open();
@@ -247,7 +190,7 @@ namespace FlitBit.Data.DataModel
 			IDbContext cx,
 			TParam param, TParam1 param1, TParam2 param2, TParam3 param3, TParam4 param4, TParam5 param5, TParam6 param6, TParam7 param7)
 		{
-			var cn = cx.SharedOrNewConnection<TDbConnection>(_mapping.ConnectionName);
+			var cn = cx.SharedOrNewConnection<TDbConnection>(ConnectionName);
 			if (!cn.State.HasFlag(ConnectionState.Open))
 			{
 				cn.Open();
@@ -260,7 +203,7 @@ namespace FlitBit.Data.DataModel
 			IDbContext cx, 
 			TParam param, TParam1 param1, TParam2 param2, TParam3 param3, TParam4 param4, TParam5 param5, TParam6 param6, TParam7 param7, TParam8 param8)
 		{
-			var cn = cx.SharedOrNewConnection<TDbConnection>(_mapping.ConnectionName);
+			var cn = cx.SharedOrNewConnection<TDbConnection>(ConnectionName);
 			if (!cn.State.HasFlag(ConnectionState.Open))
 			{
 				cn.Open();
@@ -271,7 +214,7 @@ namespace FlitBit.Data.DataModel
 
 		public TDataModel ExecuteSingle<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>(IDataModelQuerySingleCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9> cmd, IDbContext cx, TParam param, TParam1 param1, TParam2 param2, TParam3 param3, TParam4 param4, TParam5 param5, TParam6 param6, TParam7 param7, TParam8 param8, TParam9 param9)
 		{
-			var cn = cx.SharedOrNewConnection<TDbConnection>(_mapping.ConnectionName);
+			var cn = cx.SharedOrNewConnection<TDbConnection>(ConnectionName);
 			if (!cn.State.HasFlag(ConnectionState.Open))
 			{
 				cn.Open();
@@ -286,7 +229,7 @@ namespace FlitBit.Data.DataModel
 			IDbContext cx, QueryBehavior behavior,
 			TParam param)
 		{
-			var cn = cx.SharedOrNewConnection<TDbConnection>(_mapping.ConnectionName);
+			var cn = cx.SharedOrNewConnection<TDbConnection>(ConnectionName);
 			if (!cn.State.HasFlag(ConnectionState.Open))
 			{
 				cn.Open();
@@ -299,7 +242,7 @@ namespace FlitBit.Data.DataModel
 			IDbContext cx, QueryBehavior behavior,
 			TParam param, TParam1 param1)
 		{
-			var cn = cx.SharedOrNewConnection<TDbConnection>(_mapping.ConnectionName);
+			var cn = cx.SharedOrNewConnection<TDbConnection>(ConnectionName);
 			if (!cn.State.HasFlag(ConnectionState.Open))
 			{
 				cn.Open();
@@ -312,7 +255,7 @@ namespace FlitBit.Data.DataModel
 			IDbContext cx, QueryBehavior behavior,
 			TParam param, TParam1 param1, TParam2 param2)
 		{
-			var cn = cx.SharedOrNewConnection<TDbConnection>(_mapping.ConnectionName);
+			var cn = cx.SharedOrNewConnection<TDbConnection>(ConnectionName);
 			if (!cn.State.HasFlag(ConnectionState.Open))
 			{
 				cn.Open();
@@ -325,7 +268,7 @@ namespace FlitBit.Data.DataModel
 			IDbContext cx, QueryBehavior behavior,
 			TParam param, TParam1 param1, TParam2 param2, TParam3 param3)
 		{
-			var cn = cx.SharedOrNewConnection<TDbConnection>(_mapping.ConnectionName);
+			var cn = cx.SharedOrNewConnection<TDbConnection>(ConnectionName);
 			if (!cn.State.HasFlag(ConnectionState.Open))
 			{
 				cn.Open();
@@ -338,7 +281,7 @@ namespace FlitBit.Data.DataModel
 			IDbContext cx, QueryBehavior behavior,
 			TParam param, TParam1 param1, TParam2 param2, TParam3 param3, TParam4 param4)
 		{
-			var cn = cx.SharedOrNewConnection<TDbConnection>(_mapping.ConnectionName);
+			var cn = cx.SharedOrNewConnection<TDbConnection>(ConnectionName);
 			if (!cn.State.HasFlag(ConnectionState.Open))
 			{
 				cn.Open();
@@ -351,7 +294,7 @@ namespace FlitBit.Data.DataModel
 			IDbContext cx, QueryBehavior behavior,
 			TParam param, TParam1 param1, TParam2 param2, TParam3 param3, TParam4 param4, TParam5 param5)
 		{
-			var cn = cx.SharedOrNewConnection<TDbConnection>(_mapping.ConnectionName);
+			var cn = cx.SharedOrNewConnection<TDbConnection>(ConnectionName);
 			if (!cn.State.HasFlag(ConnectionState.Open))
 			{
 				cn.Open();
@@ -364,7 +307,7 @@ namespace FlitBit.Data.DataModel
 			IDbContext cx, QueryBehavior behavior,
 			TParam param, TParam1 param1, TParam2 param2, TParam3 param3, TParam4 param4, TParam5 param5, TParam6 param6)
 		{
-			var cn = cx.SharedOrNewConnection<TDbConnection>(_mapping.ConnectionName);
+			var cn = cx.SharedOrNewConnection<TDbConnection>(ConnectionName);
 			if (!cn.State.HasFlag(ConnectionState.Open))
 			{
 				cn.Open();
@@ -377,7 +320,7 @@ namespace FlitBit.Data.DataModel
 			IDbContext cx, QueryBehavior behavior,
 			TParam param, TParam1 param1, TParam2 param2, TParam3 param3, TParam4 param4, TParam5 param5, TParam6 param6, TParam7 param7)
 		{
-			var cn = cx.SharedOrNewConnection<TDbConnection>(_mapping.ConnectionName);
+			var cn = cx.SharedOrNewConnection<TDbConnection>(ConnectionName);
 			if (!cn.State.HasFlag(ConnectionState.Open))
 			{
 				cn.Open();
@@ -390,7 +333,7 @@ namespace FlitBit.Data.DataModel
 			IDbContext cx, QueryBehavior behavior,
 			TParam param, TParam1 param1, TParam2 param2, TParam3 param3, TParam4 param4, TParam5 param5, TParam6 param6, TParam7 param7, TParam8 param8)
 		{
-			var cn = cx.SharedOrNewConnection<TDbConnection>(_mapping.ConnectionName);
+			var cn = cx.SharedOrNewConnection<TDbConnection>(ConnectionName);
 			if (!cn.State.HasFlag(ConnectionState.Open))
 			{
 				cn.Open();
@@ -401,13 +344,80 @@ namespace FlitBit.Data.DataModel
 
 		public IDataModelQueryResult<TDataModel> ExecuteMany<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>(IDataModelQueryManyCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9> cmd, IDbContext cx, QueryBehavior behavior, TParam param, TParam1 param1, TParam2 param2, TParam3 param3, TParam4 param4, TParam5 param5, TParam6 param6, TParam7 param7, TParam8 param8, TParam9 param9)
 		{
-			var cn = cx.SharedOrNewConnection<TDbConnection>(_mapping.ConnectionName);
+			var cn = cx.SharedOrNewConnection<TDbConnection>(ConnectionName);
 			if (!cn.State.HasFlag(ConnectionState.Open))
 			{
 				cn.Open();
 			}
 
 			return cmd.ExecuteMany(cx, cn, behavior, param, param1, param2, param3, param4, param5, param6, param7, param8, param9);
+		}
+
+
+		protected override IDataModelQueryResult<TDataModel> PerformAll(IDbContext context, QueryBehavior behavior)
+		{
+			var cmd = _binder.GetAllCommand();
+			var cn = context.SharedOrNewConnection<TDbConnection>(ConnectionName);
+			if (!cn.State.HasFlag(ConnectionState.Open))
+			{
+				cn.Open();
+			}
+			return cmd.ExecuteMany(context, cn, behavior);
+		}
+
+		protected override TDataModel PerformCreate(IDbContext context, TDataModel model)
+		{
+			var cmd = _binder.GetCreateCommand();
+			var cn = context.SharedOrNewConnection<TDbConnection>(ConnectionName);
+			if (!cn.State.HasFlag(ConnectionState.Open))
+			{
+				cn.Open();
+			}
+
+			return cmd.ExecuteSingle(context, cn, model);
+		}
+
+		protected override bool PerformDelete(IDbContext context, TIdentityKey id)
+		{
+			var cmd = _binder.GetDeleteCommand();
+			var cn = context.SharedOrNewConnection<TDbConnection>(ConnectionName);
+			if (!cn.State.HasFlag(ConnectionState.Open))
+			{
+				cn.Open();
+			}
+			return cmd.Execute(context, cn, id) == 1;
+		}
+
+		protected override TDataModel PerformRead(IDbContext context, TIdentityKey id)
+		{
+			var cmd = _binder.GetReadCommand();
+			var cn = context.SharedOrNewConnection<TDbConnection>(ConnectionName);
+			if (!cn.State.HasFlag(ConnectionState.Open))
+			{
+				cn.Open();
+			}
+			return cmd.ExecuteSingle(context, cn, id);
+		}
+
+		protected override TDataModel PerformUpdate(IDbContext context, TDataModel model)
+		{
+			var cmd = _binder.GetUpdateCommand();
+			var cn = context.SharedOrNewConnection<TDbConnection>(ConnectionName);
+			if (!cn.State.HasFlag(ConnectionState.Open))
+			{
+				cn.Open();
+			}
+			return cmd.ExecuteSingle(context, cn, model);
+		}
+
+		protected override IEnumerable<TDataModel> PerformDirectQueryBy<TItemKey>(IDbContext context, string command, Action<DbCommand, TItemKey> binder, TItemKey key)
+		{
+			throw new NotImplementedException();
+		}
+
+		protected override TDataModel PerformDirectReadBy<TItemKey>(IDbContext context, string command, Action<DbCommand, TItemKey> binder, TItemKey key)
+		{
+			throw new NotImplementedException();
 		}
 	}
 }
