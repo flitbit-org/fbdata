@@ -4,6 +4,6 @@ namespace FlitBit.Data.DataModel
 {
 	public interface IDataModelCatalog
 	{
-		void Register<TModel, Id>(Mapping<TModel> mapping, IDataModelBinder<TModel, Id> binder);
+		void Register<TDataModel, TIdentityKey>(IMapping<TDataModel> mapping, IDataModelBinder<TDataModel, TIdentityKey> binder);
 	}
 }

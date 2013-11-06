@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Linq;
+using System.Transactions;
 using FlitBit.Core;
 using FlitBit.Data.DataModel;
 using FlitBit.Data.Expressions;
@@ -21,11 +22,11 @@ namespace FlitBit.Data.SqlServer
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)] private readonly bool _hasTimestamp;
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)] private readonly ColumnMapping _idCol;
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)] private readonly string _indent;
-		[DebuggerBrowsable(DebuggerBrowsableState.Never)] private readonly Mapping<TDataModel> _mapping =
-			Mapping<TDataModel>.Instance;
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)] private readonly IMapping<TDataModel> _mapping =
+			DataModel<TDataModel>.Mapping;
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)] private readonly string _selfRef;
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)] private bool _hasSyntheticId;
-		[DebuggerBrowsable(DebuggerBrowsableState.Never)] private bool _hasTimestampOnUpdate;
+		[DebuggerBrowsable(DebuggerBrowsableState.Never)] private readonly bool _hasTimestampOnUpdate;
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)] private OrderBy _primaryKeyOrder;
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 		private Tuple<int, string[]> _quotedColumnNames;
@@ -393,7 +394,7 @@ namespace FlitBit.Data.SqlServer
 			if (c != null && !c.IsLifted)
 			{
 				writer.NewLine().Indent().Append("WHERE ");
-				c.WriteConditions(Mapping<TDataModel>.Instance, writer);
+				c.WriteConditions(_mapping, writer);
 				writer.Outdent();
 			}
 		}
@@ -427,7 +428,7 @@ namespace FlitBit.Data.SqlServer
 				joins.Push(jj);
 				jj = jj.Path;
 			}
-			Mapping<TDataModel> mapping = Mapping<TDataModel>.Instance;
+			var mapping = _mapping;
 			IMapping fromMapping = mapping;
 			string fromRef = refName;
 			foreach (Join j in joins)

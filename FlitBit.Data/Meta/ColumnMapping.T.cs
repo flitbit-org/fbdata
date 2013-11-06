@@ -13,7 +13,7 @@ namespace FlitBit.Data.Meta
 			: base(mapping, member, ordinal)
 		{}
 
-		public Mapping<T> End()
+		public IMapping<T> End()
 		{
 			return (Mapping<T>) Mapping;
 		}

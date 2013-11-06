@@ -246,7 +246,7 @@ namespace FlitBit.Data
 			return new DbTypeDetails(column.Member.Name, bindingName, len, null);
 		}
 
-		public virtual object EmitColumnDDL<TModel>(StringBuilder buffer, int ordinal, Mapping<TModel> mapping,
+		public virtual object EmitColumnDDL<TModel>(StringBuilder buffer, int ordinal, IMapping<TModel> mapping,
 			ColumnMapping<TModel> col)
 		{
 			var tableConstraints = new List<string>();
@@ -296,7 +296,7 @@ namespace FlitBit.Data
 			return (tableConstraints.Count > 0) ? tableConstraints : null;
 		}
 
-		public virtual void EmitColumnConstraintsDDL<TModel>(StringBuilder buffer, Mapping<TModel> mapping,
+		public virtual void EmitColumnConstraintsDDL<TModel>(StringBuilder buffer, IMapping<TModel> mapping,
 			ColumnMapping<TModel> col, List<string> tableConstraints)
 		{
 			if (col.IsIdentity && mapping.Identity.Columns.Count() == 1)
@@ -394,18 +394,18 @@ namespace FlitBit.Data
 			}
 		}
 
-		public virtual void EmitColumnInitializationDDL<TModel>(StringBuilder buffer, Mapping<TModel> mapping,
+		public virtual void EmitColumnInitializationDDL<TModel>(StringBuilder buffer, IMapping<TModel> mapping,
 			ColumnMapping<TModel> col)
 		{
 		}
 
 
-		public virtual void EmitTableConstraintDDL<TModel>(StringBuilder buffer, Mapping<TModel> mapping,
+		public virtual void EmitTableConstraintDDL<TModel>(StringBuilder buffer, IMapping<TModel> mapping,
 			ColumnMapping<TModel> col, object handback)
 		{
 		}
 
-		public virtual void EmitColumnDDLForHierarchy<TModel>(StringBuilder buffer, int ordinal, Mapping<TModel> mapping,
+		public virtual void EmitColumnDDLForHierarchy<TModel>(StringBuilder buffer, int ordinal, IMapping<TModel> mapping,
 			IMapping baseMapping, ColumnMapping col)
 		{
 			DbTypeDetails details = col.DbTypeDetails;

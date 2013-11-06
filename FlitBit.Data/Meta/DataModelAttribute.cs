@@ -33,11 +33,11 @@ namespace FlitBit.Data.Meta
 
 	public abstract class PrepareDataMapping<TModel> : PrepareDataMapping
 	{
-		protected abstract void PrepareMapping(Mapping<TModel> mapping);
+		protected abstract void PrepareMapping(IMapping<TModel> mapping);
 
 		public override void UntypedPrepareMapping(IMapping mapping)
 		{
-			PrepareMapping((Mapping<TModel>)mapping);
+			PrepareMapping((IMapping<TModel>)mapping);
 		}
 	}
 }

@@ -83,7 +83,7 @@ namespace FlitBit.Data
 
 		public abstract string FormatParameterName(string rawParameterName);
 
-		public abstract IDataModelBinder<TModel, Id> GetModelBinder<TModel, Id>(Mapping<TModel> mapping);
+		public abstract IDataModelBinder<TModel, Id> GetModelBinder<TModel, Id>(IMapping<TModel> mapping);
 
 		public abstract string GetServerName(DbConnection connection);
 

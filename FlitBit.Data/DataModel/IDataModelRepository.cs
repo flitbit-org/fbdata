@@ -9,7 +9,6 @@ namespace FlitBit.Data.DataModel
 	/// </summary>
 	/// <typeparam name="TDataModel"></typeparam>
 	/// <typeparam name="TIdentityKey"></typeparam>
-	/// <typeparam name="TDbConnection"></typeparam>
 	public interface IDataModelRepository<TDataModel, TIdentityKey> :
 		IDataRepository<TDataModel, TIdentityKey>
 	{

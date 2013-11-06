@@ -8,12 +8,16 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using FlitBit.Data.Meta;
+using FlitBit.ObjectIdentity;
 
 namespace FlitBit.Data.DataModel
 {
 	public interface IMapping
 	{
+		EntityBehaviors Behaviors { get; }
+
 		IEnumerable<CollectionMapping> Collections { get; }
+
 		IEnumerable<ColumnMapping> Columns { get; }
 
 		/// <summary>
@@ -39,6 +43,9 @@ namespace FlitBit.Data.DataModel
 		/// </summary>
 		IEnumerable<MemberInfo> ParticipatingMembers { get; }
 
+		/// <summary>
+		/// The mapping's runtime type.
+		/// </summary>
 		Type RuntimeType { get; }
 
 		/// <summary>
@@ -66,12 +73,15 @@ namespace FlitBit.Data.DataModel
 		int Revision { get; }
 
 		IMapping Completed(Action action);
+
 		IDataModelBinder GetBinder();
 
 		void NotifySubtype(IMapping mapping);
+
 		string QuoteObjectName(string name);
 
 		MappedDbTypeEmitter GetEmitterFor(ColumnMapping column);
+
 		DbProviderHelper GetDbProviderHelper();
 
 		/// <summary>
@@ -80,7 +90,9 @@ namespace FlitBit.Data.DataModel
 		bool HasBinder { get; }
 	}
 
-	public interface IMapping<out M> : IMapping
+
+	public interface IMapping<out TModel> : IMapping
 	{
+		Type ConcreteType { get; }
 	}
 }

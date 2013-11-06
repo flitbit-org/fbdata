@@ -18,9 +18,9 @@ namespace FlitBit.Data.DataModel
 		IDataModelBinder<TModel, TIdentityKey, TDbConnection>
 		where TDbConnection : DbConnection
 	{
-		private readonly Mapping<TModel> _mapping;
+		private readonly IMapping<TModel> _mapping;
 
-		protected DataModelBinder(Mapping<TModel> mapping, MappingStrategy strategy)
+		protected DataModelBinder(IMapping<TModel> mapping, MappingStrategy strategy)
 		{
 			Contract.Requires<ArgumentNullException>(mapping != null);
 			_mapping = mapping;
@@ -36,7 +36,7 @@ namespace FlitBit.Data.DataModel
 
 		public abstract void BuildDdlBatch(StringBuilder batch, IList<Type> members);
 
-		public Mapping<TModel> Mapping
+		public IMapping<TModel> Mapping
 		{
 			get { return _mapping; }
 		}
@@ -125,7 +125,7 @@ namespace FlitBit.Data.DataModel
 			MakeQueryCommand<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>(
 			string queryKey);
 
-		protected virtual void AddGeneratorMethodsForLcgColumns(Mapping<TModel> mapping, StringBuilder sql)
+		protected virtual void AddGeneratorMethodsForLcgColumns(IMapping<TModel> mapping, StringBuilder sql)
 		{
 			IEnumerable<ColumnMapping> lcgColumns = mapping.Identity.Columns
 				.Where(c => c.Column.Behaviors.HasFlag(ColumnBehaviors.LinearCongruentGenerated))
@@ -146,7 +146,7 @@ namespace FlitBit.Data.DataModel
 			}
 		}
 
-		protected virtual void AddIndex(Mapping<TModel> mapping, StringBuilder sql, string dbObjectName, string indexBaseName,
+		protected virtual void AddIndex(IMapping<TModel> mapping, StringBuilder sql, string dbObjectName, string indexBaseName,
 			MapIndexAttribute index, bool any)
 		{
 			IEnumerable<string> includedColumns = index.GetIncludedColumns(typeof (TModel));
@@ -220,7 +220,7 @@ namespace FlitBit.Data.DataModel
 			}
 		}
 
-		protected virtual void AddIndexesForTable(Mapping<TModel> mapping, StringBuilder sql)
+		protected virtual void AddIndexesForTable(IMapping<TModel> mapping, StringBuilder sql)
 		{
 			string dbObjectName = mapping.DbObjectReference;
 			string indexBaseName = String.Concat("AK_", mapping.TargetSchema, mapping.TargetObject, "_");
@@ -238,7 +238,7 @@ namespace FlitBit.Data.DataModel
 			}
 		}
 
-		protected virtual void AddTableConstraintsForIndexes(Mapping<TModel> mapping, StringBuilder sql)
+		protected virtual void AddTableConstraintsForIndexes(IMapping<TModel> mapping, StringBuilder sql)
 		{
 			int tableConstraints = 0;
 			foreach (MapIndexAttribute index in typeof (TModel).GetCustomAttributes(typeof (MapIndexAttribute), false))

@@ -17,7 +17,7 @@ namespace FlitBit.Data.SqlServer
 
 	    protected override IDataModelNonQueryCommand<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9> ConstructCommandOnConstraints(Constraints constraints)
 	    {
-				Type cmd = OneClassOneTableEmitter.MakeUpdateCommand<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>(Mapping<TDataModel>.Instance, QueryKey, constraints);
+				Type cmd = OneClassOneTableEmitter.MakeUpdateCommand<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>(Mapping, QueryKey, constraints);
 				return
 					(IDataModelNonQueryCommand<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>)
 						Activator.CreateInstance(cmd, constraints.Writer.Text, Writer.WriteUpdate(constraints), Writer.ColumnOffsets);

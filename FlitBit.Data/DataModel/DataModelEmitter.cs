@@ -42,11 +42,11 @@ namespace FlitBit.Data.DataModel
 		static EmittedModule Module { get { return LazyModule.Value; } }
 
 		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
-		internal static Type ConcreteType<T>()
+		internal static Type ConcreteType<T>(IMapping<T> mapping)
 		{
+			Contract.Requires<ArgumentNullException>(mapping != null);
 			Contract.Ensures(Contract.Result<Type>() != null);
 
-			var mapping = Mapping<T>.Instance;
 			var targetType = typeof(T);
 			var typeName = RuntimeAssemblies.PrepareTypeName(targetType, "DataModel");
 
@@ -61,7 +61,7 @@ namespace FlitBit.Data.DataModel
 
 		static class EmitImplementation<T>
 		{
-			internal static Type BuildImplementation(EmittedModule module, string typeName, Mapping<T> mapping)
+			internal static Type BuildImplementation(EmittedModule module, string typeName, IMapping<T> mapping)
 			{
 				Contract.Requires<ArgumentNullException>(module != null);
 				Contract.Requires<ArgumentNullException>(typeName != null);
@@ -144,7 +144,7 @@ namespace FlitBit.Data.DataModel
 			}
 
 			static void ImplementIDataModelLoadFromDbRecord(EmittedClass builder, List<PropertyRec> props, EmittedField dirtyFlags,
-				Mapping<T> mapping)
+				IMapping<T> mapping)
 			{
 				var helper = mapping.GetDbProviderHelper();
 				var method = builder.DefineMethod("LoadFromDataReader");
@@ -304,7 +304,7 @@ namespace FlitBit.Data.DataModel
 			}
 
 			static void ImplementIDataModel(EmittedClass builder, EmittedConstructor cctor, List<PropertyRec> props,
-				EmittedField dirtyFlags, EmittedMethod propChanged, Mapping<T> mapping)
+				EmittedField dirtyFlags, EmittedMethod propChanged, IMapping<T> mapping)
 			{
 				builder.AddInterfaceImplementation(typeof(IDataModel));
 

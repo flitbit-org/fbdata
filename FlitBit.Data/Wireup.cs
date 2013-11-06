@@ -5,6 +5,7 @@
 #endregion
 
 using System.Data.SqlClient;
+using FlitBit.Core;
 using FlitBit.Data;
 using FlitBit.Data.Catalog;
 using FlitBit.Data.Meta;

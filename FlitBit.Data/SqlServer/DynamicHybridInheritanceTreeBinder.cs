@@ -35,7 +35,7 @@ namespace FlitBit.Data.SqlServer
 		///   Creates a new instance.
 		/// </summary>
 		/// <param name="mapping"></param>
-		public DynamicHybridInheritanceTreeBinder(Mapping<TModel> mapping)
+		public DynamicHybridInheritanceTreeBinder(IMapping<TModel> mapping)
 			: base(mapping, MappingStrategy.DynamicHybridInheritanceTree)
 		{
 			Contract.Requires<ArgumentNullException>(mapping != null);
@@ -47,7 +47,7 @@ namespace FlitBit.Data.SqlServer
 
 		public override void BuildDdlBatch(StringBuilder batch, IList<Type> members)
 		{
-			var mapping = this.Mapping;
+			var mapping = Mapping;
 
 			if (!members.Contains(mapping.RuntimeType))
 			{

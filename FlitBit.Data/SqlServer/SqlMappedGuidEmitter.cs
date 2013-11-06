@@ -9,6 +9,7 @@ using System.Reflection.Emit;
 using System.Text;
 using FlitBit.Data.Meta;
 using FlitBit.Emit;
+using FlitBit.Data.DataModel;
 
 namespace FlitBit.Data.SqlServer
 {
@@ -27,7 +28,7 @@ namespace FlitBit.Data.SqlServer
 			columnIndex.LoadValue(il);
 			il.CallVirtual<DbDataReader>("GetGuid", typeof(int));
 		}
-		public override void EmitColumnConstraintsDDL<TModel>(StringBuilder buffer, Mapping<TModel> mapping, ColumnMapping<TModel> col, System.Collections.Generic.List<string> tableConstraints)
+		public override void EmitColumnConstraintsDDL<TModel>(StringBuilder buffer, IMapping<TModel> mapping, ColumnMapping<TModel> col, System.Collections.Generic.List<string> tableConstraints)
 		{
 			if (col.IsIdentity && mapping.Identity.Columns.Count() == 1)
 			{

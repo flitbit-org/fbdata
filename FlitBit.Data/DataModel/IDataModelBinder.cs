@@ -45,7 +45,7 @@ namespace FlitBit.Data.DataModel
 		/// <summary>
 		/// Gets the model's mapping.
 		/// </summary>
-		Mapping<TModel> Mapping { get; }
+		IMapping<TModel> Mapping { get; }
 		/// <summary>
 		/// Makes a repository for the data model.
 		/// </summary>

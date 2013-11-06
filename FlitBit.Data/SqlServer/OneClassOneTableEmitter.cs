@@ -29,7 +29,7 @@ namespace FlitBit.Data.SqlServer
 		}
 
 		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
-		internal static Type CreateCommand<TDataModel, TImpl>(Mapping<TDataModel> mapping, DynamicSql sql)
+		internal static Type CreateCommand<TDataModel, TImpl>(IMapping<TDataModel> mapping, DynamicSql sql)
 			where TImpl : class, IDataModel, TDataModel, new()
 		{
 			Contract.Ensures(Contract.Result<Type>() != null);
@@ -47,7 +47,7 @@ namespace FlitBit.Data.SqlServer
 		}
 
 		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
-		internal static Type UpdateCommand<TDataModel, TImpl>(Mapping<TDataModel> mapping, DynamicSql sql)
+		internal static Type UpdateCommand<TDataModel, TImpl>(IMapping<TDataModel> mapping, DynamicSql sql)
 			where TImpl : class, IDataModel, TDataModel, new()
 		{
 			Contract.Ensures(Contract.Result<Type>() != null);
@@ -65,7 +65,7 @@ namespace FlitBit.Data.SqlServer
 		}
 
 		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
-		internal static Type ReadByIdCommand<TDataModel, TImpl, TIdentityKey>(Mapping<TDataModel> mapping, DynamicSql sql)
+		internal static Type ReadByIdCommand<TDataModel, TImpl, TIdentityKey>(IMapping<TDataModel> mapping, DynamicSql sql)
 			where TImpl : class, IDataModel, TDataModel, new()
 		{
 			Contract.Ensures(Contract.Result<Type>() != null);
@@ -83,7 +83,7 @@ namespace FlitBit.Data.SqlServer
 		}
 
 		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
-		internal static Type MakeRepositoryType<TDataModel, TImpl, TIdentityKey>(Mapping<TDataModel> mapping)
+		internal static Type MakeRepositoryType<TDataModel, TImpl, TIdentityKey>(IMapping<TDataModel> mapping)
 			where TImpl : class, IDataModel, TDataModel, new()
 		{
 			Contract.Ensures(Contract.Result<Type>() != null);
@@ -101,7 +101,7 @@ namespace FlitBit.Data.SqlServer
 		}
 
 		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
-		internal static Type DeleteCommand<TDataModel, TImpl, TIdentityKey>(Mapping<TDataModel> mapping, DynamicSql deleteStatement)
+		internal static Type DeleteCommand<TDataModel, TImpl, TIdentityKey>(IMapping<TDataModel> mapping, DynamicSql deleteStatement)
 			where TImpl : class, IDataModel, TDataModel, new()
 		{
 			Contract.Ensures(Contract.Result<Type>() != null);
@@ -119,7 +119,7 @@ namespace FlitBit.Data.SqlServer
 		}
 
 		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
-		internal static Type MakeQueryCommand<TDataModel, TImpl, TParam>(Mapping<TDataModel> mapping, string queryKey, Constraints cns)
+		internal static Type MakeQueryCommand<TDataModel, TImpl, TParam>(IMapping<TDataModel> mapping, string queryKey, Constraints cns)
 			where TImpl : class, IDataModel, TDataModel, new()
 		{
 			Contract.Requires<ArgumentNullException>(queryKey != null);
@@ -139,7 +139,7 @@ namespace FlitBit.Data.SqlServer
 			}
 		}
 		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
-		internal static Type MakeQueryCommand<TDataModel, TImpl, TParam, TParam1>(Mapping<TDataModel> mapping, string queryKey, Constraints cns)
+		internal static Type MakeQueryCommand<TDataModel, TImpl, TParam, TParam1>(IMapping<TDataModel> mapping, string queryKey, Constraints cns)
 			where TImpl : class, IDataModel, TDataModel, new()
 		{
 			Contract.Requires<ArgumentNullException>(queryKey != null);
@@ -159,7 +159,7 @@ namespace FlitBit.Data.SqlServer
 			}
 		}
 		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
-		internal static Type MakeQueryCommand<TDataModel, TImpl, TParam, TParam1, TParam2>(Mapping<TDataModel> mapping, string queryKey, Constraints cns)
+		internal static Type MakeQueryCommand<TDataModel, TImpl, TParam, TParam1, TParam2>(IMapping<TDataModel> mapping, string queryKey, Constraints cns)
 			where TImpl : class, IDataModel, TDataModel, new()
 		{
 			Contract.Requires<ArgumentNullException>(queryKey != null);
@@ -179,7 +179,7 @@ namespace FlitBit.Data.SqlServer
 			}
 		}
 		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
-		internal static Type MakeQueryCommand<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3>(Mapping<TDataModel> mapping, string queryKey, Constraints cns)
+		internal static Type MakeQueryCommand<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3>(IMapping<TDataModel> mapping, string queryKey, Constraints cns)
 			where TImpl : class, IDataModel, TDataModel, new()
 		{
 			Contract.Requires<ArgumentNullException>(queryKey != null);
@@ -199,7 +199,7 @@ namespace FlitBit.Data.SqlServer
 			}
 		}
 		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
-		internal static Type MakeQueryCommand<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3, TParam4>(Mapping<TDataModel> mapping, string queryKey, Constraints cns)
+		internal static Type MakeQueryCommand<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3, TParam4>(IMapping<TDataModel> mapping, string queryKey, Constraints cns)
 			where TImpl : class, IDataModel, TDataModel, new()
 		{
 			Contract.Requires<ArgumentNullException>(queryKey != null);
@@ -219,7 +219,7 @@ namespace FlitBit.Data.SqlServer
 			}
 		}
 		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
-		internal static Type MakeQueryCommand<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5>(Mapping<TDataModel> mapping, string queryKey, Constraints cns)
+		internal static Type MakeQueryCommand<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5>(IMapping<TDataModel> mapping, string queryKey, Constraints cns)
 			where TImpl : class, IDataModel, TDataModel, new()
 		{
 			Contract.Requires<ArgumentNullException>(queryKey != null);
@@ -239,7 +239,7 @@ namespace FlitBit.Data.SqlServer
 			}
 		}
 		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
-		internal static Type MakeQueryCommand<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6>(Mapping<TDataModel> mapping, string queryKey, Constraints cns)
+		internal static Type MakeQueryCommand<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6>(IMapping<TDataModel> mapping, string queryKey, Constraints cns)
 			where TImpl : class, IDataModel, TDataModel, new()
 		{
 			Contract.Requires<ArgumentNullException>(queryKey != null);
@@ -259,7 +259,7 @@ namespace FlitBit.Data.SqlServer
 			}
 		}
 		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
-		internal static Type MakeQueryCommand<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7>(Mapping<TDataModel> mapping, string queryKey, Constraints cns)
+		internal static Type MakeQueryCommand<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7>(IMapping<TDataModel> mapping, string queryKey, Constraints cns)
 			where TImpl : class, IDataModel, TDataModel, new()
 		{
 			Contract.Requires<ArgumentNullException>(queryKey != null);
@@ -279,7 +279,7 @@ namespace FlitBit.Data.SqlServer
 			}
 		}
 		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
-		internal static Type MakeQueryCommand<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8>(Mapping<TDataModel> mapping, string queryKey, Constraints cns)
+		internal static Type MakeQueryCommand<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8>(IMapping<TDataModel> mapping, string queryKey, Constraints cns)
 			where TImpl : class, IDataModel, TDataModel, new()
 		{
 			Contract.Requires<ArgumentNullException>(queryKey != null);
@@ -299,7 +299,7 @@ namespace FlitBit.Data.SqlServer
 			}
 		}
 		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
-		internal static Type MakeQueryCommand<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>(Mapping<TDataModel> mapping, string queryKey, Constraints cns)
+		internal static Type MakeQueryCommand<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>(IMapping<TDataModel> mapping, string queryKey, Constraints cns)
 			where TImpl : class, IDataModel, TDataModel, new()
 		{
 			Contract.Requires<ArgumentNullException>(queryKey != null);
@@ -319,7 +319,7 @@ namespace FlitBit.Data.SqlServer
 			}
 		}
 		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
-		internal static Type MakeUpdateCommand<TDataModel, TParam>(Mapping<TDataModel> mapping, string queryKey, Constraints cns)
+		internal static Type MakeUpdateCommand<TDataModel, TParam>(IMapping<TDataModel> mapping, string queryKey, Constraints cns)
 		{
 			Contract.Requires<ArgumentNullException>(queryKey != null);
 			Contract.Requires<ArgumentException>(queryKey.Length > 0);
@@ -338,7 +338,7 @@ namespace FlitBit.Data.SqlServer
 			}
 		}
 		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
-		internal static Type MakeUpdateCommand<TDataModel, TParam, TParam1>(Mapping<TDataModel> mapping, string queryKey, Constraints cns)
+		internal static Type MakeUpdateCommand<TDataModel, TParam, TParam1>(IMapping<TDataModel> mapping, string queryKey, Constraints cns)
 		{
 			Contract.Requires<ArgumentNullException>(queryKey != null);
 			Contract.Requires<ArgumentException>(queryKey.Length > 0);
@@ -357,7 +357,7 @@ namespace FlitBit.Data.SqlServer
 			}
 		}
 		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
-		internal static Type MakeUpdateCommand<TDataModel, TParam, TParam1, TParam2>(Mapping<TDataModel> mapping, string queryKey, Constraints cns)
+		internal static Type MakeUpdateCommand<TDataModel, TParam, TParam1, TParam2>(IMapping<TDataModel> mapping, string queryKey, Constraints cns)
 		{
 			Contract.Requires<ArgumentNullException>(queryKey != null);
 			Contract.Requires<ArgumentException>(queryKey.Length > 0);
@@ -376,7 +376,7 @@ namespace FlitBit.Data.SqlServer
 			}
 		}
 		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
-		internal static Type MakeUpdateCommand<TDataModel, TParam, TParam1, TParam2, TParam3>(Mapping<TDataModel> mapping, string queryKey, Constraints cns)
+		internal static Type MakeUpdateCommand<TDataModel, TParam, TParam1, TParam2, TParam3>(IMapping<TDataModel> mapping, string queryKey, Constraints cns)
 		{
 			Contract.Requires<ArgumentNullException>(queryKey != null);
 			Contract.Requires<ArgumentException>(queryKey.Length > 0);
@@ -395,7 +395,7 @@ namespace FlitBit.Data.SqlServer
 			}
 		}
 		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
-		internal static Type MakeUpdateCommand<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4>(Mapping<TDataModel> mapping, string queryKey, Constraints cns)
+		internal static Type MakeUpdateCommand<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4>(IMapping<TDataModel> mapping, string queryKey, Constraints cns)
 		{
 			Contract.Requires<ArgumentNullException>(queryKey != null);
 			Contract.Requires<ArgumentException>(queryKey.Length > 0);
@@ -414,7 +414,7 @@ namespace FlitBit.Data.SqlServer
 			}
 		}
 		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
-		internal static Type MakeUpdateCommand<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5>(Mapping<TDataModel> mapping, string queryKey, Constraints cns)
+		internal static Type MakeUpdateCommand<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5>(IMapping<TDataModel> mapping, string queryKey, Constraints cns)
 		{
 			Contract.Requires<ArgumentNullException>(queryKey != null);
 			Contract.Requires<ArgumentException>(queryKey.Length > 0);
@@ -433,7 +433,7 @@ namespace FlitBit.Data.SqlServer
 			}
 		}
 		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
-		internal static Type MakeUpdateCommand<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6>(Mapping<TDataModel> mapping, string queryKey, Constraints cns)
+		internal static Type MakeUpdateCommand<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6>(IMapping<TDataModel> mapping, string queryKey, Constraints cns)
 		{
 			Contract.Requires<ArgumentNullException>(queryKey != null);
 			Contract.Requires<ArgumentException>(queryKey.Length > 0);
@@ -452,7 +452,7 @@ namespace FlitBit.Data.SqlServer
 			}
 		}
 		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
-		internal static Type MakeUpdateCommand<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7>(Mapping<TDataModel> mapping, string queryKey, Constraints cns)
+		internal static Type MakeUpdateCommand<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7>(IMapping<TDataModel> mapping, string queryKey, Constraints cns)
 		{
 			Contract.Requires<ArgumentNullException>(queryKey != null);
 			Contract.Requires<ArgumentException>(queryKey.Length > 0);
@@ -471,7 +471,7 @@ namespace FlitBit.Data.SqlServer
 			}
 		}
 		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
-		internal static Type MakeUpdateCommand<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8>(Mapping<TDataModel> mapping, string queryKey, Constraints cns)
+		internal static Type MakeUpdateCommand<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8>(IMapping<TDataModel> mapping, string queryKey, Constraints cns)
 		{
 			Contract.Requires<ArgumentNullException>(queryKey != null);
 			Contract.Requires<ArgumentException>(queryKey.Length > 0);
@@ -490,7 +490,7 @@ namespace FlitBit.Data.SqlServer
 			}
 		}
 		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
-		internal static Type MakeUpdateCommand<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>(Mapping<TDataModel> mapping, string queryKey, Constraints cns)
+		internal static Type MakeUpdateCommand<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>(IMapping<TDataModel> mapping, string queryKey, Constraints cns)
 		{
 			Contract.Requires<ArgumentNullException>(queryKey != null);
 			Contract.Requires<ArgumentException>(queryKey.Length > 0);
@@ -511,7 +511,7 @@ namespace FlitBit.Data.SqlServer
 
 		private static class EmitImplementation<TDataModel>
 		{
-			public static Type BuildUpdateCommand(EmittedModule module, string typeName, Mapping<TDataModel> mapping, Constraints cns, Type baseType)
+			public static Type BuildUpdateCommand(EmittedModule module, string typeName, IMapping<TDataModel> mapping, Constraints cns, Type baseType)
 			{
 				Contract.Requires<ArgumentNullException>(module != null);
 				Contract.Requires<ArgumentNullException>(typeName != null);
@@ -540,7 +540,7 @@ namespace FlitBit.Data.SqlServer
 				return builder.Ref.Target;
 			}
 
-			public static void ImplementBindQueryCommand(EmittedClass builder, Type baseType, Mapping<TDataModel> mapping, Constraints cns)
+			public static void ImplementBindQueryCommand(EmittedClass builder, Type baseType, IMapping<TDataModel> mapping, Constraints cns)
 			{
 				var method =
 					builder.DefineOverrideMethod(baseType.GetMethod("BindCommand", BindingFlags.NonPublic | BindingFlags.Instance));
@@ -593,7 +593,7 @@ namespace FlitBit.Data.SqlServer
 		static class EmitImplementation<TDataModel, TImpl>
 			where TImpl : class, IDataModel, TDataModel, new()
 		{
-			internal static Type BuildCreateCommand(EmittedModule module, string typeName, Mapping<TDataModel> mapping, DynamicSql sql)
+			internal static Type BuildCreateCommand(EmittedModule module, string typeName, IMapping<TDataModel> mapping, DynamicSql sql)
 			{
 				Contract.Requires<ArgumentNullException>(module != null);
 				Contract.Requires<ArgumentNullException>(typeName != null);
@@ -622,7 +622,7 @@ namespace FlitBit.Data.SqlServer
 				return builder.Ref.Target;
 			}
 
-			static void ImplementCreateBindCommand(EmittedClass builder, Type baseType, Mapping<TDataModel> mapping, DynamicSql sql)
+			static void ImplementCreateBindCommand(EmittedClass builder, Type baseType, IMapping<TDataModel> mapping, DynamicSql sql)
 			{
 				var method =
 					builder.DefineOverrideMethod(baseType.GetMethod("BindCommand", BindingFlags.NonPublic | BindingFlags.Instance));
@@ -723,7 +723,7 @@ namespace FlitBit.Data.SqlServer
 				});
 			}
 
-			internal static Type BuildUpdateCommand(EmittedModule module, string typeName, Mapping<TDataModel> mapping, DynamicSql sql)
+			internal static Type BuildUpdateCommand(EmittedModule module, string typeName, IMapping<TDataModel> mapping, DynamicSql sql)
 			{
 				Contract.Requires<ArgumentNullException>(module != null);
 				Contract.Requires<ArgumentNullException>(typeName != null);
@@ -753,7 +753,7 @@ namespace FlitBit.Data.SqlServer
 				return builder.Ref.Target;
 			}
 
-			static void ImplementUpdateBindCommand(EmittedClass builder, Type baseType, Mapping<TDataModel> mapping, DynamicSql sql)
+			static void ImplementUpdateBindCommand(EmittedClass builder, Type baseType, IMapping<TDataModel> mapping, DynamicSql sql)
 			{
 				var method =
 					builder.DefineOverrideMethod(baseType.GetMethod("BindCommand", BindingFlags.NonPublic | BindingFlags.Instance));
@@ -852,7 +852,7 @@ namespace FlitBit.Data.SqlServer
 				});
 			}
 
-			internal static Type BuildDeleteCommand<TIdentityKey>(EmittedModule module, string typeName, Mapping<TDataModel> mapping, DynamicSql sql)
+			internal static Type BuildDeleteCommand<TIdentityKey>(EmittedModule module, string typeName, IMapping<TDataModel> mapping, DynamicSql sql)
 			{
 				Contract.Requires<ArgumentNullException>(module != null);
 				Contract.Requires<ArgumentNullException>(typeName != null);
@@ -883,7 +883,7 @@ namespace FlitBit.Data.SqlServer
 				return builder.Ref.Target;
 			}
 
-			internal static Type BuildReadByIdCommand<TIdentityKey>(EmittedModule module, string typeName, Mapping<TDataModel> mapping, DynamicSql sql)
+			internal static Type BuildReadByIdCommand<TIdentityKey>(EmittedModule module, string typeName, IMapping<TDataModel> mapping, DynamicSql sql)
 			{
 				Contract.Requires<ArgumentNullException>(module != null);
 				Contract.Requires<ArgumentNullException>(typeName != null);
@@ -913,7 +913,7 @@ namespace FlitBit.Data.SqlServer
 				return builder.Ref.Target;
 			}
 
-			public static Type BuildRepository<TIdentityKey>(EmittedModule module, string typeName, Mapping<TDataModel> mapping)
+			public static Type BuildRepository<TIdentityKey>(EmittedModule module, string typeName, IMapping<TDataModel> mapping)
 			{
 				Contract.Requires<ArgumentNullException>(module != null);
 				Contract.Requires<ArgumentNullException>(typeName != null);
@@ -941,7 +941,7 @@ namespace FlitBit.Data.SqlServer
 				return builder.Ref.Target;
 			}
 
-			private static void ImplementGetIdentity<TIdentityKey>(EmittedClass builder, Type baseType, Mapping<TDataModel> mapping)
+			private static void ImplementGetIdentity<TIdentityKey>(EmittedClass builder, Type baseType, IMapping<TDataModel> mapping)
 			{
 				var method = builder
 					.DefineOverrideMethod(baseType.GetMethod("GetIdentity", BindingFlags.Public | BindingFlags.Instance));
@@ -960,7 +960,7 @@ namespace FlitBit.Data.SqlServer
 			}
 
 			static void ImplementByIdBindCommand<TIdentityKey>(EmittedClass builder, Type baseType,
-				Mapping<TDataModel> mapping, DynamicSql sql)
+				IMapping<TDataModel> mapping, DynamicSql sql)
 			{
 				var method =
 					builder.DefineOverrideMethod(baseType.GetMethod("BindCommand", BindingFlags.NonPublic | BindingFlags.Instance));
@@ -990,7 +990,7 @@ namespace FlitBit.Data.SqlServer
 			}
 
 
-			internal static Type BuildQueryCommand(EmittedModule module, string typeName, Mapping<TDataModel> mapping, Constraints cns, Type baseType)
+			internal static Type BuildQueryCommand(EmittedModule module, string typeName, IMapping<TDataModel> mapping, Constraints cns, Type baseType)
 			{
 				Contract.Requires<ArgumentNullException>(module != null);
 				Contract.Requires<ArgumentNullException>(typeName != null);

@@ -2,12 +2,12 @@
 using System.Linq;
 using System.Linq.Expressions;
 using FlitBit.Data.Expressions;
+using FlitBit.Data.Meta;
 using FlitBit.Data.SqlServer;
 
 namespace FlitBit.Data.DataModel
 {
-
-    /// <summary>
+	  /// <summary>
     /// Builds SQL commands over a data model.
     /// </summary>
     /// <typeparam name="TDataModel">data model's type</typeparam>

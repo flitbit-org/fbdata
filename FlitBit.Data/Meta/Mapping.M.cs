@@ -28,16 +28,8 @@ namespace FlitBit.Data.Meta
 	///   Default mapping implementation for type TModel.
 	/// </summary>
 	/// <typeparam name="TModel"></typeparam>
-	public class Mapping<TModel> : IMapping<TModel>
+	internal class Mapping<TModel> : IMapping<TModel>
 	{
-		static Lazy<Mapping<TModel>> __mapping = new Lazy<Mapping<TModel>>(() => new Mapping<TModel>(),
-																														LazyThreadSafetyMode.ExecutionAndPublication);
-
-		/// <summary>
-		/// Gets the single mapping instance.
-		/// </summary>
-		public static Mapping<TModel> Instance { get { return __mapping.Value; } }
-
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 		int _revision;
 
@@ -99,12 +91,8 @@ namespace FlitBit.Data.Meta
 			_hierarchyMapping.OnChanged += (sender, e) => Interlocked.Increment(ref _revision);
 			_identityKey = FactoryProvider.Factory.CreateInstance<IdentityKey<TModel>>();
 			_identity = new IdentityMapping<TModel>(this);
-			_naturalKey = new NaturalKeyMapping<TModel>(this);
-			
-			this.InitFromMetadata();
+			_naturalKey = new NaturalKeyMapping<TModel>(this);			
 		}
-
-		public int LocalRevision { get { return _revision; } }
 
 		public HierarchyMapping<TModel> Hierarchy { get { return _hierarchyMapping; } } 
 		public IdentityKey<TModel> IdentityKey { get { return _identityKey; } }
@@ -115,7 +103,7 @@ namespace FlitBit.Data.Meta
 			{
 				if (typeof(TModel).IsAbstract)
 				{
-					return DataModelEmitter.ConcreteType<TModel>();
+					return DataModelEmitter.ConcreteType(this);
 				}
 				return typeof(TModel);	
 			}
@@ -788,7 +776,7 @@ namespace FlitBit.Data.Meta
 			}
 			var helper = GetDbProviderHelper();
 			var get = typeof (DbProviderHelper).MatchGenericMethod("GetModelBinder", 2, typeof (IDataModelBinder<,>),
-				typeof (Mapping<>))
+				typeof (IMapping<>))
 				.MakeGenericMethod(typeof (TModel), IdentityKeyType);
 			_binder = (IDataModelBinder) get.Invoke(helper, new object[] {this});
 			return _binder;
@@ -802,7 +790,7 @@ namespace FlitBit.Data.Meta
 		{
 			var ht = typeof(IHierarchyMapping<TModel>).MatchGenericMethod("NotifySubtype", 1, typeof(void), typeof(IMapping<>))
 																								.MakeGenericMethod(mapping.RuntimeType);
-			ht.Invoke(Instance.Hierarchy, new object[] {mapping});
+			ht.Invoke(Hierarchy, new object[] {mapping});
 		}
 
 		#endregion
@@ -818,7 +806,6 @@ namespace FlitBit.Data.Meta
 			var helper = GetDbProviderHelper();
 			return (helper != null) ? helper.GetDbTypeEmitter(this, column) : null;
 		}
-
 
 		public int Revision
 		{

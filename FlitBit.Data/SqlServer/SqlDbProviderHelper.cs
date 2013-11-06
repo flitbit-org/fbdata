@@ -141,7 +141,7 @@ WHERE name = @schema"
 			return (name[0] == '@') ? name : String.Concat("@", name);
 		}
 
-		public override IDataModelBinder<TModel, TIdentityKey> GetModelBinder<TModel, TIdentityKey>(Mapping<TModel> mapping)
+		public override IDataModelBinder<TModel, TIdentityKey> GetModelBinder<TModel, TIdentityKey>(IMapping<TModel> mapping)
 		{
 			Type binderType;
 
@@ -149,11 +149,11 @@ WHERE name = @schema"
 			{
 				case MappingStrategy.Default:
 					binderType = typeof(DynamicHybridInheritanceTreeBinder<,,>).MakeGenericType(typeof(TModel), typeof(TIdentityKey),
-																																													Mapping<TModel>.Instance.ConcreteType);
+																																													mapping.ConcreteType);
 					break;
 				case MappingStrategy.OneClassOneTable:
 					binderType = typeof(OneClassOneTableBinder<,,>).MakeGenericType(typeof(TModel), typeof(TIdentityKey),
-																																													Mapping<TModel>.Instance.ConcreteType);
+																																													mapping.ConcreteType);
 					break;
 				case MappingStrategy.OneInheritanceTreeOneTable:
 					throw new NotImplementedException();

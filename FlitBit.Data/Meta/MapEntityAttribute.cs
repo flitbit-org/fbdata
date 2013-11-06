@@ -173,8 +173,9 @@ namespace FlitBit.Data.Meta
 				var cra = task as MapEntityAttribute;
 				if (cra != null && target != null)
 				{
-					MethodInfo concreteMethod = ConcreteTypeMethod.MakeGenericMethod(target);
-					var concrete = (Type) concreteMethod.Invoke(null, null);
+					var concreteType = typeof (DataModel<>).MakeGenericType(target)
+						.GetProperty("ConcreteType", BindingFlags.Public | BindingFlags.Static);
+					var concrete = (Type) concreteType.GetGetMethod().Invoke(null, null);
 					MethodInfo reg = RegisterMethod.MakeGenericMethod(target, concrete);
 					reg.Invoke(FactoryProvider.Factory, null);
 				}

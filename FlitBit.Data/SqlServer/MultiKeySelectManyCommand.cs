@@ -16,7 +16,7 @@ namespace FlitBit.Data.SqlServer
 		readonly string _selectPage;
 		readonly int[] _offsets;
 
-		protected MultiKeySelectManyCommand(Mapping<TModel> mapping)
+		protected MultiKeySelectManyCommand(IMapping<TModel> mapping)
 		{
 			var idCols = mapping.Identity.Columns.ToArray();
 			var columns = mapping.Columns.ToArray();

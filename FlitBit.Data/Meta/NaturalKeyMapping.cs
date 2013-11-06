@@ -11,6 +11,7 @@ using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
 using FlitBit.Core;
+using FlitBit.Data.DataModel;
 
 namespace FlitBit.Data.Meta
 {
@@ -66,7 +67,7 @@ namespace FlitBit.Data.Meta
 			return this;
 		}
 
-		public Mapping<T> End()
+		public IMapping<T> End()
 		{
 			return _owner;
 		}

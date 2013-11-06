@@ -43,7 +43,7 @@ namespace FlitBit.Data.SqlServer
 		///   Creates a new instance.
 		/// </summary>
 		/// <param name="mapping"></param>
-		public OneClassOneTableBinder(Mapping<TDataModel> mapping)
+		public OneClassOneTableBinder(IMapping<TDataModel> mapping)
 			: base(mapping, MappingStrategy.OneClassOneTable)
 		{
 			Contract.Requires<ArgumentNullException>(mapping != null);

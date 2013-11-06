@@ -32,7 +32,13 @@ namespace FlitBit.Data.DataModel
 			Contract.Requires<ArgumentNullException>(sqlWriter != null);
 			QueryKey = queryKey;
 			_sqlWriter = sqlWriter;
+			Mapping = DataModel<TDataModel>.Mapping;
 		}
+
+		/// <summary>
+		/// Gets the data model's mapping.
+		/// </summary>
+		public IMapping<TDataModel> Mapping { get; private set; }
 
 		/// <summary>
 		/// Gets the builder's sql writer.
@@ -144,7 +150,7 @@ namespace FlitBit.Data.DataModel
 
 		ValueReference FormatValueReference(Expression expr, Constraints cns)
 		{
-			var mapping = Mapping<TDataModel>.Instance;
+			var mapping = Mapping;
 			var helper = mapping.GetDbProviderHelper();
 			ValueReference res;
 			if (expr.NodeType == ExpressionType.MemberAccess)
@@ -264,7 +270,7 @@ namespace FlitBit.Data.DataModel
 				throw new NotSupportedException();
 			var key = "";
 			var outer = default(Join);
-			IMapping fromMapping = Mapping<TDataModel>.Instance;
+			IMapping fromMapping = Mapping;
 			foreach (var it in stack)
 			{
 				var m = it.Member;

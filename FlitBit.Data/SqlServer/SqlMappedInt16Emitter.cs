@@ -5,6 +5,7 @@ using System.Reflection.Emit;
 using System.Text;
 using FlitBit.Data.Meta;
 using FlitBit.Emit;
+using FlitBit.Data.DataModel;
 
 namespace FlitBit.Data.SqlServer
 {
@@ -21,7 +22,7 @@ namespace FlitBit.Data.SqlServer
 			columnIndex.LoadValue(il);
 			il.CallVirtual<DbDataReader>("GetInt16", typeof(int));
 		}
-		public override void EmitColumnInitializationDDL<TModel>(StringBuilder buffer, Mapping<TModel> mapping, ColumnMapping<TModel> col)
+		public override void EmitColumnInitializationDDL<TModel>(StringBuilder buffer, IMapping<TModel> mapping, ColumnMapping<TModel> col)
 		{
 			if (col.IsSynthetic)
 			{
