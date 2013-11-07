@@ -27,40 +27,33 @@ namespace FlitBit.Data.Tests.Catalog
 		[TestMethod]
 		public void OneTypeOneTableMappingTest()
 		{
-			var mapping = Mappings.Instance.ForType<IMappedType>();
+			var untypedRepo = DataModel<IMappedType>.GetRepository<int>();
 
-			Assert.IsNotNull(mapping);
-			Assert.IsNotNull(mapping.Columns);
+			var repo = (IDataModelRepository<IMappedType, int, SqlConnection>) untypedRepo;
 
-			var binder = (IDataModelBinder<IMappedType,int, SqlConnection>)mapping.GetBinder();
+			var binder = DataModel<IMappedType>.Binder;
 			var builder = new StringBuilder(2000);
 			binder.BuildDdlBatch(builder);
 			var sql = builder.ToString();
-			Assert.IsNotNull(mapping.ConcreteType);
 			Assert.IsNotNull(sql);
 
-			var all = binder.GetAllCommand();
-			var create = binder.GetCreateCommand();
-			var update = binder.GetUpdateCommand();
-			var readByType = binder
-				.MakeQueryCommand<Type>("ByRuntimeType")
-				.Where((model, runtimeType) => model.RuntimeType == runtimeType);
+			var byRuntimeType = repo.Where<Type>("ByRuntimeType", (model, runtimeType) => model.RuntimeType == runtimeType);
 
 			using (var cx = DbContext.NewContext())
 			{
 				using (var cn = cx.SharedOrNewConnection<SqlConnection>("test-data"))
 				{
-					var them = all.ExecuteMany(cx, cn, QueryBehavior.Default);
+					var them = repo.All(cx);
 					Assert.IsNotNull(them);
 					Assert.IsTrue(them.Succeeded);
 
-					var existing = readByType.ExecuteMany(cx, cn, QueryBehavior.Default, typeof(IMappedType));
+					var existing = repo.ExecuteMany(byRuntimeType, cx, QueryBehavior.Default, typeof (IMappedType));
 					var res = existing.Results.SingleOrDefault();
 					if (res != null)
 					{
-						var ver = typeof(IMappedType).Assembly
-																				.GetName()
-																				.Version;
+						var ver = typeof (IMappedType).Assembly
+							.GetName()
+							.Version;
 						if (res.LatestVersion == ver.ToString(3))
 						{
 							res.LatestVersion = new Version(ver.Major, ver.Minor, ver.Build + 1).ToString();
@@ -69,26 +62,24 @@ namespace FlitBit.Data.Tests.Catalog
 						{
 							res.LatestVersion = ver.ToString(3);
 						}
-						update.ExecuteSingle(cx, cn, res);
+						repo.Update(cx, res);
 					}
 					else
 					{
 						var model = FactoryProvider.Factory.CreateInstance<IMappedType>();
 						model.Catalog = "unitest";
-						model.LatestVersion = typeof(IMappedType).Assembly.GetName()
-																										.Version.ToString(3);
+						model.LatestVersion = typeof (IMappedType).Assembly.GetName()
+							.Version.ToString(3);
 						model.Schema = "OrmCatalog";
 						model.MappedTable = "MappedType";
-						model.RuntimeType = typeof(IMappedType);
+						model.RuntimeType = typeof (IMappedType);
 						model.OriginalVersion = model.LatestVersion;
 						model.ReadObjectName = "MappedType";
-						model.Strategy = MappingStrategy.OneClassOneTable; 
+						model.Strategy = MappingStrategy.OneClassOneTable;
 
-						var created = create.ExecuteSingle(cx, cn, model);
+						var created = repo.Create(cx, model);
 						Assert.IsNotNull(created);
 					}
-
-
 				}
 			}
 		}

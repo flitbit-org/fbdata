@@ -8,9 +8,9 @@ namespace FlitBit.Data
 	/// Maintains a model's hierarchy mappings.
 	/// </summary>
 	/// <typeparam name="TModel">model type TModel</typeparam>
-	public class HierarchyMapping<TModel> : IHierarchyMapping<TModel>, IHierarchyMappings<TModel>
+	public class HierarchyMapping<TModel> : IHierarchyMapping<TModel>, IHierarchyMappings
 	{
-		readonly List<IMapping<TModel>> _knownSubtypes = new List<IMapping<TModel>>();
+		readonly List<IMapping> _knownSubtypes = new List<IMapping>();
 
 		#region IHierarchyMapping<M> Members
 
@@ -21,7 +21,7 @@ namespace FlitBit.Data
 		/// <param name="mapping">the submodel's mapping.</param>
 		public void NotifySubtype<TSubModel>(IMapping<TSubModel> mapping) where TSubModel : TModel
 		{
-			this._knownSubtypes.Add((IMapping<TModel>) mapping);
+			_knownSubtypes.Add(mapping);
 			if (OnChanged != null)
 			{
 				OnChanged(this, new EventArgs());
@@ -30,12 +30,12 @@ namespace FlitBit.Data
 
 		#endregion
 
-		#region IHierarchyMappings<M> Members
+		#region IHierarchyMappings Members
 
 		/// <summary>
 		/// Gets a model's known subtype's mappings.
 		/// </summary>
-		public IEnumerable<IMapping<TModel>> KnownSubtypes { get { return this._knownSubtypes.AsReadOnly(); } }
+		public IEnumerable<IMapping> KnownSubtypes { get { return _knownSubtypes.AsReadOnly(); } }
 
 		#endregion
 

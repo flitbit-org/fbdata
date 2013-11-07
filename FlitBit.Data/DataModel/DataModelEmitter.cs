@@ -129,8 +129,7 @@ namespace FlitBit.Data.DataModel
 						if (prop.IsReference && prop.HasIdentityKey)
 						{
 							il.LoadArg_0();
-							il.LoadNull();
-							il.NewObj(prop.FieldType.GetConstructor(new[] {prop.Source.PropertyType}));
+							il.NewObj(prop.FieldType.GetConstructor(Type.EmptyTypes));
 							il.StoreField(prop.EmittedField);
 						}
 						if (prop.IsObservableCollection)

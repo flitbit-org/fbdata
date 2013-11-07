@@ -29,7 +29,7 @@ namespace FlitBit.Data.Meta
 			{
 				if (_emitter == null || _emitter.Item1 != Mapping.Revision)
 				{
-					_emitter = Tuple.Create<int, MappedDbTypeEmitter>(Mapping.Revision, Mapping.GetEmitterFor(this));
+					_emitter = Tuple.Create<int, MappedDbTypeEmitter>(Mapping.Revision, Mapping.GetColumnEmitter(this));
 				}
 				return _emitter.Item2;
 			}

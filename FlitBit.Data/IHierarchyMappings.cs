@@ -6,12 +6,11 @@ namespace FlitBit.Data
 	/// <summary>
 	/// Maintains a model's hierarchy mapping.
 	/// </summary>
-	/// <typeparam name="TModel">model type TModel</typeparam>
-	public interface IHierarchyMappings<out TModel>
+	public interface IHierarchyMappings
 	{
 		/// <summary>
 		/// Gets a model's known subtype's mappings.
 		/// </summary>
-		IEnumerable<IMapping<TModel>> KnownSubtypes { get; }
+		IEnumerable<IMapping> KnownSubtypes { get; }
 	}
 }

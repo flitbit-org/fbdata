@@ -16,14 +16,17 @@ namespace FlitBit.Data.DataModel
 
 		private TModel _model;
 
-		public DataModelReference()
+		public DataModelReference() : this(default(TIdentityKey))
 		{
 		}
 
-		public DataModelReference(TModel model, TIdentityKey id)
+		public DataModelReference(TModel model)
 		{
 			_model = model;
-			IdentityKey = id;			
+			if (!EqualityComparer<TModel>.Default.Equals(default(TModel), model))
+			{
+				IdentityKey = (TIdentityKey)DataModel<TModel>.IdentityKey.UntypedKey(model);
+			}
 		}
 
 		/// <summary>

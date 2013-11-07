@@ -23,7 +23,7 @@ namespace FlitBit.Data.Tests.Meta
 		[TestMethod]
 		public void TestMethod1()
 		{
-			var party = Mapping<IParty>.Instance;
+			var party = DataModel<IParty>.Mapping;
 			var idk = party.IdentityKeyType;
 			Assert.IsNotNull(party);
 			Assert.IsNotNull(party.Columns);
@@ -37,8 +37,7 @@ namespace FlitBit.Data.Tests.Meta
 
 			Assert.IsNotNull(sql);
 
-			var people = Mapping<IPerson>.Instance;
-			idk = Mapping<IParty>.Instance.IdentityKeyType;
+			var people = DataModel<IPerson>.Mapping;
 
 			Assert.IsNotNull(people);
 
@@ -55,13 +54,13 @@ namespace FlitBit.Data.Tests.Meta
 
 			Assert.IsNotNull(sql);
 
-			var organizations = Mapping<IOrganization>.Instance;
-			var groups = Mapping<IGroup>.Instance;
+			var organizations = DataModel<IOrganization>.Mapping;
+			var groups = DataModel<IGroup>.Mapping;
 
 			var parties = party.Hierarchy.KnownSubtypes;
 			Assert.IsNotNull(parties);
-			Assert.IsNotNull(party.ConcreteType);
-			Assert.IsNotNull(people.ConcreteType);
+			Assert.IsNotNull(DataModel<IParty>.ConcreteType);
+			Assert.IsNotNull(DataModel<IPerson>.ConcreteType);
 		}
 	}
 }

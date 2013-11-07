@@ -46,5 +46,8 @@ namespace FlitBit.Data.Catalog
 
 		[MapColumn]
 		MappingStrategy Strategy { get; set; }
+
+		[MapColumn]
+		bool? Active { get; set; }
 	}
 }

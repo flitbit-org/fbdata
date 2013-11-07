@@ -1,4 +1,5 @@
 ﻿using System;
+using FlitBit.Data.DataModel;
 using FlitBit.Data.Meta;
 using FlitBit.ObjectIdentity;
 using FlitBit.Wireup.Meta;
@@ -23,7 +24,7 @@ namespace FlitBit.Data.Tests.Meta.Models
 
 	public sealed class PreparePartyMapping	: PrepareDataMapping<IParty>
 	{
-		protected override void PrepareMapping(Mapping<IParty> mapping)
+		protected override void PrepareMapping(IMapping<IParty> mapping)
 		{
 			mapping
 					.Column(x => x.ID).WithBehaviors(ColumnBehaviors.Synthetic).End()

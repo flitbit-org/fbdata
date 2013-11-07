@@ -14,7 +14,7 @@ namespace FlitBit.Data.Meta.Tests
 		[TestMethod]
 		public void Monkey()
 		{
-			Mapping<TestPerson>.Instance
+			Mappings.Instance.ForType<TestPerson>()
 												.UsesConnection("test-data")
 												.Column(x => x.ID).WithBehaviors(ColumnBehaviors.Synthetic).End()
 												.Column(x => x.ExternalID).WithBehaviors(ColumnBehaviors.AlternateKey).End()

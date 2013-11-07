@@ -36,11 +36,16 @@ WHERE name = @schema"
 		protected override void Initialize()
 		{
 			base.Initialize();
-			MapRuntimeType<bool>(new SqlMappedBoolAsBitEmitter()); 
+			MapRuntimeType<bool>(new SqlMappedBoolAsBitEmitter());
+			MapRuntimeType<bool?>(new SqlMappedNullableBoolAsBitEmitter());
 			MapRuntimeType<DateTime>(new SqlMappedDateTimeEmitter(SqlDbType.DateTime2));
+			MapRuntimeType<DateTime?>(new SqlMappedNullableDateTimeEmitter(SqlDbType.DateTime2));
 			MapRuntimeType<Int16>(new SqlMappedInt16Emitter());
+			MapRuntimeType<Int16?>(new SqlMappedNullableInt16Emitter());
 			MapRuntimeType<Int32>(new SqlMappedInt32Emitter());
+			MapRuntimeType<Int32?>(new SqlMappedNullableInt32Emitter());
 			MapRuntimeType<Int64>(new SqlMappedInt64Emitter());
+			MapRuntimeType<Int64?>(new SqlMappedNullableInt64Emitter());
 			MapRuntimeType<string>(new SqlMappedStringEmitter(SqlDbType.NVarChar));
 			MapRuntimeType<Type>(new SqlMappedTypeToStringEmitter());
 		}
@@ -144,16 +149,17 @@ WHERE name = @schema"
 		public override IDataModelBinder<TModel, TIdentityKey> GetModelBinder<TModel, TIdentityKey>(IMapping<TModel> mapping)
 		{
 			Type binderType;
+			Type concrete = DataModel<TModel>.ConcreteType;
 
 			switch (mapping.Strategy)
 			{
 				case MappingStrategy.Default:
 					binderType = typeof(DynamicHybridInheritanceTreeBinder<,,>).MakeGenericType(typeof(TModel), typeof(TIdentityKey),
-																																													mapping.ConcreteType);
+																																													concrete);
 					break;
 				case MappingStrategy.OneClassOneTable:
 					binderType = typeof(OneClassOneTableBinder<,,>).MakeGenericType(typeof(TModel), typeof(TIdentityKey),
-																																													mapping.ConcreteType);
+																																													concrete);
 					break;
 				case MappingStrategy.OneInheritanceTreeOneTable:
 					throw new NotImplementedException();

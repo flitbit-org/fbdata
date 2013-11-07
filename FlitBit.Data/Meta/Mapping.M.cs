@@ -24,6 +24,7 @@ using Inflector;
 
 namespace FlitBit.Data.Meta
 {
+	
 	/// <summary>
 	///   Default mapping implementation for type TModel.
 	/// </summary>
@@ -65,7 +66,7 @@ namespace FlitBit.Data.Meta
 		readonly Object _sync = new Object();
 
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
-		readonly ConcurrentQueue<Action> _whenCompleted = new ConcurrentQueue<Action>();
+		readonly ConcurrentQueue<Action<IMapping>> _whenCompleted = new ConcurrentQueue<Action<IMapping>>();
 
 		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
 		IDataModelBinder _binder;
@@ -96,18 +97,6 @@ namespace FlitBit.Data.Meta
 
 		public HierarchyMapping<TModel> Hierarchy { get { return _hierarchyMapping; } } 
 		public IdentityKey<TModel> IdentityKey { get { return _identityKey; } }
-
-		public Type ConcreteType
-		{
-			get
-			{
-				if (typeof(TModel).IsAbstract)
-				{
-					return DataModelEmitter.ConcreteType(this);
-				}
-				return typeof(TModel);	
-			}
-		}
 
 		/// <summary>
 		///   Indicates the entity's behaviors.
@@ -172,7 +161,7 @@ namespace FlitBit.Data.Meta
 		/// </returns>
 		public ColumnMapping<TModel> Column(Expression<Func<TModel, object>> expression)
 		{
-			Contract.Requires(expression != null);
+			Contract.Requires<ArgumentNullException>(expression != null);
 
 			var member = expression.GetMemberFromExpression();
 			Contract.Assert(member != null, "Expression must reference a field or property member");
@@ -218,7 +207,7 @@ namespace FlitBit.Data.Meta
 			return _helper;
 		}
 
-		public Mapping<TModel> InSchema(string schema)
+		public IMapping<TModel> InSchema(string schema)
 		{
 			Contract.Requires(schema != null);
 			Contract.Requires(schema.Length > 0);
@@ -241,12 +230,12 @@ namespace FlitBit.Data.Meta
 			return foreignObjectID.Member;
 		}
 
-		public Mapping<TModel> MapAllOperations()
+		public IMapping<TModel> MapAllOperations()
 		{
 			return MapAllOperations(this.Strategy);
 		}
 
-		public Mapping<TModel> MapAllOperations(MappingStrategy strategy)
+		public IMapping<TModel> MapAllOperations(MappingStrategy strategy)
 		{
 			this.Strategy = strategy;
 			var errors = new List<string>();
@@ -289,12 +278,12 @@ namespace FlitBit.Data.Meta
 			return this;
 		}
 
-		public Mapping<TModel> ReferencesType<TOther>(Expression<Func<TModel, TOther, bool>> expression)
+		public IMapping<TModel> ReferencesType<TOther>(Expression<Func<TModel, TOther, bool>> expression)
 		{
 			return this;
 		}
 
-		public Mapping<TModel> UsesConnection(string connection)
+		public IMapping<TModel> UsesConnection(string connection)
 		{
 			Contract.Requires<ArgumentNullException>(connection != null);
 			Contract.Requires<ArgumentException>(connection.Length > 0);
@@ -311,7 +300,7 @@ namespace FlitBit.Data.Meta
 		///   the type.
 		/// </param>
 		/// <returns></returns>
-		public Mapping<TModel> WithName(string name)
+		public IMapping<TModel> WithName(string name)
 		{
 			Contract.Requires<ArgumentNullException>(name != null);
 			Contract.Requires<ArgumentException>(name.Length > 0);
@@ -320,13 +309,13 @@ namespace FlitBit.Data.Meta
 			return this;
 		}
 
-		internal MappedDbTypeEmitter GetColumnEmitter(ColumnMapping column)
+		public MappedDbTypeEmitter GetColumnEmitter(ColumnMapping column)
 		{
 			var helper = this.GetDbProviderHelper();
 			return (helper != null) ? helper.GetDbTypeEmitter(this, column) : null;
 		}
 
-		internal void AddContributedColumn(ColumnMapping contributed)
+		public void AddContributedColumn(ColumnMapping contributed)
 		{
 			var name = contributed.TargetName;
 			lock (_sync)
@@ -342,7 +331,7 @@ namespace FlitBit.Data.Meta
 			Interlocked.Increment(ref _revision);
 		}
 
-		internal void AddDependency(IMapping target, DependencyKind kind, MemberInfo member)
+		public void AddDependency(IMapping target, DependencyKind kind, MemberInfo member)
 		{
 			lock (_sync)
 			{
@@ -355,7 +344,7 @@ namespace FlitBit.Data.Meta
 			}
 		}
 
-		internal CollectionMapping<TModel> DefineCollection(PropertyInfo property)
+		public CollectionMapping<TModel> DefineCollection(PropertyInfo property)
 		{
 			var name = property.Name;
 
@@ -370,7 +359,7 @@ namespace FlitBit.Data.Meta
 			return col;
 		}
 
-		internal ColumnMapping<TModel> DefineColumn(MemberInfo member)
+		public ColumnMapping<TModel> DefineColumn(MemberInfo member)
 		{
 			var name = member.Name;
 
@@ -389,7 +378,7 @@ namespace FlitBit.Data.Meta
 			return (ColumnMapping<TModel>) col;
 		}
 
-		internal Mapping<TModel> InitFromMetadata()
+		public IMapping<TModel> InitFromMetadata()
 		{
 			var typ = typeof(TModel);
 			var mod = typ.Module;
@@ -478,7 +467,7 @@ namespace FlitBit.Data.Meta
 			return this;
 		}
 
-		internal void MapCollectionFromMeta(PropertyInfo p, MapCollectionAttribute mapColl)
+		public void MapCollectionFromMeta(PropertyInfo p, MapCollectionAttribute mapColl)
 		{
 			var elmType = p.PropertyType.FindElementType();
 			IMapping elmMapping;
@@ -520,7 +509,7 @@ namespace FlitBit.Data.Meta
 			coll.ReferenceBehaviors = mapColl.ReferenceBehaviors;
 		}
 
-		internal void MapColumnFromMeta(PropertyInfo p, MapColumnAttribute mapColumn)
+		public void MapColumnFromMeta(PropertyInfo p, MapColumnAttribute mapColumn)
 		{
 			var column = this.DefineColumn(p);
 			if (!String.IsNullOrEmpty(mapColumn.TargetName))
@@ -573,14 +562,14 @@ namespace FlitBit.Data.Meta
 				column.DefineReference(foreignColumn, mapColumn.ReferenceBehaviors);
 			}
 		}
-		
-		void MarkComplete()
+
+		public void MarkComplete()
 		{
 			this.IsComplete = true;
-			Action a;
+			Action<IMapping> a;
 			while (_whenCompleted.TryDequeue(out a))
 			{
-				a();
+				a(this);
 			}
 		}
 
@@ -741,21 +730,21 @@ namespace FlitBit.Data.Meta
 		/// </summary>
 		/// <param name="action"></param>
 		/// <returns></returns>
-		public IMapping Completed(Action action)
+		public IMapping OnCompleted(Action<IMapping> action)
 		{
 			if (IsComplete)
 			{
-				action();
+				action(this);
 			}
 			else
 			{
 				_whenCompleted.Enqueue(action);
 				if (IsComplete)
 				{
-					Action a;
+					Action<IMapping> a;
 					while (_whenCompleted.TryDequeue(out a))
 					{
-						a();
+						a(this);
 					}
 				}
 			}
@@ -769,7 +758,7 @@ namespace FlitBit.Data.Meta
 		public IDataModelBinder GetBinder()
 		{
 			if (_binder != null) return _binder;
-			if (IdentityKeyType == null)
+			if (IdentityKey.KeyType == null)
 			{
 				throw new InvalidOperationException(String.Concat("IdentityKey not defined for type: ",
 					RuntimeType.GetReadableSimpleName(), "."));
@@ -777,7 +766,7 @@ namespace FlitBit.Data.Meta
 			var helper = GetDbProviderHelper();
 			var get = typeof (DbProviderHelper).MatchGenericMethod("GetModelBinder", 2, typeof (IDataModelBinder<,>),
 				typeof (IMapping<>))
-				.MakeGenericMethod(typeof (TModel), IdentityKeyType);
+				.MakeGenericMethod(typeof (TModel), IdentityKey.KeyType);
 			_binder = (IDataModelBinder) get.Invoke(helper, new object[] {this});
 			return _binder;
 		}
@@ -795,21 +784,14 @@ namespace FlitBit.Data.Meta
 
 		#endregion
 
-
-		public Type IdentityKeyType
-		{
-			get { return IdentityKey.KeyType; }
-		}
-
-		public MappedDbTypeEmitter GetEmitterFor(ColumnMapping column)
-		{
-			var helper = GetDbProviderHelper();
-			return (helper != null) ? helper.GetDbTypeEmitter(this, column) : null;
-		}
-
 		public int Revision
 		{
 			get { return Thread.VolatileRead(ref _revision); }
 		}
-}
+
+		public Type IdentityKeyType
+		{
+			get { return (HasIdentity) ? IdentityKey.KeyType : null; }
+		}
+	}
 }

@@ -140,7 +140,6 @@
     <Compile Include="BasicDbCommandTests.cs" />
     <Compile Include="Catalog\MappedTypeTests.cs" />
     <Compile Include="Catalog\Models\IMappedTypeDataModel.cs" />
-    <Compile Include="Catalog\Models\IMappedTypeRepository.cs" />
     <Compile Include="DataRepositoryTests.cs" />
     <Compile Include="DbConnectionExtensionTests.cs" />
     <Compile Include="DbContextTests.cs" />

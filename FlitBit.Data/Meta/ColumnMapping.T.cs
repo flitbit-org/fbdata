@@ -15,7 +15,7 @@ namespace FlitBit.Data.Meta
 
 		public IMapping<T> End()
 		{
-			return (Mapping<T>) Mapping;
+			return (IMapping<T>) Mapping;
 		}
 
 		public ColumnMapping<T> WithBehaviors(ColumnBehaviors behaviors)

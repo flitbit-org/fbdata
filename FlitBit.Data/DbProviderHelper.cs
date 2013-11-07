@@ -33,6 +33,7 @@ namespace FlitBit.Data
 		protected virtual void Initialize()
 		{
 			MapRuntimeType<bool>(new MappedBooleanEmitter());
+			MapRuntimeType<bool?>(new MappedNullableBooleanEmitter());
 			MapRuntimeType<byte>(new MappedByteEmitter());
 			MapRuntimeType<byte[]>(new MappedBinaryEmitter());
 			MapRuntimeType<char>(new MappedCharEmitter(DbType.String));

@@ -163,9 +163,9 @@ namespace FlitBit.Data.Meta
 			{
 				var self = this;
 				var path = new MemberInfo[] {Member};
-				Target.Completed(() =>
+				Target.OnCompleted(them =>
 				{
-					var refs = Target.ParticipatingMembers.Where(info => Mappings.ExistsFor(info.GetTypeOfValue()
+					var refs = them.ParticipatingMembers.Where(info => Mappings.ExistsFor(info.GetTypeOfValue()
 																																											.FindElementType()));
 					foreach (var mbr in refs)
 					{
@@ -202,9 +202,9 @@ namespace FlitBit.Data.Meta
 				if (!memberInfos.Contains(member))
 				{
 					var m = Mappings.AccessMappingFor(mtype);
-					m.Completed(() =>
+					m.OnCompleted(them =>
 					{
-						var refs = m.ParticipatingMembers.Where(info => Mappings.ExistsFor(info.GetTypeOfValue()
+						var refs = them.ParticipatingMembers.Where(info => Mappings.ExistsFor(info.GetTypeOfValue()
 																																									.FindElementType()));
 						foreach (var mbr in refs)
 						{

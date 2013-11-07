@@ -1,4 +1,3 @@
-using System;
 using System.Data;
 using System.Data.Common;
 using System.Reflection.Emit;
@@ -6,9 +5,9 @@ using FlitBit.Emit;
 
 namespace FlitBit.Data
 {
-	internal class MappedBooleanEmitter : MappedDbTypeEmitter<bool, DbType>
+	internal class MappedNullableBooleanEmitter : MappedDbTypeEmitter<bool?, DbType>
 	{
-		internal MappedBooleanEmitter()
+		internal MappedNullableBooleanEmitter()
 			: base(DbType.Boolean, DbType.Boolean)
 		{
 		}
@@ -26,6 +25,11 @@ namespace FlitBit.Data
 			reader.LoadValue(il);
 			columnIndex.LoadValue(il);
 			il.CallVirtual<DbDataReader>("GetBoolean", typeof(int));
+		}
+
+		protected override void EmitTranslateDbType(ILGenerator il)
+		{
+			il.NewObj(typeof(bool?).GetConstructor(new [] { typeof(bool) }));
 		}
 	}
 }
