@@ -47,8 +47,8 @@ namespace FlitBit.Data
 		/// <param name="behaviors"></param>
 		/// <param name="pageSize"></param>
 		/// <param name="page"></param>
-		/// <param name="pageCount"></param>
-		public QueryBehavior(QueryBehaviors behaviors, int pageSize, int page, long pageCount)
+		/// <param name="totalCount"></param>
+		public QueryBehavior(QueryBehaviors behaviors, int pageSize, int page, long totalCount)
 		{
 			Contract.Requires<ArgumentException>(behaviors.HasFlag(QueryBehaviors.Limited));
 			Contract.Requires<ArgumentOutOfRangeException>(pageSize > 0);
@@ -56,7 +56,7 @@ namespace FlitBit.Data
 			_behaviors = behaviors;
 			_limit = pageSize;
 			Page = page;
-			PageCount = pageCount;
+			TotalCount = totalCount;
 		}
 
 		/// <summary>
@@ -131,9 +131,9 @@ namespace FlitBit.Data
 		public object PageCorrelationKey { get; internal set; }
 
 		/// <summary>
-		///   Indicates the total number of pages in the query.
+		///   Indicates the total number results.
 		/// </summary>
-		public long PageCount { get; internal set; }
+		public long TotalCount { get; internal set; }
 
 		/// <summary>
 		///   Indicates the query's page size.
@@ -147,5 +147,62 @@ namespace FlitBit.Data
 		///   Indicates whether the query is paging backwards.
 		/// </summary>
 		public bool Backward { get; set; }
+
+		/// <summary>
+		/// Indicates whether there is a next page.
+		/// </summary>
+		public bool HasNext
+		{
+			get
+			{
+				if (IsPaging && PageSize > 0 && TotalCount > 0)
+				{
+					var pages = TotalCount/PageSize;
+					if ((TotalCount%PageSize) > 0) pages++;
+					return Page < pages;
+				}
+					return false;
+			}
+		}
+
+		/// <summary>
+		/// Indicates whether there is a prior page.
+		/// </summary>
+		public bool PriorNext
+		{
+			get
+			{
+				return IsPaging && Page > 1;
+			}
+		}
+
+		/// <summary>
+		/// Creates query behaviors for the next page.
+		/// </summary>
+		/// <returns></returns>
+		public QueryBehavior NextPage()
+		{
+			Contract.Requires<InvalidOperationException>(IsPaging);
+			var next = new QueryBehavior(Behaviors, PageSize, Page + 1, PageCorrelationKey, false)
+			{
+				TotalCount = TotalCount
+			};
+			return next;
+		}
+
+		/// <summary>
+		/// Creates query behaviors for the prior page.
+		/// </summary>
+		/// <returns></returns>
+		public QueryBehavior PriorPage()
+		{
+			Contract.Requires<InvalidOperationException>(IsPaging);
+			Contract.Requires<InvalidOperationException>(Page > 1);
+			var next = new QueryBehavior(Behaviors, PageSize, Page - 1, PageCorrelationKey, true)
+			{
+				TotalCount = TotalCount
+			};
+			return next;
+		}
 	}
 }

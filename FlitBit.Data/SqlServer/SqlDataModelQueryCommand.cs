@@ -38,7 +38,7 @@ namespace FlitBit.Data.SqlServer
 			var limited = behavior.IsLimited;
 			var page = behavior.Page - 1;
 			var res = new List<TDataModel>();
-			var pageCount = 0;
+			var totalRows = 0;
 			cn.EnsureConnectionIsOpen();
 			var query = (limited) ? PagingQuery.Text : AllQuery;
 
@@ -63,9 +63,9 @@ namespace FlitBit.Data.SqlServer
 					{
 						var model = new TImpl();
 						model.LoadFromDataReader(reader, offsets);
-						if (limited && pageCount == 0)
+						if (limited && totalRows == 0)
 						{
-							pageCount = reader.GetInt32(offsets.Length);
+							totalRows = reader.GetInt32(offsets.Length);
 						}
 						res.Add(model);
 					}
@@ -73,7 +73,7 @@ namespace FlitBit.Data.SqlServer
 			}
 			if (limited)
 			{
-				return new DataModelQueryResult<TDataModel>(new QueryBehavior(behavior.Behaviors, behavior.PageSize, page, pageCount),
+				return new DataModelQueryResult<TDataModel>(new QueryBehavior(behavior.Behaviors, behavior.PageSize, page, totalRows),
 					res);
 			}
 			return new DataModelQueryResult<TDataModel>(new QueryBehavior(behavior.Behaviors), res);
@@ -154,7 +154,7 @@ namespace FlitBit.Data.SqlServer
 			var limited = behavior.IsLimited;
 			var page = behavior.Page - 1;
 			var res = new List<TDataModel>();
-			var pageCount = 0;
+			var totalRows = 0;
 			cn.EnsureConnectionIsOpen();
 			var query = (limited) ? PagingQuery.Text : AllQuery;
 
@@ -178,9 +178,9 @@ namespace FlitBit.Data.SqlServer
 					{
 						var model = new TImpl();
 						model.LoadFromDataReader(reader, offsets);
-						if (limited && pageCount == 0)
+						if (limited && totalRows == 0)
 						{
-							pageCount = reader.GetInt32(offsets.Length);
+							totalRows = reader.GetInt32(offsets.Length);
 						}
 						res.Add(model);
 					}
@@ -188,7 +188,7 @@ namespace FlitBit.Data.SqlServer
 			}
 			if (limited)
 			{
-				return new DataModelQueryResult<TDataModel>(new QueryBehavior(behavior.Behaviors, behavior.PageSize, page, pageCount),
+				return new DataModelQueryResult<TDataModel>(new QueryBehavior(behavior.Behaviors, behavior.PageSize, page, totalRows),
 					res);
 			}
 			return new DataModelQueryResult<TDataModel>(new QueryBehavior(behavior.Behaviors), res);
@@ -271,7 +271,7 @@ namespace FlitBit.Data.SqlServer
 			var limited = behavior.IsLimited;
 			var page = behavior.Page - 1;
 			var res = new List<TDataModel>();
-			var pageCount = 0;
+			var totalRows = 0;
 			cn.EnsureConnectionIsOpen();
 			var query = (limited) ? PagingQuery.Text : AllQuery;
 
@@ -295,9 +295,9 @@ namespace FlitBit.Data.SqlServer
 					{
 						var model = new TImpl();
 						model.LoadFromDataReader(reader, offsets);
-						if (limited && pageCount == 0)
+						if (limited && totalRows == 0)
 						{
-							pageCount = reader.GetInt32(offsets.Length);
+							totalRows = reader.GetInt32(offsets.Length);
 						}
 						res.Add(model);
 					}
@@ -305,7 +305,7 @@ namespace FlitBit.Data.SqlServer
 			}
 			if (limited)
 			{
-				return new DataModelQueryResult<TDataModel>(new QueryBehavior(behavior.Behaviors, behavior.PageSize, page, pageCount),
+				return new DataModelQueryResult<TDataModel>(new QueryBehavior(behavior.Behaviors, behavior.PageSize, page, totalRows),
 					res);
 			}
 			return new DataModelQueryResult<TDataModel>(new QueryBehavior(behavior.Behaviors), res);
@@ -392,7 +392,7 @@ namespace FlitBit.Data.SqlServer
 			var limited = behavior.IsLimited;
 			var page = behavior.Page - 1;
 			var res = new List<TDataModel>();
-			var pageCount = 0;
+			var totalRows = 0;
 			cn.EnsureConnectionIsOpen();
 			var query = (limited) ? PagingQuery.Text : AllQuery;
 
@@ -416,9 +416,9 @@ namespace FlitBit.Data.SqlServer
 					{
 						var model = new TImpl();
 						model.LoadFromDataReader(reader, offsets);
-						if (limited && pageCount == 0)
+						if (limited && totalRows == 0)
 						{
-							pageCount = reader.GetInt32(offsets.Length);
+							totalRows = reader.GetInt32(offsets.Length);
 						}
 						res.Add(model);
 					}
@@ -426,7 +426,7 @@ namespace FlitBit.Data.SqlServer
 			}
 			if (limited)
 			{
-				return new DataModelQueryResult<TDataModel>(new QueryBehavior(behavior.Behaviors, behavior.PageSize, page, pageCount),
+				return new DataModelQueryResult<TDataModel>(new QueryBehavior(behavior.Behaviors, behavior.PageSize, page, totalRows),
 					res);
 			}
 			return new DataModelQueryResult<TDataModel>(new QueryBehavior(behavior.Behaviors), res);
@@ -517,7 +517,7 @@ namespace FlitBit.Data.SqlServer
 			var limited = behavior.IsLimited;
 			var page = behavior.Page - 1;
 			var res = new List<TDataModel>();
-			var pageCount = 0;
+			var totalRows = 0;
 			cn.EnsureConnectionIsOpen();
 			var query = (limited) ? PagingQuery.Text : AllQuery;
 
@@ -541,9 +541,9 @@ namespace FlitBit.Data.SqlServer
 					{
 						var model = new TImpl();
 						model.LoadFromDataReader(reader, offsets);
-						if (limited && pageCount == 0)
+						if (limited && totalRows == 0)
 						{
-							pageCount = reader.GetInt32(offsets.Length);
+							totalRows = reader.GetInt32(offsets.Length);
 						}
 						res.Add(model);
 					}
@@ -551,7 +551,7 @@ namespace FlitBit.Data.SqlServer
 			}
 			if (limited)
 			{
-				return new DataModelQueryResult<TDataModel>(new QueryBehavior(behavior.Behaviors, behavior.PageSize, page, pageCount),
+				return new DataModelQueryResult<TDataModel>(new QueryBehavior(behavior.Behaviors, behavior.PageSize, page, totalRows),
 					res);
 			}
 			return new DataModelQueryResult<TDataModel>(new QueryBehavior(behavior.Behaviors), res);
@@ -646,7 +646,7 @@ namespace FlitBit.Data.SqlServer
 			var limited = behavior.IsLimited;
 			var page = behavior.Page - 1;
 			var res = new List<TDataModel>();
-			var pageCount = 0;
+			var totalRows = 0;
 			cn.EnsureConnectionIsOpen();
 			var query = (limited) ? PagingQuery.Text : AllQuery;
 
@@ -670,9 +670,9 @@ namespace FlitBit.Data.SqlServer
 					{
 						var model = new TImpl();
 						model.LoadFromDataReader(reader, offsets);
-						if (limited && pageCount == 0)
+						if (limited && totalRows == 0)
 						{
-							pageCount = reader.GetInt32(offsets.Length);
+							totalRows = reader.GetInt32(offsets.Length);
 						}
 						res.Add(model);
 					}
@@ -680,7 +680,7 @@ namespace FlitBit.Data.SqlServer
 			}
 			if (limited)
 			{
-				return new DataModelQueryResult<TDataModel>(new QueryBehavior(behavior.Behaviors, behavior.PageSize, page, pageCount),
+				return new DataModelQueryResult<TDataModel>(new QueryBehavior(behavior.Behaviors, behavior.PageSize, page, totalRows),
 					res);
 			}
 			return new DataModelQueryResult<TDataModel>(new QueryBehavior(behavior.Behaviors), res);
@@ -780,7 +780,7 @@ namespace FlitBit.Data.SqlServer
 			var limited = behavior.IsLimited;
 			var page = behavior.Page - 1;
 			var res = new List<TDataModel>();
-			var pageCount = 0;
+			var totalRows = 0;
 			cn.EnsureConnectionIsOpen();
 			var query = (limited) ? PagingQuery.Text : AllQuery;
 
@@ -804,9 +804,9 @@ namespace FlitBit.Data.SqlServer
 					{
 						var model = new TImpl();
 						model.LoadFromDataReader(reader, offsets);
-						if (limited && pageCount == 0)
+						if (limited && totalRows == 0)
 						{
-							pageCount = reader.GetInt32(offsets.Length);
+							totalRows = reader.GetInt32(offsets.Length);
 						}
 						res.Add(model);
 					}
@@ -814,7 +814,7 @@ namespace FlitBit.Data.SqlServer
 			}
 			if (limited)
 			{
-				return new DataModelQueryResult<TDataModel>(new QueryBehavior(behavior.Behaviors, behavior.PageSize, page, pageCount),
+				return new DataModelQueryResult<TDataModel>(new QueryBehavior(behavior.Behaviors, behavior.PageSize, page, totalRows),
 					res);
 			}
 			return new DataModelQueryResult<TDataModel>(new QueryBehavior(behavior.Behaviors), res);
@@ -917,7 +917,7 @@ namespace FlitBit.Data.SqlServer
 			var limited = behavior.IsLimited;
 			var page = behavior.Page - 1;
 			var res = new List<TDataModel>();
-			var pageCount = 0;
+			var totalRows = 0;
 			cn.EnsureConnectionIsOpen();
 			var query = (limited) ? PagingQuery.Text : AllQuery;
 
@@ -941,9 +941,9 @@ namespace FlitBit.Data.SqlServer
 					{
 						var model = new TImpl();
 						model.LoadFromDataReader(reader, offsets);
-						if (limited && pageCount == 0)
+						if (limited && totalRows == 0)
 						{
-							pageCount = reader.GetInt32(offsets.Length);
+							totalRows = reader.GetInt32(offsets.Length);
 						}
 						res.Add(model);
 					}
@@ -951,7 +951,7 @@ namespace FlitBit.Data.SqlServer
 			}
 			if (limited)
 			{
-				return new DataModelQueryResult<TDataModel>(new QueryBehavior(behavior.Behaviors, behavior.PageSize, page, pageCount),
+				return new DataModelQueryResult<TDataModel>(new QueryBehavior(behavior.Behaviors, behavior.PageSize, page, totalRows),
 					res);
 			}
 			return new DataModelQueryResult<TDataModel>(new QueryBehavior(behavior.Behaviors), res);
@@ -1059,7 +1059,7 @@ namespace FlitBit.Data.SqlServer
 			var limited = behavior.IsLimited;
 			var page = behavior.Page - 1;
 			var res = new List<TDataModel>();
-			var pageCount = 0;
+			var totalRows = 0;
 			cn.EnsureConnectionIsOpen();
 			var query = (limited) ? PagingQuery.Text : AllQuery;
 
@@ -1083,9 +1083,9 @@ namespace FlitBit.Data.SqlServer
 					{
 						var model = new TImpl();
 						model.LoadFromDataReader(reader, offsets);
-						if (limited && pageCount == 0)
+						if (limited && totalRows == 0)
 						{
-							pageCount = reader.GetInt32(offsets.Length);
+							totalRows = reader.GetInt32(offsets.Length);
 						}
 						res.Add(model);
 					}
@@ -1093,7 +1093,7 @@ namespace FlitBit.Data.SqlServer
 			}
 			if (limited)
 			{
-				return new DataModelQueryResult<TDataModel>(new QueryBehavior(behavior.Behaviors, behavior.PageSize, page, pageCount),
+				return new DataModelQueryResult<TDataModel>(new QueryBehavior(behavior.Behaviors, behavior.PageSize, page, totalRows),
 					res);
 			}
 			return new DataModelQueryResult<TDataModel>(new QueryBehavior(behavior.Behaviors), res);
@@ -1205,7 +1205,7 @@ namespace FlitBit.Data.SqlServer
 			var limited = behavior.IsLimited;
 			var page = behavior.Page - 1;
 			var res = new List<TDataModel>();
-			var pageCount = 0;
+			var totalRows = 0;
 			cn.EnsureConnectionIsOpen();
 			var query = (limited) ? PagingQuery.Text : AllQuery;
 
@@ -1229,9 +1229,9 @@ namespace FlitBit.Data.SqlServer
 					{
 						var model = new TImpl();
 						model.LoadFromDataReader(reader, offsets);
-						if (limited && pageCount == 0)
+						if (limited && totalRows == 0)
 						{
-							pageCount = reader.GetInt32(offsets.Length);
+							totalRows = reader.GetInt32(offsets.Length);
 						}
 						res.Add(model);
 					}
@@ -1239,7 +1239,7 @@ namespace FlitBit.Data.SqlServer
 			}
 			if (limited)
 			{
-				return new DataModelQueryResult<TDataModel>(new QueryBehavior(behavior.Behaviors, behavior.PageSize, page, pageCount),
+				return new DataModelQueryResult<TDataModel>(new QueryBehavior(behavior.Behaviors, behavior.PageSize, page, totalRows),
 					res);
 			}
 			return new DataModelQueryResult<TDataModel>(new QueryBehavior(behavior.Behaviors), res);

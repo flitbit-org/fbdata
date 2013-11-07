@@ -39,7 +39,7 @@ namespace FlitBit.Data.SqlServer
 			// behavior.Page is 1 based, our math is zero-based.
 			var page = behavior.Page - 1;
 			var res = new List<TModel>();
-			var pageCount = 0L;
+			var totalRows = 0L;
 			cn.EnsureConnectionIsOpen();
 			var query = (limited) ? _selectPage.Text : _selectAll;
 
@@ -63,10 +63,9 @@ namespace FlitBit.Data.SqlServer
 					{
 						var model = new TImpl();
 						model.LoadFromDataReader(reader, _offsets);
-						if (limited && pageCount == 0)
+						if (limited && totalRows == 0)
 						{
-							pageCount = reader.GetInt64(_countField);
-							pageCount = (pageCount > 0) ? pageCount/behavior.PageSize : 0;
+							totalRows = reader.GetInt64(_countField);
 						}
 						res.Add(model);
 					}
@@ -75,7 +74,7 @@ namespace FlitBit.Data.SqlServer
 			if (limited)
 			{
 				// behavior.Page is 1 based, our math is zero-based.
-				return new DataModelQueryResult<TModel>(new QueryBehavior(behavior.Behaviors, behavior.PageSize, page + 1, pageCount),
+				return new DataModelQueryResult<TModel>(new QueryBehavior(behavior.Behaviors, behavior.PageSize, page + 1, totalRows),
 					res);
 			}
 			return new DataModelQueryResult<TModel>(new QueryBehavior(behavior.Behaviors), res);

@@ -392,7 +392,6 @@
       <DependentUpon>Resources.resx</DependentUpon>
     </Compile>
     <Compile Include="QueryBehavior.cs" />
-    <Compile Include="QueryBehaviorExtensions.cs" />
     <Compile Include="QueryBehaviors.cs" />
     <Compile Include="SPI\IDataModel.cs" />
     <Compile Include="SqlServer\SqlMappedGuidEmitter.cs" />
