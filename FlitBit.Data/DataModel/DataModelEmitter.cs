@@ -186,8 +186,7 @@ namespace FlitBit.Data.DataModel
 								if (mappedColumn.IsNullable)
 								{
 									il.MarkLabel(isnull);
-									il.LoadNull();
-									il.NewObj(prop.FieldType.GetConstructor(new[] {prop.Source.PropertyType}));
+									il.NewObj(prop.FieldType.GetConstructor(Type.EmptyTypes));
 								}
 							}
 							else

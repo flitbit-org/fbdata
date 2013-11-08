@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Linq;
@@ -98,7 +99,7 @@ namespace FlitBit.Data.SqlServer
 			}
 		}
 
-		public string Select
+		public DynamicSql Select
 		{
 			get
 			{
@@ -111,19 +112,22 @@ namespace FlitBit.Data.SqlServer
 				writer.Outdent().NewLine()
 					.Append("FROM ").Append(_dbObjectReference)
 					.Append(" AS ").Append(_selfRef);
-				return writer.ToString();
+
+				return new DynamicSql(writer.ToString(), CommandType.Text,
+					CommandBehavior.SingleResult | CommandBehavior.SequentialAccess);
 			}
 		}
 
-		public string SelectInPrimaryKeyOrder
+		public DynamicSql SelectInPrimaryKeyOrder
 		{
 			get
 			{
 				SqlWriter writer = new SqlWriter(_bufferLength, Environment.NewLine, _indent)
-					.Append(Select)
+					.Append(Select.Text)
 					.NewLine();
 				PrimaryKeyOrder.WriteOrderBy(Mapping, writer, _selfRef, false);
-				return writer.ToString();
+				return new DynamicSql(writer.ToString(), CommandType.Text,
+					CommandBehavior.SingleResult | CommandBehavior.SequentialAccess);
 			}
 		}
 
@@ -156,7 +160,7 @@ namespace FlitBit.Data.SqlServer
 				var mapping = Mapping;
 				var helper = mapping.GetDbProviderHelper();
 				var idStr = helper.FormatParameterName("@identity");
-				var res = new DynamicSql() {SyntheticIdentityVar = idStr};
+				var res = new DynamicSql(null, CommandType.Text, CommandBehavior.SingleResult | CommandBehavior.SequentialAccess) {SyntheticIdentityVar = idStr};
 				var writer = new SqlWriter(_bufferLength, Environment.NewLine, _indent);
 				if (_hasTimestamp)
 				{
@@ -172,7 +176,7 @@ namespace FlitBit.Data.SqlServer
 				writer.NewLine("{1}");
 				writer.Outdent().NewLine(")")
 					.NewLine("SET ").Append(idStr).Append(" = SCOPE_IDENTITY()")
-					.NewLine(Select)
+					.NewLine(Select.Text)
 					.NewLine("WHERE ").Append(_selfRef).Append(".").Append(helper.QuoteObjectName(_idCol.TargetName)).Append(" = ").Append(idStr);
 				res.Text = writer.ToString();
 				return res;
@@ -187,7 +191,7 @@ namespace FlitBit.Data.SqlServer
 				
 				var helper = Mapping.GetDbProviderHelper();
 				var idStr = helper.FormatParameterName(_idCol.DbTypeDetails.BindingName);
-				var res = new DynamicSql() { BindIdentityParameter = idStr };
+				var res = new DynamicSql(null, CommandType.Text, CommandBehavior.SingleResult | CommandBehavior.SequentialAccess) { BindIdentityParameter = idStr };
 				var writer = new SqlWriter(_bufferLength, Environment.NewLine, _indent);
 				if (_hasTimestampOnUpdate)
 				{
@@ -200,7 +204,7 @@ namespace FlitBit.Data.SqlServer
 				writer
 					.NewLine("WHERE ").Append(helper.QuoteObjectName(_idCol.TargetName)).Append(" = ").Append(idStr)
 					.NewLine().Outdent()
-					.NewLine(Select)
+					.NewLine(Select.Text)
 					.NewLine("WHERE ").Append(_selfRef).Append(".").Append(helper.QuoteObjectName(_idCol.TargetName)).Append(" = ").Append(idStr);
 				res.Text = writer.ToString();
 				return res;
@@ -213,7 +217,7 @@ namespace FlitBit.Data.SqlServer
 
 			var helper = Mapping.GetDbProviderHelper();
 			var idStr = helper.FormatParameterName(_idCol.DbTypeDetails.BindingName);
-			var res = new DynamicSql() { BindIdentityParameter = idStr };
+			var res = new DynamicSql(null, CommandType.Text, CommandBehavior.SingleResult | CommandBehavior.SequentialAccess) { BindIdentityParameter = idStr };
 			var writer = new SqlWriter(_bufferLength, Environment.NewLine, _indent);
 			if (_hasTimestampOnUpdate)
 			{
@@ -247,9 +251,9 @@ namespace FlitBit.Data.SqlServer
 			{
 				var helper = Mapping.GetDbProviderHelper();
 				var idStr = helper.FormatParameterName(_idCol.DbTypeDetails.BindingName);
-				var res = new DynamicSql() { BindIdentityParameter = idStr };
+				var res = new DynamicSql(null, CommandType.Text, CommandBehavior.SingleResult | CommandBehavior.SequentialAccess) { BindIdentityParameter = idStr };
 				var writer = new SqlWriter(_bufferLength, Environment.NewLine, _indent)
-					.Append(Select)
+					.Append(Select.Text)
 					.NewLine("WHERE ").Append(helper.QuoteObjectName(_idCol.TargetName)).Append(" = ").Append(idStr);
 				res.Text = writer.ToString();
 				return res;
@@ -262,7 +266,7 @@ namespace FlitBit.Data.SqlServer
 			{
 				var helper = Mapping.GetDbProviderHelper();
 				var idStr = helper.FormatParameterName(_idCol.DbTypeDetails.BindingName);
-				var res = new DynamicSql() { BindIdentityParameter = idStr };
+				var res = new DynamicSql(null, CommandType.Text, CommandBehavior.SingleResult | CommandBehavior.SequentialAccess) { BindIdentityParameter = idStr };
 				var writer = new SqlWriter(_bufferLength, Environment.NewLine, _indent)
 					.Append("DELETE FROM ").Append(Mapping.DbObjectReference)
 					.NewLine("WHERE ").Append(helper.QuoteObjectName(_idCol.TargetName)).Append(" = ").Append(idStr);
@@ -278,7 +282,7 @@ namespace FlitBit.Data.SqlServer
 			// Default to PK order...
 			OrderBy order = orderBy ?? PrimaryKeyOrder;
 
-			var res = new DynamicSql();
+			var res = new DynamicSql(null, CommandType.Text, CommandBehavior.SingleResult | CommandBehavior.SequentialAccess);
 			res.BindLimitParameter = "@pageSize";
 			res.BindStartRowParameter = "@startRow";
 

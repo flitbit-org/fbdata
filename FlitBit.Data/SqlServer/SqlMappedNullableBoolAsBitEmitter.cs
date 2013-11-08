@@ -18,6 +18,7 @@ namespace FlitBit.Data.SqlServer
 			reader.LoadValue(il);
 			columnIndex.LoadValue(il);
 			il.CallVirtual<DbDataReader>("GetBoolean", typeof(int));
+			EmitTranslateRuntimeType(il);
 		}
 
 		/// <summary>

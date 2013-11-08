@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Data;
 using System.Data.SqlClient;
 using FlitBit.Data.DataModel;
 using FlitBit.Data.Expressions;
@@ -20,9 +21,11 @@ namespace FlitBit.Data.SqlServer
 		protected override IDataModelQueryCommand<TDataModel, SqlConnection, TParam> ConstructCommandOnConstraints(Constraints constraints)
 		{
 			Type cmd = OneClassOneTableEmitter.MakeQueryCommand<TDataModel, TImpl, TParam>(Mapping, QueryKey, constraints);
+			var all = new DynamicSql(constraints.Writer.Text, CommandType.Text,
+				CommandBehavior.SingleResult | CommandBehavior.SequentialAccess);
 			return
 				(IDataModelQueryCommand<TDataModel, SqlConnection, TParam>)
-					Activator.CreateInstance(cmd, constraints.Writer.Text, Writer.WriteSelectWithPaging(constraints, null), Writer.ColumnOffsets);
+					Activator.CreateInstance(cmd, all, Writer.WriteSelectWithPaging(constraints, null), Writer.ColumnOffsets);
 		}
 	}
 
@@ -55,9 +58,11 @@ namespace FlitBit.Data.SqlServer
 		protected override IDataModelQueryCommand<TDataModel, SqlConnection, TParam, TParam1> ConstructCommandOnConstraints(Constraints constraints)
 		{
 			var cmd = OneClassOneTableEmitter.MakeQueryCommand<TDataModel, TImpl, TParam, TParam1>(Mapping, QueryKey, constraints);
+			var all = new DynamicSql(constraints.Writer.Text, CommandType.Text,
+				CommandBehavior.SingleResult | CommandBehavior.SequentialAccess);
 			return
 				(IDataModelQueryCommand<TDataModel, SqlConnection, TParam, TParam1>)
-					Activator.CreateInstance(cmd, constraints.Writer.Text, Writer.WriteSelectWithPaging(constraints, null), Writer.ColumnOffsets);
+					Activator.CreateInstance(cmd, all, Writer.WriteSelectWithPaging(constraints, null), Writer.ColumnOffsets);
 		}
 	}
 	/// <summary>
@@ -90,9 +95,11 @@ namespace FlitBit.Data.SqlServer
 		protected override IDataModelQueryCommand<TDataModel, SqlConnection, TParam, TParam1, TParam2> ConstructCommandOnConstraints(Constraints constraints)
 		{
 			var cmd = OneClassOneTableEmitter.MakeQueryCommand<TDataModel, TImpl, TParam, TParam1, TParam2>(Mapping, QueryKey, constraints);
+			var all = new DynamicSql(constraints.Writer.Text, CommandType.Text,
+				CommandBehavior.SingleResult | CommandBehavior.SequentialAccess);
 			return
 				(IDataModelQueryCommand<TDataModel, SqlConnection, TParam, TParam1, TParam2>)
-					Activator.CreateInstance(cmd, constraints.Writer.Text, Writer.WriteSelectWithPaging(constraints, null), Writer.ColumnOffsets);
+					Activator.CreateInstance(cmd, all, Writer.WriteSelectWithPaging(constraints, null), Writer.ColumnOffsets);
 		}
 	}
 	/// <summary>
@@ -126,9 +133,11 @@ namespace FlitBit.Data.SqlServer
 		protected override IDataModelQueryCommand<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3> ConstructCommandOnConstraints(Constraints constraints)
 		{
 			var cmd = OneClassOneTableEmitter.MakeQueryCommand<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3>(Mapping, QueryKey, constraints);
+			var all = new DynamicSql(constraints.Writer.Text, CommandType.Text,
+				CommandBehavior.SingleResult | CommandBehavior.SequentialAccess);
 			return
 				(IDataModelQueryCommand<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3>)
-					Activator.CreateInstance(cmd, constraints.Writer.Text, Writer.WriteSelectWithPaging(constraints, null), Writer.ColumnOffsets);
+					Activator.CreateInstance(cmd, all, Writer.WriteSelectWithPaging(constraints, null), Writer.ColumnOffsets);
 		}
 	}
 	/// <summary>
@@ -163,9 +172,11 @@ namespace FlitBit.Data.SqlServer
 		protected override IDataModelQueryCommand<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4> ConstructCommandOnConstraints(Constraints constraints)
 		{
 			Type cmd = OneClassOneTableEmitter.MakeQueryCommand<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3, TParam4>(Mapping, QueryKey, constraints);
+			var all = new DynamicSql(constraints.Writer.Text, CommandType.Text,
+				CommandBehavior.SingleResult | CommandBehavior.SequentialAccess);
 			return
 				(IDataModelQueryCommand<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4>)
-					Activator.CreateInstance(cmd, constraints.Writer.Text, Writer.WriteSelectWithPaging(constraints, null), Writer.ColumnOffsets);
+					Activator.CreateInstance(cmd, all, Writer.WriteSelectWithPaging(constraints, null), Writer.ColumnOffsets);
 		}
 	}
 	/// <summary>
@@ -201,9 +212,11 @@ namespace FlitBit.Data.SqlServer
 		protected override IDataModelQueryCommand<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5> ConstructCommandOnConstraints(Constraints constraints)
 		{
 			Type cmd = OneClassOneTableEmitter.MakeQueryCommand<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5>(Mapping, QueryKey, constraints);
+			var all = new DynamicSql(constraints.Writer.Text, CommandType.Text,
+				CommandBehavior.SingleResult | CommandBehavior.SequentialAccess);
 			return
 				(IDataModelQueryCommand<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5>)
-					Activator.CreateInstance(cmd, constraints.Writer.Text, Writer.WriteSelectWithPaging(constraints, null), Writer.ColumnOffsets);
+					Activator.CreateInstance(cmd, all, Writer.WriteSelectWithPaging(constraints, null), Writer.ColumnOffsets);
 		}
 	}
 	/// <summary>
@@ -240,9 +253,11 @@ namespace FlitBit.Data.SqlServer
 		protected override IDataModelQueryCommand<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6> ConstructCommandOnConstraints(Constraints constraints)
 		{
 			Type cmd = OneClassOneTableEmitter.MakeQueryCommand<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6>(Mapping, QueryKey, constraints);
+			var all = new DynamicSql(constraints.Writer.Text, CommandType.Text,
+				CommandBehavior.SingleResult | CommandBehavior.SequentialAccess);
 			return
 				(IDataModelQueryCommand<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6>)
-					Activator.CreateInstance(cmd, constraints.Writer.Text, Writer.WriteSelectWithPaging(constraints, null), Writer.ColumnOffsets);
+					Activator.CreateInstance(cmd, all, Writer.WriteSelectWithPaging(constraints, null), Writer.ColumnOffsets);
 		}
 	}
 	/// <summary>
@@ -280,9 +295,11 @@ namespace FlitBit.Data.SqlServer
 		protected override IDataModelQueryCommand<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7> ConstructCommandOnConstraints(Constraints constraints)
 		{
 			Type cmd = OneClassOneTableEmitter.MakeQueryCommand<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7>(Mapping, QueryKey, constraints);
+			var all = new DynamicSql(constraints.Writer.Text, CommandType.Text,
+				CommandBehavior.SingleResult | CommandBehavior.SequentialAccess);
 			return
 				(IDataModelQueryCommand<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7>)
-					Activator.CreateInstance(cmd, constraints.Writer.Text, Writer.WriteSelectWithPaging(constraints, null), Writer.ColumnOffsets);
+					Activator.CreateInstance(cmd, all, Writer.WriteSelectWithPaging(constraints, null), Writer.ColumnOffsets);
 		}
 	}
 	/// <summary>
@@ -321,9 +338,11 @@ namespace FlitBit.Data.SqlServer
 		protected override IDataModelQueryCommand<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8> ConstructCommandOnConstraints(Constraints constraints)
 		{
 			Type cmd = OneClassOneTableEmitter.MakeQueryCommand<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8>(Mapping, QueryKey, constraints);
+			var all = new DynamicSql(constraints.Writer.Text, CommandType.Text,
+				CommandBehavior.SingleResult | CommandBehavior.SequentialAccess);
 			return
 				(IDataModelQueryCommand<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8>)
-					Activator.CreateInstance(cmd, constraints.Writer.Text, Writer.WriteSelectWithPaging(constraints, null), Writer.ColumnOffsets);
+					Activator.CreateInstance(cmd, all, Writer.WriteSelectWithPaging(constraints, null), Writer.ColumnOffsets);
 		}
 	}
 	/// <summary>
@@ -363,9 +382,11 @@ namespace FlitBit.Data.SqlServer
 		protected override IDataModelQueryCommand<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9> ConstructCommandOnConstraints(Constraints constraints)
 		{
 			Type cmd = OneClassOneTableEmitter.MakeQueryCommand<TDataModel, TImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>(Mapping, QueryKey, constraints);
+			var all = new DynamicSql(constraints.Writer.Text, CommandType.Text,
+				CommandBehavior.SingleResult | CommandBehavior.SequentialAccess);
 			return
 				(IDataModelQueryCommand<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>)
-					Activator.CreateInstance(cmd, constraints.Writer.Text, Writer.WriteSelectWithPaging(constraints, null), Writer.ColumnOffsets);
+					Activator.CreateInstance(cmd, all, Writer.WriteSelectWithPaging(constraints, null), Writer.ColumnOffsets);
 		}
 	}
 }

@@ -20,7 +20,8 @@ namespace FlitBit.Data.SqlServer
 		/// <summary>
 		/// Creates a new instance.
 		/// </summary>
-		protected SqlDataModelQueryCommand(string all, DynamicSql page, int[] offsets) : base(all, page, offsets)
+		protected SqlDataModelQueryCommand(DynamicSql all, DynamicSql page, int[] offsets)
+			: base(all, page, offsets)
 		{
 		}
 
@@ -40,9 +41,9 @@ namespace FlitBit.Data.SqlServer
 			var res = new List<TDataModel>();
 			var totalRows = 0;
 			cn.EnsureConnectionIsOpen();
-			var query = (limited) ? PagingQuery.Text : AllQuery;
+			var query = (limited) ? PagingQuery : AllQuery;
 
-			using (var cmd = cn.CreateCommand(query, CommandType.Text))
+			using (var cmd = cn.CreateCommand(query.Text, query.CommandType))
 			{
 				if (limited)
 				{
@@ -56,7 +57,7 @@ namespace FlitBit.Data.SqlServer
 				}
 				var offsets = Offsets;
 				BindCommand((SqlCommand)cmd, offsets, param);
-				using (var reader = cmd.ExecuteReader())
+				using (var reader = cmd.ExecuteReader(query.CommandBehavior))
 				{
 					cx.IncrementQueryCounter();
 					while (reader.Read())
@@ -90,13 +91,14 @@ namespace FlitBit.Data.SqlServer
 		public TDataModel ExecuteSingle(IDbContext cx, SqlConnection cn, TParam param)
 		{
 			cn.EnsureConnectionIsOpen();
+			var query = AllQuery;
 			var res = default(TImpl);
-			using (var cmd = cn.CreateCommand(AllQuery, CommandType.Text))
+			using (var cmd = cn.CreateCommand(query.Text, query.CommandType))
 			{
 				var offsets = Offsets;
 
 				BindCommand((SqlCommand)cmd, offsets, param);
-				using (var reader = cmd.ExecuteReader())
+				using (var reader = cmd.ExecuteReader(query.CommandBehavior))
 				{
 					cx.IncrementQueryCounter();
 					if (reader.Read())
@@ -134,7 +136,7 @@ namespace FlitBit.Data.SqlServer
 		/// <summary>
 		/// Creates a new instance.
 		/// </summary>
-		protected SqlDataModelQueryCommand(string all, DynamicSql page, int[] offsets)
+		protected SqlDataModelQueryCommand(DynamicSql all, DynamicSql page, int[] offsets)
 			: base(all, page, offsets)
 		{
 		}
@@ -146,7 +148,6 @@ namespace FlitBit.Data.SqlServer
 		/// <param name="behavior">behaviors, possibly paging</param>
 		/// <param name="param">criteria used to bind the command.</param>
 		/// <param name="param1"></param>
-		/// <param name="param2"></param>
 		/// <returns>a data model query result</returns>
 		public IDataModelQueryResult<TDataModel> ExecuteMany(IDbContext cx, SqlConnection cn, QueryBehavior behavior, TParam param, TParam1 param1)
 		{
@@ -156,9 +157,9 @@ namespace FlitBit.Data.SqlServer
 			var res = new List<TDataModel>();
 			var totalRows = 0;
 			cn.EnsureConnectionIsOpen();
-			var query = (limited) ? PagingQuery.Text : AllQuery;
+			var query = (limited) ? PagingQuery : AllQuery;
 
-			using (var cmd = cn.CreateCommand(query, CommandType.Text))
+			using (var cmd = cn.CreateCommand(query.Text, query.CommandType))
 			{
 				if (limited)
 				{
@@ -172,7 +173,7 @@ namespace FlitBit.Data.SqlServer
 				}
 				var offsets = Offsets;
 				BindCommand((SqlCommand)cmd, offsets, param, param1);
-				using (var reader = cmd.ExecuteReader())
+				using (var reader = cmd.ExecuteReader(query.CommandBehavior))
 				{
 					while (reader.Read())
 					{
@@ -206,13 +207,14 @@ namespace FlitBit.Data.SqlServer
 		public TDataModel ExecuteSingle(IDbContext cx, SqlConnection cn, TParam param, TParam1 param1)
 		{
 			cn.EnsureConnectionIsOpen();
+			var query = AllQuery;
 			var res = default(TImpl);
-			using (var cmd = cn.CreateCommand(AllQuery, CommandType.Text))
+			using (var cmd = cn.CreateCommand(query.Text, query.CommandType))
 			{
 				var offsets = Offsets;
 
 				BindCommand((SqlCommand)cmd, offsets, param, param1);
-				using (var reader = cmd.ExecuteReader())
+				using (var reader = cmd.ExecuteReader(query.CommandBehavior))
 				{
 					if (reader.Read())
 					{
@@ -251,7 +253,7 @@ namespace FlitBit.Data.SqlServer
 		/// <summary>
 		/// Creates a new instance.
 		/// </summary>
-		protected SqlDataModelQueryCommand(string all, DynamicSql page, int[] offsets)
+		protected SqlDataModelQueryCommand(DynamicSql all, DynamicSql page, int[] offsets)
 			: base(all, page, offsets)
 		{
 		}
@@ -273,9 +275,9 @@ namespace FlitBit.Data.SqlServer
 			var res = new List<TDataModel>();
 			var totalRows = 0;
 			cn.EnsureConnectionIsOpen();
-			var query = (limited) ? PagingQuery.Text : AllQuery;
+			var query = (limited) ? PagingQuery : AllQuery;
 
-			using (var cmd = cn.CreateCommand(query, CommandType.Text))
+			using (var cmd = cn.CreateCommand(query.Text, query.CommandType))
 			{
 				if (limited)
 				{
@@ -289,7 +291,7 @@ namespace FlitBit.Data.SqlServer
 				}
 				var offsets = Offsets;
 				BindCommand((SqlCommand)cmd, offsets, param, param1, param2);
-				using (var reader = cmd.ExecuteReader())
+				using (var reader = cmd.ExecuteReader(query.CommandBehavior))
 				{
 					while (reader.Read())
 					{
@@ -324,13 +326,14 @@ namespace FlitBit.Data.SqlServer
 		public TDataModel ExecuteSingle(IDbContext cx, SqlConnection cn, TParam param, TParam1 param1, TParam2 param2)
 		{
 			cn.EnsureConnectionIsOpen();
+			var query = AllQuery;
 			var res = default(TImpl);
-			using (var cmd = cn.CreateCommand(AllQuery, CommandType.Text))
+			using (var cmd = cn.CreateCommand(query.Text, query.CommandType))
 			{
 				var offsets = Offsets;
 
 				BindCommand((SqlCommand)cmd, offsets, param, param1, param2);
-				using (var reader = cmd.ExecuteReader())
+				using (var reader = cmd.ExecuteReader(query.CommandBehavior))
 				{
 					if (reader.Read())
 					{
@@ -371,7 +374,7 @@ namespace FlitBit.Data.SqlServer
 		/// <summary>
 		/// Creates a new instance.
 		/// </summary>
-		protected SqlDataModelQueryCommand(string all, DynamicSql page, int[] offsets)
+		protected SqlDataModelQueryCommand(DynamicSql all, DynamicSql page, int[] offsets)
 			: base(all, page, offsets)
 		{
 		}
@@ -394,9 +397,9 @@ namespace FlitBit.Data.SqlServer
 			var res = new List<TDataModel>();
 			var totalRows = 0;
 			cn.EnsureConnectionIsOpen();
-			var query = (limited) ? PagingQuery.Text : AllQuery;
+			var query = (limited) ? PagingQuery : AllQuery;
 
-			using (var cmd = cn.CreateCommand(query, CommandType.Text))
+			using (var cmd = cn.CreateCommand(query.Text, query.CommandType))
 			{
 				if (limited)
 				{
@@ -410,7 +413,7 @@ namespace FlitBit.Data.SqlServer
 				}
 				var offsets = Offsets;
 				BindCommand((SqlCommand)cmd, offsets, param, param1, param2, param3);
-				using (var reader = cmd.ExecuteReader())
+				using (var reader = cmd.ExecuteReader(query.CommandBehavior))
 				{
 					while (reader.Read())
 					{
@@ -446,13 +449,14 @@ namespace FlitBit.Data.SqlServer
 		public TDataModel ExecuteSingle(IDbContext cx, SqlConnection cn, TParam param, TParam1 param1, TParam2 param2, TParam3 param3)
 		{
 			cn.EnsureConnectionIsOpen();
+			var query = AllQuery;
 			var res = default(TImpl);
-			using (var cmd = cn.CreateCommand(AllQuery, CommandType.Text))
+			using (var cmd = cn.CreateCommand(query.Text, query.CommandType))
 			{
 				var offsets = Offsets;
 
 				BindCommand((SqlCommand)cmd, offsets, param, param1, param2, param3);
-				using (var reader = cmd.ExecuteReader())
+				using (var reader = cmd.ExecuteReader(query.CommandBehavior))
 				{
 					if (reader.Read())
 					{
@@ -495,7 +499,7 @@ namespace FlitBit.Data.SqlServer
 		/// <summary>
 		/// Creates a new instance.
 		/// </summary>
-		protected SqlDataModelQueryCommand(string all, DynamicSql page, int[] offsets)
+		protected SqlDataModelQueryCommand(DynamicSql all, DynamicSql page, int[] offsets)
 			: base(all, page, offsets)
 		{
 		}
@@ -519,9 +523,9 @@ namespace FlitBit.Data.SqlServer
 			var res = new List<TDataModel>();
 			var totalRows = 0;
 			cn.EnsureConnectionIsOpen();
-			var query = (limited) ? PagingQuery.Text : AllQuery;
+			var query = (limited) ? PagingQuery : AllQuery;
 
-			using (var cmd = cn.CreateCommand(query, CommandType.Text))
+			using (var cmd = cn.CreateCommand(query.Text, query.CommandType))
 			{
 				if (limited)
 				{
@@ -535,7 +539,7 @@ namespace FlitBit.Data.SqlServer
 				}
 				var offsets = Offsets;
 				BindCommand((SqlCommand)cmd, offsets, param, param1, param2, param3, param4);
-				using (var reader = cmd.ExecuteReader())
+				using (var reader = cmd.ExecuteReader(query.CommandBehavior))
 				{
 					while (reader.Read())
 					{
@@ -572,13 +576,14 @@ namespace FlitBit.Data.SqlServer
 		public TDataModel ExecuteSingle(IDbContext cx, SqlConnection cn, TParam param, TParam1 param1, TParam2 param2, TParam3 param3, TParam4 param4)
 		{
 			cn.EnsureConnectionIsOpen();
+			var query = AllQuery;
 			var res = default(TImpl);
-			using (var cmd = cn.CreateCommand(AllQuery, CommandType.Text))
+			using (var cmd = cn.CreateCommand(query.Text, query.CommandType))
 			{
 				var offsets = Offsets;
 
 				BindCommand((SqlCommand)cmd, offsets, param, param1, param2, param3, param4);
-				using (var reader = cmd.ExecuteReader())
+				using (var reader = cmd.ExecuteReader(query.CommandBehavior))
 				{
 					if (reader.Read())
 					{
@@ -623,7 +628,7 @@ namespace FlitBit.Data.SqlServer
 		/// <summary>
 		/// Creates a new instance.
 		/// </summary>
-		protected SqlDataModelQueryCommand(string all, DynamicSql page, int[] offsets)
+		protected SqlDataModelQueryCommand(DynamicSql all, DynamicSql page, int[] offsets)
 			: base(all, page, offsets)
 		{
 		}
@@ -648,9 +653,9 @@ namespace FlitBit.Data.SqlServer
 			var res = new List<TDataModel>();
 			var totalRows = 0;
 			cn.EnsureConnectionIsOpen();
-			var query = (limited) ? PagingQuery.Text : AllQuery;
+			var query = (limited) ? PagingQuery : AllQuery;
 
-			using (var cmd = cn.CreateCommand(query, CommandType.Text))
+			using (var cmd = cn.CreateCommand(query.Text, query.CommandType))
 			{
 				if (limited)
 				{
@@ -664,7 +669,7 @@ namespace FlitBit.Data.SqlServer
 				}
 				var offsets = Offsets;
 				BindCommand((SqlCommand)cmd, offsets, param, param1, param2, param3, param4, param5);
-				using (var reader = cmd.ExecuteReader())
+				using (var reader = cmd.ExecuteReader(query.CommandBehavior))
 				{
 					while (reader.Read())
 					{
@@ -702,13 +707,14 @@ namespace FlitBit.Data.SqlServer
 		public TDataModel ExecuteSingle(IDbContext cx, SqlConnection cn, TParam param, TParam1 param1, TParam2 param2, TParam3 param3, TParam4 param4, TParam5 param5)
 		{
 			cn.EnsureConnectionIsOpen();
+			var query = AllQuery;
 			var res = default(TImpl);
-			using (var cmd = cn.CreateCommand(AllQuery, CommandType.Text))
+			using (var cmd = cn.CreateCommand(query.Text, query.CommandType))
 			{
 				var offsets = Offsets;
 
 				BindCommand((SqlCommand)cmd, offsets, param, param1, param2, param3, param4, param5);
-				using (var reader = cmd.ExecuteReader())
+				using (var reader = cmd.ExecuteReader(query.CommandBehavior))
 				{
 					if (reader.Read())
 					{
@@ -756,7 +762,7 @@ namespace FlitBit.Data.SqlServer
 		/// <summary>
 		/// Creates a new instance.
 		/// </summary>
-		protected SqlDataModelQueryCommand(string all, DynamicSql page, int[] offsets)
+		protected SqlDataModelQueryCommand(DynamicSql all, DynamicSql page, int[] offsets)
 			: base(all, page, offsets)
 		{
 		}
@@ -782,9 +788,9 @@ namespace FlitBit.Data.SqlServer
 			var res = new List<TDataModel>();
 			var totalRows = 0;
 			cn.EnsureConnectionIsOpen();
-			var query = (limited) ? PagingQuery.Text : AllQuery;
+			var query = (limited) ? PagingQuery : AllQuery;
 
-			using (var cmd = cn.CreateCommand(query, CommandType.Text))
+			using (var cmd = cn.CreateCommand(query.Text, query.CommandType))
 			{
 				if (limited)
 				{
@@ -798,7 +804,7 @@ namespace FlitBit.Data.SqlServer
 				}
 				var offsets = Offsets;
 				BindCommand((SqlCommand)cmd, offsets, param, param1, param2, param3, param4, param5, param6);
-				using (var reader = cmd.ExecuteReader())
+				using (var reader = cmd.ExecuteReader(query.CommandBehavior))
 				{
 					while (reader.Read())
 					{
@@ -837,13 +843,14 @@ namespace FlitBit.Data.SqlServer
 		public TDataModel ExecuteSingle(IDbContext cx, SqlConnection cn, TParam param, TParam1 param1, TParam2 param2, TParam3 param3, TParam4 param4, TParam5 param5, TParam6 param6)
 		{
 			cn.EnsureConnectionIsOpen();
+			var query = AllQuery;
 			var res = default(TImpl);
-			using (var cmd = cn.CreateCommand(AllQuery, CommandType.Text))
+			using (var cmd = cn.CreateCommand(query.Text, query.CommandType))
 			{
 				var offsets = Offsets;
 
 				BindCommand((SqlCommand)cmd, offsets, param, param1, param2, param3, param4, param5, param6);
-				using (var reader = cmd.ExecuteReader())
+				using (var reader = cmd.ExecuteReader(query.CommandBehavior))
 				{
 					if (reader.Read())
 					{
@@ -892,7 +899,7 @@ namespace FlitBit.Data.SqlServer
 		/// <summary>
 		/// Creates a new instance.
 		/// </summary>
-		protected SqlDataModelQueryCommand(string all, DynamicSql page, int[] offsets)
+		protected SqlDataModelQueryCommand(DynamicSql all, DynamicSql page, int[] offsets)
 			: base(all, page, offsets)
 		{
 		}
@@ -919,9 +926,9 @@ namespace FlitBit.Data.SqlServer
 			var res = new List<TDataModel>();
 			var totalRows = 0;
 			cn.EnsureConnectionIsOpen();
-			var query = (limited) ? PagingQuery.Text : AllQuery;
+			var query = (limited) ? PagingQuery : AllQuery;
 
-			using (var cmd = cn.CreateCommand(query, CommandType.Text))
+			using (var cmd = cn.CreateCommand(query.Text, query.CommandType))
 			{
 				if (limited)
 				{
@@ -935,7 +942,7 @@ namespace FlitBit.Data.SqlServer
 				}
 				var offsets = Offsets;
 				BindCommand((SqlCommand)cmd, offsets, param, param1, param2, param3, param4, param5, param6, param7);
-				using (var reader = cmd.ExecuteReader())
+				using (var reader = cmd.ExecuteReader(query.CommandBehavior))
 				{
 					while (reader.Read())
 					{
@@ -975,13 +982,14 @@ namespace FlitBit.Data.SqlServer
 		public TDataModel ExecuteSingle(IDbContext cx, SqlConnection cn, TParam param, TParam1 param1, TParam2 param2, TParam3 param3, TParam4 param4, TParam5 param5, TParam6 param6, TParam7 param7)
 		{
 			cn.EnsureConnectionIsOpen();
+			var query = AllQuery;
 			var res = default(TImpl);
-			using (var cmd = cn.CreateCommand(AllQuery, CommandType.Text))
+			using (var cmd = cn.CreateCommand(query.Text, query.CommandType))
 			{
 				var offsets = Offsets;
 
 				BindCommand((SqlCommand)cmd, offsets, param, param1, param2, param3, param4, param5, param6, param7);
-				using (var reader = cmd.ExecuteReader())
+				using (var reader = cmd.ExecuteReader(query.CommandBehavior))
 				{
 					if (reader.Read())
 					{
@@ -1033,7 +1041,7 @@ namespace FlitBit.Data.SqlServer
 		/// <summary>
 		/// Creates a new instance.
 		/// </summary>
-		protected SqlDataModelQueryCommand(string all, DynamicSql page, int[] offsets)
+		protected SqlDataModelQueryCommand(DynamicSql all, DynamicSql page, int[] offsets)
 			: base(all, page, offsets)
 		{
 		}
@@ -1061,9 +1069,9 @@ namespace FlitBit.Data.SqlServer
 			var res = new List<TDataModel>();
 			var totalRows = 0;
 			cn.EnsureConnectionIsOpen();
-			var query = (limited) ? PagingQuery.Text : AllQuery;
+			var query = (limited) ? PagingQuery : AllQuery;
 
-			using (var cmd = cn.CreateCommand(query, CommandType.Text))
+			using (var cmd = cn.CreateCommand(query.Text, query.CommandType))
 			{
 				if (limited)
 				{
@@ -1077,7 +1085,7 @@ namespace FlitBit.Data.SqlServer
 				}
 				var offsets = Offsets;
 				BindCommand((SqlCommand)cmd, offsets, param, param1, param2, param3, param4, param5, param6, param7, param8);
-				using (var reader = cmd.ExecuteReader())
+				using (var reader = cmd.ExecuteReader(query.CommandBehavior))
 				{
 					while (reader.Read())
 					{
@@ -1118,13 +1126,14 @@ namespace FlitBit.Data.SqlServer
 		public TDataModel ExecuteSingle(IDbContext cx, SqlConnection cn, TParam param, TParam1 param1, TParam2 param2, TParam3 param3, TParam4 param4, TParam5 param5, TParam6 param6, TParam7 param7, TParam8 param8)
 		{
 			cn.EnsureConnectionIsOpen();
+			var query = AllQuery;
 			var res = default(TImpl);
-			using (var cmd = cn.CreateCommand(AllQuery, CommandType.Text))
+			using (var cmd = cn.CreateCommand(query.Text, query.CommandType))
 			{
 				var offsets = Offsets;
 
 				BindCommand((SqlCommand)cmd, offsets, param, param1, param2, param3, param4, param5, param6, param7, param8);
-				using (var reader = cmd.ExecuteReader())
+				using (var reader = cmd.ExecuteReader(query.CommandBehavior))
 				{
 					if (reader.Read())
 					{
@@ -1177,7 +1186,7 @@ namespace FlitBit.Data.SqlServer
 		/// <summary>
 		/// Creates a new instance.
 		/// </summary>
-		protected SqlDataModelQueryCommand(string all, DynamicSql page, int[] offsets)
+		protected SqlDataModelQueryCommand(DynamicSql all, DynamicSql page, int[] offsets)
 			: base(all, page, offsets)
 		{
 		}
@@ -1207,9 +1216,9 @@ namespace FlitBit.Data.SqlServer
 			var res = new List<TDataModel>();
 			var totalRows = 0;
 			cn.EnsureConnectionIsOpen();
-			var query = (limited) ? PagingQuery.Text : AllQuery;
+			var query = (limited) ? PagingQuery : AllQuery;
 
-			using (var cmd = cn.CreateCommand(query, CommandType.Text))
+			using (var cmd = cn.CreateCommand(query.Text, query.CommandType))
 			{
 				if (limited)
 				{
@@ -1223,7 +1232,7 @@ namespace FlitBit.Data.SqlServer
 				}
 				var offsets = Offsets;
 				BindCommand((SqlCommand)cmd, offsets, param, param1, param2, param3, param4, param5, param6, param7, param8, param9);
-				using (var reader = cmd.ExecuteReader())
+				using (var reader = cmd.ExecuteReader(query.CommandBehavior))
 				{
 					while (reader.Read())
 					{
@@ -1265,13 +1274,14 @@ namespace FlitBit.Data.SqlServer
 		public TDataModel ExecuteSingle(IDbContext cx, SqlConnection cn, TParam param, TParam1 param1, TParam2 param2, TParam3 param3, TParam4 param4, TParam5 param5, TParam6 param6, TParam7 param7, TParam8 param8, TParam9 param9)
 		{
 			cn.EnsureConnectionIsOpen();
+			var query = AllQuery;
 			var res = default(TImpl);
-			using (var cmd = cn.CreateCommand(AllQuery, CommandType.Text))
+			using (var cmd = cn.CreateCommand(query.Text, query.CommandType))
 			{
 				var offsets = Offsets;
 
 				BindCommand((SqlCommand)cmd, offsets, param, param1, param2, param3, param4, param5, param6, param7, param8, param9);
-				using (var reader = cmd.ExecuteReader())
+				using (var reader = cmd.ExecuteReader(query.CommandBehavior))
 				{
 					if (reader.Read())
 					{

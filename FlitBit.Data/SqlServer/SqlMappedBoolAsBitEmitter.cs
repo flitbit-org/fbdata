@@ -83,6 +83,7 @@ namespace FlitBit.Data.SqlServer
 			reader.LoadValue(il);
 			columnIndex.LoadValue(il);
 			il.CallVirtual<DbDataReader>("GetByte", typeof(int));
+			EmitTranslateRuntimeType(il);
 		}
 
 		/// <summary>
@@ -119,6 +120,7 @@ namespace FlitBit.Data.SqlServer
 			reader.LoadValue(il);
 			columnIndex.LoadValue(il);
 			il.CallVirtual<DbDataReader>("GetInt16", typeof(int));
+			EmitTranslateRuntimeType(il);
 		}
 
 		/// <summary>
@@ -154,6 +156,7 @@ namespace FlitBit.Data.SqlServer
 			reader.LoadValue(il);
 			columnIndex.LoadValue(il);
 			il.CallVirtual<DbDataReader>("GetInt32", typeof(int));
+			EmitTranslateRuntimeType(il);
 		}
 
 		/// <summary>
@@ -190,6 +193,7 @@ namespace FlitBit.Data.SqlServer
 			reader.LoadValue(il);
 			columnIndex.LoadValue(il);
 			il.CallVirtual<DbDataReader>("GetInt64", typeof(int));
+			EmitTranslateRuntimeType(il);
 		}
 
 		/// <summary>

@@ -16,7 +16,7 @@ namespace FlitBit.Data.SqlServer
 	public class DataModelQueryManyCommand<TModel, TImpl> : IDataModelQueryManyCommand<TModel, SqlConnection>
 		where TImpl : TModel, IDataModel, new()
 	{
-		readonly string _selectAll;
+		readonly DynamicSql _selectAll;
 		readonly DynamicSql _selectPage;
 		readonly int[] _offsets;
 		readonly int _countField;
@@ -24,7 +24,7 @@ namespace FlitBit.Data.SqlServer
 		/// <summary>
 		/// Creates a new instance.
 		/// </summary>
-		public DataModelQueryManyCommand(string all, DynamicSql page, int[] offsets)
+		public DataModelQueryManyCommand(DynamicSql all, DynamicSql page, int[] offsets)
 		{
 			_selectAll = all;
 			_selectPage = page;
@@ -41,9 +41,9 @@ namespace FlitBit.Data.SqlServer
 			var res = new List<TModel>();
 			var totalRows = 0L;
 			cn.EnsureConnectionIsOpen();
-			var query = (limited) ? _selectPage.Text : _selectAll;
+			var query = (limited) ? _selectPage : _selectAll;
 
-			using (var cmd = cn.CreateCommand(query, CommandType.Text))
+			using (var cmd = cn.CreateCommand(query.Text, query.CommandType))
 			{
 				if (limited)
 				{
@@ -56,7 +56,7 @@ namespace FlitBit.Data.SqlServer
 					}
 				}
 
-				using (var reader = cmd.ExecuteReader())
+				using (var reader = cmd.ExecuteReader(query.CommandBehavior))
 				{
 					cx.IncrementQueryCounter();
 					while (reader.Read())

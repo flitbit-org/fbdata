@@ -1003,7 +1003,7 @@ namespace FlitBit.Data.SqlServer
 				builder.Attributes = TypeAttributes.Sealed | TypeAttributes.Public | TypeAttributes.BeforeFieldInit;
 
 				var ctor = builder.DefineCtor();
-				ctor.DefineParameter("all", typeof(string));
+				ctor.DefineParameter("all", typeof(DynamicSql));
 				ctor.DefineParameter("page", typeof(DynamicSql));
 				ctor.DefineParameter("offsets", typeof(int[]));
 				ctor.ContributeInstructions((m, il) =>
@@ -1012,7 +1012,7 @@ namespace FlitBit.Data.SqlServer
 					il.LoadArg_1();
 					il.LoadArg_2();
 					il.LoadArg_3();
-					il.Call(baseType.GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic, null, new[] { typeof(string), typeof(DynamicSql), typeof(int[]) }, null));
+					il.Call(baseType.GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic, null, new[] { typeof(DynamicSql), typeof(DynamicSql), typeof(int[]) }, null));
 				});
 
 				EmitImplementation<TDataModel>.ImplementBindQueryCommand(builder, baseType, mapping, cns);

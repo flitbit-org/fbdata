@@ -59,7 +59,7 @@ namespace FlitBit.Data.DataModel
 		/// <exception cref="NotSupportedException"></exception>
 		protected virtual Constraints PrepareTranslateExpression(Constraints cns, Expression expr)
 		{
-			cns.Writer.Append(_sqlWriter.Select);
+			cns.Writer.Append(_sqlWriter.Select.Text);
 
 			var binary = expr as BinaryExpression;
 			if (binary == null) throw new NotSupportedException(String.Concat("Expression not supported: ", expr.NodeType));

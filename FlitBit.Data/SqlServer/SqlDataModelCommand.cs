@@ -8,7 +8,7 @@
         /// <summary>
         /// Creates a new instance.
         /// </summary>
-        protected SqlDataModelCommand(string all, DynamicSql page, int[] offsets)
+			protected SqlDataModelCommand(DynamicSql all, DynamicSql page, int[] offsets)
         {
             AllQuery = all;
             PagingQuery = page;
@@ -18,7 +18,7 @@
         /// <summary>
         /// The query's text.
         /// </summary>
-        protected string AllQuery { get; private set; }
+			protected DynamicSql AllQuery { get; private set; }
 
         /// <summary>
         /// The paging query.

@@ -99,6 +99,7 @@ namespace FlitBit.Data.SqlServer
 			reader.LoadValue(il);
 			columnIndex.LoadValue(il);
 			il.CallVirtual<DbDataReader>("GetDateTime", typeof(int));
+			EmitTranslateRuntimeType(il);
 		}
 
 		/// <summary>
