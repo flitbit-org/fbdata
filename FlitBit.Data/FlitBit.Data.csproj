@@ -158,6 +158,7 @@
     <Compile Include="Configuration\MapConnectionStringConfigSection.cs" />
     <Compile Include="Configuration\MapConnectionStringsConfigurationElementCollection.cs" />
     <Compile Include="DataModel\DataModelBinder.cs" />
+    <Compile Include="DataModel\DataModelCollectionReference.cs" />
     <Compile Include="DataModel\DataModelCommandBuilder.cs" />
     <Compile Include="DataModel\DataModelRepositoryEmitter.cs" />
     <Compile Include="DataModel\DataModelUpdateCommandBuilder.cs" />

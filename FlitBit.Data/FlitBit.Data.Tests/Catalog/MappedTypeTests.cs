@@ -28,7 +28,6 @@ namespace FlitBit.Data.Tests.Catalog
 		public void OneTypeOneTableMappingTest()
 		{
 			var untypedRepo = DataModel<IMappedType>.GetRepository<int>();
-
 			var repo = (IDataModelRepository<IMappedType, int, SqlConnection>) untypedRepo;
 
 			var binder = DataModel<IMappedType>.Binder;

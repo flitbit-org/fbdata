@@ -5,6 +5,8 @@ using System.Collections.Specialized;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Data.Common;
+using System.Data.SqlClient;
+using System.Data.SqlTypes;
 using System.Linq;
 using System.Threading;
 using FlitBit.Core.Collections;
@@ -15,430 +17,464 @@ using FlitBit.Data.SPI;
 
 namespace FlitBit.Data.Tests.Catalog.Models
 {
-	[Serializable]
-	public sealed class IMappedTypeDataModel : INotifyPropertyChanged, IMappedType, IEquatable<IMappedTypeDataModel>,
-		IEquatable<IMappedType>, IDataModel
-	{
-		// Fields
-		private static readonly string[] __fieldMap =
-		{
-			"Catalog", "DateCreated", "DateUpdated", "ID", "LatestVersion",
-			"MappedBaseType", "MappedTable", "OriginalVersion", "ReadObjectName", "RuntimeType", "Schema", "Strategy"
-		};
+	
+    [Serializable]
+    public sealed class IMappedTypeDataModel : INotifyPropertyChanged, IMappedType, IEquatable<IMappedTypeDataModel>, IEquatable<IMappedType>, IDataModel
+    {
+        private static readonly string[] __fieldMap = new string[] { "ID", "DateCreated", "DateUpdated", "Catalog", "LatestVersion", "MappedBaseType", "MappedTable", "OriginalVersion", "ReadObjectName", "RuntimeType", "Schema", "Strategy", "Active" };
+        /* private scope */ BitVector DirtyFlags = new BitVector(14);
+	    private object _sync = new object();
+        private bool? IMappedType_Active_field;
+        private string IMappedType_Catalog_field;
+        private DateTime IMappedType_DateCreated_field;
+        private DateTime IMappedType_DateUpdated_field;
+        private int IMappedType_ID_field;
+        private string IMappedType_LatestVersion_field;
+        private DataModelReference<IMappedType, int> IMappedType_MappedBaseType_field = new DataModelReference<IMappedType, int>();
+        private string IMappedType_MappedTable_field;
+        private string IMappedType_OriginalVersion_field;
+        private string IMappedType_ReadObjectName_field;
+				private DataModelCollectionReference<IMappedType, int> IMappedType_RegisteredSubtypes_field;
+        private Type IMappedType_RuntimeType_field;
+        private string IMappedType_Schema_field;
+        private MappingStrategy IMappedType_Strategy_field;
+        [NonSerialized]
+        private PropertyChangedEventHandler _propertyChanged;
+        private static readonly int CHashCodeSeed = typeof(IMappedTypeDataModel).AssemblyQualifiedName.GetHashCode();
 
-		private static readonly int CHashCodeSeed = typeof (IMappedTypeDataModel).AssemblyQualifiedName.GetHashCode();
+        public event PropertyChangedEventHandler PropertyChanged
+        {
+            add
+            {
+                PropertyChangedEventHandler handler2;
+                PropertyChangedEventHandler handler = this._propertyChanged;
+                do
+                {
+                    handler2 = handler;
+                    PropertyChangedEventHandler handler3 = (PropertyChangedEventHandler) Delegate.Combine(handler2, value);
+                    handler = Interlocked.CompareExchange<PropertyChangedEventHandler>(ref this._propertyChanged, handler3, handler2);
+                }
+                while (handler == handler2);
+            }
+            remove
+            {
+                PropertyChangedEventHandler handler2;
+                PropertyChangedEventHandler handler = this._propertyChanged;
+                do
+                {
+                    handler2 = handler;
+                    PropertyChangedEventHandler handler3 = (PropertyChangedEventHandler) Delegate.Remove(handler2, value);
+                    handler = Interlocked.CompareExchange<PropertyChangedEventHandler>(ref this._propertyChanged, handler3, handler2);
+                }
+                while (handler == handler2);
+            }
+        }
 
-		/* private scope */
-		private BitVector DirtyFlags = new BitVector(13);
-		private bool? IMappedType_Active_field;
-		private string IMappedType_Catalog_field;
-		private DateTime IMappedType_DateCreated_field;
-		private DateTime IMappedType_DateUpdated_field;
-		private int IMappedType_ID_field;
-		private string IMappedType_LatestVersion_field;
+        public IMappedTypeDataModel()
+        {
+        }
 
-		private DataModelReference<IMappedType, int> IMappedType_MappedBaseType_field =
-			new DataModelReference<IMappedType, int>();
+	    private void IMappedType_RegisteredSubtypes_field_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
+        {
+            this.DirtyFlags[9] = true;
+            this.HandlePropertyChanged("RegisteredSubtypes");
+        }
 
-		private string IMappedType_MappedTable_field;
-		private string IMappedType_OriginalVersion_field;
-		private string IMappedType_ReadObjectName_field;
-		private ObservableCollection<IMappedType> IMappedType_RegisteredSubtypes_field;
-		private Type IMappedType_RuntimeType_field;
-		private string IMappedType_Schema_field;
-		private MappingStrategy IMappedType_Strategy_field;
-		[NonSerialized] private PropertyChangedEventHandler _propertyChanged;
+        public object Clone()
+        {
+            IMappedTypeDataModel model = (IMappedTypeDataModel) base.MemberwiseClone();
+            model.DirtyFlags = this.DirtyFlags.Copy();
+            model._propertyChanged = null;
+						if (IMappedType_RegisteredSubtypes_field != null)
+	        model.IMappedType_RegisteredSubtypes_field = IMappedType_RegisteredSubtypes_field.Clone(model.IMappedType_RegisteredSubtypes_field_CollectionChanged);
+            return model;
+        }
 
-		// Methods
-		public IMappedTypeDataModel()
-		{
-			RegisteredSubtypes = null;
-		}
+        public bool Equals(IMappedType other)
+        {
+            return ((other is IMappedTypeDataModel) && this.Equals((IMappedTypeDataModel) other));
+        }
 
-		public bool? Active
-		{
-			get { return IMappedType_Active_field; }
-			set
-			{
-				if (IMappedType_Active_field != value)
-				{
-					IMappedType_Active_field = value;
-					DirtyFlags[10] = true;
-					HandlePropertyChanged("Active");
-				}
-			}
-		}
+	    public bool Equals(IMappedTypeDataModel other)
+	    {
+		    return ((((((this.DirtyFlags == other.DirtyFlags) && (this.IMappedType_ID_field == other.IMappedType_ID_field)) &&
+		               ((this.IMappedType_DateCreated_field == other.IMappedType_DateCreated_field) &&
+		                (this.IMappedType_DateUpdated_field == other.IMappedType_DateUpdated_field))) &&
+		              (((this.IMappedType_Catalog_field == other.IMappedType_Catalog_field) &&
+		                (this.IMappedType_LatestVersion_field == other.IMappedType_LatestVersion_field)) &&
+		               (EqualityComparer<DataModelReference<IMappedType, int>>.Default.Equals(
+			               this.IMappedType_MappedBaseType_field, other.IMappedType_MappedBaseType_field) &&
+		                (this.IMappedType_MappedTable_field == other.IMappedType_MappedTable_field)))) &&
+		             ((((this.IMappedType_OriginalVersion_field == other.IMappedType_OriginalVersion_field) &&
+		                (this.IMappedType_ReadObjectName_field == other.IMappedType_ReadObjectName_field)) &&
+		               (this.IMappedType_RegisteredSubtypes_field.Equals(other.IMappedType_RegisteredSubtypes_field) &&
+		                (this.IMappedType_RuntimeType_field == other.IMappedType_RuntimeType_field))) &&
+		              ((this.IMappedType_Schema_field == other.IMappedType_Schema_field) &&
+		               (this.IMappedType_Strategy_field == other.IMappedType_Strategy_field)))) &&
+		            Nullable.Equals<bool>(this.IMappedType_Active_field, other.IMappedType_Active_field));
+	    }
 
-		public object Clone()
-		{
-			var model = (IMappedTypeDataModel) base.MemberwiseClone();
-			model.DirtyFlags = DirtyFlags.Copy();
-			model._propertyChanged = null;
-			model.RegisteredSubtypes = IMappedType_RegisteredSubtypes_field;
-			return model;
-		}
+	    public override bool Equals(object obj)
+        {
+            return ((obj is IMappedTypeDataModel) && this.Equals((IMappedTypeDataModel) obj));
+        }
 
-		public BitVector GetDirtyFlags()
-		{
-			return (BitVector) DirtyFlags.Clone();
-		}
+        public BitVector GetDirtyFlags()
+        {
+            return (BitVector) this.DirtyFlags.Clone();
+        }
 
-		public TIdentityKey GetReferentID<TIdentityKey>(string member)
-		{
-			if (string.Equals("MappedBaseType", member))
-			{
-				return (TIdentityKey) (object) IMappedType_MappedBaseType_field.IdentityKey;
-			}
-			if (member == null)
-			{
-				throw new ArgumentNullException("member");
-			}
-			throw new ArgumentOutOfRangeException("member", "IMappedType does not reference: " + member + ".");
-		}
+        public override int GetHashCode()
+        {
+            int num = 0xf3e9b;
+            int num2 = CHashCodeSeed * num;
+            num2 ^= num * this.DirtyFlags.GetHashCode();
+            num2 ^= num * this.IMappedType_ID_field;
+            num2 ^= num * this.IMappedType_DateCreated_field.GetHashCode();
+            num2 ^= num * this.IMappedType_DateUpdated_field.GetHashCode();
+            if (this.IMappedType_Catalog_field != null)
+            {
+                num2 ^= num * this.IMappedType_Catalog_field.GetHashCode();
+            }
+            if (this.IMappedType_LatestVersion_field != null)
+            {
+                num2 ^= num * this.IMappedType_LatestVersion_field.GetHashCode();
+            }
+            num2 ^= num * this.IMappedType_MappedBaseType_field.GetHashCode();
+            if (this.IMappedType_MappedTable_field != null)
+            {
+                num2 ^= num * this.IMappedType_MappedTable_field.GetHashCode();
+            }
+            if (this.IMappedType_OriginalVersion_field != null)
+            {
+                num2 ^= num * this.IMappedType_OriginalVersion_field.GetHashCode();
+            }
+            if (this.IMappedType_ReadObjectName_field != null)
+            {
+                num2 ^= num * this.IMappedType_ReadObjectName_field.GetHashCode();
+            }
+            num2 ^= num * this.IMappedType_RegisteredSubtypes_field.GetHashCode();
+            num2 ^= num * this.IMappedType_RuntimeType_field.GetHashCode();
+            if (this.IMappedType_Schema_field != null)
+            {
+                num2 ^= num * this.IMappedType_Schema_field.GetHashCode();
+            }
+            num2 ^= num * Convert.ToInt32(this.IMappedType_Strategy_field);
+            return (num2 ^ (num * this.IMappedType_Active_field.GetHashCode()));
+        }
 
-		/* private scope */
+        public TIdentityKey GetReferentID<TIdentityKey>(string member)
+        {
+            if (string.Equals("MappedBaseType", member))
+            {
+                return (TIdentityKey) Convert.ChangeType(this.IMappedType_MappedBaseType_field.IdentityKey, typeof(TIdentityKey));
+            }
+            if (member == null)
+            {
+                throw new ArgumentNullException("member");
+            }
+            throw new ArgumentOutOfRangeException("member", "IMappedType does not reference: " + member + ".");
+        }
 
-		public bool IsDirty(string member)
-		{
-			if (member == null)
-			{
-				throw new ArgumentNullException("member");
-			}
-			int index = Array.IndexOf(__fieldMap, member);
-			if (index < 0)
-			{
-				throw new ArgumentOutOfRangeException("member", "IMappedType does not define property: `" + member + "`.");
-			}
-			return DirtyFlags[index];
-		}
+        /* private scope */ void HandlePropertyChanged(string propName)
+        {
+            if (this._propertyChanged != null)
+            {
+                this._propertyChanged(this, new PropertyChangedEventArgs(propName));
+            }
+        }
 
-		public void LoadFromDataReader(DbDataReader reader, int[] offsets)
-		{
-			int ordinal = offsets[0];
-			IMappedType_Catalog_field = reader.GetString(ordinal);
-			ordinal = offsets[1];
-			IMappedType_DateCreated_field = reader.GetDateTime(ordinal);
-			ordinal = offsets[2];
-			IMappedType_DateUpdated_field = reader.GetDateTime(ordinal);
-			ordinal = offsets[3];
-			IMappedType_ID_field = reader.GetInt32(ordinal);
-			ordinal = offsets[4];
-			IMappedType_LatestVersion_field = reader.GetString(ordinal);
-			ordinal = offsets[5];
-			IMappedType_MappedBaseType_field = reader.IsDBNull(ordinal)
-				? new DataModelReference<IMappedType, int>()
-				: new DataModelReference<IMappedType, int>(reader.GetInt32(ordinal));
-			ordinal = offsets[6];
-			IMappedType_MappedTable_field = reader.GetString(ordinal);
-			ordinal = offsets[7];
-			IMappedType_OriginalVersion_field = reader.GetString(ordinal);
-			ordinal = offsets[8];
-			IMappedType_ReadObjectName_field = reader.GetString(ordinal);
-			ordinal = offsets[9];
-			IMappedType_RuntimeType_field = Type.GetType(reader.GetString(ordinal));
-			ordinal = offsets[10];
-			IMappedType_Schema_field = reader.GetString(ordinal);
-			ordinal = offsets[11];
-			IMappedType_Strategy_field = ((MappingStrategy) reader.GetInt32(ordinal));
-			IMappedType_Active_field = reader.IsDBNull(ordinal) ? default(bool?) : reader.GetBoolean(ordinal);
-			DirtyFlags = new BitVector(13);
-		}
+        public bool IsDirty(string member)
+        {
+            if (member == null)
+            {
+                throw new ArgumentNullException("member");
+            }
+            int index = Array.IndexOf<string>(__fieldMap, member);
+            if (index < 0)
+            {
+                throw new ArgumentOutOfRangeException("member", "IMappedType does not define property: `" + member + "`.");
+            }
+            return this.DirtyFlags[index];
+        }
 
-		public void ResetDirtyFlags()
-		{
-			DirtyFlags = new BitVector(13);
-		}
+	    public void LoadFromDataReader(DbDataReader reader, int[] offsets)
+	    {
+		    int ordinal = offsets[0];
+		    this.IMappedType_ID_field = reader.GetInt32(ordinal);
+				ordinal = offsets[1];
+		    this.IMappedType_DateCreated_field = reader.GetDateTime(ordinal);
+		    ordinal = offsets[2];
+		    this.IMappedType_DateUpdated_field = reader.GetDateTime(ordinal);
+		    ordinal = offsets[3];
+		    this.IMappedType_Catalog_field = reader.GetString(ordinal);
+		    ordinal = offsets[4];
+		    this.IMappedType_LatestVersion_field = reader.GetString(ordinal);
+		    ordinal = offsets[5];
+		    this.IMappedType_MappedBaseType_field = reader.IsDBNull(ordinal)
+			    ? new DataModelReference<IMappedType, int>()
+			    : new DataModelReference<IMappedType, int>(reader.GetInt32(ordinal));
+		    ordinal = offsets[6];
+		    this.IMappedType_MappedTable_field = reader.GetString(ordinal);
+		    ordinal = offsets[7];
+		    this.IMappedType_OriginalVersion_field = reader.GetString(ordinal);
+		    ordinal = offsets[8];
+		    this.IMappedType_ReadObjectName_field = reader.GetString(ordinal);
+		    ordinal = offsets[9];
+		    this.IMappedType_RuntimeType_field = Type.GetType(reader.GetString(ordinal));
+		    ordinal = offsets[10];
+		    this.IMappedType_Schema_field = reader.GetString(ordinal);
+		    ordinal = offsets[11];
+		    this.IMappedType_Strategy_field = (MappingStrategy) reader.GetInt32(ordinal);
+		    ordinal = offsets[12];
+		    this.IMappedType_Active_field = reader.IsDBNull(ordinal)
+			    ? null
+			    : ((bool?) new SqlBoolean(reader.GetBoolean(ordinal)));
+		    this.DirtyFlags = new BitVector(14);
+	    }
 
-		public void SetReferentID<TIdentityKey>(string member, TIdentityKey id)
-		{
-			if (string.Equals("MappedBaseType", member))
-			{
-				if (!IMappedType_MappedBaseType_field.IdentityEquals(id))
-				{
-					IMappedType_MappedBaseType_field = new DataModelReference<IMappedType, int>((int) (object) id);
-					DirtyFlags[5] = true;
-					HandlePropertyChanged("MappedBaseType");
-				}
-			}
-			else
-			{
-				if (member == null)
-				{
-					throw new ArgumentNullException("member");
-				}
-				throw new ArgumentOutOfRangeException("member", "IMappedType does not reference: " + member + ".");
-			}
-		}
+	    public void ResetDirtyFlags()
+        {
+            this.DirtyFlags = new BitVector(14);
+        }
 
-		public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
-		{
-			throw new NotImplementedException();
-		}
+        public void SetReferentID<TIdentityKey>(string member, TIdentityKey id)
+        {
+            if (string.Equals("MappedBaseType", member))
+            {
+                if (!this.IMappedType_MappedBaseType_field.IdentityEquals(id))
+                {
+                    this.IMappedType_MappedBaseType_field = new DataModelReference<IMappedType, int>(Convert.ToInt32(id));
+                    this.DirtyFlags[5] = true;
+                    this.HandlePropertyChanged("MappedBaseType");
+                }
+            }
+            else
+            {
+                if (member == null)
+                {
+                    throw new ArgumentNullException("member");
+                }
+                throw new ArgumentOutOfRangeException("member", "IMappedType does not reference: " + member + ".");
+            }
+        }
 
-		public bool Equals(IMappedType other)
-		{
-			return ((other is IMappedTypeDataModel) && Equals((IMappedTypeDataModel) other));
-		}
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            return null;
+        }
 
-		public bool Equals(IMappedTypeDataModel other)
-		{
-			return ((((((DirtyFlags == other.DirtyFlags) && (IMappedType_Catalog_field == other.IMappedType_Catalog_field)) &&
-			           ((IMappedType_DateCreated_field == other.IMappedType_DateCreated_field) &&
-			            (IMappedType_DateUpdated_field == other.IMappedType_DateUpdated_field))) &&
-			          (((IMappedType_ID_field == other.IMappedType_ID_field) &&
-			            (IMappedType_LatestVersion_field == other.IMappedType_LatestVersion_field)) &&
-			           (EqualityComparer<DataModelReference<IMappedType, int>>.Default.Equals(IMappedType_MappedBaseType_field,
-				           other.IMappedType_MappedBaseType_field) &&
-			            (IMappedType_MappedTable_field == other.IMappedType_MappedTable_field)))) &&
-			         ((((IMappedType_OriginalVersion_field == other.IMappedType_OriginalVersion_field) &&
-			            (IMappedType_ReadObjectName_field == other.IMappedType_ReadObjectName_field)) &&
-			           (IMappedType_RegisteredSubtypes_field.SequenceEqual(other.IMappedType_RegisteredSubtypes_field) &&
-			            (IMappedType_RuntimeType_field == other.IMappedType_RuntimeType_field))) &&
-			          (IMappedType_Schema_field == other.IMappedType_Schema_field))) &&
-			        (IMappedType_Strategy_field == other.IMappedType_Strategy_field));
-		}
+        public bool? Active
+        {
+            get
+            {
+                return this.IMappedType_Active_field;
+            }
+            set
+            {
+                if (!Nullable.Equals<bool>(this.IMappedType_Active_field, value))
+                {
+                    this.IMappedType_Active_field = value;
+                    this.DirtyFlags[12] = true;
+                    this.HandlePropertyChanged("Active");
+                }
+            }
+        }
 
-		// Properties
-		public string Catalog
-		{
-			get { return IMappedType_Catalog_field; }
-			set
-			{
-				if (IMappedType_Catalog_field == value)
-				{
-					return;
-				}
-				IMappedType_Catalog_field = value;
-				DirtyFlags[0] = true;
-				HandlePropertyChanged("Catalog");
-			}
-		}
+        public string Catalog
+        {
+            get
+            {
+                return this.IMappedType_Catalog_field;
+            }
+            set
+            {
+                if (this.IMappedType_Catalog_field != value)
+                {
+                    this.IMappedType_Catalog_field = value;
+                    this.DirtyFlags[3] = true;
+                    this.HandlePropertyChanged("Catalog");
+                }
+            }
+        }
 
-		public DateTime DateCreated
-		{
-			get { return IMappedType_DateCreated_field; }
-		}
+        public DateTime DateCreated
+        {
+            get
+            {
+                return this.IMappedType_DateCreated_field;
+            }
+        }
 
-		public DateTime DateUpdated
-		{
-			get { return IMappedType_DateUpdated_field; }
-		}
+        public DateTime DateUpdated
+        {
+            get
+            {
+                return this.IMappedType_DateUpdated_field;
+            }
+        }
 
-		public int ID
-		{
-			get { return IMappedType_ID_field; }
-		}
+        public int ID
+        {
+            get
+            {
+                return this.IMappedType_ID_field;
+            }
+        }
 
-		public string LatestVersion
-		{
-			get { return IMappedType_LatestVersion_field; }
-			set
-			{
-				if (IMappedType_LatestVersion_field != value)
-				{
-					IMappedType_LatestVersion_field = value;
-					DirtyFlags[4] = true;
-					HandlePropertyChanged("LatestVersion");
-				}
-			}
-		}
+        public string LatestVersion
+        {
+            get
+            {
+                return this.IMappedType_LatestVersion_field;
+            }
+            set
+            {
+                if (this.IMappedType_LatestVersion_field != value)
+                {
+                    this.IMappedType_LatestVersion_field = value;
+                    this.DirtyFlags[4] = true;
+                    this.HandlePropertyChanged("LatestVersion");
+                }
+            }
+        }
 
-		public IMappedType MappedBaseType
-		{
-			get { return IMappedType_MappedBaseType_field.Model; }
-			set
-			{
-				if (!IMappedType_MappedBaseType_field.Equals(value))
-				{
-					IMappedType_MappedBaseType_field = new DataModelReference<IMappedType, int>(value);
-					DirtyFlags[5] = true;
-					HandlePropertyChanged("MappedBaseType");
-				}
-			}
-		}
+        public IMappedType MappedBaseType
+        {
+            get
+            {
+                return this.IMappedType_MappedBaseType_field.Model;
+            }
+            set
+            {
+                if (!this.IMappedType_MappedBaseType_field.Equals(value))
+                {
+                    this.IMappedType_MappedBaseType_field = new DataModelReference<IMappedType, int>(value);
+                    this.DirtyFlags[5] = true;
+                    this.HandlePropertyChanged("MappedBaseType");
+                }
+            }
+        }
 
-		public string MappedTable
-		{
-			get { return IMappedType_MappedTable_field; }
-			set
-			{
-				if (!(IMappedType_MappedTable_field == value))
-				{
-					IMappedType_MappedTable_field = value;
-					DirtyFlags[6] = true;
-					HandlePropertyChanged("MappedTable");
-				}
-			}
-		}
+        public string MappedTable
+        {
+            get
+            {
+                return this.IMappedType_MappedTable_field;
+            }
+            set
+            {
+                if (this.IMappedType_MappedTable_field != value)
+                {
+                    this.IMappedType_MappedTable_field = value;
+                    this.DirtyFlags[6] = true;
+                    this.HandlePropertyChanged("MappedTable");
+                }
+            }
+        }
 
-		public string OriginalVersion
-		{
-			get { return IMappedType_OriginalVersion_field; }
-			set
-			{
-				if (!(IMappedType_OriginalVersion_field == value))
-				{
-					IMappedType_OriginalVersion_field = value;
-					DirtyFlags[7] = true;
-					HandlePropertyChanged("OriginalVersion");
-				}
-			}
-		}
+        public string OriginalVersion
+        {
+            get
+            {
+                return this.IMappedType_OriginalVersion_field;
+            }
+            set
+            {
+                if (this.IMappedType_OriginalVersion_field != value)
+                {
+                    this.IMappedType_OriginalVersion_field = value;
+                    this.DirtyFlags[7] = true;
+                    this.HandlePropertyChanged("OriginalVersion");
+                }
+            }
+        }
 
-		public string ReadObjectName
-		{
-			get { return IMappedType_ReadObjectName_field; }
-			set
-			{
-				if (!(IMappedType_ReadObjectName_field == value))
-				{
-					IMappedType_ReadObjectName_field = value;
-					DirtyFlags[8] = true;
-					HandlePropertyChanged("ReadObjectName");
-				}
-			}
-		}
+        public string ReadObjectName
+        {
+            get
+            {
+                return this.IMappedType_ReadObjectName_field;
+            }
+            set
+            {
+                if (this.IMappedType_ReadObjectName_field != value)
+                {
+                    this.IMappedType_ReadObjectName_field = value;
+                    this.DirtyFlags[8] = true;
+                    this.HandlePropertyChanged("ReadObjectName");
+                }
+            }
+        }
 
-		public IList<IMappedType> RegisteredSubtypes
-		{
-			get { return IMappedType_RegisteredSubtypes_field; }
-			private set
-			{
-				if (value != null)
-				{
-					IMappedType_RegisteredSubtypes_field = new ObservableCollection<IMappedType>(value);
-				}
-				else
-				{
-					IMappedType_RegisteredSubtypes_field = new ObservableCollection<IMappedType>();
-				}
-				IMappedType_RegisteredSubtypes_field.CollectionChanged += IMappedType_RegisteredSubtypes_field_CollectionChanged;
-			}
-		}
+	    public IList<IMappedType> RegisteredSubtypes
+	    {
+		    get
+		    {
+			    if (IMappedType_RegisteredSubtypes_field == null)
+			    {
+				    lock (_sync)
+				    {
+					    if (IMappedType_RegisteredSubtypes_field == null)
+					    {
+						    IMappedType_RegisteredSubtypes_field = new DataModelCollectionReference<IMappedType, int>("RegisteredSubtypes",
+							    IMappedType_RegisteredSubtypes_field_CollectionChanged, ID);
+					    }
+				    }
+			    }
+					return IMappedType_RegisteredSubtypes_field.GetCollection();
+		    }
+	    }
 
-		public Type RuntimeType
-		{
-			get { return IMappedType_RuntimeType_field; }
-			set
-			{
-				if (!(IMappedType_RuntimeType_field == value))
-				{
-					IMappedType_RuntimeType_field = value;
-					DirtyFlags[9] = true;
-					HandlePropertyChanged("RuntimeType");
-				}
-			}
-		}
+	    public Type RuntimeType
+        {
+            get
+            {
+                return this.IMappedType_RuntimeType_field;
+            }
+            set
+            {
+                if (this.IMappedType_RuntimeType_field != value)
+                {
+                    this.IMappedType_RuntimeType_field = value;
+                    this.DirtyFlags[9] = true;
+                    this.HandlePropertyChanged("RuntimeType");
+                }
+            }
+        }
 
-		public string Schema
-		{
-			get { return IMappedType_Schema_field; }
-			set
-			{
-				if (!(IMappedType_Schema_field == value))
-				{
-					IMappedType_Schema_field = value;
-					DirtyFlags[10] = true;
-					HandlePropertyChanged("Schema");
-				}
-			}
-		}
+        public string Schema
+        {
+            get
+            {
+                return this.IMappedType_Schema_field;
+            }
+            set
+            {
+                if (this.IMappedType_Schema_field != value)
+                {
+                    this.IMappedType_Schema_field = value;
+                    this.DirtyFlags[10] = true;
+                    this.HandlePropertyChanged("Schema");
+                }
+            }
+        }
 
-		public MappingStrategy Strategy
-		{
-			get { return IMappedType_Strategy_field; }
-			set
-			{
-				if (IMappedType_Strategy_field != value)
-				{
-					IMappedType_Strategy_field = value;
-					DirtyFlags[11] = true;
-					HandlePropertyChanged("Strategy");
-				}
-			}
-		}
-
-		public event PropertyChangedEventHandler PropertyChanged
-		{
-			add
-			{
-				PropertyChangedEventHandler handler2;
-				PropertyChangedEventHandler handler = _propertyChanged;
-				do
-				{
-					handler2 = handler;
-					var handler3 = (PropertyChangedEventHandler) Delegate.Combine(handler2, value);
-					handler = Interlocked.CompareExchange(ref _propertyChanged, handler3, handler2);
-				} while (handler == handler2);
-			}
-			remove
-			{
-				PropertyChangedEventHandler handler2;
-				PropertyChangedEventHandler handler = _propertyChanged;
-				do
-				{
-					handler2 = handler;
-					var handler3 = (PropertyChangedEventHandler) Delegate.Remove(handler2, value);
-					handler = Interlocked.CompareExchange(ref _propertyChanged, handler3, handler2);
-				} while (handler == handler2);
-			}
-		}
-
-		private void IMappedType_RegisteredSubtypes_field_CollectionChanged(object sender, NotifyCollectionChangedEventArgs e)
-		{
-			DirtyFlags[9] = true;
-			HandlePropertyChanged("RegisteredSubtypes");
-		}
-
-		public override bool Equals(object obj)
-		{
-			return ((obj is IMappedTypeDataModel) && Equals((IMappedTypeDataModel) obj));
-		}
-
-		public override int GetHashCode()
-		{
-			int num = 0xf3e9b;
-			int num2 = CHashCodeSeed*num;
-			num2 ^= num*DirtyFlags.GetHashCode();
-			if (IMappedType_Catalog_field != null)
-			{
-				num2 ^= num*IMappedType_Catalog_field.GetHashCode();
-			}
-			num2 ^= num*IMappedType_DateCreated_field.GetHashCode();
-			num2 ^= num*IMappedType_DateUpdated_field.GetHashCode();
-			num2 ^= num*IMappedType_ID_field;
-			if (IMappedType_LatestVersion_field != null)
-			{
-				num2 ^= num*IMappedType_LatestVersion_field.GetHashCode();
-			}
-			num2 ^= num*IMappedType_MappedBaseType_field.GetHashCode();
-			if (IMappedType_MappedTable_field != null)
-			{
-				num2 ^= num*IMappedType_MappedTable_field.GetHashCode();
-			}
-			if (IMappedType_OriginalVersion_field != null)
-			{
-				num2 ^= num*IMappedType_OriginalVersion_field.GetHashCode();
-			}
-			if (IMappedType_ReadObjectName_field != null)
-			{
-				num2 ^= num*IMappedType_ReadObjectName_field.GetHashCode();
-			}
-			num2 ^= num*IMappedType_RegisteredSubtypes_field.GetHashCode();
-			num2 ^= num*IMappedType_RuntimeType_field.GetHashCode();
-			if (IMappedType_Schema_field != null)
-			{
-				num2 ^= num*IMappedType_Schema_field.GetHashCode();
-			}
-			return (num2 ^ (num*(int) IMappedType_Strategy_field));
-		}
-
-		private void HandlePropertyChanged(string propName)
-		{
-			if (_propertyChanged != null)
-			{
-				_propertyChanged(this, new PropertyChangedEventArgs(propName));
-			}
-		}
-	}
+        public MappingStrategy Strategy
+        {
+            get
+            {
+                return this.IMappedType_Strategy_field;
+            }
+            set
+            {
+                if (this.IMappedType_Strategy_field != value)
+                {
+                    this.IMappedType_Strategy_field = value;
+                    this.DirtyFlags[11] = true;
+                    this.HandlePropertyChanged("Strategy");
+                }
+            }
+        }
+    }
 }

@@ -10,7 +10,7 @@ namespace FlitBit.Sample.People
 		DateTime DateCreated { get; set; }
 		DateTime DateUpdated { get; set; }
 
-		IEnumerable<IGroup> GroupMemberships { get; }
-		IEnumerable<IGroup> GroupCommissions { get; } 
+		ICollection<IGroup> GroupMemberships { get; }
+		ICollection<IGroup> GroupCommissions { get; } 
 	}
 }
