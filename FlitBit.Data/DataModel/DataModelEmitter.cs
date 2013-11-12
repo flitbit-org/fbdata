@@ -112,13 +112,13 @@ namespace FlitBit.Data.DataModel
 				ImplementSpecializedEquals(builder);
 				ImplementSpecializedGetHashCode(builder, chashCodeSeed);
 				ImplementIDataModel(builder, cctor, props, dirtyFlags, propChanged);
-				EmitConstructor(ctor, props, dirtyFlags);
+				EmitConstructor(builder, ctor, props, dirtyFlags);
 				
 				builder.Compile();
 				return builder.Ref.Target;
 			}
 
-			static void EmitConstructor(EmittedMethodBase ctor, ICollection<PropertyRec> props,
+			static void EmitConstructor(EmittedClass builder, EmittedMethodBase ctor, ICollection<PropertyRec> props,
 				IFieldRef dirtyFlags)
 			{
 				ctor.ContributeInstructions((m, il) =>
@@ -127,6 +127,14 @@ namespace FlitBit.Data.DataModel
 					il.LoadValue(props.Count);
 					il.New<BitVector>(typeof(int));
 					il.StoreField(dirtyFlags);
+
+					var sync = builder.Fields.FirstOrDefault(f => f.Name == "_sync");
+					if (sync != null)
+					{
+						il.LoadArg_0();
+						il.New<Object>();
+						il.StoreField(sync);
+					}
 
 					foreach (var prop in props)
 					{
@@ -244,9 +252,9 @@ namespace FlitBit.Data.DataModel
 					{
 						if (prop.IsCollection)
 						{
-							//	if (this.<collection_field> != null)
+							//	if (this.<collection-field> != null)
 							//	{
-							//		model.<collection_field> = this.<collection_field>.Clone(new NotifyCollectionChangedEventHandler(model.<collection_field>_CollectionChanged));
+							//		model.<collection-field> = this.<collection-field>.Clone(new NotifyCollectionChangedEventHandler(model.<collection-field>_CollectionChanged));
 							//	}
 							//
 							var afterColl = il.DefineLabel();
@@ -766,7 +774,7 @@ namespace FlitBit.Data.DataModel
 			}
 
 			private static void ImplementPropertyFor(IMapping<TDataModel> mapping, Type intf, EmittedClass builder,
-				List<PropertyRec> props, PropertyInfo property,
+				IList<PropertyRec> props, PropertyInfo property,
 				EmittedField dirtyFlags, EmittedMethod propChanged)
 			{
 				var col = (ColumnMapping<TDataModel>) mapping.Columns.SingleOrDefault(c => c.Member == property);
@@ -788,15 +796,14 @@ namespace FlitBit.Data.DataModel
 				if (coll != null)
 				{
 					props.Add(rec = PropertyRec.CreateOnCollection(mapping, intf, builder, coll, property));
-					EmitPropertyForCollection(intf, builder, rec, dirtyFlags, propChanged);
+					EmitPropertyForCollection(builder, rec, props, dirtyFlags, propChanged);
 				}
 			}
 
-			private static void EmitPropertyForCollection(Type intf, EmittedClass builder, PropertyRec rec,
-				EmittedField dirtyFlags, EmittedMethod propChanged)
+			private static void EmitPropertyForCollection(EmittedClass builder, PropertyRec rec, IList<PropertyRec> props, EmittedField dirtyFlags, EmittedMethod propChanged)
 			{
 				var observer =
-					builder.DefineMethod(String.Concat("<", intf.Name, "_", rec.Source.Name, ">_field_CollectionChanged"));
+					builder.DefineMethod(String.Concat(rec.EmittedField.Name, "_CollectionChanged"));
 				observer.ClearAttributes();
 				observer.IncludeAttributes(MethodAttributes.Private | MethodAttributes.HideBySig);
 				observer.DefineParameter("sender", typeof (object));
@@ -839,16 +846,18 @@ namespace FlitBit.Data.DataModel
 						var outerElse = il.DefineLabel();
 						var innerElse = il.DefineLabel();
 						var endFinally = il.DefineLabel();
-						var afterFinally = il.DefineLabel();
-						;
+						
 						il.LoadArg_0();
 						rec.EmittedField.LoadValue(il);
 						il.LoadNull();
+						il.CompareEqual();
+						il.Load_I4_0();
 						il.CompareEqual();
 						il.StoreLocal(flag2);
 						il.LoadLocal(flag2);
 						il.BranchIfTrue(outerElse);
 
+						il.BeginExceptionBlock();
 						il.Load_I4_0();
 						il.StoreLocal(flag);
 						il.LoadArg_0();
@@ -864,6 +873,8 @@ namespace FlitBit.Data.DataModel
 						rec.EmittedField.LoadValue(il);
 						il.LoadNull();
 						il.CompareEqual();
+						il.Load_I4_0();
+						il.CompareEqual();
 						il.StoreLocal(flag2);
 						il.LoadLocal(flag2);
 						il.BranchIfTrue(innerElse);
@@ -876,13 +887,21 @@ namespace FlitBit.Data.DataModel
 						il.NewObj(ctor);
 
 						// load the param.
-						// TODO: handle reference objects by calling GetReferentID<>()
 						foreach (var joinMem in rec.Collection.LocalJoinProperties)
 						{
 							il.LoadArg_0();
 							if (joinMem.MemberType == MemberTypes.Property)
 							{
-								il.CallVirtual(((PropertyInfo)joinMem).GetGetMethod());
+								var localColumn = props.First(c => c.Source == joinMem);
+								if (localColumn.Column.IsReference)
+								{
+									localColumn.EmittedField.LoadValue(il);
+									il.CallVirtual(localColumn.FieldType.GetProperty("IdentityKey").GetGetMethod());
+								}
+								else
+								{
+									localColumn.EmittedField.LoadValue(il);
+								}
 							}
 							if (joinMem.MemberType == MemberTypes.Field)
 							{
@@ -890,13 +909,13 @@ namespace FlitBit.Data.DataModel
 							}
 						}
 
-						il.NewObj(rec.FieldType.GetConstructors()[0]); // assumes only one!
+						il.NewObj(rec.FieldType.GetConstructors()[0]); // assumes only one, matching the parameter types!
 						il.StoreField(rec.EmittedField);
-							
 						
 						il.MarkLabel(innerElse);
 						il.Nop();
-						il.Emit(OpCodes.Leave, afterFinally);
+
+						il.BeginFinallyBlock();
 						il.LoadLocal(flag);
 						il.Load_I4_0();
 						il.CompareEqual();
@@ -907,9 +926,10 @@ namespace FlitBit.Data.DataModel
 						il.Call(typeof (Monitor).GetMethod("Exit"));
 						il.MarkLabel(endFinally);
 						il.EndFinally();
-						il.MarkLabel(afterFinally);
 						il.Nop();
-
+						il.EndExceptionBlock();
+						il.Nop();
+						
 						il.MarkLabel(outerElse);
 						il.LoadArg_0();
 						rec.EmittedField.LoadValue(il);
@@ -957,7 +977,6 @@ namespace FlitBit.Data.DataModel
 							il.MarkLabel(cont);
 
 							// TODO: emit column validation in setter
-
 
 							il.LoadArg_0();
 							il.LoadArg_1();
@@ -1416,7 +1435,7 @@ namespace FlitBit.Data.DataModel
 
 				public static PropertyRec CreateOnColumn(Type intf, EmittedClass builder, ColumnMapping<TDataModel> col, PropertyInfo info)
 				{
-					var fieldName = String.Concat("<", intf.Name, "_", info.Name, ">_field");
+					var fieldName = String.Concat("<", intf.Name, "_", info.Name, ">");
 					var res = new PropertyRec
 					{
 						Column = col,
@@ -1439,7 +1458,7 @@ namespace FlitBit.Data.DataModel
 
 				public static PropertyRec CreateOnCollection(IMapping<TDataModel> mapping, Type intf, EmittedClass builder, CollectionMapping<TDataModel> coll, PropertyInfo info)
 				{
-					var fieldName = String.Concat("<", intf.Name, "_", info.Name, ">_field");
+					var fieldName = String.Concat("<", intf.Name, "_", info.Name, ">");
 					var res = new PropertyRec
 					{
 						Collection = coll,
