@@ -784,7 +784,7 @@ namespace FlitBit.Data.DataModel
 					}
 				}
 
-				var coll = (CollectionMapping<TDataModel>) mapping.Collections.SingleOrDefault(c => c.Member == property);
+				var coll = (CollectionMapping<TDataModel>) mapping.Collections.SingleOrDefault(c => c.LocalMember == property);
 				if (coll != null)
 				{
 					props.Add(rec = PropertyRec.CreateOnCollection(mapping, intf, builder, coll, property));
@@ -832,7 +832,90 @@ namespace FlitBit.Data.DataModel
 						// }
 						// return this.<collection-field>.GetCollection();
 						//
+						var flag = il.DeclareLocal<bool>();
+						var res = il.DeclareLocal(rec.Source.PropertyType);
+						var flag2 = il.DeclareLocal<bool>();
+						var sync = il.DeclareLocal<object>();
+						var outerElse = il.DefineLabel();
+						var innerElse = il.DefineLabel();
+						var endFinally = il.DefineLabel();
+						var afterFinally = il.DefineLabel();
+						;
+						il.LoadArg_0();
+						rec.EmittedField.LoadValue(il);
 						il.LoadNull();
+						il.CompareEqual();
+						il.StoreLocal(flag2);
+						il.LoadLocal(flag2);
+						il.BranchIfTrue(outerElse);
+
+						il.Load_I4_0();
+						il.StoreLocal(flag);
+						il.LoadArg_0();
+						il.LoadField(builder.Fields.First(f => f.Name == "_sync"));
+						il.Duplicate();
+						il.StoreLocal(sync);
+						il.LoadLocalAddressShort(flag);
+						il.Call(typeof(Monitor).GetMethod("Enter", BindingFlags.Static | BindingFlags.Public, null,
+							 new [] { typeof(Object), typeof(bool).MakeByRefType() }, null)
+							 );
+
+						il.LoadArg_0();
+						rec.EmittedField.LoadValue(il);
+						il.LoadNull();
+						il.CompareEqual();
+						il.StoreLocal(flag2);
+						il.LoadLocal(flag2);
+						il.BranchIfTrue(innerElse);
+
+						il.LoadArg_0();
+						il.LoadValue(rec.Source.Name);
+						il.LoadArg_0();
+						il.Emit(OpCodes.Ldftn, rec.CollectionChanged.Builder);
+						var ctor = typeof(NotifyCollectionChangedEventHandler).GetConstructors()[0];
+						il.NewObj(ctor);
+
+						// load the param.
+						// TODO: handle reference objects by calling GetReferentID<>()
+						foreach (var joinMem in rec.Collection.LocalJoinProperties)
+						{
+							il.LoadArg_0();
+							if (joinMem.MemberType == MemberTypes.Property)
+							{
+								il.CallVirtual(((PropertyInfo)joinMem).GetGetMethod());
+							}
+							if (joinMem.MemberType == MemberTypes.Field)
+							{
+								il.LoadField(((FieldInfo)joinMem));
+							}
+						}
+
+						il.NewObj(rec.FieldType.GetConstructors()[0]); // assumes only one!
+						il.StoreField(rec.EmittedField);
+							
+						
+						il.MarkLabel(innerElse);
+						il.Nop();
+						il.Emit(OpCodes.Leave, afterFinally);
+						il.LoadLocal(flag);
+						il.Load_I4_0();
+						il.CompareEqual();
+						il.StoreLocal(flag2);
+						il.LoadLocal(flag2);
+						il.BranchIfTrue(endFinally);
+						il.LoadLocal(sync);
+						il.Call(typeof (Monitor).GetMethod("Exit"));
+						il.MarkLabel(endFinally);
+						il.EndFinally();
+						il.MarkLabel(afterFinally);
+						il.Nop();
+
+						il.MarkLabel(outerElse);
+						il.LoadArg_0();
+						rec.EmittedField.LoadValue(il);
+						il.CallVirtual(rec.EmittedField.FieldType.Target.GetMethod("GetCollection"));
+						il.StoreLocal(res);
+						il.LoadLocal(res);
 					});
 			}
 
@@ -1338,14 +1421,14 @@ namespace FlitBit.Data.DataModel
 					{
 						Column = col,
 						Ordinal = col.Ordinal,
-						Source = info
+						Source = info,
+						FieldType = info.PropertyType
 					};
 
-					res.FieldType = info.PropertyType;
 					if (col.IsReference)
 					{
 						res.ReferenceTargetMemberType = col.ReferenceTargetMember.GetTypeOfValue();
-						res.FieldType = typeof (DataModelReference<,>).MakeGenericType(res.FieldType, res.ReferenceTargetMemberType);
+						res.FieldType = typeof(DataModelReference<,>).MakeGenericType(res.FieldType, res.ReferenceTargetMemberType);
 					}
 					
 					res.IsLifted = info.IsDefined(typeof(MapLiftedColumnAttribute), true);
@@ -1365,15 +1448,13 @@ namespace FlitBit.Data.DataModel
 
 					var colls = mapping.Collections.ToArray();
 					res.Ordinal = mapping.Columns.Count() + Array.IndexOf(colls, coll);
-				
-					res.FieldType = typeof (DataModelCollectionReference<,>).MakeGenericType(info.PropertyType,
-						coll.ReferenceJoinMember.GetTypeOfValue());
+
+					res.FieldType = coll.MakeCollectionReferenceType();
 
 					res.EmittedProperty = builder.DefinePropertyFromPropertyInfo(info);
 					res.EmittedField = builder.DefineField(fieldName, res.FieldType);
 					return res;
 				}
-
 
 				public EmittedMethod CollectionChanged { get; set; }
 			}

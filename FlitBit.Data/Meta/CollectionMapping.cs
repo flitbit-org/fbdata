@@ -5,8 +5,11 @@
 #endregion
 
 using System;
+using System.Collections;
+using System.Collections.Generic;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
+using System.Linq;
 using System.Reflection;
 using FlitBit.Data.DataModel;
 using FlitBit.Emit;
@@ -15,45 +18,71 @@ namespace FlitBit.Data.Meta
 {
 	public abstract class CollectionMapping
 	{
-		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
-		MemberInfo _referenceTargetMember;
-
 		internal CollectionMapping(IMapping mapping, MemberInfo member)
 		{
-			Contract.Requires(mapping != null);
-			Contract.Requires(member != null);
+			Contract.Requires<ArgumentNullException>(mapping != null);
+			Contract.Requires<ArgumentNullException>(member != null);
 
-			this.Member = member;
-			this.ElementType = member.GetTypeOfValue()
-															.FindElementType();
-			this.TargetName = member.Name;
-			this.Mapping = mapping;
+			LocalMapping = mapping;
+			LocalMember = member;
 		}
 
-		public Type ElementType { get; private set; }
+		public MemberInfo LocalMember { get; internal set; }
 
-		public IMapping Mapping { get; private set; }
-		public MemberInfo Member { get; private set; }
+		public IMapping LocalMapping { get; private set; }
+
+		public IList<MemberInfo> LocalJoinProperties { get; internal set; }
 
 		public ReferenceBehaviors ReferenceBehaviors { get; internal set; }
 
-		public MemberInfo ReferenceJoinMember
+		public Type ReferencedType { get; internal set; }
+
+		public IMapping ReferencedMapping { get; internal set; }
+
+		public IList<MemberInfo> ReferencedProperties { get; internal set; }
+
+		internal Type MakeCollectionReferenceType()
 		{
-			get
+			var paramTypes = new List<Type>();
+			var arity = ReferencedProperties.Count;
+			for (var i = 0; i < arity; i++)
 			{
-				if (_referenceTargetMember == null)
-				{
-					_referenceTargetMember = InferCollectionReferenceTargetMember(Member, ElementType);
-				}
-				return _referenceTargetMember;
+				paramTypes.Add(CalculateColumnTypeFromJoinProperties(LocalJoinProperties[i], ReferencedProperties[i]));
 			}
-			internal set { _referenceTargetMember = value; }
+
+			switch (arity)
+			{
+				case 1: return typeof(DataModelCollectionReference<,>).MakeGenericType(ReferencedType, paramTypes[0]);
+				default: throw new NotImplementedException();
+			}
 		}
 
-		public string TargetName { get; set; }
+		private Type CalculateColumnTypeFromJoinProperties(MemberInfo local, MemberInfo reference)
+		{
+			Contract.Requires<ArgumentNullException>(local != null);
+			Contract.Requires<ArgumentNullException>(reference != null);
 
-		internal ColumnMapping BackReference { get; set; }
-		internal Type CollectionType { get; set; }
-		protected abstract MemberInfo InferCollectionReferenceTargetMember(MemberInfo Member, Type ElementType);
+			var lcolumn = LocalMapping.Columns.SingleOrDefault(c => c.Member == local);
+			if (lcolumn == null)
+			{
+				throw new MappingException(String.Concat("The mapped collection on ", LocalMapping.RuntimeType.Name, ".", LocalMember.Name,
+					" uses a local property that is not mapped to a column: ", LocalMapping.RuntimeType.Name, ".", local.Name)
+					);
+			}
+			var rcolumn = ReferencedMapping.Columns.SingleOrDefault(c => c.Member == reference);
+			if (rcolumn == null)
+			{
+				throw new MappingException(String.Concat("The mapped collection on ", LocalMapping.RuntimeType.Name, ".", LocalMember.Name,
+					" references an property that is not mapped to a column: ", ReferencedType.Name, ".", reference.Name)
+					);
+			}
+			if (lcolumn.UnderlyingType != rcolumn.UnderlyingType)
+			{
+				throw new MappingException(String.Concat("The mapped collection on ", LocalMapping.RuntimeType.Name, ".", LocalMember.Name,
+					" references incompatible properties: ", LocalMapping.RuntimeType.Name, ".", local.Name, " cannot equal ", ReferencedType.Name, ".", reference.Name)
+					);
+			}
+			return lcolumn.UnderlyingType;
+		}
 	}
 }

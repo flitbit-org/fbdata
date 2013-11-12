@@ -40,31 +40,38 @@ namespace FlitBit.Data.Meta
 			Contract.Requires<ArgumentNullException>(mapping != null);
 			Contract.Requires<ArgumentException>(member != null);
 			
-			this.Member = member;
-			this.TargetName = member.Name;
-			this.Ordinal = ordinal;
-			this.Mapping = mapping;
+			Member = member;
+			TargetName = member.Name;
+			Ordinal = ordinal;
+			Mapping = mapping;
 		}
 
 		public ColumnBehaviors Behaviors { get; internal set; }
+
 		public string DbObjectReference { get { return String.Concat(Mapping.DbObjectReference, '.', Mapping.QuoteObjectName(TargetName)); } }
 
 		public bool IsAlternateKey { get { return Behaviors.HasFlag(ColumnBehaviors.AlternateKey); } }
 
 		public bool IsCalculated { get { return Behaviors.HasFlag(ColumnBehaviors.Calculated); } }
+
 		public bool IsIdentity { get { return Behaviors.HasFlag(ColumnBehaviors.Identity); } }
 
 		public bool IsImmutable { get { return Behaviors.HasFlag(ColumnBehaviors.Immutable); } }
 
 		public bool IsNullable { get { return Behaviors.HasFlag(ColumnBehaviors.Nullable); } }
+
 		public bool IsReference { get; internal set; }
+
 		public bool IsRevisionTracking { get { return Behaviors.HasFlag(ColumnBehaviors.RevisionConcurrency); } }
+
 		public bool IsSynthetic { get { return Behaviors.HasFlag(ColumnBehaviors.Synthetic); } }
 
 		public bool IsTimestampOnInsert { get { return Behaviors.HasFlag(ColumnBehaviors.TimestampOnInsert); } }
 
 		public bool IsTimestampOnUpdate { get { return Behaviors.HasFlag(ColumnBehaviors.TimestampOnUpdate); } }
+
 		public IMapping Mapping { get; private set; }
+
 		public MemberInfo Member { get; private set; }
 		public int Ordinal { get; internal set; }
 
@@ -79,9 +86,7 @@ namespace FlitBit.Data.Meta
 		{
 			get
 			{
-				return (IsReference)
-					? ReferenceTargetMember.GetTypeOfValue()
-					: Member.GetTypeOfValue();
+				return Member.GetTypeOfValue();
 			}
 		}
 
@@ -144,6 +149,14 @@ namespace FlitBit.Data.Meta
 				emitter.DescribeColumn(buffer, this);
 			}
 			return buffer.ToString();
+		}
+
+		public Type UnderlyingType
+		{
+			get
+			{
+				return Emitter.UnderlyingType;
+			}
 		}
 	}
 }

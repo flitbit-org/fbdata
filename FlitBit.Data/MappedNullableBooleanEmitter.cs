@@ -8,7 +8,7 @@ namespace FlitBit.Data
 	internal class MappedNullableBooleanEmitter : MappedDbTypeEmitter<bool?, DbType>
 	{
 		internal MappedNullableBooleanEmitter()
-			: base(DbType.Boolean, DbType.Boolean)
+			: base(DbType.Boolean, DbType.Boolean, typeof(bool))
 		{
 		}
 

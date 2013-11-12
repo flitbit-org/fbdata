@@ -74,7 +74,7 @@ namespace FlitBit.Data.SqlServer
 	internal class SqlMappedNullableByteEmitter : SqlDbTypeEmitter<byte?>
 	{
 		internal SqlMappedNullableByteEmitter()
-			: base(DbType.Byte, SqlDbType.TinyInt)
+			: base(DbType.Byte, SqlDbType.TinyInt, typeof(byte))
 		{
 		}
 		public override void LoadValueFromDbReader(MethodBuilder method, IValueRef reader, IValueRef columnIndex, DbTypeDetails details)
@@ -111,7 +111,7 @@ namespace FlitBit.Data.SqlServer
 	internal class SqlMappedNullableInt16Emitter : SqlDbTypeEmitter<short?>
 	{
 		internal SqlMappedNullableInt16Emitter()
-			: base(DbType.Int16, SqlDbType.SmallInt)
+			: base(DbType.Int16, SqlDbType.SmallInt, typeof(short))
 		{
 		}
 		public override void LoadValueFromDbReader(MethodBuilder method, IValueRef reader, IValueRef columnIndex, DbTypeDetails details)
@@ -147,7 +147,7 @@ namespace FlitBit.Data.SqlServer
 	internal class SqlMappedNullableInt32Emitter : SqlDbTypeEmitter<int?>
 	{
 		internal SqlMappedNullableInt32Emitter()
-			: base(DbType.Int32, SqlDbType.Int)
+			: base(DbType.Int32, SqlDbType.Int, typeof(int))
 		{
 		}
 		public override void LoadValueFromDbReader(MethodBuilder method, IValueRef reader, IValueRef columnIndex, DbTypeDetails details)
@@ -184,7 +184,7 @@ namespace FlitBit.Data.SqlServer
 	internal class SqlMappedNullableInt64Emitter : SqlDbTypeEmitter<long?>
 	{
 		internal SqlMappedNullableInt64Emitter()
-			: base(DbType.Int64, SqlDbType.BigInt)
+			: base(DbType.Int64, SqlDbType.BigInt, typeof(long))
 		{
 		}
 		public override void LoadValueFromDbReader(MethodBuilder method, IValueRef reader, IValueRef columnIndex, DbTypeDetails details)

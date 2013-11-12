@@ -35,7 +35,7 @@ namespace FlitBit.Data.Catalog
 		[MapColumn(128)]
 		string ReadObjectName { get; set; }
 
-		[MapCollection(ReferenceBehaviors.Lazy)]
+		[MapCollection]
 		IList<IMappedType> RegisteredSubtypes { get; }
 
 		[MapColumn(ColumnBehaviors.AlternateKey)]

@@ -209,8 +209,8 @@ namespace FlitBit.Data.Meta
 
 		public IMapping<TModel> InSchema(string schema)
 		{
-			Contract.Requires(schema != null);
-			Contract.Requires(schema.Length > 0);
+			Contract.Requires<ArgumentNullException>(schema != null);
+			Contract.Requires<ArgumentException>(schema.Length > 0);
 
 			this.TargetSchema = schema;
 			return this;
@@ -218,14 +218,14 @@ namespace FlitBit.Data.Meta
 
 		public MemberInfo InferCollectionReferenceTargetMember(MemberInfo member, IMapping elmMapping)
 		{
-			AddDependency(elmMapping, DependencyKind.Soft, member);
-
 			var foreignObjectID = elmMapping.GetPreferredReferenceColumn();
 			if (foreignObjectID == null)
 			{
 				throw new MappingException(String.Concat("Relationship not defined between ", typeof(TModel).Name, ".", member.Name,
 																								" and the referenced type: ", elmMapping.RuntimeType.Name));
 			}
+
+			AddDependency(elmMapping, DependencyKind.Soft, member);
 
 			return foreignObjectID.Member;
 		}
@@ -467,12 +467,12 @@ namespace FlitBit.Data.Meta
 			return this;
 		}
 
-		public void MapCollectionFromMeta(PropertyInfo p, MapCollectionAttribute mapColl)
+		public void MapCollectionFromMeta(PropertyInfo p, MapCollectionAttribute attr)
 		{
 			var elmType = p.PropertyType.FindElementType();
 			IMapping elmMapping;
 
-			if (elmType == this.RuntimeType)
+			if (elmType == RuntimeType)
 			{
 				elmMapping = this;
 			} 
@@ -482,31 +482,52 @@ namespace FlitBit.Data.Meta
 			}
 			else
 			{
-				throw new MappingException(String.Concat(typeof(TModel).Name,
-																								": reference collection must be mapped over other mapped types: ",
-																								p.Name));
+				throw new MappingException(String.Concat("Unable to fulfill collection mapping on ", typeof (TModel).Name, ".", p.Name,
+						" because the property must reference a mapped type.")
+						);
 			}
-
-			MemberInfo refColumn;
-			if (mapColl.References == null || !mapColl.References.Any())
+			var localProps = attr.LocalProperties.ToArray();
+			if (localProps.Length == 0)
 			{
-				refColumn = InferCollectionReferenceTargetMember(p, elmMapping);
+				localProps = Identity.Columns.Select(c => c.Column.Member.Name).ToArray();
 			}
-			else
+			var referencedProps = attr.ReferencedProperties.ToArray();
+			if (referencedProps.Length != localProps.Length)
 			{
-				var refColumnName = mapColl.References.Select(s => s.Trim())
-																	.First(s => !String.IsNullOrEmpty(s));
-				refColumn = elmType.GetProperty(refColumnName);
-				if (refColumn == null)
+				throw new MappingException(String.Concat("The mapped collection on ", typeof (TModel).Name, ".", p.Name,
+					" must identify the same number of join properties on both sides of the reference.")
+					);
+			}
+			var locals = new List<MemberInfo>();
+			foreach (var name in localProps)
+			{
+				var pp = typeof (TModel).GetProperty(name);
+				if (pp == null)
 				{
-					throw new InvalidOperationException(String.Concat(typeof(TModel).Name,
-																														": relationship property doesn't exist on the target type: ", refColumnName));
+					throw new MappingException(String.Concat("The mapped collection on ", typeof(TModel).Name, ".", p.Name,
+						" names a local property that does not exist: ", name, ".")
+						);
 				}
+				locals.Add(pp);
 			}
-
+			var referenced = new List<MemberInfo>();
+			foreach (var name in referencedProps)
+			{
+				var pp = elmType.GetProperty(name);
+				if (pp == null)
+				{
+					throw new MappingException(String.Concat("The mapped collection on ", typeof(TModel).Name, ".", p.Name,
+						" references a property that does not exist: ", elmType.Name, ".", name, ".")
+						);
+				}
+				referenced.Add(pp);
+			}
 			var coll = DefineCollection(p);
-			coll.ReferenceJoinMember = refColumn;
-			coll.ReferenceBehaviors = mapColl.ReferenceBehaviors;
+			coll.ReferenceBehaviors = attr.Behaviors;
+			coll.ReferencedType = elmType;
+			coll.ReferencedProperties = referenced;
+			coll.ReferencedMapping = elmMapping;
+			coll.LocalJoinProperties = locals;
 		}
 
 		public void MapColumnFromMeta(PropertyInfo p, MapColumnAttribute mapColumn)
@@ -658,7 +679,7 @@ namespace FlitBit.Data.Meta
 			get
 			{
 				return Columns.Select(c => c.Member)
-											.Concat(_collections.Select(kvp => kvp.Value.Member))
+											.Concat(_collections.Select(kvp => kvp.Value.LocalMember))
 											.ToReadOnly();
 			}
 		}

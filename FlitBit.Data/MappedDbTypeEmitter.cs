@@ -19,10 +19,15 @@ namespace FlitBit.Data
 	/// </summary>
 	public abstract class MappedDbTypeEmitter
 	{
-		protected MappedDbTypeEmitter(DbType dbType, Type type)
+		protected MappedDbTypeEmitter(DbType dbType, Type type) : this(dbType, type, type)
+		{
+		}
+
+		protected MappedDbTypeEmitter(DbType dbType, Type type, Type underlying)
 		{
 			DbType = dbType;
 			RuntimeType = type;
+			UnderlyingType = type;
 			SpecializedSqlTypeName = dbType.ToString()
 				.ToUpperInvariant();
 			NameDelimiterBegin = '[';
@@ -82,6 +87,9 @@ namespace FlitBit.Data
 		/// </summary>
 		public char LengthDelimiterEnd { get; protected set; }
 
+		/// <summary>
+		/// String used by the backend database to signify the maximum length.
+		/// </summary>
 		public string LengthMaximum { get; protected set; }
 
 		/// <summary>
@@ -102,6 +110,11 @@ namespace FlitBit.Data
 		///   Gets the runtime type associated with the mapped DbType.
 		/// </summary>
 		public Type RuntimeType { get; private set; }
+
+		/// <summary>
+		///   Gets the underlying runtime type.
+		/// </summary>
+		public Type UnderlyingType { get; private set; }
 
 		/// <summary>
 		///   Gets the specialized DbType's value (as integer).
@@ -605,8 +618,8 @@ namespace FlitBit.Data
 
 	internal abstract class MappedDbTypeEmitter<T> : MappedDbTypeEmitter
 	{
-		protected MappedDbTypeEmitter(DbType dbType)
-			: base(dbType, typeof (T))
+		protected MappedDbTypeEmitter(DbType dbType, Type underlying)
+			: base(dbType, typeof (T), underlying)
 		{
 		}
 	}
@@ -614,8 +627,12 @@ namespace FlitBit.Data
 	internal abstract class MappedDbTypeEmitter<T, TDbType> : MappedDbTypeEmitter<T>
 		where TDbType : struct
 	{
-		protected MappedDbTypeEmitter(DbType dbType, TDbType specializedDbType)
-			: base(dbType)
+		protected MappedDbTypeEmitter(DbType dbType, TDbType specializedDbType) : this(dbType, specializedDbType, typeof(T))
+		{
+			
+		}
+		protected MappedDbTypeEmitter(DbType dbType, TDbType specializedDbType, Type underlying)
+			: base(dbType, underlying)
 		{
 			SpecializedDbTypeValue = Convert.ToInt32(specializedDbType);
 			SpecializedDbType = specializedDbType;

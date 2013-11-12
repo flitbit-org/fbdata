@@ -13,7 +13,11 @@ namespace FlitBit.Data.SqlServer
 	internal class SqlMappedAnyToStringEmitter<T> : SqlDbTypeEmitter<T>
 	{
 		internal SqlMappedAnyToStringEmitter(SqlDbType dbType)
-			: base(default(DbType), dbType)
+			: this(dbType, typeof(T))
+		{
+		}
+		internal SqlMappedAnyToStringEmitter(SqlDbType dbType, Type underlying)
+			: base(default(DbType), dbType, underlying)
 		{
 			switch (dbType)
 			{

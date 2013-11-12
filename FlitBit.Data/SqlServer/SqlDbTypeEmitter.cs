@@ -12,7 +12,13 @@ namespace FlitBit.Data.SqlServer
 	internal abstract class SqlDbTypeEmitter<T> : MappedDbTypeEmitter<T, SqlDbType>
 	{
 		internal SqlDbTypeEmitter(DbType dbType, SqlDbType sqlDbType)
-			: base(dbType, sqlDbType)
+			: this(dbType, sqlDbType, typeof (T))
+		{
+			
+		}
+
+		internal SqlDbTypeEmitter(DbType dbType, SqlDbType sqlDbType, Type underlying)
+			: base(dbType, sqlDbType, underlying)
 		{
 		}
 

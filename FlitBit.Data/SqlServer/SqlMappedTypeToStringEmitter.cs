@@ -11,7 +11,7 @@ namespace FlitBit.Data.SqlServer
 	internal class SqlMappedTypeToStringEmitter : SqlMappedAnyToStringEmitter<Type>
 	{
 		public SqlMappedTypeToStringEmitter()
-			: base(SqlDbType.NVarChar)
+			: base(SqlDbType.NVarChar, typeof(string))
 		{ }
 
 		protected override void EmitTranslateDbType(ILGenerator il)

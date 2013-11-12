@@ -10,7 +10,7 @@ namespace FlitBit.Data.SqlServer
 		where TEnum : struct
 	{
 		internal SqlMappedEmumAsInt32Emitter()
-			: base(DbType.Int16, SqlDbType.Int)
+			: base(DbType.Int16, SqlDbType.Int, typeof(int))
 		{
 		}
 
