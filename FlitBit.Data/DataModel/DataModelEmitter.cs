@@ -77,15 +77,7 @@ namespace FlitBit.Data.DataModel
 				var chashCodeSeed = builder.DefineField<int>("CHashCodeSeed");
 				chashCodeSeed.IncludeAttributes(FieldAttributes.Static | FieldAttributes.Private | FieldAttributes.InitOnly);
 				var cctor = builder.DefineCCtor();
-				cctor.ContributeInstructions((m, il) =>
-				{
-					il.LoadType(builder.Builder);
-					il.CallVirtual(typeof(Type).GetProperty("AssemblyQualifiedName")
-																		.GetGetMethod());
-					il.CallVirtual<object>("GetHashCode");
-					il.StoreField(chashCodeSeed);
-				});
-
+				
 				if (mapping.Collections.Any())
 				{
 					builder.DefineField<object>("_sync").ClearAttributes();
@@ -113,6 +105,14 @@ namespace FlitBit.Data.DataModel
 				ImplementSpecializedGetHashCode(builder, chashCodeSeed);
 				ImplementIDataModel(builder, cctor, props, dirtyFlags, propChanged);
 				EmitConstructor(builder, ctor, props, dirtyFlags);
+				cctor.ContributeInstructions((m, il) =>
+				{
+					il.LoadType(builder.Builder);
+					il.CallVirtual(typeof (Type).GetProperty("AssemblyQualifiedName")
+						.GetGetMethod());
+					il.CallVirtual<object>("GetHashCode");
+					il.StoreField(chashCodeSeed);
+				});
 				
 				builder.Compile();
 				return builder.Ref.Target;
@@ -160,63 +160,72 @@ namespace FlitBit.Data.DataModel
 				{
 					var col = m.DefineLocal("col", typeof (int));
 
-					foreach (var prop in props.Where(p => p.IsColumn).OrderBy(p => p.Ordinal))
+					foreach (var prop in props.OrderBy(p => p.Ordinal))
 					{
-						var mappedColumn = prop.Column;
+						if (prop.IsColumn)
+						{
+							var mappedColumn = prop.Column;
 
-						var isnull = il.DefineLabel();
-						var store = il.DefineLabel();
-						il.LoadArg(offsets);
-						il.LoadValue(prop.Ordinal);
-						il.Emit(OpCodes.Ldelem_I4);
-						col.StoreValue(il);
-						il.LoadArg_0();
-						if (mappedColumn.IsNullable)
-						{
-							il.LoadArg(reader);
-							col.LoadValue(il);
-							il.CallVirtual<DbDataReader>("IsDBNull", typeof (int));
-							il.BranchIfTrue(isnull);
-						}
-						if (prop.Column.IsReference)
-						{
-							mappedColumn.Emitter.LoadValueFromDbReader(method.Builder, reader, col, mappedColumn.DbTypeDetails);
-							il.NewObj(prop.FieldType.GetConstructor(new[] { prop.ReferenceTargetMemberType }));
-							il.Branch(store);
+							var isnull = il.DefineLabel();
+							var store = il.DefineLabel();
+							il.LoadArg(offsets);
+							il.LoadValue(prop.Ordinal);
+							il.Emit(OpCodes.Ldelem_I4);
+							col.StoreValue(il);
+							il.LoadArg_0();
 							if (mappedColumn.IsNullable)
 							{
-								il.MarkLabel(isnull);
-								il.NewObj(prop.FieldType.GetConstructor(Type.EmptyTypes));
+								il.LoadArg(reader);
+								col.LoadValue(il);
+								il.CallVirtual<DbDataReader>("IsDBNull", typeof (int));
+								il.BranchIfTrue(isnull);
 							}
-						}
-						else
-						{
-							mappedColumn.Emitter.LoadValueFromDbReader(method.Builder, reader, col, mappedColumn.DbTypeDetails);
-							il.Branch(store);
-							if (mappedColumn.IsNullable)
+							if (prop.Column.IsReference)
 							{
-								il.MarkLabel(isnull);
-								if (prop.FieldType.IsValueType)
+								mappedColumn.Emitter.LoadValueFromDbReader(method.Builder, reader, col, mappedColumn.DbTypeDetails);
+								il.NewObj(prop.FieldType.GetConstructor(new[] {prop.ReferenceTargetMemberType}));
+								il.Branch(store);
+								if (mappedColumn.IsNullable)
 								{
-									var defa = il.DeclareLocal(prop.FieldType);
-									il.LoadLocalAddress(defa);
-									il.InitObject(prop.FieldType);
-									il.LoadLocal(defa);
-								}
-								else
-								{
-									il.LoadDefaultValue(prop.FieldType);
+									il.MarkLabel(isnull);
+									il.NewObj(prop.FieldType.GetConstructor(Type.EmptyTypes));
 								}
 							}
+							else
+							{
+								mappedColumn.Emitter.LoadValueFromDbReader(method.Builder, reader, col, mappedColumn.DbTypeDetails);
+								il.Branch(store);
+								if (mappedColumn.IsNullable)
+								{
+									il.MarkLabel(isnull);
+									if (prop.FieldType.IsValueType)
+									{
+										var defa = il.DeclareLocal(prop.FieldType);
+										il.LoadLocalAddress(defa);
+										il.InitObject(prop.FieldType);
+										il.LoadLocal(defa);
+									}
+									else
+									{
+										il.LoadDefaultValue(prop.FieldType);
+									}
+								}
+							}
+							il.MarkLabel(store);
+							il.StoreField(prop.EmittedField);
 						}
-						il.MarkLabel(store);
-						il.StoreField(prop.EmittedField);
+						else if (prop.IsCollection)
+						{
+							il.LoadArg_0();
+							il.LoadNull();
+							prop.EmittedField.StoreValue(il);
+						}
 					}
-
 					il.LoadArg_0();
 					il.LoadValue(props.Count);
 					il.New<BitVector>(typeof (int));
 					il.StoreField(dirtyFlags);
+
 				});
 			}
 
@@ -267,8 +276,9 @@ namespace FlitBit.Data.DataModel
 							il.BranchIfTrue(afterColl);
 							il.LoadLocal(model);
 							il.LoadArg_0();
-							il.Emit(OpCodes.Ldftn, prop.CollectionChanged.Builder);
+							prop.EmittedField.LoadValue(il);
 							il.LoadLocal(model);
+							il.Emit(OpCodes.Ldftn, prop.CollectionChanged.Builder);
 							var ctor = typeof(NotifyCollectionChangedEventHandler).GetConstructors()[0];
 							il.NewObj(ctor);
 							il.CallVirtual(prop.FieldType.GetMethod("Clone", new [] { typeof (NotifyCollectionChangedEventHandler) } ));
@@ -821,7 +831,32 @@ namespace FlitBit.Data.DataModel
 						il.LoadValue(rec.Source.Name);
 						il.Call(propChanged);
 					});
+
 				rec.CollectionChanged = observer;
+
+				// This code assumes the DataModelCollectionReference<,,,...> and the IDataModelQueryCommand<,,...>
+				// have the same generic arguments other than the reference type's identity key.
+				var paramTypes = rec.FieldType.GetGenericArguments();
+				EmittedField lazyCmd = default(EmittedField);
+				switch (paramTypes.Length)
+				{
+					case 4:
+						lazyCmd = builder.DefineField(
+							String.Concat(rec.EmittedField.Name, "_Command"),
+							typeof(Lazy<>).MakeGenericType(
+							typeof (IDataModelQueryCommand<,,>).MakeGenericType(paramTypes[0], paramTypes[2], paramTypes[3])
+							)
+							);
+						break;
+					default:
+						throw new NotImplementedException("DataModelEmitter missing implementation for DataModelCollectionReference<...> with " + paramTypes.Length + " type arguments.");
+				}
+				lazyCmd.ClearAttributes();
+				lazyCmd.IncludeAttributes(FieldAttributes.Private | FieldAttributes.Static);
+
+				rec.CollectionCommand = lazyCmd;
+
+				EmitMakeResolveCollectionCommand(builder, rec, props);
 
 				rec.EmittedProperty.AddGetter()
 					.ContributeInstructions((m, il) =>
@@ -833,7 +868,7 @@ namespace FlitBit.Data.DataModel
 						//    {
 						//        if (this.<collection-field> == null)
 						//        {
-						//            this.<collection-field> = new DataModelCollectionReference<IMappedType, int>(<collection-name>, new NotifyCollectionChangedEventHandler(this.<collection-field>_CollectionChanged), this.ID);
+						//            this.<collection-field> = new DataModelCollectionReference<IMappedType, int>(<collection-name>, <lazy-collection-command-field>.Value, new NotifyCollectionChangedEventHandler(this.<collection-field>_CollectionChanged), this.ID);
 						//        }
 						//    }
 						// }
@@ -881,6 +916,8 @@ namespace FlitBit.Data.DataModel
 
 						il.LoadArg_0();
 						il.LoadValue(rec.Source.Name);
+						lazyCmd.LoadValue(il);
+						il.Call(lazyCmd.Builder.FieldType.GetProperty("Value").GetGetMethod());
 						il.LoadArg_0();
 						il.Emit(OpCodes.Ldftn, rec.CollectionChanged.Builder);
 						var ctor = typeof(NotifyCollectionChangedEventHandler).GetConstructors()[0];
@@ -937,6 +974,24 @@ namespace FlitBit.Data.DataModel
 						il.StoreLocal(res);
 						il.LoadLocal(res);
 					});
+			}
+
+			private static void EmitMakeResolveCollectionCommand(EmittedClass builder, PropertyRec rec, IList<PropertyRec> props)
+			{
+				var make =
+					builder.DefineMethod(String.Concat("MakeResolve", rec.Source.Name, "Command"));
+				make.ClearAttributes();
+				make.IncludeAttributes(MethodAttributes.Private | MethodAttributes.Static);
+				make.ReturnType = TypeRef.FromType(rec.CollectionCommand.FieldType.Target.GetGenericArguments()[0]);
+				make.ContributeInstructions((m, il) =>
+				{
+					var paramTypes = rec.FieldType.GetGenericArguments();
+
+
+
+					il.LoadNull();
+				});
+				rec.CollectionMakeResolve = make;
 			}
 
 			private static void EmitPropertyForReferenceColumn(PropertyRec rec, EmittedField dirtyFlags, EmittedMethod propChanged)
@@ -1097,7 +1152,10 @@ namespace FlitBit.Data.DataModel
 
 					var fields =
 						new List<EmittedField>(
-							builder.Fields.Where(f => f.IsStatic == false && f.FieldType.Target != typeof(PropertyChangedEventHandler)));
+							builder.Fields.Where(f => f.IsStatic == false 
+								&& f.FieldType.Target != typeof(PropertyChangedEventHandler)
+								&& f.Name != "_sync"
+								));
 					for (var i = 0; i < fields.Count; i++)
 					{
 						var field = fields[i];
@@ -1435,7 +1493,7 @@ namespace FlitBit.Data.DataModel
 
 				public static PropertyRec CreateOnColumn(Type intf, EmittedClass builder, ColumnMapping<TDataModel> col, PropertyInfo info)
 				{
-					var fieldName = String.Concat("<", intf.Name, "_", info.Name, ">");
+					var fieldName = String.Concat("<", intf.Name, "_", info.Name, ">_field");
 					var res = new PropertyRec
 					{
 						Column = col,
@@ -1468,7 +1526,7 @@ namespace FlitBit.Data.DataModel
 					var colls = mapping.Collections.ToArray();
 					res.Ordinal = mapping.Columns.Count() + Array.IndexOf(colls, coll);
 
-					res.FieldType = coll.MakeCollectionReferenceType();
+					res.FieldType = coll.MakeCollectionReferenceType(coll.ReferencedMapping);
 
 					res.EmittedProperty = builder.DefinePropertyFromPropertyInfo(info);
 					res.EmittedField = builder.DefineField(fieldName, res.FieldType);
@@ -1476,6 +1534,10 @@ namespace FlitBit.Data.DataModel
 				}
 
 				public EmittedMethod CollectionChanged { get; set; }
+
+				public EmittedField CollectionCommand { get; set; }
+
+				public EmittedMethod CollectionMakeResolve { get; set; }
 			}
 		}
 	}

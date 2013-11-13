@@ -25,20 +25,24 @@ namespace FlitBit.Data
 		readonly ConcurrentDictionary<Type, MappedDbTypeEmitter> _emitters =
 			new ConcurrentDictionary<Type, MappedDbTypeEmitter>();
 
-		protected DbProviderHelper()
+		private bool _initialized;
+
+		protected DbProviderHelper(Type dbconnectionType)
 		{
-			Initialize();
+			Contract.Requires<ArgumentException>(dbconnectionType == null || typeof(DbConnection).IsAssignableFrom(dbconnectionType));
+			DbConnectionType = dbconnectionType ?? typeof (DbConnection);
 		}
 		
-		protected virtual void Initialize()
+		public virtual void Initialize()
 		{
+			if (_initialized) return;
 			MapRuntimeType<bool>(new MappedBooleanEmitter());
 			MapRuntimeType<bool?>(new MappedNullableBooleanEmitter());
 			MapRuntimeType<byte>(new MappedByteEmitter());
 			MapRuntimeType<byte[]>(new MappedBinaryEmitter());
 			MapRuntimeType<char>(new MappedCharEmitter(DbType.String));
 			MapRuntimeType<short>(new MappedInt16Emitter());
-			MapRuntimeType<string>(new MappedStringEmitter(DbType.String)); 
+			MapRuntimeType<string>(new MappedStringEmitter(DbType.String));
 			MapRuntimeType<int>(new MappedInt32Emitter());
 			MapRuntimeType<long>(new MappedInt16Emitter());
 			MapRuntimeType<sbyte>(new MappedSByteEmitter());
@@ -50,7 +54,8 @@ namespace FlitBit.Data
 			MapRuntimeType<float>(new MappedSingleEmitter());
 			MapRuntimeType<DateTime>(new MappedDateTimeEmitter());
 			MapRuntimeType<DateTimeOffset>(new MappedDateTimeOffsetEmitter());
-			MapRuntimeType<Type>(new MappedTypeToStringEmitter(DbType.String)); 
+			MapRuntimeType<Type>(new MappedTypeToStringEmitter(DbType.String));
+			_initialized = true;
 		}
 
 		protected void MapRuntimeType<T>(MappedDbTypeEmitter map)
@@ -60,6 +65,8 @@ namespace FlitBit.Data
 		}
 
 		public DbProviderFactory Factory { get; protected set; }
+
+		public Type DbConnectionType { get; private set; }
 
 		public abstract IDbExecutable DefineExecutableOnConnection(string connectionName);
 

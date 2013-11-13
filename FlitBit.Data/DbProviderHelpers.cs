@@ -23,7 +23,9 @@ namespace FlitBit.Data
 			IRegistrationKey<string, Type> registration;
 			if (__registry.TryGetRegistration(key, out registration))
 			{
-				return (DbProviderHelper) Activator.CreateInstance(registration.Handback);
+				var res = (DbProviderHelper) Activator.CreateInstance(registration.Handback);
+				res.Initialize();
+				return res;
 			}
 			return default(DbProviderHelper);
 		}
@@ -37,7 +39,9 @@ namespace FlitBit.Data
 			IRegistrationKey<string, Type> registration;
 			if (__registry.TryGetRegistration(key, out registration))
 			{
-				return (DbProviderHelper) Activator.CreateInstance(registration.Handback);
+				var res = (DbProviderHelper)Activator.CreateInstance(registration.Handback);
+				res.Initialize();
+				return res;
 			}
 			return default(DbProviderHelper);
 		}

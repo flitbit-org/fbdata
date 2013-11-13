@@ -41,8 +41,10 @@ namespace FlitBit.Data.Meta
 
 		public IList<MemberInfo> ReferencedProperties { get; internal set; }
 
-		internal Type MakeCollectionReferenceType()
+		internal Type MakeCollectionReferenceType(IMapping mapping)
 		{
+			Contract.Requires<InvalidOperationException>(mapping.HasBinder);
+
 			var paramTypes = new List<Type>();
 			var arity = ReferencedProperties.Count;
 			for (var i = 0; i < arity; i++)
@@ -52,7 +54,10 @@ namespace FlitBit.Data.Meta
 
 			switch (arity)
 			{
-				case 1: return typeof(DataModelCollectionReference<,>).MakeGenericType(ReferencedType, paramTypes[0]);
+				case 1: return typeof(DataModelCollectionReference<,,,>).MakeGenericType(ReferencedType, 
+					mapping.IdentityKeyType,
+					mapping.GetDbProviderHelper().DbConnectionType,
+					paramTypes[0]);
 				default: throw new NotImplementedException();
 			}
 		}

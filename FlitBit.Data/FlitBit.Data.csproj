@@ -206,6 +206,7 @@
     <Compile Include="SqlServer\SqlDataModelUpdateCommand.cs" />
     <Compile Include="SqlServer\SqlDataModelUpdateCommandBuilder.cs" />
     <Compile Include="SqlServer\SqlDbTypeEmitter.cs" />
+    <Compile Include="SqlServer\SqlMappedByteEmitter.cs" />
     <Compile Include="SqlServer\SqlMappedEmumAsInt16Emitter.cs" />
     <Compile Include="SqlServer\SqlMappedEmumAsInt32Emitter.cs" />
     <Compile Include="SqlServer\SqlMappedBoolAsBitEmitter.cs" />
@@ -213,6 +214,11 @@
     <Compile Include="SqlServer\SqlMappedInt32Emitter.cs" />
     <Compile Include="SqlServer\SqlMappedInt64Emitter.cs" />
     <Compile Include="SqlServer\SqlMappedNullableBoolAsBitEmitter.cs" />
+    <Compile Include="SqlServer\SqlMappedNullableByteEmitter.cs" />
+    <Compile Include="SqlServer\SqlMappedNullableDateTimeEmitter.cs" />
+    <Compile Include="SqlServer\SqlMappedNullableInt16Emitter.cs" />
+    <Compile Include="SqlServer\SqlMappedNullableInt32Emitter.cs" />
+    <Compile Include="SqlServer\SqlMappedNullableInt64Emitter.cs" />
     <Compile Include="Terminology\IUITerminologyService.cs" />
     <Compile Include="MappedDbTypeEmitter.cs" />
     <Compile Include="MappedBinaryEmitter.cs">

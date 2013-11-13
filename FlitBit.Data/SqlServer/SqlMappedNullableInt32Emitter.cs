@@ -6,10 +6,10 @@ using FlitBit.Emit;
 
 namespace FlitBit.Data.SqlServer
 {
-	internal class SqlMappedNullableBoolAsBitEmitter : SqlDbTypeEmitter<bool?>
+	internal class SqlMappedNullableInt32Emitter : SqlDbTypeEmitter<int?>
 	{
-		internal SqlMappedNullableBoolAsBitEmitter()
-			: base(DbType.Boolean, SqlDbType.Bit)
+		internal SqlMappedNullableInt32Emitter()
+			: base(DbType.Int32, SqlDbType.Int, typeof(int))
 		{
 		}
 		public override void LoadValueFromDbReader(MethodBuilder method, IValueRef reader, IValueRef columnIndex, DbTypeDetails details)
@@ -17,7 +17,7 @@ namespace FlitBit.Data.SqlServer
 			var il = method.GetILGenerator();
 			reader.LoadValue(il);
 			columnIndex.LoadValue(il);
-			il.CallVirtual<DbDataReader>("GetBoolean", typeof(int));
+			il.CallVirtual<DbDataReader>("GetInt32", typeof(int));
 			EmitTranslateDbType(il);
 		}
 
@@ -31,18 +31,14 @@ namespace FlitBit.Data.SqlServer
 		/// </remarks>
 		protected override void EmitTranslateRuntimeType(ILGenerator il)
 		{
-			il.NewObj(typeof(SqlBoolean).GetConstructor(new[] { typeof(bool) }));
-			il.Box(typeof(SqlBoolean));
+			il.NewObj(typeof(SqlInt32).GetConstructor(new[] { typeof(int) }));
+			il.Box(typeof(SqlInt32));
 		}
+
 
 		protected override void EmitTranslateDbType(ILGenerator il)
 		{
-			il.NewObj(typeof(bool?).GetConstructor(new[] { typeof(bool) }));
-		}
-
-		protected override string TransformConstantValueToString(object value)
-		{
-			return (bool)value ? "1" : "0";
+			il.NewObj(typeof(int?).GetConstructor(new[] { typeof(int) }));
 		}
 	}
 }

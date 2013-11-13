@@ -28,13 +28,16 @@ FROM sys.schemas
 WHERE name = @schema"
 			).DefineParameter("@schema", DbType.String);
 
-		public SqlDbProviderHelper()
+		private bool _initialized;
+
+		public SqlDbProviderHelper() : base(typeof(SqlConnection))
 		{
-			base.Factory = DbProviderFactories.GetFactory("System.Data.SqlClient");
+			Factory = DbProviderFactories.GetFactory("System.Data.SqlClient");
 		}
 
-		protected override void Initialize()
+		public override void Initialize()
 		{
+			if (_initialized) return;
 			base.Initialize();
 			MapRuntimeType<bool>(new SqlMappedBoolAsBitEmitter());
 			MapRuntimeType<bool?>(new SqlMappedNullableBoolAsBitEmitter());
@@ -48,6 +51,7 @@ WHERE name = @schema"
 			MapRuntimeType<Int64?>(new SqlMappedNullableInt64Emitter());
 			MapRuntimeType<string>(new SqlMappedStringEmitter(SqlDbType.NVarChar));
 			MapRuntimeType<Type>(new SqlMappedTypeToStringEmitter());
+			_initialized = true;
 		}
 
 		public override IAsyncResult BeginExecuteNonQuery(DbCommand command, AsyncCallback callback, object stateObject)

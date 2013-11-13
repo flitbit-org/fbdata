@@ -1,18 +1,15 @@
 ﻿using System;
 using System.Data;
 using System.Data.Common;
-using System.Data.SqlClient;
-using System.Reflection;
-using System.Reflection.Emit;
-using FlitBit.Data.Meta;
-using FlitBit.Emit;
 using System.Data.SqlTypes;
+using System.Reflection.Emit;
+using FlitBit.Emit;
 
 namespace FlitBit.Data.SqlServer
 {
-	internal class SqlMappedDateTimeEmitter : SqlDbTypeEmitter<DateTime>
+	internal class SqlMappedNullableDateTimeEmitter : SqlDbTypeEmitter<DateTime?>
 	{
-		internal SqlMappedDateTimeEmitter(SqlDbType dbType)
+		internal SqlMappedNullableDateTimeEmitter(SqlDbType dbType)
 			: base(default(DbType), dbType)
 		{
 			switch (dbType)
@@ -46,6 +43,7 @@ namespace FlitBit.Data.SqlServer
 			reader.LoadValue(il);
 			columnIndex.LoadValue(il);
 			il.CallVirtual<DbDataReader>("GetDateTime", typeof(int));
+			EmitTranslateDbType(il);
 		}
 
 		/// <summary>
@@ -60,6 +58,11 @@ namespace FlitBit.Data.SqlServer
 		{
 			il.NewObj(typeof(SqlDateTime).GetConstructor(new[] { typeof(DateTime) }));
 			il.Box(typeof(SqlDateTime));
+		}
+
+		protected override void EmitTranslateDbType(ILGenerator il)
+		{
+			il.NewObj(typeof(DateTime?).GetConstructor(new[] { typeof(DateTime) }));
 		}
 	}
 }

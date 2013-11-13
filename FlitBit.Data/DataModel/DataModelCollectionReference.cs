@@ -1,4 +1,6 @@
-﻿using FlitBit.Core;
+﻿using System.Data.Common;
+using System.Reflection.Emit;
+using FlitBit.Core;
 using System;
 using System.Collections.Generic;
 using System.Collections.ObjectModel;
@@ -11,15 +13,19 @@ namespace FlitBit.Data.DataModel
 	/// <summary>
 	/// Lazy-fetch wrapper for referenced collections (parent child relationships and such).
 	/// </summary>
-	/// <typeparam name="TReferent">referent type TReferent</typeparam>
+	/// <typeparam name="TDataModel">referent type TDataModel</typeparam>
 	/// <typeparam name="TParam"></typeparam>
-	public sealed class DataModelCollectionReference<TReferent, TParam> 
-		: IEquatable<DataModelCollectionReference<TReferent, TParam>>
+	/// <typeparam name="TIdentityKey"></typeparam>
+	/// <typeparam name="TDbConnection"></typeparam>
+	public sealed class DataModelCollectionReference<TDataModel, TIdentityKey, TDbConnection, TParam> 
+		: IEquatable<DataModelCollectionReference<TDataModel, TIdentityKey, TDbConnection,TParam>>
+		where TDbConnection : DbConnection
 	{
 // ReSharper disable once StaticFieldInGenericType
-		static readonly int CHashCodeSeed = typeof(DataModelCollectionReference<TReferent, TParam>).AssemblyQualifiedName.GetHashCode();
+		static readonly int CHashCodeSeed = typeof(DataModelCollectionReference<TDataModel, TIdentityKey, TDbConnection, TParam>).AssemblyQualifiedName.GetHashCode();
 
-		private ObservableCollection<TReferent> _collection;
+		private readonly IDataModelQueryCommand<TDataModel, TDbConnection, TParam> _command; 
+		private ObservableCollection<TDataModel> _collection;
 		private bool _resolved;
 		private bool _isFaulted;
 		private Exception _exception;
@@ -30,22 +36,22 @@ namespace FlitBit.Data.DataModel
 		/// Creates a new instance.
 		/// </summary>
 		/// <param name="name">Name of the reference.</param>
-		/// <param name="referrerNotify">A callback to notify the referrer that the colleciton has been resolved.</param>
+		/// <param name="cmd">the command that performs the query</param>
+		/// <param name="referrerNotify">A callback to notify the referrer that the collection has been resolved.</param>
 		/// <param name="param">parameter used to select the referenced items</param>
-		public DataModelCollectionReference(string name, NotifyCollectionChangedEventHandler referrerNotify, TParam param)
+		public DataModelCollectionReference(string name, IDataModelQueryCommand<TDataModel, TDbConnection, TParam> cmd, NotifyCollectionChangedEventHandler referrerNotify, TParam param)
 		{
 			Contract.Requires<ArgumentNullException>(name != null);
-			Contract.Requires<ArgumentException>(name.Length > 0);
+			Contract.Requires<ArgumentNullException>(name.Length > 0);
+			Contract.Requires<ArgumentNullException>(cmd != null);
 
 			ReferenceName = name;
+			_command = cmd;
 			_referrerNotify = referrerNotify;
 			Param = param;
 		}
 
-		/// <summary>
-		/// The resolver.
-		/// </summary>
-		public Func<TParam, IDataModelQueryResult<TReferent>> Resolver { get; set; }
+		public string ReferenceName { get; private set; }
 
 		/// <summary>
 		/// The first parameter used to resolve the collection.
@@ -53,29 +59,28 @@ namespace FlitBit.Data.DataModel
 		public TParam Param { get; private set; }
 
 		/// <summary>
-		/// The reference's name from the perspective of the referrer.
-		/// </summary>
-		public string ReferenceName { get; private set; }
-
-		/// <summary>
 		/// Gets the referenced collection; resovling it if necessary.
 		/// </summary>
 		/// <returns></returns>
 		/// <exception cref="DataModelReferenceException"></exception>
-		public ObservableCollection<TReferent> GetCollection()
+		public ObservableCollection<TDataModel> GetCollection()
 		{
-			Contract.Requires<InvalidOperationException>(Resolver != null);
-			Contract.Ensures(Contract.Result<ObservableCollection<TReferent>>() != null);
+			Contract.Ensures(Contract.Result<ObservableCollection<TDataModel>>() != null);
 			if (!_resolved)
 			{
 				lock (_sync)
 				{
 					if (_resolved)
 					{
-						var res = Resolver(Param);
+						var repo = (IDataModelRepository<TDataModel, TIdentityKey, TDbConnection>)DataModel<TDataModel>.GetRepository<TIdentityKey>();
+						IDataModelQueryResult<TDataModel> res;
+						using (var cx = DbContext.SharedOrNewContext())
+						{
+							res = repo.ExecuteMany(_command, cx, QueryBehavior.Default, Param);
+						}
 						if (res.Succeeded)
 						{
-							_collection = new ObservableCollection<TReferent>(res.Results);
+							_collection = new ObservableCollection<TDataModel>(res.Results);
 							if (_referrerNotify != null)
 							{
 								_collection.CollectionChanged += _referrerNotify;
@@ -94,7 +99,7 @@ namespace FlitBit.Data.DataModel
 			{
 				throw new DataModelReferenceException(
 					String.Concat("Unable to resolve reference: ", ReferenceName, "(", typeof(TParam).GetReadableSimpleName(), ") -> ", 
-					typeof (TReferent).GetReadableSimpleName(), "."), _exception);
+					typeof (TDataModel).GetReadableSimpleName(), "."), _exception);
 			}
 			return _collection;
 		}
@@ -104,7 +109,7 @@ namespace FlitBit.Data.DataModel
 		/// </summary>
 		/// <param name="other"></param>
 		/// <returns></returns>
-		public bool Equals(DataModelCollectionReference<TReferent, TParam> other)
+		public bool Equals(DataModelCollectionReference<TDataModel, TIdentityKey, TDbConnection, TParam> other)
 		{
 			var result = other != null
 									 && String.Equals(ReferenceName, other.ReferenceName)
@@ -129,7 +134,7 @@ namespace FlitBit.Data.DataModel
 		/// <returns></returns>
 		public override bool Equals(object obj)
 		{
-			var other = obj as DataModelCollectionReference<TReferent, TParam>;
+			var other = obj as DataModelCollectionReference<TDataModel, TIdentityKey, TDbConnection, TParam>;
 			return other != null && Equals(other);
 		}
 
@@ -158,13 +163,13 @@ namespace FlitBit.Data.DataModel
 		/// <param name="referrerNotify"></param>
 		/// <returns></returns>
 		/// <exception cref="NotImplementedException"></exception>
-		public DataModelCollectionReference<TReferent, TParam> Clone(NotifyCollectionChangedEventHandler referrerNotify)
+		public DataModelCollectionReference<TDataModel, TIdentityKey, TDbConnection, TParam> Clone(NotifyCollectionChangedEventHandler referrerNotify)
 		{
-			var clone = (DataModelCollectionReference<TReferent, TParam>)MemberwiseClone();
+			var clone = (DataModelCollectionReference<TDataModel, TIdentityKey, TDbConnection, TParam>)MemberwiseClone();
 			clone._referrerNotify = referrerNotify;
 			if (clone._collection != null)
 			{
-				clone._collection = new ObservableCollection<TReferent>(clone._collection);
+				clone._collection = new ObservableCollection<TDataModel>(clone._collection);
 				if (referrerNotify != null)
 				{
 					clone._collection.CollectionChanged += referrerNotify;
