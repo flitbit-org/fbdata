@@ -448,8 +448,7 @@ namespace FlitBit.Data.SqlServer
 						.Indent()
 						.NewLine()
 						.Append("ON ")
-						.Append(toRef)
-						.Append(mapping.QuoteObjectName(toCol.TargetName))
+						.Append(toRef).Append(".").Append(mapping.QuoteObjectName(toCol.TargetName))
 						.Append(" = ")
 						.Append(fromRef).Append('.').Append(mapping.QuoteObjectName(fromCol.TargetName));
 					Condition conditions = join.Conditions;

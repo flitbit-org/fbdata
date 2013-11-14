@@ -3,14 +3,14 @@ using System.Data.Common;
 using System.Reflection.Emit;
 using FlitBit.Emit;
 
-namespace FlitBit.Data
+namespace FlitBit.Data.DataModel.DbTypeEmitters
 {
-	internal class MappedSingleEmitter : MappedDbTypeEmitter<float, DbType>
+	internal class MappedUInt16Emitter : MappedDbTypeEmitter<uint, DbType>
 	{
-		internal MappedSingleEmitter()
-			: base(DbType.Single, DbType.Single)
+		internal MappedUInt16Emitter()
+			: base(DbType.UInt16, DbType.UInt16)
 		{
-
+			this.SpecializedSqlTypeName = "SMALLINT";
 		}
 
 		/// <summary>
@@ -25,7 +25,7 @@ namespace FlitBit.Data
 			var il = method.GetILGenerator();
 			reader.LoadValue(il);
 			columnIndex.LoadValue(il);
-			il.CallVirtual<DbDataReader>("GetSingle", typeof(int));
+			il.CallVirtual<DbDataReader>("GetUInt16", typeof(int));
 		}
 	}
 }

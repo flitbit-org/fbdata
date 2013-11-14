@@ -1,16 +1,16 @@
-using System;
 using System.Data;
-using System.Data.Common;
+using System.Reflection;
 using System.Reflection.Emit;
 using FlitBit.Emit;
 
-namespace FlitBit.Data
+namespace FlitBit.Data.DataModel.DbTypeEmitters
 {
-	internal class MappedBooleanEmitter : MappedDbTypeEmitter<bool, DbType>
+	internal class MappedBinaryEmitter : MappedDbTypeEmitter<byte[], DbType>
 	{
-		internal MappedBooleanEmitter()
-			: base(DbType.Boolean, DbType.Boolean)
+		internal MappedBinaryEmitter()
+			: base(DbType.Binary, DbType.Binary)
 		{
+			this.SpecializedSqlTypeName = "VARBINARY";
 		}
 
 		/// <summary>
@@ -25,7 +25,7 @@ namespace FlitBit.Data
 			var il = method.GetILGenerator();
 			reader.LoadValue(il);
 			columnIndex.LoadValue(il);
-			il.CallVirtual<DbDataReader>("GetBoolean", typeof(int));
+			il.Call(typeof(DbDataReaderExtensions).GetMethod("StreamBinaryDataFromDbDataReader", BindingFlags.Public | BindingFlags.Static));
 		}
 	}
 }

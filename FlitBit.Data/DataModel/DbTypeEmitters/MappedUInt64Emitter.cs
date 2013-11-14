@@ -3,13 +3,14 @@ using System.Data.Common;
 using System.Reflection.Emit;
 using FlitBit.Emit;
 
-namespace FlitBit.Data
+namespace FlitBit.Data.DataModel.DbTypeEmitters
 {
-	internal class MappedNullableBooleanEmitter : MappedDbTypeEmitter<bool?, DbType>
+	internal class MappedUInt64Emitter : MappedDbTypeEmitter<uint, DbType>
 	{
-		internal MappedNullableBooleanEmitter()
-			: base(DbType.Boolean, DbType.Boolean, typeof(bool))
+		internal MappedUInt64Emitter()
+			: base(DbType.UInt64, DbType.UInt64)
 		{
+
 		}
 
 		/// <summary>
@@ -24,12 +25,7 @@ namespace FlitBit.Data
 			var il = method.GetILGenerator();
 			reader.LoadValue(il);
 			columnIndex.LoadValue(il);
-			il.CallVirtual<DbDataReader>("GetBoolean", typeof(int));
-		}
-
-		protected override void EmitTranslateDbType(ILGenerator il)
-		{
-			il.NewObj(typeof(bool?).GetConstructor(new [] { typeof(bool) }));
+			il.CallVirtual<DbDataReader>("GetUInt64", typeof(int));
 		}
 	}
 }

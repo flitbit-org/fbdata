@@ -5,7 +5,7 @@ using System.Data.Common;
 using System.Diagnostics.Contracts;
 using FlitBit.Data.DataModel;
 
-namespace FlitBit.Data
+namespace FlitBit.Data.Repositories
 {
 	public abstract class TableBackedRepository<TModel, TIdentityKey> : AbstractCachingRepository<TModel, TIdentityKey>
 	{

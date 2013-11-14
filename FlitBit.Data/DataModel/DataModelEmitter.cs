@@ -15,6 +15,7 @@ using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Threading;
@@ -23,6 +24,7 @@ using FlitBit.Core.Collections;
 using FlitBit.Data.Meta;
 using FlitBit.Data.SPI;
 using FlitBit.Emit;
+using Inflector;
 using Extensions = FlitBit.Core.Extensions;
 
 namespace FlitBit.Data.DataModel
@@ -112,6 +114,17 @@ namespace FlitBit.Data.DataModel
 						.GetGetMethod());
 					il.CallVirtual<object>("GetHashCode");
 					il.StoreField(chashCodeSeed);
+					foreach (var prop in props.Where(p => p.IsCollection))
+					{
+						il.LoadNull();
+						il.Emit(OpCodes.Ldftn, prop.CollectionMakeResolve.Builder);
+						var funcType = typeof (Func<>).MakeGenericType(prop.CollectionMakeResolve.Builder.ReturnType);
+						il.NewObj(funcType.GetConstructors()[0]);
+						il.LoadValue(LazyThreadSafetyMode.ExecutionAndPublication);
+						var lazyType = prop.CollectionStaticLazyCommand.Builder.FieldType;
+						il.NewObj(lazyType.GetConstructor(new [] { funcType, typeof(LazyThreadSafetyMode) }));
+						prop.CollectionStaticLazyCommand.StoreValue(il);
+					}
 				});
 				
 				builder.Compile();
@@ -834,28 +847,6 @@ namespace FlitBit.Data.DataModel
 
 				rec.CollectionChanged = observer;
 
-				// This code assumes the DataModelCollectionReference<,,,...> and the IDataModelQueryCommand<,,...>
-				// have the same generic arguments other than the reference type's identity key.
-				var paramTypes = rec.FieldType.GetGenericArguments();
-				EmittedField lazyCmd = default(EmittedField);
-				switch (paramTypes.Length)
-				{
-					case 4:
-						lazyCmd = builder.DefineField(
-							String.Concat(rec.EmittedField.Name, "_Command"),
-							typeof(Lazy<>).MakeGenericType(
-							typeof (IDataModelQueryCommand<,,>).MakeGenericType(paramTypes[0], paramTypes[2], paramTypes[3])
-							)
-							);
-						break;
-					default:
-						throw new NotImplementedException("DataModelEmitter missing implementation for DataModelCollectionReference<...> with " + paramTypes.Length + " type arguments.");
-				}
-				lazyCmd.ClearAttributes();
-				lazyCmd.IncludeAttributes(FieldAttributes.Private | FieldAttributes.Static);
-
-				rec.CollectionCommand = lazyCmd;
-
 				EmitMakeResolveCollectionCommand(builder, rec, props);
 
 				rec.EmittedProperty.AddGetter()
@@ -916,6 +907,7 @@ namespace FlitBit.Data.DataModel
 
 						il.LoadArg_0();
 						il.LoadValue(rec.Source.Name);
+						var lazyCmd = rec.CollectionStaticLazyCommand;
 						lazyCmd.LoadValue(il);
 						il.Call(lazyCmd.Builder.FieldType.GetProperty("Value").GetGetMethod());
 						il.LoadArg_0();
@@ -978,18 +970,132 @@ namespace FlitBit.Data.DataModel
 
 			private static void EmitMakeResolveCollectionCommand(EmittedClass builder, PropertyRec rec, IList<PropertyRec> props)
 			{
+				// This code assumes the DataModelCollectionReference<,,,...> and the IDataModelQueryCommand<,,...>
+				// have the same generic arguments other than the reference type's identity key.
+				var paramTypes = rec.FieldType.GetGenericArguments();
+				var referencedType = paramTypes[0];
+				var referencedIdentityKeyType = paramTypes[1];
+				var referencedDbConnectionType = paramTypes[2];
+				const int parameterOffset = 3;
+				var commandType = default(Type);
+				var repositoryType = typeof(IDataModelRepository<,,>).MakeGenericType(referencedType, referencedIdentityKeyType, referencedDbConnectionType);
+				switch (paramTypes.Length)
+				{
+					case 4: commandType = typeof(IDataModelQueryCommand<,,>).MakeGenericType(referencedType, referencedDbConnectionType, paramTypes[parameterOffset]); break;
+					default:
+						throw new NotImplementedException("DataModelEmitter missing implementation for DataModelCollectionReference<...> with " + paramTypes.Length + " type arguments.");
+				}
+
+				var lazyCmd = builder.DefineField(String.Concat(rec.EmittedField.Name, "_Command"), typeof(Lazy<>).MakeGenericType(commandType));
+				lazyCmd.ClearAttributes();
+				lazyCmd.IncludeAttributes(FieldAttributes.Private | FieldAttributes.Static);
+
+				rec.CollectionStaticLazyCommand = lazyCmd;
+
 				var make =
 					builder.DefineMethod(String.Concat("MakeResolve", rec.Source.Name, "Command"));
 				make.ClearAttributes();
 				make.IncludeAttributes(MethodAttributes.Private | MethodAttributes.Static);
-				make.ReturnType = TypeRef.FromType(rec.CollectionCommand.FieldType.Target.GetGenericArguments()[0]);
+				make.ReturnType = TypeRef.FromType(commandType);
 				make.ContributeInstructions((m, il) =>
 				{
-					var paramTypes = rec.FieldType.GetGenericArguments();
+					// Build the Expression tree representing the join, and rely on the referent's repository to build a suitable command...
+					//
+					//   var repository = (IDataModelRepository<TReferent, TReferentIdentitKey, TDbConnection>) DataModel<TReferent>.GetRepository<TReferentIdentitKey>();
+					//   return repository.Where<TParam>("<TReferent_ReferencedProperty[0]>", (model, param) => model.<LocalJoinProperty[0]> == param);
+					//
 
+					var repo = il.DeclareLocal(repositoryType);
+					var res = il.DeclareLocal(commandType);
+					var dataModelT = typeof(DataModel<>).MakeGenericType(referencedType);
+					il.Call(dataModelT.GetMethod("GetRepository").MakeGenericMethod(referencedIdentityKeyType));
+					il.CastClass(repositoryType);
+					il.StoreLocal(repo);
 
+					var selfExpr = il.DeclareLocal<ParameterExpression>();
 
-					il.LoadNull();
+					il.LoadLocal(repo);
+					il.LoadValue(String.Concat(rec.Collection.ReferencedType.Name, "_", rec.Source.Name));
+
+					il.LoadToken(typeof (TDataModel));
+					il.Call<Type>("GetTypeFromHandle", BindingFlags.Static | BindingFlags.Public, typeof(RuntimeTypeHandle));
+					il.LoadValue("self");
+					il.Call<Expression>("Parameter", BindingFlags.Static | BindingFlags.Public, typeof(Type), typeof(string));
+					il.StoreLocal(selfExpr);
+
+					var exprParams = new List<Tuple<string, Type, LocalBuilder>>();
+					for (var i = parameterOffset; i < paramTypes.Length; i++)
+					{
+						var p = rec.Collection.LocalJoinProperties[i - parameterOffset];
+						var name = p.Name.Pascalize();
+						var type = paramTypes[i];
+						var expr = il.DeclareLocal<ParameterExpression>();
+						exprParams.Add(Tuple.Create(name, type, expr));
+						il.LoadToken(type);
+						il.Call<Type>("GetTypeFromHandle", BindingFlags.Static | BindingFlags.Public, typeof(RuntimeTypeHandle));
+						il.LoadValue(name);
+						il.Call<Expression>("Parameter", BindingFlags.Static | BindingFlags.Public, typeof(Type), typeof(string));
+						il.StoreLocal(expr);
+					}
+
+					for (var i = 0; i < exprParams.Count; i++)
+					{
+						var p = (PropertyInfo)rec.Collection.ReferencedProperties[i];
+						var c = rec.Collection.ReferencedMapping.Columns.First(ea => ea.Member == p);
+						il.LoadLocal(selfExpr);
+						il.Emit(OpCodes.Ldtoken, p.GetGetMethod());
+						il.Call<MethodBase>("GetMethodFromHandle", BindingFlags.Static | BindingFlags.Public, typeof(RuntimeMethodHandle));
+						il.CastClass<MethodInfo>();
+						il.Call<Expression>("Property", BindingFlags.Static | BindingFlags.Public, typeof(Expression), typeof(MethodInfo));
+						if (c.IsReference)
+						{
+							var id = c.Mapping.Columns.First(pp => pp.IsIdentity);
+							il.Emit(OpCodes.Ldtoken, ((PropertyInfo)id.Member).GetGetMethod());
+							il.Call<MethodBase>("GetMethodFromHandle", BindingFlags.Static | BindingFlags.Public, typeof(RuntimeMethodHandle));
+							il.CastClass<MethodInfo>();
+							il.Call<Expression>("Property", BindingFlags.Static | BindingFlags.Public, typeof(Expression), typeof(MethodInfo));
+						}
+						il.LoadLocal(exprParams[i].Item3);
+						il.Call<Expression>("Equal", BindingFlags.Static | BindingFlags.Public, typeof(Expression), typeof(Expression));
+					}
+					var arr = il.DeclareLocal<ParameterExpression[]>();
+					il.NewArr(typeof(ParameterExpression), exprParams.Count + 1);
+					il.StoreLocal(arr);
+					il.LoadLocal(arr);
+					il.Load_I4_0();
+					il.LoadLocal(selfExpr);
+					il.StoreElementRef();
+					for (var i = 0; i < exprParams.Count; i++)
+					{
+						il.LoadLocal(arr);
+						il.Load_I4(i + 1);
+						il.LoadLocal(exprParams[i].Item3);
+						il.StoreElementRef();
+					}
+
+					il.LoadLocal(arr);
+					var funType = default(Type);
+					var exprType = default(Type);
+					var whereMethod = default(MethodInfo);
+					switch (exprParams.Count)
+					{
+						case 1:
+							funType = typeof(Func<,,>).MakeGenericType(referencedType, exprParams[0].Item2, typeof(bool));
+							exprType = typeof(Expression<>).MakeGenericType(funType);
+							whereMethod = repositoryType.MatchGenericMethod("Where", 1, commandType, typeof(String), exprType)
+								.MakeGenericMethod(exprParams[0].Item2);
+							break;
+					}
+					il.Call(typeof(Expression).MatchGenericMethod("Lambda", BindingFlags.Static | BindingFlags.Public, 1, exprType, typeof(Expression), typeof(ParameterExpression[]))
+						.MakeGenericMethod(funType));
+					il.CallVirtual(whereMethod);
+					il.StoreLocal(res);
+
+					var dumb = il.DefineLabel();
+					il.Branch_ShortForm(dumb);
+					il.MarkLabel(dumb);
+
+					il.LoadLocal(res);
 				});
 				rec.CollectionMakeResolve = make;
 			}
@@ -1288,7 +1394,11 @@ namespace FlitBit.Data.DataModel
 					var exit = il.DefineLabel();
 					var fields =
 						new List<EmittedField>(
-							builder.Fields.Where(f => f.IsStatic == false && f.FieldType.Target != typeof(PropertyChangedEventHandler)));
+							builder.Fields.Where(f => f.IsStatic == false 
+								&& f.FieldType.Target != typeof(PropertyChangedEventHandler)
+								&& f.Name != "_sync"
+								));
+					var lbl = default(Label);
 					foreach (var field in fields)
 					{
 						var fieldType = field.FieldType.Target;
@@ -1393,24 +1503,38 @@ namespace FlitBit.Data.DataModel
 									il.Xor();
 									il.StoreLocal(result);
 								}
-								else
+								else if (fieldType.IsValueType)
 								{
 									il.LoadLocal(result);
 									il.LoadLocal(prime);
 									il.LoadArg_0();
-									if (fieldType.IsValueType)
-									{
-										il.LoadFieldAddress(field);
-										il.Constrained(fieldType);
-									}
-									else
-									{
-										il.LoadField(field);
-									}
+									il.LoadFieldAddress(field);
+									il.Constrained(fieldType);
 									il.CallVirtual<object>("GetHashCode");
 									il.Multiply();
 									il.Xor();
 									il.StoreLocal(result);
+								}
+								else
+								{
+									il.LoadArg_0();
+									il.LoadField(field);
+									il.LoadNull();
+									il.CompareEqual();
+									il.StoreLocal_2();
+									il.LoadLocal_2();
+									lbl = il.DefineLabel();
+									il.BranchIfTrue_ShortForm(lbl);
+
+									il.LoadLocal(result);
+									il.LoadLocal(prime);
+									il.LoadArg_0();
+									il.LoadField(field);
+									il.CallVirtual<object>("GetHashCode");
+									il.Multiply();
+									il.Xor();
+									il.StoreLocal(result);
+									il.MarkLabel(lbl);
 								}
 								break;
 							case TypeCode.String:
@@ -1420,7 +1544,7 @@ namespace FlitBit.Data.DataModel
 								il.CompareEqual();
 								il.StoreLocal_2();
 								il.LoadLocal_2();
-								var lbl = il.DefineLabel();
+								lbl = il.DefineLabel();
 								il.BranchIfTrue_ShortForm(lbl);
 
 								il.LoadLocal(result);
@@ -1535,7 +1659,7 @@ namespace FlitBit.Data.DataModel
 
 				public EmittedMethod CollectionChanged { get; set; }
 
-				public EmittedField CollectionCommand { get; set; }
+				public EmittedField CollectionStaticLazyCommand { get; set; }
 
 				public EmittedMethod CollectionMakeResolve { get; set; }
 			}

@@ -3,14 +3,13 @@ using System.Data.Common;
 using System.Reflection.Emit;
 using FlitBit.Emit;
 
-namespace FlitBit.Data
+namespace FlitBit.Data.DataModel.DbTypeEmitters
 {
-	internal class MappedUInt64Emitter : MappedDbTypeEmitter<uint, DbType>
+	internal class MappedByteEmitter : MappedDbTypeEmitter<byte, DbType>
 	{
-		internal MappedUInt64Emitter()
-			: base(DbType.UInt64, DbType.UInt64)
+		internal MappedByteEmitter()
+			: base(DbType.Byte, DbType.Byte)
 		{
-
 		}
 
 		/// <summary>
@@ -25,7 +24,7 @@ namespace FlitBit.Data
 			var il = method.GetILGenerator();
 			reader.LoadValue(il);
 			columnIndex.LoadValue(il);
-			il.CallVirtual<DbDataReader>("GetUInt64", typeof(int));
+			il.CallVirtual<DbDataReader>("GetByte", typeof(int));
 		}
 	}
 }

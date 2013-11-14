@@ -19,6 +19,8 @@ namespace FlitBit.Data
 		int CachePuts { get; }
 		int CacheRemoves { get; }
 		int QueryCount { get; }
+		int ObjectsAffected { get; }
+		int ObjectsFetched { get; }
 
 		T Add<T>(T item)
 			where T : IDisposable;
@@ -29,6 +31,10 @@ namespace FlitBit.Data
 		DbProviderHelper HelperForConnection(DbConnection cn);
 		int IncrementQueryCounter();
 		int IncrementQueryCounter(int count);
+		int IncrementObjectsAffected(int count);
+		int IncrementObjectsFetched(int count);
+		int IncrementObjectsFetched();
+
 		DbConnection NewConnection(string connection);
 
 		TConnection NewConnection<TConnection>(string connectionName)
@@ -44,5 +50,6 @@ namespace FlitBit.Data
 			where TConnection : DbConnection, new();
 
 		bool TryGetCacheItem<TCacheKey, TItemKey, TItem>(TCacheKey cacheKey, TItemKey key, out TItem item);
+
 	}
 }

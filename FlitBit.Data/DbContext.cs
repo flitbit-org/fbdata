@@ -27,6 +27,8 @@ namespace FlitBit.Data
 
 		IDbContext _parent;
 		int _queryCount = 0;
+		int _objectsAffected = 0;
+		int _objectsFetched = 0;
 		ICleanupScope _scope;
 
 		public DbContext()
@@ -164,6 +166,10 @@ namespace FlitBit.Data
 
 		public int QueryCount { get { return Thread.VolatileRead(ref _queryCount); } }
 
+		public int ObjectsAffected { get { return Thread.VolatileRead(ref _objectsAffected); } }
+
+		public int ObjectsFetched { get { return Thread.VolatileRead(ref _objectsFetched); } }
+
 		public int IncrementQueryCounter()
 		{
 			return Interlocked.Increment(ref _queryCount);
@@ -172,6 +178,19 @@ namespace FlitBit.Data
 		public int IncrementQueryCounter(int count)
 		{
 			return Interlocked.Add(ref _queryCount, count);
+		}
+
+		public int IncrementObjectsAffected(int count)
+		{
+			return Interlocked.Add(ref _objectsAffected, count);
+		}
+		public int IncrementObjectsFetched(int count)
+		{
+			return Interlocked.Add(ref _objectsFetched, count);
+		}
+		public int IncrementObjectsFetched()
+		{
+			return Interlocked.Increment(ref _objectsFetched);
 		}
 
 		public DbProviderHelper HelperForConnection(DbConnection cn)

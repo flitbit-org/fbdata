@@ -6,6 +6,7 @@
 
 using FlitBit.Core;
 using FlitBit.Data.DataModel;
+using FlitBit.Data.DataModel.DbTypeEmitters;
 using FlitBit.Data.Expressions;
 using FlitBit.Data.Meta;
 using FlitBit.Emit;

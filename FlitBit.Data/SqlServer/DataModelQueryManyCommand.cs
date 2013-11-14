@@ -69,6 +69,7 @@ namespace FlitBit.Data.SqlServer
 						}
 						res.Add(model);
 					}
+					cx.IncrementObjectsFetched(res.Count);
 				}
 			}
 			if (limited)

@@ -7,12 +7,11 @@ using System.Linq;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
-using FlitBit.Data.DataModel;
 using FlitBit.Data.Expressions;
 using FlitBit.Data.Meta;
 using FlitBit.Emit;
 
-namespace FlitBit.Data
+namespace FlitBit.Data.DataModel
 {
 	/// <summary>
 	///   Used by the framework to emit optimized IL for database IO on behalf of data models.

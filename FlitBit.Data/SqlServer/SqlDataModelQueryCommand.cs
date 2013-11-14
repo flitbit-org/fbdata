@@ -70,6 +70,7 @@ namespace FlitBit.Data.SqlServer
 						}
 						res.Add(model);
 					}
+					cx.IncrementObjectsFetched(res.Count);
 				}
 			}
 			if (limited)
@@ -105,6 +106,7 @@ namespace FlitBit.Data.SqlServer
 					{
 						res = new TImpl();
 						res.LoadFromDataReader(reader, offsets);
+						cx.IncrementObjectsFetched();
 					}
 					if (reader.Read()) throw new DuplicateObjectException();
 				}

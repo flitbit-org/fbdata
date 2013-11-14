@@ -1,16 +1,17 @@
+using System;
 using System.Data;
-using System.Reflection;
+using System.Data.Common;
 using System.Reflection.Emit;
 using FlitBit.Emit;
 
-namespace FlitBit.Data
+namespace FlitBit.Data.DataModel.DbTypeEmitters
 {
-	internal class MappedBinaryEmitter : MappedDbTypeEmitter<byte[], DbType>
+	internal class MappedDateTimeEmitter : MappedDbTypeEmitter<DateTime, DbType>
 	{
-		internal MappedBinaryEmitter()
-			: base(DbType.Binary, DbType.Binary)
+		internal MappedDateTimeEmitter()
+			: base(DbType.DateTime, DbType.DateTime)
 		{
-			this.SpecializedSqlTypeName = "VARBINARY";
+
 		}
 
 		/// <summary>
@@ -25,7 +26,7 @@ namespace FlitBit.Data
 			var il = method.GetILGenerator();
 			reader.LoadValue(il);
 			columnIndex.LoadValue(il);
-			il.Call(typeof(DbDataReaderExtensions).GetMethod("StreamBinaryDataFromDbDataReader", BindingFlags.Public | BindingFlags.Static));
+			il.CallVirtual<DbDataReader>("GetDateTime", typeof(int));
 		}
 	}
 }

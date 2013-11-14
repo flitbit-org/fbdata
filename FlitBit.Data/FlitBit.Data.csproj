@@ -149,9 +149,32 @@
     <Compile Include="..\AssemblyInfo.corporate.cs">
       <Link>Properties\AssemblyInfo.corporate.cs</Link>
     </Compile>
-    <Compile Include="AbstractCachingRepository.cs">
-      <DependentUpon>IDataRepository.cs</DependentUpon>
-    </Compile>
+    <Compile Include="DataModel\DbTypeEmitters\MappedAnyToStringEmitter.cs" />
+    <Compile Include="DataModel\DbTypeEmitters\MappedBinaryEmitter.cs" />
+    <Compile Include="DataModel\DbTypeEmitters\MappedBooleanEmitter.cs" />
+    <Compile Include="DataModel\DbTypeEmitters\MappedByteEmitter.cs" />
+    <Compile Include="DataModel\DbTypeEmitters\MappedCharEmitter.cs" />
+    <Compile Include="DataModel\DbTypeEmitters\MappedDateTimeEmitter.cs" />
+    <Compile Include="DataModel\DbTypeEmitters\MappedDateTimeOffsetEmitter.cs" />
+    <Compile Include="DataModel\DbTypeEmitters\MappedDecimalEmitter.cs" />
+    <Compile Include="DataModel\DbTypeEmitters\MappedDoubleEmitter.cs" />
+    <Compile Include="DataModel\DbTypeEmitters\MappedEmumAsInt16Emitter.cs" />
+    <Compile Include="DataModel\DbTypeEmitters\MappedEmumAsInt32Emitter.cs" />
+    <Compile Include="DataModel\DbTypeEmitters\MappedGuidEmitter.cs" />
+    <Compile Include="DataModel\DbTypeEmitters\MappedInt16Emitter.cs" />
+    <Compile Include="DataModel\DbTypeEmitters\MappedInt32Emitter.cs" />
+    <Compile Include="DataModel\DbTypeEmitters\MappedInt64Emitter.cs" />
+    <Compile Include="DataModel\DbTypeEmitters\MappedNullableBooleanEmitter.cs" />
+    <Compile Include="DataModel\DbTypeEmitters\MappedSByteEmitter.cs" />
+    <Compile Include="DataModel\DbTypeEmitters\MappedSingleEmitter.cs" />
+    <Compile Include="DataModel\DbTypeEmitters\MappedStringEmitter.cs" />
+    <Compile Include="DataModel\DbTypeEmitters\MappedTypeToStringEmitter.cs" />
+    <Compile Include="DataModel\DbTypeEmitters\MappedUInt16Emitter.cs" />
+    <Compile Include="DataModel\DbTypeEmitters\MappedUInt32Emitter.cs" />
+    <Compile Include="DataModel\DbTypeEmitters\MappedUInt64Emitter.cs" />
+    <Compile Include="DataModel\MappedDbTypeEmitter.cs" />
+    <Compile Include="Repositories\AbstractCacheHandler.cs" />
+    <Compile Include="Repositories\AbstractCachingRepository.cs" />
     <Compile Include="Catalog\IMappedType.cs" />
     <Compile Include="Catalog\StaticCatalog.cs" />
     <Compile Include="Configuration\DataModelConfigSection.cs" />
@@ -189,9 +212,9 @@
     <Compile Include="Expressions\ValueReferenceKind.cs" />
     <Compile Include="IHierarchyMapping.cs" />
     <Compile Include="IHierarchyMappings.cs" />
-    <Compile Include="MappedNullableBooleanEmitter.cs" />
     <Compile Include="Meta\MappedSortColumn.cs" />
     <Compile Include="Meta\SortOrderKind.cs" />
+    <Compile Include="Repositories\ContextCacheByIdentityKeyCacheHandler.cs" />
     <Compile Include="SqlServer\DynamicSql.cs" />
     <Compile Include="SqlServer\MultiKeySelectManyCommand.cs" />
     <Compile Include="SqlServer\OneClassOneTableEmitter.cs" />
@@ -220,73 +243,6 @@
     <Compile Include="SqlServer\SqlMappedNullableInt32Emitter.cs" />
     <Compile Include="SqlServer\SqlMappedNullableInt64Emitter.cs" />
     <Compile Include="Terminology\IUITerminologyService.cs" />
-    <Compile Include="MappedDbTypeEmitter.cs" />
-    <Compile Include="MappedBinaryEmitter.cs">
-      <DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
-    </Compile>
-    <Compile Include="MappedBooleanEmitter.cs">
-      <DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
-    </Compile>
-    <Compile Include="MappedByteEmitter.cs">
-      <DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
-    </Compile>
-    <Compile Include="MappedCharEmitter.cs">
-      <DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
-    </Compile>
-    <Compile Include="MappedDateTimeEmitter.cs">
-      <DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
-    </Compile>
-    <Compile Include="MappedDateTimeOffsetEmitter.cs">
-      <DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
-    </Compile>
-    <Compile Include="MappedDecimalEmitter.cs">
-      <DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
-    </Compile>
-    <Compile Include="MappedDoubleEmitter.cs">
-      <DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
-    </Compile>
-    <Compile Include="MappedEmumAsInt16Emitter.cs">
-      <DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
-    </Compile>
-    <Compile Include="MappedEmumAsInt32Emitter.cs">
-      <DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
-    </Compile>
-    <Compile Include="MappedGuidEmitter.cs">
-      <DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
-    </Compile>
-    <Compile Include="MappedSByteEmitter.cs">
-      <DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
-    </Compile>
-    <Compile Include="MappedSingleEmitter.cs">
-      <DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
-    </Compile>
-    <Compile Include="MappedStringEmitter.cs">
-      <DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
-    </Compile>
-    <Compile Include="MappedInt64Emitter.cs">
-      <DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
-    </Compile>
-    <Compile Include="MappedInt16Emitter.cs">
-      <DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
-    </Compile>
-    <Compile Include="MappedInt32Emitter.cs">
-      <DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
-    </Compile>
-    <Compile Include="MappedAnyToStringEmitter.cs">
-      <DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
-    </Compile>
-    <Compile Include="MappedTypeToStringEmitter.cs">
-      <DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
-    </Compile>
-    <Compile Include="MappedUInt16Emitter.cs">
-      <DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
-    </Compile>
-    <Compile Include="MappedUInt32Emitter.cs">
-      <DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
-    </Compile>
-    <Compile Include="MappedUInt64Emitter.cs">
-      <DependentUpon>MappedDbTypeEmitter.cs</DependentUpon>
-    </Compile>
     <Compile Include="DataModel\DataModel.TModel.cs" />
     <Compile Include="DataModel\DataModelReference.M.IK.cs" />
     <Compile Include="HierarchyMapping.cs" />
@@ -298,31 +254,17 @@
     <Compile Include="DataModel\DataModelEmitter.cs" />
     <Compile Include="DbTypeLengthRequirements.cs" />
     <Compile Include="Meta\ColumnMapping.T.cs" />
-    <Compile Include="DbContext.static.cs">
-      <DependentUpon>IDbContext.cs</DependentUpon>
-    </Compile>
-    <Compile Include="DbContext.cache.cs">
-      <DependentUpon>IDbContext.cs</DependentUpon>
-    </Compile>
+    <Compile Include="DbContext.static.cs" />
+    <Compile Include="DbContext.cache.cs" />
     <Compile Include="DbContextBehaviors.cs" />
-    <Compile Include="DbExecutable.cs">
-      <DependentUpon>IDbExecutable.cs</DependentUpon>
-    </Compile>
+    <Compile Include="DbExecutable.cs" />
     <Compile Include="CommandBehaviors.cs" />
     <Compile Include="Conversion.cs" />
-    <Compile Include="DataParameterBinder.cs">
-      <DependentUpon>IDataParameterBinder.cs</DependentUpon>
-    </Compile>
+    <Compile Include="DataParameterBinder.cs" />
     <Compile Include="DataParameterBinders.cs" />
-    <Compile Include="DbContext.cs">
-      <DependentUpon>IDbContext.cs</DependentUpon>
-    </Compile>
-    <Compile Include="DbExecutable.static.cs">
-      <DependentUpon>IDbExecutable.cs</DependentUpon>
-    </Compile>
-    <Compile Include="DbExecutableDefinition.cs">
-      <DependentUpon>IDbExecutable.cs</DependentUpon>
-    </Compile>
+    <Compile Include="DbContext.cs" />
+    <Compile Include="DbExecutable.static.cs" />
+    <Compile Include="DbExecutableDefinition.cs" />
     <Compile Include="DbExtensions.cs" />
     <Compile Include="DbParamDefinition.cs" />
     <Compile Include="DbProviderFactoryExtensions.cs" />
@@ -335,22 +277,16 @@
     <Compile Include="Exceptions.cs" />
     <Compile Include="DataModel\IDataModelCatalog.cs" />
     <Compile Include="IDataParameterBinder.cs" />
-    <Compile Include="IDataParameterBinderExtensions.cs">
-      <DependentUpon>IDataParameterBinder.cs</DependentUpon>
-    </Compile>
+    <Compile Include="IDataParameterBinderExtensions.cs" />
     <Compile Include="DbDataReaderExtensions.cs" />
     <Compile Include="IDataRecordExtensions.cs" />
     <Compile Include="DbCommandExtensions.cs" />
     <Compile Include="DbConnectionExtensions.cs" />
     <Compile Include="IDataRepository.cs" />
-    <Compile Include="IDataRepositoryExtensions.cs">
-      <DependentUpon>IDataRepository.cs</DependentUpon>
-    </Compile>
+    <Compile Include="IDataRepositoryExtensions.cs" />
     <Compile Include="IDbContext.cs" />
     <Compile Include="IDbExecutable.cs" />
-    <Compile Include="IDbExecutableExtensions.cs">
-      <DependentUpon>IDbExecutable.cs</DependentUpon>
-    </Compile>
+    <Compile Include="IDbExecutableExtensions.cs" />
     <Compile Include="Meta\CollectionMapping.cs" />
     <Compile Include="Meta\ColumnMapping.cs" />
     <Compile Include="Meta\CollectionMapping.T.cs" />
@@ -369,9 +305,7 @@
     <Compile Include="Meta\Exceptions.cs" />
     <Compile Include="Meta\IdentityMapping.cs" />
     <Compile Include="DataModel\IMapping.cs" />
-    <Compile Include="DataModel\IMappingExtensions.cs">
-      <DependentUpon>IMapping.cs</DependentUpon>
-    </Compile>
+    <Compile Include="DataModel\IMappingExtensions.cs" />
     <Compile Include="Meta\IndexMapping.cs" />
     <Compile Include="Meta\MapCollectionAttribute.cs" />
     <Compile Include="Meta\MapColumnAttribute.cs" />
@@ -414,9 +348,7 @@
     <Compile Include="SqlServer\SqlMappedStringEmitter.cs" />
     <Compile Include="SqlServer\SqlMappedTypeToStringEmitter.cs" />
     <Compile Include="SqlServer\SqlParameterBinder.cs" />
-    <Compile Include="TableBackedDataRepository.cs">
-      <DependentUpon>IDataRepository.cs</DependentUpon>
-    </Compile>
+    <Compile Include="Repositories\TableBackedDataRepository.cs" />
     <Compile Include="Terminology\ITranslatableTermDefinition.cs" />
     <Compile Include="Terminology\ITranslatedTerm.cs" />
     <Compile Include="Terminology\Terms.cs" />
@@ -437,7 +369,9 @@
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="DbTypeEmitters\" />
+  </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildThisFileDirectory)\csproj-import-after.targets" Condition="Exists('$(MSBuildThisFileDirectory)\csproj-import-after.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

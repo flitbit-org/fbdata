@@ -70,7 +70,7 @@ namespace FlitBit.Data.DataModel
 			{
 				lock (_sync)
 				{
-					if (_resolved)
+					if (!_resolved)
 					{
 						var repo = (IDataModelRepository<TDataModel, TIdentityKey, TDbConnection>)DataModel<TDataModel>.GetRepository<TIdentityKey>();
 						IDataModelQueryResult<TDataModel> res;

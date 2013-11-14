@@ -2,14 +2,13 @@ using System.Data;
 using System.Data.Common;
 using System.Reflection.Emit;
 using FlitBit.Emit;
-using System.IO;
 
-namespace FlitBit.Data
+namespace FlitBit.Data.DataModel.DbTypeEmitters
 {
-	internal class MappedByteEmitter : MappedDbTypeEmitter<byte, DbType>
+	internal class MappedBooleanEmitter : MappedDbTypeEmitter<bool, DbType>
 	{
-		internal MappedByteEmitter()
-			: base(DbType.Byte, DbType.Byte)
+		internal MappedBooleanEmitter()
+			: base(DbType.Boolean, DbType.Boolean)
 		{
 		}
 
@@ -25,7 +24,7 @@ namespace FlitBit.Data
 			var il = method.GetILGenerator();
 			reader.LoadValue(il);
 			columnIndex.LoadValue(il);
-			il.CallVirtual<DbDataReader>("GetByte", typeof(int));
+			il.CallVirtual<DbDataReader>("GetBoolean", typeof(int));
 		}
 	}
 }

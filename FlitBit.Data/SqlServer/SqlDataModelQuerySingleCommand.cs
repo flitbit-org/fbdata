@@ -49,6 +49,7 @@ namespace FlitBit.Data.SqlServer
 					{
 						res = new TImpl();
 						res.LoadFromDataReader(reader, _offsets);
+						cx.IncrementObjectsFetched();
 					}
 					if (reader.Read()) throw new DuplicateObjectException();
 				}

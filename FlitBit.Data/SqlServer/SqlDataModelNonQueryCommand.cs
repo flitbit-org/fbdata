@@ -35,6 +35,7 @@ namespace FlitBit.Data.SqlServer
 				res = cmd.ExecuteNonQuery();
 				cx.IncrementQueryCounter();
 			}
+			cx.IncrementObjectsAffected(res);
 			return res;
 		}
 

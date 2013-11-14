@@ -1,16 +1,18 @@
 using System.Data;
-using System.Data.Common;
 using System.Reflection.Emit;
 using FlitBit.Emit;
 
-namespace FlitBit.Data
+namespace FlitBit.Data.DataModel.DbTypeEmitters
 {
-	internal class MappedUInt32Emitter : MappedDbTypeEmitter<uint, DbType>
+	internal abstract class MappedAnyToStringEmitter<T> : MappedDbTypeEmitter<T, DbType>
 	{
-		internal MappedUInt32Emitter()
-			: base(DbType.UInt32, DbType.UInt32)
+		readonly MappedStringEmitter _stringEmitter;
+
+		internal MappedAnyToStringEmitter(DbType dbType)
+			: base(dbType, dbType)
 		{
-			this.SpecializedSqlTypeName = "INT";
+			this._stringEmitter = new MappedStringEmitter(dbType);
+			this.SpecializedSqlTypeName = _stringEmitter.SpecializedSqlTypeName;
 		}
 
 		/// <summary>
@@ -22,10 +24,13 @@ namespace FlitBit.Data
 		/// <param name="details"></param>
 		public override void LoadValueFromDbReader(MethodBuilder method, IValueRef reader, IValueRef columnIndex, DbTypeDetails details)
 		{
-			var il = method.GetILGenerator();
-			reader.LoadValue(il);
-			columnIndex.LoadValue(il);
-			il.CallVirtual<DbDataReader>("GetUInt32", typeof(int));
+			this._stringEmitter.LoadValueFromDbReader(method, reader, columnIndex, details);
+			EmitTranslateType(method);
+		}
+
+		protected virtual void EmitTranslateType(MethodBuilder method)
+		{
+			// default to nothing, assuming the string type is ok.
 		}
 	}
 }

@@ -1,20 +1,15 @@
-using System;
 using System.Data;
-using System.Reflection;
+using System.Data.Common;
 using System.Reflection.Emit;
 using FlitBit.Emit;
 
-namespace FlitBit.Data
+namespace FlitBit.Data.DataModel.DbTypeEmitters
 {
-	internal abstract class MappedAnyToStringEmitter<T> : MappedDbTypeEmitter<T, DbType>
+	internal class MappedNullableBooleanEmitter : MappedDbTypeEmitter<bool?, DbType>
 	{
-		readonly MappedStringEmitter _stringEmitter;
-
-		internal MappedAnyToStringEmitter(DbType dbType)
-			: base(dbType, dbType)
+		internal MappedNullableBooleanEmitter()
+			: base(DbType.Boolean, DbType.Boolean, typeof(bool))
 		{
-			this._stringEmitter = new MappedStringEmitter(dbType);
-			this.SpecializedSqlTypeName = _stringEmitter.SpecializedSqlTypeName;
 		}
 
 		/// <summary>
@@ -26,13 +21,15 @@ namespace FlitBit.Data
 		/// <param name="details"></param>
 		public override void LoadValueFromDbReader(MethodBuilder method, IValueRef reader, IValueRef columnIndex, DbTypeDetails details)
 		{
-			this._stringEmitter.LoadValueFromDbReader(method, reader, columnIndex, details);
-			EmitTranslateType(method);
+			var il = method.GetILGenerator();
+			reader.LoadValue(il);
+			columnIndex.LoadValue(il);
+			il.CallVirtual<DbDataReader>("GetBoolean", typeof(int));
 		}
 
-		protected virtual void EmitTranslateType(MethodBuilder method)
+		protected override void EmitTranslateDbType(ILGenerator il)
 		{
-			// default to nothing, assuming the string type is ok.
+			il.NewObj(typeof(bool?).GetConstructor(new [] { typeof(bool) }));
 		}
 	}
 }

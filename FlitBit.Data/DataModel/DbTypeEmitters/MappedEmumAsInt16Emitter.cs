@@ -5,15 +5,15 @@ using System.Reflection;
 using System.Reflection.Emit;
 using FlitBit.Emit;
 
-namespace FlitBit.Data
+namespace FlitBit.Data.DataModel.DbTypeEmitters
 {
-	internal class MappedEmumAsInt32Emitter<TEnum> : MappedDbTypeEmitter<TEnum, DbType>
-		where TEnum : struct
+	internal class MappedEmumAsInt16Emitter<TEnum> : MappedDbTypeEmitter<TEnum, DbType>
+		where TEnum: struct
 	{
-		internal MappedEmumAsInt32Emitter()
-			: base(DbType.Int32, DbType.Int32)
+		internal MappedEmumAsInt16Emitter()
+			: base(DbType.Int16, DbType.Int16)
 		{
-			this.SpecializedSqlTypeName = "INT";
+			this.SpecializedSqlTypeName = "SMALLINT";
 		}
 
 		/// <summary>
@@ -28,7 +28,7 @@ namespace FlitBit.Data
 			var il = method.GetILGenerator();
 			reader.LoadValue(il);
 			columnIndex.LoadValue(il);
-			il.CallVirtual<DbDataReader>("GetInt32", typeof(int));
+			il.CallVirtual<DbDataReader>("GetInt16", typeof(int));
 		}
 
 		/// <summary>
@@ -41,7 +41,7 @@ namespace FlitBit.Data
 		/// </remarks>
 		protected override void EmitTranslateRuntimeType(ILGenerator il)
 		{
-			il.Call(typeof(Convert).GetMethod("ToInt32", BindingFlags.Public | BindingFlags.Static, null, new []{ typeof(object) }, null));
+			il.Call(typeof(Convert).GetMethod("ToInt16", BindingFlags.Public | BindingFlags.Static, null, new[] { typeof(object) }, null));
 		}
 	}
 }

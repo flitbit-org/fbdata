@@ -6,14 +6,14 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using FlitBit.Data.DataModel;
 
-namespace FlitBit.Data
+namespace FlitBit.Data.Repositories
 {
 	public abstract class AbstractCachingRepository<TModel, TIdentityKey> : IDataRepository<TModel, TIdentityKey>
 	{
 		// ReSharper disable once StaticFieldInGenericType
 		protected static readonly string CCacheKey = typeof(TModel).AssemblyQualifiedName;
 
-		private readonly ConcurrentBag<AbstractCacheHandler> _cacheHandlers = new ConcurrentBag<AbstractCacheHandler>();
+		private readonly ConcurrentBag<AbstractCacheHandler<TModel>> _cacheHandlers = new ConcurrentBag<AbstractCacheHandler<TModel>>();
 		private readonly DbProviderHelper _helper;
 
 		public AbstractCachingRepository(string connectionName)
@@ -110,7 +110,7 @@ namespace FlitBit.Data
 		{
 			foreach (var item in items)
 			{
-				foreach (AbstractCacheHandler handler in _cacheHandlers)
+				foreach (var handler in _cacheHandlers)
 				{
 					handler.PerformUpdateCacheItem(context, item);
 				}
@@ -153,7 +153,13 @@ namespace FlitBit.Data
 
 		protected void RegisterCacheHandler<TCacheKey, TKey>(TCacheKey cacheKey, Func<TModel, TKey> calculateKey)
 		{
-			_cacheHandlers.Add(new CacheHandler<TCacheKey, TKey>(cacheKey, calculateKey));
+			AddCacheHandler(new ContextCacheByIdentityKeyCacheHandler<TModel, TCacheKey, TKey>(cacheKey, calculateKey));
+		}
+
+		protected void AddCacheHandler(AbstractCacheHandler<TModel> handler)
+		{
+			Contract.Requires<ArgumentNullException>(handler != null);
+			_cacheHandlers.Add(handler);
 		}
 
 		#region IDataRepository<M,IK> Members
@@ -222,32 +228,5 @@ namespace FlitBit.Data
 
 		#endregion
 
-		private abstract class AbstractCacheHandler
-		{
-			internal abstract void PerformUpdateCacheItem(IDbContext context, TModel item);
-			internal abstract void RemoveCacheItem(IDbContext context, TModel item);
-		}
-
-		private class CacheHandler<TCacheKey, TItemKey> : AbstractCacheHandler
-		{
-			private readonly TCacheKey _cacheKey;
-			private readonly Func<TModel, TItemKey> _calculateKey;
-
-			public CacheHandler(TCacheKey cacheKey, Func<TModel, TItemKey> calculateKey)
-			{
-				_cacheKey = cacheKey;
-				_calculateKey = calculateKey;
-			}
-
-			internal override void PerformUpdateCacheItem(IDbContext context, TModel item)
-			{
-				context.PutCacheItem(_cacheKey, item, _calculateKey(item), (k, v) => item);
-			}
-
-			internal override void RemoveCacheItem(IDbContext context, TModel item)
-			{
-				context.RemoveCacheItem(_cacheKey, item, _calculateKey(item));
-			}
-		}
 	}
 }

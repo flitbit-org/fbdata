@@ -4,6 +4,7 @@ using System.Data.SqlClient;
 using System.Reflection;
 using System.Reflection.Emit;
 using System.Text;
+using FlitBit.Data.DataModel;
 using FlitBit.Data.Meta;
 using FlitBit.Emit;
 

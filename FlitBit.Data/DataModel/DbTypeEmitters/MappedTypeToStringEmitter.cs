@@ -4,7 +4,7 @@ using System.Reflection;
 using System.Reflection.Emit;
 using FlitBit.Emit;
 
-namespace FlitBit.Data
+namespace FlitBit.Data.DataModel.DbTypeEmitters
 {
 	internal class MappedTypeToStringEmitter: MappedAnyToStringEmitter<Type>
 	{

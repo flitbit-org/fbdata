@@ -1,16 +1,16 @@
-using System;
 using System.Data;
 using System.Data.Common;
 using System.Reflection.Emit;
 using FlitBit.Emit;
 
-namespace FlitBit.Data
+namespace FlitBit.Data.DataModel.DbTypeEmitters
 {
-	internal class MappedDateTimeOffsetEmitter : MappedDbTypeEmitter<DateTimeOffset, DbType>
+	internal class MappedSingleEmitter : MappedDbTypeEmitter<float, DbType>
 	{
-		internal MappedDateTimeOffsetEmitter()
-			: base(DbType.DateTime, DbType.DateTime)
-		{																																						
+		internal MappedSingleEmitter()
+			: base(DbType.Single, DbType.Single)
+		{
+
 		}
 
 		/// <summary>
@@ -25,7 +25,7 @@ namespace FlitBit.Data
 			var il = method.GetILGenerator();
 			reader.LoadValue(il);
 			columnIndex.LoadValue(il);
-			il.CallVirtual<DbDataReader>("GetDateTimeOffset", typeof(int));
+			il.CallVirtual<DbDataReader>("GetSingle", typeof(int));
 		}
 	}
 }
