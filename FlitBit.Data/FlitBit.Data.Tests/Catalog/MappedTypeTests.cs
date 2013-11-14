@@ -6,7 +6,6 @@ using FlitBit.Core;
 using FlitBit.Data.Catalog;
 using FlitBit.Data.DataModel;
 using FlitBit.Data.Meta;
-using FlitBit.Data.Tests.Catalog.Models;
 using FlitBit.Emit;
 using FlitBit.Wireup;
 using Microsoft.VisualStudio.TestTools.UnitTesting;

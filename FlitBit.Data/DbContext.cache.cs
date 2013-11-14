@@ -8,6 +8,7 @@ using System;
 using System.Collections.Concurrent;
 using System.Diagnostics.Contracts;
 using System.Threading;
+using FlitBit.Data.Repositories;
 
 namespace FlitBit.Data
 {
@@ -18,63 +19,10 @@ namespace FlitBit.Data
 		int _cachePuts = 0;
 		int _cacheRemoves = 0;
 
-		Lazy<ConcurrentDictionary<object, object>> _localCaches =
-			new Lazy<ConcurrentDictionary<object, object>>(LazyThreadSafetyMode.PublicationOnly);
+		Lazy<ConcurrentDictionary<object, ContextCache>> _localCaches =
+			new Lazy<ConcurrentDictionary<object, ContextCache>>(LazyThreadSafetyMode.PublicationOnly);
 
 		#region IDbContext Members
-
-		public void PutCacheItem<TCacheKey, TItemKey, TItem>(TCacheKey cacheKey, TItem item, TItemKey key,
-			Func<TItemKey, TItem, TItem> updateCachedItem)
-		{
-			Contract.Requires<InvalidOperationException>(!Behaviors.HasFlag(DbContextBehaviors.DisableCaching));
-
-			var cache = EnsureCache<TCacheKey, ConcurrentDictionary<TItemKey, TItem>>(cacheKey);
-			cache.AddOrUpdate(key, item, updateCachedItem);
-			Interlocked.Increment(ref _cachePuts);
-		}
-
-		public void RemoveCacheItem<TCacheKey, TItemKey, TItem>(TCacheKey cacheKey, TItem item, TItemKey key)
-		{
-			Contract.Requires<InvalidOperationException>(!Behaviors.HasFlag(DbContextBehaviors.DisableCaching));
-
-			var cache = EnsureCache<TCacheKey, ConcurrentDictionary<TItemKey, TItem>>(cacheKey);
-			TItem unused;
-			if (cache.TryRemove(key, out unused))
-			{
-				Interlocked.Increment(ref _cacheRemoves);
-			}
-		}
-
-		public bool TryGetCacheItem<TCacheKey, TItemKey, TItem>(TCacheKey cacheKey, TItemKey key, out TItem item)
-		{
-			Contract.Requires<InvalidOperationException>(!Behaviors.HasFlag(DbContextBehaviors.DisableCaching));
-
-			var cache = EnsureCache<TCacheKey, ConcurrentDictionary<TItemKey, TItem>>(cacheKey);
-			Interlocked.Increment(ref _cacheAttempts);
-			if (cache.TryGetValue(key, out item))
-			{
-				Interlocked.Increment(ref _cacheHits);
-				return true;
-			}
-			item = default(TItem);
-			return false;
-		}
-
-		public C EnsureCache<K, C>(K key)
-			where C : new()
-		{
-			Contract.Requires<InvalidOperationException>(!Behaviors.HasFlag(DbContextBehaviors.DisableCaching));
-
-			if (_parent != null && _behaviors.HasFlag(DbContextBehaviors.DisableInheritedCache))
-			{
-				return _parent.EnsureCache<K, C>(key);
-			}
-			else
-			{
-				var caches = _localCaches.Value;
-				return (C) caches.GetOrAdd(key, ignored => new C());
-			}
-		}
 
 		public int CachePuts { get { return Thread.VolatileRead(ref _cachePuts); } }
 
@@ -84,6 +32,53 @@ namespace FlitBit.Data
 
 		public int CacheRemoves { get { return Thread.VolatileRead(ref _cacheRemoves); } }
 
+		public int IncrementCacheAttempts()
+		{
+			return Interlocked.Increment(ref _cacheAttempts);
+		}
+
+		public C EnsureCache<K, C>(K key, Func<IDbContext, K, C> factory)
+			where C : ContextCache
+		{
+			Contract.Requires<InvalidOperationException>(!Behaviors.HasFlag(DbContextBehaviors.DisableCaching));
+
+			if (_parent != null && _behaviors.HasFlag(DbContextBehaviors.DisableInheritedCache))
+			{
+				return _parent.EnsureCache(key, factory);
+			}
+			var caches = _localCaches.Value;
+			C cache = default(C);
+			while (true)
+			{
+				ContextCache res;
+				if (caches.TryGetValue(key, out res))
+				{
+					return (C) res;
+				}
+				if (cache == null)
+				{
+					cache = factory(this, key);
+				}
+				if (caches.TryAdd(key, cache))
+				{
+					return cache;
+				}
+			}
+		}
+
+		public int IncrementCacheHits()
+		{
+			return Interlocked.Increment(ref _cacheHits);
+		}
+		public int IncrementCachePuts()
+		{
+			return Interlocked.Increment(ref _cachePuts);
+		}
+		public int IncrementCacheRemoves()
+		{
+			return Interlocked.Increment(ref _cacheRemoves);
+		}
+		
 		#endregion
 	}
 }

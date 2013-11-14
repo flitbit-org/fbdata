@@ -4,6 +4,7 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Diagnostics.Contracts;
 using System.Linq;
+using System.Runtime.Remoting.Messaging;
 using FlitBit.Data.DataModel;
 
 namespace FlitBit.Data.Repositories
@@ -12,9 +13,12 @@ namespace FlitBit.Data.Repositories
 	{
 		// ReSharper disable once StaticFieldInGenericType
 		protected static readonly string CCacheKey = typeof(TModel).AssemblyQualifiedName;
+		// ReSharper disable once StaticFieldInGenericType
+		protected static readonly string CCacheKeyAll = CCacheKey + "All Items";
 
-		private readonly ConcurrentBag<AbstractCacheHandler<TModel>> _cacheHandlers = new ConcurrentBag<AbstractCacheHandler<TModel>>();
+
 		private readonly DbProviderHelper _helper;
+		private readonly EqualityComparer<TModel> _comparer = EqualityComparer<TModel>.Default;
 
 		public AbstractCachingRepository(string connectionName)
 		{
@@ -22,7 +26,6 @@ namespace FlitBit.Data.Repositories
 			Contract.Requires<ArgumentException>(connectionName.Length > 0);
 
 			ConnectionName = connectionName;
-			RegisterCacheHandler(CCacheKey, GetIdentity);
 			_helper = DbProviderHelpers.GetDbProviderHelperForDbConnection(connectionName);
 		}
 
@@ -39,127 +42,99 @@ namespace FlitBit.Data.Repositories
 		protected abstract bool PerformDelete(IDbContext context, TIdentityKey id);
 
 		protected abstract IEnumerable<TModel> PerformDirectQueryBy<TItemKey>(IDbContext context, string command,
-				Action<DbCommand, TItemKey> binder, TItemKey key);
+			Action<DbCommand, TItemKey> binder, TItemKey key);
 
 		protected abstract TModel PerformDirectReadBy<TItemKey>(IDbContext context, string command,
-				Action<DbCommand, TItemKey> binder, TItemKey key);
+			Action<DbCommand, TItemKey> binder, TItemKey key);
 
 		protected abstract TModel PerformRead(IDbContext context, TIdentityKey id);
 
 		protected abstract TModel PerformUpdate(IDbContext context, TModel model);
 
-		protected IEnumerable<TModel> GetCacheCollection<TCacheKey, TItemKey>(IDbContext context, TCacheKey cacheKey,
-				TItemKey key,
-				Func<IDbContext, TItemKey, IEnumerable<TModel>> resolver)
-				where TCacheKey : class
+		protected IEnumerable<TModel> QueryBy<TCacheKey, TQueryKey>(IDbContext context, string command,
+			Action<DbCommand, TQueryKey> binder, TCacheKey cacheKey, TQueryKey key)
+			where TCacheKey : class
 		{
-			IEnumerable<TModel> res;
-			if (cacheKey != null)
-			{
-				if (context.TryGetCacheItem(cacheKey, key, out res))
-				{
-					return res;
-				}
-			}
-			res = resolver(context, key);
-			var arr = res as TModel[] ?? res.ToArray();
-			if (res != null)
-			{
-				PerformUpdateCacheItems(context, arr);
-			}
-			return arr;
-		}
+			Contract.Requires<ArgumentNullException>(context != null);
+			Contract.Requires<ArgumentNullException>(command != null);
+			Contract.Requires<ArgumentException>(command.Length > 0);
 
-		protected TModel GetCacheItem<TCacheKey, TItemKey>(IDbContext context, TCacheKey cacheKey, TItemKey key,
-				Func<IDbContext, TItemKey, TModel> resolver)
-				where TCacheKey : class
-		{
-			TModel res;
-			if (cacheKey != null)
+			if (context.Behaviors.HasFlag(DbContextBehaviors.DisableCaching))
 			{
-				if (context.TryGetCacheItem(cacheKey, key, out res))
-				{
-					return res;
-				}
+				return PerformDirectQueryBy(context, command, binder, key);
 			}
-			res = resolver(context, key);
-			if (res != null)
+			var cache = GetContextCollectionCache(context, cacheKey, key);
+			var res = cache.Get(key);
+			if (res == null)
 			{
-				PerformUpdateCacheItem(context, res);
+				res = PerformDirectQueryBy(context, command, binder, key);
+				if (res != null)
+				{
+					cache.Put(key, res);
+				}
 			}
 			return res;
 		}
 
-		protected void PerformRemoveCacheItem(IDbContext context, TModel item)
+		protected TModel ReadBy<TCacheKey, TItemKey>(IDbContext context, string command,
+			Action<DbCommand, TItemKey> binder, TCacheKey cacheKey, TItemKey key)
+			where TCacheKey : class
 		{
-			foreach (var handler in _cacheHandlers)
-			{
-				handler.PerformUpdateCacheItem(context, item);
-			}
-		}
+			Contract.Requires<ArgumentNullException>(context != null);
+			Contract.Requires<ArgumentNullException>(command != null);
+			Contract.Requires<ArgumentException>(command.Length > 0);
 
-		protected void PerformUpdateCacheItem(IDbContext context, TModel item)
-		{
-			foreach (var handler in _cacheHandlers)
+			if (context.Behaviors.HasFlag(DbContextBehaviors.DisableCaching))
 			{
-				handler.PerformUpdateCacheItem(context, item);
+				return PerformDirectReadBy(context, command, binder, key);
 			}
-		}
-
-		protected void PerformUpdateCacheItems(IDbContext context, IEnumerable<TModel> items)
-		{
-			foreach (var item in items)
+			var cache = GetContextCache(context, cacheKey, key);
+			TModel res = cache.Get(key);
+			if (_comparer.Equals(default(TModel), res))
 			{
-				foreach (var handler in _cacheHandlers)
+				res = PerformDirectReadBy(context, command, binder, key);
+				if (!_comparer.Equals(default(TModel), res))
 				{
-					handler.PerformUpdateCacheItem(context, item);
+					cache.Put(key, res);
 				}
 			}
+			return res;
 		}
 
-		protected IEnumerable<TModel> QueryBy<TCacheKey, TQueryKey>(IDbContext context, string command,
-				Action<DbCommand, TQueryKey> binder, TCacheKey cacheKey, TQueryKey key)
-				where TCacheKey : class
+		protected virtual ContextCache<TCacheKey, TKey, TModel> GetContextCache<TCacheKey, TKey>(IDbContext context, TCacheKey cacheKey,
+			TKey key)
+			where TCacheKey : class
 		{
-			Contract.Requires<ArgumentNullException>(context != null);
-			Contract.Requires<ArgumentNullException>(command != null);
-			Contract.Requires<ArgumentException>(command.Length > 0);
-
-			bool disableCaching = context.Behaviors.HasFlag(DbContextBehaviors.DisableCaching);
-			if (cacheKey != null && !disableCaching)
-			{
-				return GetCacheCollection(context, cacheKey, key,
-						(ctx, k) => PerformDirectQueryBy(context, command, binder, key));
-			}
-			return PerformDirectQueryBy(context, command, binder, key);
+			return context.EnsureCache(cacheKey, MakeContextCache<TCacheKey, TKey>);
 		}
 
-		protected TModel ReadBy<TCacheKey, TItemKey>(IDbContext context, string command,
-				Action<DbCommand, TItemKey> binder, TCacheKey cacheKey, TItemKey key)
-				where TCacheKey : class
+		protected virtual ContextCache<TCacheKey, TKey, TModel> MakeContextCache<TCacheKey, TKey>(IDbContext context, TCacheKey cacheKey)
+			where TCacheKey : class
 		{
-			Contract.Requires<ArgumentNullException>(context != null);
-			Contract.Requires<ArgumentNullException>(command != null);
-			Contract.Requires<ArgumentException>(command.Length > 0);
-
-			bool disableCaching = context.Behaviors.HasFlag(DbContextBehaviors.DisableCaching);
-			if (cacheKey != null && !disableCaching)
-			{
-				return GetCacheItem(context, cacheKey, key,
-						(ctx, k) => PerformDirectReadBy(context, command, binder, key));
-			}
-			return PerformDirectReadBy(context, command, binder, key);
+			return new SimpleContextCache<TCacheKey, TKey, TModel>(cacheKey, HandleContextCacheEnd, context);
 		}
 
-		protected void RegisterCacheHandler<TCacheKey, TKey>(TCacheKey cacheKey, Func<TModel, TKey> calculateKey)
+		protected virtual void HandleContextCacheEnd<TCacheKey, TKey>(IDbContext cx, TCacheKey cacheKey,
+			IEnumerable<KeyValuePair<TKey, TModel>> items)
 		{
-			AddCacheHandler(new ContextCacheByIdentityKeyCacheHandler<TModel, TCacheKey, TKey>(cacheKey, calculateKey));
 		}
 
-		protected void AddCacheHandler(AbstractCacheHandler<TModel> handler)
+		protected virtual ContextCache<TCacheKey, TKey, IEnumerable<TModel>> GetContextCollectionCache<TCacheKey, TKey>(IDbContext context, TCacheKey cacheKey,
+			TKey key)
+			where TCacheKey : class
 		{
-			Contract.Requires<ArgumentNullException>(handler != null);
-			_cacheHandlers.Add(handler);
+			return context.EnsureCache(cacheKey, MakeContextCollectionCache<TCacheKey, TKey>);
+		}
+
+		protected virtual ContextCache<TCacheKey, TKey, IEnumerable<TModel>> MakeContextCollectionCache<TCacheKey, TKey>(IDbContext context, TCacheKey cacheKey)
+			where TCacheKey : class
+		{
+			return new SimpleContextCache<TCacheKey, TKey, IEnumerable<TModel>>(cacheKey, HandleContextCollectionCacheEnd, context);
+		}
+
+		protected virtual void HandleContextCollectionCacheEnd<TCacheKey, TKey>(IDbContext cx, TCacheKey cacheKey,
+		IEnumerable<KeyValuePair<TKey, IEnumerable<TModel>>> items)
+		{
 		}
 
 		#region IDataRepository<M,IK> Members
@@ -168,62 +143,65 @@ namespace FlitBit.Data.Repositories
 
 		public TModel Create(IDbContext context, TModel model)
 		{
-			TModel res = PerformCreate(context, model);
-			if (res != null)
+			if (context.Behaviors.HasFlag(DbContextBehaviors.DisableCaching))
 			{
-				bool disableCaching = context.Behaviors.HasFlag(DbContextBehaviors.DisableCaching);
-				if (!disableCaching)
+				return PerformCreate(context, model);
+			}
+			var res = PerformCreate(context, model);
+			var id = GetIdentity(model);
+			var cache = GetContextCache(context, CCacheKey, id);
+			cache.Put(id, res);
+			return res;
+		}
+
+		public TModel ReadByIdentity(IDbContext context, TIdentityKey key)
+		{
+			if (context.Behaviors.HasFlag(DbContextBehaviors.DisableCaching))
+			{
+				return PerformRead(context, key);
+			}
+			var cache = GetContextCache(context, CCacheKey, key);
+			var res = cache.Get(key);
+			if (_comparer.Equals(default(TModel), res))
+			{
+				res = PerformRead(context, key);
+				if (!_comparer.Equals(default(TModel), res))
 				{
-					PerformUpdateCacheItem(context, res);
+					cache.Put(key, res);
 				}
 			}
 			return res;
 		}
 
-		public TModel ReadByIdentity(IDbContext context, TIdentityKey id)
+		public TModel Update(IDbContext context, TModel model)
 		{
 			if (context.Behaviors.HasFlag(DbContextBehaviors.DisableCaching))
 			{
-				return PerformRead(context, id);
+				return PerformUpdate(context, model);
 			}
-			return GetCacheItem(context, CCacheKey, id, PerformRead);
-		}
-
-		public TModel Update(IDbContext context, TModel model)
-		{
-			TModel res = PerformUpdate(context, model);
-			if (!context.Behaviors.HasFlag(DbContextBehaviors.DisableCaching))
-			{
-				PerformUpdateCacheItem(context, res);
-			}
+			var res = PerformUpdate(context, model);
+			var id = GetIdentity(model);
+			var cache = GetContextCache(context, CCacheKey, id);
+			cache.Put(id, res);
 			return res;
 		}
 
 		public bool Delete(IDbContext context, TIdentityKey id)
 		{
-			bool disableCaching = context.Behaviors.HasFlag(DbContextBehaviors.DisableCaching);
-			TModel cached = default(TModel);
-			if (!disableCaching)
+			if (context.Behaviors.HasFlag(DbContextBehaviors.DisableCaching))
 			{
-				context.TryGetCacheItem(CCacheKey, id, out cached);
+				return PerformDelete(context, id);
 			}
-			bool res = PerformDelete(context, id);
-			if (res && cached != null)
-			{
-				PerformRemoveCacheItem(context, cached);
-			}
+			var res = PerformDelete(context, id);
+			var cache = GetContextCache(context, CCacheKey, id);
+			cache.Remove(id);
 			return res;
 		}
 
 		public IDataModelQueryResult<TModel> All(IDbContext context, QueryBehavior behavior)
 		{
-			IDataModelQueryResult<TModel> res = PerformAll(context, behavior);
+			return PerformAll(context, behavior);
 
-			if (res.Succeeded && !context.Behaviors.HasFlag(DbContextBehaviors.DisableCaching) && !behavior.BypassCache)
-			{
-				PerformUpdateCacheItems(context, res.Results);
-			}
-			return res;
 		}
 
 		#endregion

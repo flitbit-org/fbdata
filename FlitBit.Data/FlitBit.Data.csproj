@@ -149,6 +149,7 @@
     <Compile Include="..\AssemblyInfo.corporate.cs">
       <Link>Properties\AssemblyInfo.corporate.cs</Link>
     </Compile>
+    <Compile Include="ContextCache.cs" />
     <Compile Include="DataModel\DbTypeEmitters\MappedAnyToStringEmitter.cs" />
     <Compile Include="DataModel\DbTypeEmitters\MappedBinaryEmitter.cs" />
     <Compile Include="DataModel\DbTypeEmitters\MappedBooleanEmitter.cs" />
@@ -173,7 +174,6 @@
     <Compile Include="DataModel\DbTypeEmitters\MappedUInt32Emitter.cs" />
     <Compile Include="DataModel\DbTypeEmitters\MappedUInt64Emitter.cs" />
     <Compile Include="DataModel\MappedDbTypeEmitter.cs" />
-    <Compile Include="Repositories\AbstractCacheHandler.cs" />
     <Compile Include="Repositories\AbstractCachingRepository.cs" />
     <Compile Include="Catalog\IMappedType.cs" />
     <Compile Include="Catalog\StaticCatalog.cs" />
@@ -214,7 +214,7 @@
     <Compile Include="IHierarchyMappings.cs" />
     <Compile Include="Meta\MappedSortColumn.cs" />
     <Compile Include="Meta\SortOrderKind.cs" />
-    <Compile Include="Repositories\ContextCacheByIdentityKeyCacheHandler.cs" />
+    <Compile Include="SimpleContextCache.cs" />
     <Compile Include="SqlServer\DynamicSql.cs" />
     <Compile Include="SqlServer\MultiKeySelectManyCommand.cs" />
     <Compile Include="SqlServer\OneClassOneTableEmitter.cs" />

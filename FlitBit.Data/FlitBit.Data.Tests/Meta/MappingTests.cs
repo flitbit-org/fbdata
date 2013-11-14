@@ -107,8 +107,9 @@ namespace FlitBit.Data.Meta.Tests
 
 			// Verify the collection type...
 			var phones = people.Collections.First();
-			Assert.IsNotNull(phones.ReferenceJoinMember);
-			Assert.AreEqual("Person", phones.ReferenceJoinMember.Name);
+			Assert.IsNotNull(phones.ReferencedMapping);
+			Assert.IsNotNull(phones.ReferencedProperties);
+			Assert.IsNotNull(phones.ReferencedProperties.FirstOrDefault(p => p.Name == "Person"));
 
 			people.ConnectionName = "test-data";
 			people.TargetCatalog = "testing";

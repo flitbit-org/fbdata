@@ -139,7 +139,6 @@
   <ItemGroup>
     <Compile Include="BasicDbCommandTests.cs" />
     <Compile Include="Catalog\MappedTypeTests.cs" />
-    <Compile Include="Catalog\Models\IMappedTypeDataModel.cs" />
     <Compile Include="DataRepositoryTests.cs" />
     <Compile Include="DbConnectionExtensionTests.cs" />
     <Compile Include="DbContextTests.cs" />
@@ -172,7 +171,9 @@
     </None>
     <None Include="packages.config" />
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <Folder Include="Catalog\Models\" />
+  </ItemGroup>
   <Import Project="$(MSBuildBinPath)\Microsoft.CSharp.targets" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 
        Other similar extension points exist, see Microsoft.Common.targets.

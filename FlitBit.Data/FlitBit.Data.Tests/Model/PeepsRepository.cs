@@ -3,6 +3,7 @@ using System.Data;
 using System.Data.Common;
 using System.Diagnostics.Contracts;
 using FlitBit.Data.DataModel;
+using FlitBit.Data.Repositories;
 
 namespace FlitBit.Data.Tests.Model
 {
@@ -81,47 +82,49 @@ WHERE [{0}].[Peeps].[ID] = @ID";
 			this.InsertCommand = String.Format(__InsertCommandFmt, schemaName);
 			this.UpdateCommand = String.Format(__UpdateCommandFmt, schemaName);
 			this.ReadCommand = String.Concat(
-																			 String.Format(__BaseSelectCommandFmt, schemaName),
-																			String.Format(__ByIDCommandFmt, schemaName)
+				String.Format(__BaseSelectCommandFmt, schemaName),
+				String.Format(__ByIDCommandFmt, schemaName)
 				);
 			this.ReadByNameCommand = String.Concat(
-																						 String.Format(__BaseSelectCommandFmt, schemaName),
-																						String.Format(__ByNameCommandFmt, schemaName)
+				String.Format(__BaseSelectCommandFmt, schemaName),
+				String.Format(__ByNameCommandFmt, schemaName)
 				);
 			this.DeleteCommand = String.Format(__DeleteCommandFmt, schemaName);
-			RegisterCacheHandler(CCacheKey_Name, GetItemName);
 		}
 
 		protected string ReadByNameCommand { get; set; }
 
 		protected string UpdateCommand { get; set; }
 
-		public override int GetIdentity(Peep model) { return model.ID; }
+		public override int GetIdentity(Peep model)
+		{
+			return model.ID;
+		}
 
 		public Peep ReadByName(IDbContext context, string name)
 		{
 			Contract.Requires<ArgumentNullException>(context != null);
 
 			return ReadBy(context, ReadByNameCommand,
-			    (cmd, n) =>
-			    {
-			        var binder = Helper.MakeParameterBinder(cmd);
-			        binder.DefineAndBindParameter("Name", n);
-			    }
-                , CCacheKey_Name, 
-                name
-                );
+				(cmd, n) =>
+				{
+					var binder = Helper.MakeParameterBinder(cmd);
+					binder.DefineAndBindParameter("Name", n);
+				}
+				, CCacheKey_Name,
+				name
+				);
 		}
 
-	    protected override void BindDeleteCommand(DbCommand cmd, int id)
-	    {
-            var binder = Helper.MakeParameterBinder(cmd);
-	        binder.DefineAndBindParameter("ID", id);
-	    }
-
-        protected override void BindInsertCommand(DbCommand cmd, Peep model)
+		protected override void BindDeleteCommand(DbCommand cmd, int id)
 		{
-            var binder = Helper.MakeParameterBinder(cmd);
+			var binder = Helper.MakeParameterBinder(cmd);
+			binder.DefineAndBindParameter("ID", id);
+		}
+
+		protected override void BindInsertCommand(DbCommand cmd, Peep model)
+		{
+			var binder = Helper.MakeParameterBinder(cmd);
 
 			if (model.Name == null)
 			{
@@ -141,21 +144,28 @@ WHERE [{0}].[Peeps].[ID] = @ID";
 			}
 		}
 
-	    protected override void BindReadCommand(DbCommand cmd, int id)
-	    {
-            var binder = Helper.MakeParameterBinder(cmd);
-            binder.DefineAndBindParameter("ID", id);
-	    }
-
-        protected override void BindUpdateCommand(DbCommand cmd, Peep model)
+		protected override void BindReadCommand(DbCommand cmd, int id)
 		{
-            var binder = Helper.MakeParameterBinder(cmd);
+			var binder = Helper.MakeParameterBinder(cmd);
+			binder.DefineAndBindParameter("ID", id);
+		}
+
+		protected override void BindUpdateCommand(DbCommand cmd, Peep model)
+		{
+			var binder = Helper.MakeParameterBinder(cmd);
 			binder.DefineAndBindParameter("ID", model.ID);
 			BindInsertCommand(cmd, model);
 		}
 
-		protected override Peep CreateInstance() { return new Peep(); }
-		protected override string MakeUpdateCommand(Peep model) { return UpdateCommand; }
+		protected override Peep CreateInstance()
+		{
+			return new Peep();
+		}
+
+		protected override string MakeUpdateCommand(Peep model)
+		{
+			return UpdateCommand;
+		}
 
 		protected override void PopulateInstance(IDbContext context, Peep model, IDataRecord reader, object state)
 		{
@@ -165,7 +175,5 @@ WHERE [{0}].[Peeps].[ID] = @ID";
 			model.DateCreated = reader.GetValueOrDefault<DateTime>(3);
 			model.DateUpdated = reader.GetValueOrDefault<DateTime>(4);
 		}
-
-		string GetItemName(Peep peep) { return peep.Name; }
 	}
 }
