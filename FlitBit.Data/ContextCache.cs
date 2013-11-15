@@ -3,13 +3,22 @@ using System.Collections.Generic;
 
 namespace FlitBit.Data
 {
-	
+	/// <summary>
+	/// Abstract context cache.
+	/// </summary>
 	public abstract class ContextCache
 	{
+		/// <summary>
+		/// Creates a new instance.
+		/// </summary>
+		/// <param name="cackeKey"></param>
 		protected ContextCache(object cackeKey)
 		{
 			UntypedCacheKey = cackeKey;
 		}
+		/// <summary>
+		/// Gets the cache's untyped cache key.
+		/// </summary>
 		public object UntypedCacheKey { get; private set; }
 		public abstract object UntypedGet(object key);
 		public abstract void UntypedPut(object key, object value);

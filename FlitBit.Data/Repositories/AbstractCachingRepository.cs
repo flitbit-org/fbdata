@@ -39,6 +39,7 @@ namespace FlitBit.Data.Repositories
 		protected abstract IDataModelQueryResult<TModel> PerformAll(IDbContext context, QueryBehavior behavior);
 
 		protected abstract TModel PerformCreate(IDbContext context, TModel model);
+
 		protected abstract bool PerformDelete(IDbContext context, TIdentityKey id);
 
 		protected abstract IEnumerable<TModel> PerformDirectQueryBy<TItemKey>(IDbContext context, string command,

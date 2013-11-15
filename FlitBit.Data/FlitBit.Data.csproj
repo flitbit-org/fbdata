@@ -173,6 +173,7 @@
     <Compile Include="DataModel\DbTypeEmitters\MappedUInt16Emitter.cs" />
     <Compile Include="DataModel\DbTypeEmitters\MappedUInt32Emitter.cs" />
     <Compile Include="DataModel\DbTypeEmitters\MappedUInt64Emitter.cs" />
+    <Compile Include="DataModel\LookupListDataModelRepository.cs" />
     <Compile Include="DataModel\MappedDbTypeEmitter.cs" />
     <Compile Include="Repositories\AbstractCachingRepository.cs" />
     <Compile Include="Catalog\IMappedType.cs" />

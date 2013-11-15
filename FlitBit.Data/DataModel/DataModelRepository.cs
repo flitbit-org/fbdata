@@ -8,8 +8,8 @@ using System.Linq.Expressions;
 
 namespace FlitBit.Data.DataModel
 {
-	public abstract class DataModelRepository<TDataModel, TIdentityKey, TDbConnection> : AbstractCachingRepository<TDataModel, TIdentityKey>,
-	IDataModelRepository<TDataModel, TIdentityKey, TDbConnection>
+	public abstract class DataModelRepository<TDataModel, TIdentityKey, TDbConnection> 
+    : AbstractCachingRepository<TDataModel, TIdentityKey>, IDataModelRepository<TDataModel, TIdentityKey, TDbConnection>
 		where TDbConnection : DbConnection, new()
 	{
 		private readonly IDataModelBinder<TDataModel, TIdentityKey, TDbConnection> _binder;
