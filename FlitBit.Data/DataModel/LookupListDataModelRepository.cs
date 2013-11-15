@@ -18,11 +18,12 @@ namespace FlitBit.Data.DataModel
     protected static readonly string CCacheKey = typeof(TDataModel).AssemblyQualifiedName;
 
     readonly ConcurrentDictionary<TIdentityKey, Tuple<TDataModel, DateTime>> _items = new ConcurrentDictionary<TIdentityKey, Tuple<TDataModel, DateTime>>();
-    TDataModel[] _itemsInDefaultOrder;
+    object _itemsInDefaultOrder;
     readonly DbProviderHelper _helper;
     readonly EqualityComparer<TDataModel> _comparer = EqualityComparer<TDataModel>.Default;
     readonly IDataModelBinder<TDataModel, TIdentityKey, TDbConnection> _binder;
     readonly IMapping<TDataModel> _mapping;
+    private TimeSpan _maxCacheSpan;
 
     protected LookupListDataModelRepository(IMapping<TDataModel> mapping)
     {
@@ -32,6 +33,7 @@ namespace FlitBit.Data.DataModel
       _binder = (IDataModelBinder<TDataModel, TIdentityKey, TDbConnection>)mapping.GetBinder();
       ConnectionName = _mapping.ConnectionName;
       _helper = DbProviderHelpers.GetDbProviderHelperForDbConnection(ConnectionName);
+      _maxCacheSpan = TimeSpan.FromMinutes(5);
     }
 
     protected string ConnectionName { get; private set; }
@@ -50,6 +52,11 @@ namespace FlitBit.Data.DataModel
       return res;
     }
 
+    private void ClearCollectionCache()
+    {
+      Interlocked.Exchange(ref _itemsInDefaultOrder, null);
+    }
+
     public TDataModel ReadByIdentity(IDbContext context, TIdentityKey key)
     {
       if (context.Behaviors.HasFlag(DbContextBehaviors.DisableCaching))
@@ -58,41 +65,33 @@ namespace FlitBit.Data.DataModel
       }
       var time = DateTime.Now;
       Tuple<TDataModel, DateTime> item;
-      if (_items.TryGetValue(key, out item) && 
-      var res = cache.Get(key);
-      if (_comparer.Equals(default(TDataModel), res))
+      if (_items.TryGetValue(key, out item) && item.Item2.Add(_maxCacheSpan) > time)
       {
-        res = PerformRead(context, key);
-        if (!_comparer.Equals(default(TDataModel), res))
-        {
-          cache.Put(key, res);
-        }
+        return item.Item1;
       }
+      var res = PerformRead(context, key);
+      _items.AddOrUpdate(key, k => Tuple.Create(res, DateTime.Now), (k, _) => Tuple.Create(res, DateTime.Now));
       return res;
     }
 
     public TDataModel Update(IDbContext context, TDataModel model)
     {
-      if (context.Behaviors.HasFlag(DbContextBehaviors.DisableCaching))
-      {
-        return PerformUpdate(context, model);
-      }
       var res = PerformUpdate(context, model);
-      var id = GetIdentity(model);
-      var cache = GetContextCache(context, CCacheKey, id);
-      cache.Put(id, res);
+      var key = GetIdentity(model);
+      _items.AddOrUpdate(key, k => Tuple.Create(res, DateTime.Now), (k, _) => Tuple.Create(res, DateTime.Now));
+      ClearCollectionCache();
       return res;
     }
 
     public bool Delete(IDbContext context, TIdentityKey id)
     {
-      if (context.Behaviors.HasFlag(DbContextBehaviors.DisableCaching))
-      {
-        return PerformDelete(context, id);
-      }
       var res = PerformDelete(context, id);
-      var cache = GetContextCache(context, CCacheKey, id);
-      cache.Remove(id);
+      if (res)
+      {
+        Tuple<TDataModel, DateTime> item;
+        _items.TryRemove(id, out item);
+        ClearCollectionCache();
+      }
       return res;
     }
 
