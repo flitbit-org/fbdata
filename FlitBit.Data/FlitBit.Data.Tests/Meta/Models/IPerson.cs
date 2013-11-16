@@ -24,7 +24,7 @@ namespace FlitBit.Data.Tests.Meta.Models
 		[MapColumn]
 		EmailVerificationStates VerificationState { get; set; }
 
-		//[MapInplaceColumns("Person:PrimaryEmail", "ID")]
-		//IEmailAddress PrimaryEmail { get; }
+		[MapInplaceColumns("Person:PrimaryEmail", "ID")]
+		IEmailAddress PrimaryEmail { get; }
 	}
 }

@@ -921,7 +921,9 @@ namespace FlitBit.Data.SqlServer
 				Contract.Requires<InvalidOperationException>(mapping.HasBinder);
 				Contract.Ensures(Contract.Result<Type>() != null);
 
-				var baseType = typeof(DataModelRepository<TDataModel, TIdentityKey, SqlConnection>);
+				var baseType = (mapping.IsLookupList) 
+          ? typeof(LookupListDataModelRepository<TDataModel, TIdentityKey, SqlConnection>) 
+          : typeof(DataModelRepository<TDataModel, TIdentityKey, SqlConnection>);
 				var builder = module.DefineClass(typeName, EmittedClass.DefaultTypeAttributes,
 					baseType, null);
 				builder.Attributes = TypeAttributes.Sealed | TypeAttributes.Public | TypeAttributes.BeforeFieldInit;

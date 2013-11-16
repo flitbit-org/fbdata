@@ -55,6 +55,11 @@ namespace FlitBit.Data.DataModel
 		/// </summary>
 		bool IsEnum { get; }
 
+    /// <summary>
+    /// Indicates whether the mapping behaves like a lookup list.
+    /// </summary>
+    bool IsLookupList { get; }
+
 		/// <summary>
 		///   Indicates whether the entity's database object name is pluralized.
 		/// </summary>
@@ -319,7 +324,7 @@ namespace FlitBit.Data.DataModel
 		/// <param name="mapColumn"></param>
 		void MapColumnFromMeta(PropertyInfo p, MapColumnAttribute mapColumn);
 
-		
-	}
+
+  }
 
 }

@@ -616,6 +616,11 @@ namespace FlitBit.Data.Meta
 		/// </summary>
 		public bool IsPluralized { get { return Behaviors.HasFlag(EntityBehaviors.Pluralized); } }
 
+	  /// <summary>
+	  /// Indicates whether the mapping behaves like a lookup list.
+	  /// </summary>
+	  public bool IsLookupList { get { return Behaviors.HasFlag(EntityBehaviors.LookupList); } }
+    
 		/// <summary>
 		///   The Db object to which type T maps; either a table or view.
 		/// </summary>

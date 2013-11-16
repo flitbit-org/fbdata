@@ -4,9 +4,9 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics.Contracts;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Threading;
-using FlitBit.Data.Repositories;
 
 namespace FlitBit.Data.DataModel
 {
@@ -17,15 +17,21 @@ namespace FlitBit.Data.DataModel
     // ReSharper disable once StaticFieldInGenericType
     protected static readonly string CCacheKey = typeof(TDataModel).AssemblyQualifiedName;
 
-    readonly ConcurrentDictionary<TIdentityKey, Tuple<TDataModel, DateTime>> _items = new ConcurrentDictionary<TIdentityKey, Tuple<TDataModel, DateTime>>();
+    readonly ConcurrentDictionary<TIdentityKey, Tuple<TDataModel, DateTime>> _items =
+      new ConcurrentDictionary<TIdentityKey, Tuple<TDataModel, DateTime>>();
+
     object _itemsInDefaultOrder;
     readonly DbProviderHelper _helper;
     readonly EqualityComparer<TDataModel> _comparer = EqualityComparer<TDataModel>.Default;
     readonly IDataModelBinder<TDataModel, TIdentityKey, TDbConnection> _binder;
     readonly IMapping<TDataModel> _mapping;
-    private TimeSpan _maxCacheSpan;
+    TimeSpan _cacheRefreshSpan;
 
     protected LookupListDataModelRepository(IMapping<TDataModel> mapping)
+      : this(mapping, TimeSpan.FromMinutes(5))
+    {}
+
+    protected LookupListDataModelRepository(IMapping<TDataModel> mapping, TimeSpan cacheRefreshSpan)
     {
       Contract.Requires<ArgumentNullException>(mapping != null);
       Contract.Requires<ArgumentException>(mapping.HasBinder);
@@ -33,14 +39,21 @@ namespace FlitBit.Data.DataModel
       _binder = (IDataModelBinder<TDataModel, TIdentityKey, TDbConnection>)mapping.GetBinder();
       ConnectionName = _mapping.ConnectionName;
       _helper = DbProviderHelpers.GetDbProviderHelperForDbConnection(ConnectionName);
-      _maxCacheSpan = TimeSpan.FromMinutes(5);
+      _cacheRefreshSpan = cacheRefreshSpan;
     }
 
     protected string ConnectionName { get; private set; }
 
-    protected DbProviderHelper Helper
+    protected DbProviderHelper Helper { get { return _helper; } }
+
+    public TimeSpan CacheRefreshSpan
     {
-      get { return _helper; }
+      get { return _cacheRefreshSpan; }
+      set
+      {
+        Contract.Requires<ArgumentException>(value.Milliseconds > 0);
+        _cacheRefreshSpan = value;
+      }
     }
 
     public abstract TIdentityKey GetIdentity(TDataModel model);
@@ -52,25 +65,37 @@ namespace FlitBit.Data.DataModel
       return res;
     }
 
-    private void ClearCollectionCache()
-    {
-      Interlocked.Exchange(ref _itemsInDefaultOrder, null);
-    }
+    void ClearCollectionCache() { Interlocked.Exchange(ref _itemsInDefaultOrder, null); }
 
     public TDataModel ReadByIdentity(IDbContext context, TIdentityKey key)
     {
+      TDataModel res;
       if (context.Behaviors.HasFlag(DbContextBehaviors.DisableCaching))
       {
-        return PerformRead(context, key);
+        res = PerformRead(context, key);
+        ThreadPool.QueueUserWorkItem(
+                                     unused => _items.AddOrUpdate(
+                                                                  key,
+                                                                  k => Tuple.Create(res, DateTime.Now),
+                                                                  (k, _) => Tuple.Create(res, DateTime.Now))
+          );
+        return res;
       }
       var time = DateTime.Now;
       Tuple<TDataModel, DateTime> item;
-      if (_items.TryGetValue(key, out item) && item.Item2.Add(_maxCacheSpan) > time)
+      if (_items.TryGetValue(key, out item)
+          && time <= item.Item2.Add(_cacheRefreshSpan))
       {
         return item.Item1;
       }
-      var res = PerformRead(context, key);
-      _items.AddOrUpdate(key, k => Tuple.Create(res, DateTime.Now), (k, _) => Tuple.Create(res, DateTime.Now));
+      // Not cached... got to the db...
+      res = PerformRead(context, key);
+      if (!_comparer.Equals(res, default(TDataModel)))
+      {
+        // If it was in the db then our cache is out of sync...
+        ClearCollectionCache();
+        _items.AddOrUpdate(key, k => Tuple.Create(res, DateTime.Now), (k, _) => Tuple.Create(res, DateTime.Now));
+      }
       return res;
     }
 
@@ -97,8 +122,49 @@ namespace FlitBit.Data.DataModel
 
     public IDataModelQueryResult<TDataModel> All(IDbContext context, QueryBehavior behavior)
     {
-      return PerformAll(context, behavior);
+      IDataModelQueryResult<TDataModel> res;
+      if (context.Behaviors.HasFlag(DbContextBehaviors.DisableCaching)
+          || behavior.Behaviors != QueryBehaviors.Default)
+      {
+        res = PerformAll(context, behavior);
+        if (res.Succeeded)
+        {
+          ThreadPool.QueueUserWorkItem(unused => UpdateCollectionCache(res));
+        }
+        return res;
+      }
 
+      var items = (TDataModel[])Thread.VolatileRead(ref _itemsInDefaultOrder);
+      if (items != null)
+      {
+        return new DataModelQueryResult<TDataModel>(behavior, items);
+      }
+      res = PerformAll(context, behavior);
+      if (res.Succeeded)
+      {
+        UpdateCollectionCache(res);
+      }
+      return res;
+    }
+
+    void UpdateCollectionCache(IDataModelQueryResult<TDataModel> res)
+    {
+      Contract.Requires<ArgumentException>(res.Succeeded);
+      var items = res.Results.ToArray();
+      if (res.Behaviors.Behaviors == QueryBehaviors.Default)
+      {
+        Interlocked.Exchange(ref _itemsInDefaultOrder, items);
+        _items.Clear();
+      }
+      var timestamp = DateTime.Now;
+      for (var i = 0; i < items.Length; ++i)
+      {
+        var item = items[i];
+        _items.AddOrUpdate(GetIdentity(item),
+                           k => Tuple.Create(item, timestamp),
+                           (k, _) => Tuple.Create(item, timestamp)
+          );
+      }
     }
 
     public IDataModelBinder<TDataModel, TIdentityKey, TDbConnection> Binder { get { return _binder; } }
@@ -367,7 +433,6 @@ namespace FlitBit.Data.DataModel
       return cmd.ExecuteSingle(cx, cn, param, param1, param2, param3, param4, param5, param6, param7, param8, param9);
     }
 
-
     public IDataModelQueryResult<TDataModel> ExecuteMany<TParam>(
       IDataModelQueryManyCommand<TDataModel, TDbConnection, TParam> cmd,
       IDbContext cx, QueryBehavior behavior,
@@ -518,7 +583,6 @@ namespace FlitBit.Data.DataModel
                              param9);
     }
 
-
     protected virtual IDataModelQueryResult<TDataModel> PerformAll(IDbContext context, QueryBehavior behavior)
     {
       var cmd = _binder.GetAllCommand();
@@ -576,14 +640,14 @@ namespace FlitBit.Data.DataModel
     }
 
     protected virtual IEnumerable<TDataModel> PerformDirectQueryBy<TItemKey>(IDbContext context, string command,
-                                                                              Action<DbCommand, TItemKey> binder,
-                                                                              TItemKey key)
+                                                                             Action<DbCommand, TItemKey> binder,
+                                                                             TItemKey key)
     {
       throw new NotImplementedException();
     }
 
     protected virtual TDataModel PerformDirectReadBy<TItemKey>(IDbContext context, string command,
-                                                                Action<DbCommand, TItemKey> binder, TItemKey key)
+                                                               Action<DbCommand, TItemKey> binder, TItemKey key)
     {
       throw new NotImplementedException();
     }
