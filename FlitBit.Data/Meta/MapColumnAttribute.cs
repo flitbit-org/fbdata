@@ -6,6 +6,7 @@
 
 using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Reflection;
@@ -174,6 +175,11 @@ namespace FlitBit.Data.Meta
 		///   Gets and sets a column's database translator type (reserved).
 		/// </summary>
 		public Type DbTypeTranslator { get; set; }
+
+    /// <summary>
+    /// Declared DBType; providers use this as a suggestion when mapping the type.
+    /// </summary>
+    public DbType SuggestedDbType { get; set; }
 
 		/// <summary>
 		///   Gets and sets the mapped column's length/size.

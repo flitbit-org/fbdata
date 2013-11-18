@@ -370,9 +370,7 @@
       <LastGenOutput>Resources.Designer.cs</LastGenOutput>
     </EmbeddedResource>
   </ItemGroup>
-  <ItemGroup>
-    <Folder Include="DbTypeEmitters\" />
-  </ItemGroup>
+  <ItemGroup />
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Import Project="$(MSBuildThisFileDirectory)\csproj-import-after.targets" Condition="Exists('$(MSBuildThisFileDirectory)\csproj-import-after.targets')" />
   <!-- To modify your build process, add your task inside one of the targets below and uncomment it. 

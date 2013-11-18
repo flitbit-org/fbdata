@@ -86,17 +86,48 @@ namespace FlitBit.Data.Meta
 		LinearCongruentGeneratedWithCheckDigit = (1 << 12) | LinearCongruentGeneratedAsHexidecimal,
 	}
 
+	/// <summary>
+	/// Behaviors for reference properties; informs joins and foreign keys.
+	/// </summary>
 	[Flags]
 	public enum ReferenceBehaviors
 	{
+    /// <summary>
+    /// Indicates the default behavior (lazy).
+    /// </summary>
+    Default = 0,
+    /// <summary>
+    /// Indicates the reference is resolved on demand.
+    /// </summary>
 		Lazy = 0,
+    /// <summary>
+    /// Indicates the reference should be aggressively resolved.
+    /// </summary>
 		Aggressive = 1,
+    /// <summary>
+    /// Indicates the desired resolution (lazy or aggressive) should be enforced.
+    /// </summary>
 		Enforced = 1 << 1,
+    /// <summary>
+    /// Enforced aggressive.
+    /// </summary>
 		EnforcedAggressive = Enforced | Aggressive,
+    /// <summary>
+    /// Indicates the foreign key should be defined to update cascade. Applise to reference properties; no affect on reference collections.
+    /// </summary>
 		OnUpdateCascade = 1 << 2,
-		OnDeleteCascade = 1 << 3,
-		OnDeleteSetNull = 1 << 4,
-		OnDeleteSetDefault = 1 << 5
+    /// <summary>
+    /// Indicates the foreign key should be defined to delete cascade. Applise to reference properties; no affect on reference collections.
+    /// </summary>
+    OnDeleteCascade = 1 << 3,
+    /// <summary>
+    /// Indicates the foreign key should be defined to set null on delete. Applise to reference properties; no affect on reference collections.
+    /// </summary>
+    OnDeleteSetNull = 1 << 4,
+    /// <summary>
+    /// Indicates the foreign key should be defined to set default on delete. Applise to reference properties; no affect on reference collections.
+    /// </summary>
+    OnDeleteSetDefault = 1 << 5
 	}
 
 	/// <summary>
