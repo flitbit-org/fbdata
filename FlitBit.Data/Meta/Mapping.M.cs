@@ -141,7 +141,7 @@ namespace FlitBit.Data.Meta
 			{
 				if (!_collections.TryGetValue(name, out col))
 				{
-					_collections.Add(name, col = new CollectionMapping<TModel>(this, member));
+					_collections.Add(name, col = new CollectionMapping<TModel>(this, member, name));
 				}
 			}
 			return col;
@@ -344,16 +344,22 @@ namespace FlitBit.Data.Meta
 			}
 		}
 
-		public CollectionMapping<TModel> DefineCollection(PropertyInfo property)
+		public CollectionMapping<TModel> DefineCollection(MemberInfo member, string name)
 		{
-			var name = property.Name;
+      Contract.Requires<ArgumentNullException>(member != null);
+      Contract.Requires<ArgumentNullException>(name != null);
+		  if (member.MemberType != MemberTypes.Property
+		      && typeof(TModel).GetProperty(name) != null)
+		  {
+        throw new MappingException(String.Concat("Collection name defined on method ", member.Name, " conflicts with an existing property's name: ", name, "."));
+		  }
 
 			CollectionMapping<TModel> col;
 			lock (_sync)
 			{
 				if (!_collections.TryGetValue(name, out col))
 				{
-					_collections.Add(name, col = new CollectionMapping<TModel>(this, property));
+					_collections.Add(name, col = new CollectionMapping<TModel>(this, member, name));
 				}
 			}
 			return col;
@@ -467,9 +473,11 @@ namespace FlitBit.Data.Meta
 			return this;
 		}
 
-		public void MapCollectionFromMeta(PropertyInfo p, MapCollectionAttribute attr)
+		public void MapCollectionFromMeta(MemberInfo member, MapCollectionAttribute attr)
 		{
-			var elmType = p.PropertyType.FindElementType();
+      Contract.Requires<ArgumentException>(member.MemberType == MemberTypes.Property || member.MemberType == MemberTypes.Method);
+		  var type = (member.MemberType == MemberTypes.Property) ? ((PropertyInfo)member).PropertyType : ((MethodInfo)member).ReturnType;
+			var elmType = type.FindElementType();
 			IMapping elmMapping;
 
 			if (elmType == RuntimeType)
@@ -482,7 +490,7 @@ namespace FlitBit.Data.Meta
 			}
 			else
 			{
-				throw new MappingException(String.Concat("Unable to fulfill collection mapping on ", typeof (TModel).Name, ".", p.Name,
+				throw new MappingException(String.Concat("Unable to fulfill collection mapping on ", typeof (TModel).Name, ".", member.Name,
 						" because the property must reference a mapped type.")
 						);
 			}
@@ -494,7 +502,7 @@ namespace FlitBit.Data.Meta
 			var referencedProps = attr.ReferencedProperties.ToArray();
 			if (referencedProps.Length != localProps.Length)
 			{
-				throw new MappingException(String.Concat("The mapped collection on ", typeof (TModel).Name, ".", p.Name,
+				throw new MappingException(String.Concat("The mapped collection on ", typeof (TModel).Name, ".", member.Name,
 					" must identify the same number of join properties on both sides of the reference.")
 					);
 			}
@@ -504,30 +512,82 @@ namespace FlitBit.Data.Meta
 				var pp = typeof (TModel).GetProperty(name);
 				if (pp == null)
 				{
-					throw new MappingException(String.Concat("The mapped collection on ", typeof(TModel).Name, ".", p.Name,
+					throw new MappingException(String.Concat("The mapped collection on ", typeof(TModel).Name, ".", member.Name,
 						" names a local property that does not exist: ", name, ".")
 						);
 				}
 				locals.Add(pp);
 			}
+
+      var joinType = attr.JoinType;
+      var joins = new List<MemberInfo>();
+      
 			var referenced = new List<MemberInfo>();
-			foreach (var name in referencedProps)
-			{
-				var pp = elmType.GetProperty(name);
-				if (pp == null)
-				{
-					throw new MappingException(String.Concat("The mapped collection on ", typeof(TModel).Name, ".", p.Name,
-						" references a property that does not exist: ", elmType.Name, ".", name, ".")
-						);
-				}
-				referenced.Add(pp);
-			}
-			var coll = DefineCollection(p);
-			coll.ReferenceBehaviors = attr.Behaviors;
+		  if (joinType == null)
+		  {
+		    foreach (var name in referencedProps)
+		    {
+		      var pp = elmType.GetProperty(name);
+		      if (pp == null)
+		      {
+		        throw new MappingException(String.Concat("The mapped collection on ", typeof(TModel).Name, ".", member.Name,
+		          " references a property that does not exist: ", elmType.Name, ".", name, ".")
+		          );
+		      }
+		      referenced.Add(pp);
+		    }
+        AddDependency(elmMapping, DependencyKind.Soft, member);
+		  }
+		  else
+		  {
+		    IMapping joinMapping;
+        if (joinType == RuntimeType)
+        {
+          joinMapping = this;
+        }
+        else if (Mappings.ExistsFor(joinType))
+        {
+          joinMapping = Mappings.AccessMappingFor(joinType);
+        }
+        else
+        {
+          throw new MappingException(String.Concat("Unable to fulfill collection mapping on ", typeof(TModel).Name, ".", member.Name,
+              " because the property must only reference mapped type.")
+              );
+        }
+        foreach (var name in referencedProps)
+        {
+          var pp = joinType.GetProperty(name);
+          if (pp == null)
+          {
+            throw new MappingException(String.Concat("The mapped collection on ", typeof(TModel).Name, ".", member.Name,
+              " references a property that does not exist: ", joinType.Name, ".", name, ".")
+              );
+          }
+          referenced.Add(pp);
+        }
+        foreach (var name in attr.JoinProperties)
+        {
+          var pp = joinType.GetProperty(name);
+          if (pp == null)
+          {
+            throw new MappingException(String.Concat("The mapped collection on ", typeof(TModel).Name, ".", member.Name,
+              " references a property that does not exist: ", joinType.Name, ".", name, ".")
+              );
+          }
+          joins.Add(pp);
+        }
+        AddDependency(joinMapping, DependencyKind.Soft, member);
+        AddDependency(elmMapping, DependencyKind.Soft, member);
+		  }
+			var coll = DefineCollection(member, attr.Name ?? member.Name);
+		  coll.ReferenceBehaviors = attr.Behaviors;
 			coll.ReferencedType = elmType;
 			coll.ReferencedProperties = referenced;
 			coll.ReferencedMapping = elmMapping;
-			coll.LocalJoinProperties = locals;
+			coll.LocalProperties = locals;
+		  coll.JoinType = attr.JoinType;
+		  coll.JoinProperties = joins;
 		}
 
 		public void MapColumnFromMeta(PropertyInfo p, MapColumnAttribute mapColumn)

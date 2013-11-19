@@ -18,11 +18,11 @@ namespace FlitBit.Data.Meta
 {
 	public class CollectionMapping<T> : CollectionMapping
 	{
-		internal CollectionMapping(Mapping<T> mapping, MemberInfo member)
-			: base(mapping, member)
+		internal CollectionMapping(Mapping<T> mapping, MemberInfo member, string name)
+			: base(mapping, member, name)
 		{}
 
-		public IMapping<T> End()
+	  public IMapping<T> End()
 		{
 			return (Mapping<T>) LocalMapping;
 		}
@@ -82,7 +82,7 @@ namespace FlitBit.Data.Meta
 			ReferencedType = elmType;
 			ReferencedProperties = referenced;
 			ReferencedMapping = elmMapping;
-			LocalJoinProperties = locals;
+			this.LocalProperties = locals;
 
 			return this;
 		}

@@ -290,12 +290,13 @@ namespace FlitBit.Data.DataModel
 		/// <param name="member"></param>
 		void AddDependency(IMapping target, DependencyKind kind, MemberInfo member);
 
-		/// <summary>
-		/// Defines a collection mapping.
-		/// </summary>
-		/// <param name="property"></param>
-		/// <returns></returns>
-		CollectionMapping<TModel> DefineCollection(PropertyInfo property);
+	  /// <summary>
+	  /// Defines a collection mapping.
+	  /// </summary>
+	  /// <param name="member">member on which the collection is defined.</param>
+	  /// <param name="name">the collection's name</param>
+	  /// <returns>a collection mapping</returns>
+	  CollectionMapping<TModel> DefineCollection(MemberInfo member, string name);
 
 		/// <summary>
 		///  Defines a column mapping.
@@ -310,12 +311,12 @@ namespace FlitBit.Data.DataModel
 		/// <returns></returns>
 		IMapping<TModel> InitFromMetadata();
 
-		/// <summary>
-		/// Maps a collection from metadata.
-		/// </summary>
-		/// <param name="p"></param>
-		/// <param name="mapColl"></param>
-		void MapCollectionFromMeta(PropertyInfo p, MapCollectionAttribute mapColl);
+	  /// <summary>
+	  /// Maps a collection from metadata.
+	  /// </summary>
+	  /// <param name="member"></param>
+	  /// <param name="mapColl"></param>
+	  void MapCollectionFromMeta(MemberInfo member, MapCollectionAttribute mapColl);
 
 		/// <summary>
 		/// Maps a column from metadata.

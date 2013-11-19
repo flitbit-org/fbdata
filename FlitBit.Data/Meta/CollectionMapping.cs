@@ -18,20 +18,27 @@ namespace FlitBit.Data.Meta
 {
 	public abstract class CollectionMapping
 	{
-		internal CollectionMapping(IMapping mapping, MemberInfo member)
+		internal CollectionMapping(IMapping mapping, MemberInfo member, string name)
 		{
 			Contract.Requires<ArgumentNullException>(mapping != null);
-			Contract.Requires<ArgumentNullException>(member != null);
+      Contract.Requires<ArgumentNullException>(member != null);
+      Contract.Requires<ArgumentNullException>(name != null);
 
 			LocalMapping = mapping;
 			LocalMember = member;
+		  Name = name;
 		}
+
+    /// <summary>
+    /// The collection's name.
+    /// </summary>
+    public string Name { get; private set; }
 
 		public MemberInfo LocalMember { get; internal set; }
 
 		public IMapping LocalMapping { get; private set; }
 
-		public IList<MemberInfo> LocalJoinProperties { get; internal set; }
+		public IList<MemberInfo> LocalProperties { get; internal set; }
 
 		public ReferenceBehaviors ReferenceBehaviors { get; internal set; }
 
@@ -40,7 +47,11 @@ namespace FlitBit.Data.Meta
 		public IMapping ReferencedMapping { get; internal set; }
 
 		public IList<MemberInfo> ReferencedProperties { get; internal set; }
+    
+    public Type JoinType { get; set; }
 
+    public IList<MemberInfo> JoinProperties { get; set; }
+    
 		internal Type MakeCollectionReferenceType(IMapping mapping)
 		{
 			Contract.Requires<InvalidOperationException>(mapping.HasBinder);
@@ -49,7 +60,7 @@ namespace FlitBit.Data.Meta
 			var arity = ReferencedProperties.Count;
 			for (var i = 0; i < arity; i++)
 			{
-				paramTypes.Add(CalculateColumnTypeFromJoinProperties(LocalJoinProperties[i], ReferencedProperties[i]));
+				paramTypes.Add(CalculateColumnTypeFromJoinProperties(this.LocalProperties[i], ReferencedProperties[i]));
 			}
 
 			switch (arity)

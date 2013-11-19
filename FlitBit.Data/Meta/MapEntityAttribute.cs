@@ -134,6 +134,11 @@ namespace FlitBit.Data.Meta
 					}
 				}
 			}
+		  foreach (MethodInfo m in declaringType.GetMethods().Where(m => m.IsDefined(typeof(MapCollectionAttribute), false)))
+		  {
+        mapping.MapCollectionFromMeta(m, (MapCollectionAttribute)m.GetCustomAttributes(typeof(MapCollectionAttribute), false)
+                                                                  .Single());
+		  }
 		}
 
 		/// <summary>

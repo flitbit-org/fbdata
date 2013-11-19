@@ -25,7 +25,7 @@ namespace FlitBit.Data.DataModel.DbTypeEmitters
 			var il = method.GetILGenerator();
 			reader.LoadValue(il);
 			columnIndex.LoadValue(il);
-			il.CallVirtual<DbDataReader>("GetSingle", typeof(int));
+			il.CallVirtual<DbDataReader>("GetFloat", typeof(int));
 		}
 	}
 }

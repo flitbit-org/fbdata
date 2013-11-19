@@ -90,6 +90,11 @@ namespace FlitBit.Data.Meta
         : joinPropertyNames.Split(',').Select(s => s.Trim());
 		}
 
+    /// <summary>
+    /// The name of the collection; taken from the member name if not specified.
+    /// </summary>
+    public string Name { get; set; }
+
 	  /// <summary>
 	  /// The collection's join type. A join type is the type that joins the target type with the reference type, such as in a many-to-many join it is the type that holds the references going in both directions.
 	  /// </summary>
