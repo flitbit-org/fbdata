@@ -150,6 +150,7 @@
       <Link>Properties\AssemblyInfo.corporate.cs</Link>
     </Compile>
     <Compile Include="ContextCache.cs" />
+    <Compile Include="DataModel\DataModelJoinCommandBuilder.cs" />
     <Compile Include="DataModel\DbTypeEmitters\MappedAnyToStringEmitter.cs" />
     <Compile Include="DataModel\DbTypeEmitters\MappedBinaryEmitter.cs" />
     <Compile Include="DataModel\DbTypeEmitters\MappedBooleanEmitter.cs" />
@@ -173,6 +174,7 @@
     <Compile Include="DataModel\DbTypeEmitters\MappedUInt16Emitter.cs" />
     <Compile Include="DataModel\DbTypeEmitters\MappedUInt32Emitter.cs" />
     <Compile Include="DataModel\DbTypeEmitters\MappedUInt64Emitter.cs" />
+    <Compile Include="DataModel\IDataModelJoinCommandBuilder.cs" />
     <Compile Include="DataModel\LookupListDataModelRepository.cs" />
     <Compile Include="DataModel\MappedDbTypeEmitter.cs" />
     <Compile Include="Repositories\AbstractCachingRepository.cs" />
@@ -222,6 +224,7 @@
     <Compile Include="SqlServer\DataModelSqlWriter.cs" />
     <Compile Include="SqlServer\SingleUpdateQueryCommand.cs" />
     <Compile Include="SqlServer\SqlDataModelCommand.cs" />
+    <Compile Include="SqlServer\SqlDataModelJoinCommand.cs" />
     <Compile Include="SqlServer\SqlDataModelNonQueryCommand.cs" />
     <Compile Include="SqlServer\SqlDataModelQuerySingleCommand.cs" />
     <Compile Include="SqlServer\DataModelQueryManyCommand.cs" />

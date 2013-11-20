@@ -9,7 +9,7 @@ namespace FlitBit.Data.DataModel
 	/// <typeparam name="TDataModel"></typeparam>
 	/// <typeparam name="TDbConnection"></typeparam>
 	/// <typeparam name="TParam"></typeparam>
-	public interface IDataModelQueryCommandBuilder<TDataModel, TDbConnection, TParam>
+	public interface IDataModelCommandBuilder<TDataModel, TDbConnection, TParam>
 	{
 		/// <summary>
 		/// Specifies constraints on the data model. The expression must evaluate like a predicate in order to be translated to SQL.

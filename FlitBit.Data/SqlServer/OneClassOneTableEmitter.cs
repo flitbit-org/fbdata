@@ -118,6 +118,27 @@ namespace FlitBit.Data.SqlServer
 			}
 		}
 
+    [SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
+    internal static Type MakeJoinCommand<TDataModel, TImpl, TJoin, TParam>(IMapping<TDataModel> mapping, string queryKey, Constraints cns)
+      where TImpl : class, IDataModel, TDataModel, new()
+    {
+      Contract.Requires<ArgumentNullException>(queryKey != null);
+      Contract.Requires<ArgumentException>(queryKey.Length > 0);
+      Contract.Requires<ArgumentNullException>(cns != null);
+      Contract.Ensures(Contract.Result<Type>() != null);
+
+      var targetType = typeof(TDataModel);
+      var typeName = RuntimeAssemblies.PrepareTypeName(targetType, queryKey);
+
+      var module = Module;
+      lock (module)
+      {
+        var type = module.Builder.GetType(typeName, false, false) ??
+                  EmitImplementation<TDataModel, TImpl>.BuildQueryCommand(module, typeName, mapping, cns, typeof(SqlDataModelQueryCommand<TDataModel, TImpl, TJoin, TParam>));
+        return type;
+      }
+    }
+
 		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
 		internal static Type MakeQueryCommand<TDataModel, TImpl, TParam>(IMapping<TDataModel> mapping, string queryKey, Constraints cns)
 			where TImpl : class, IDataModel, TDataModel, new()

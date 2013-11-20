@@ -78,7 +78,7 @@ namespace FlitBit.Data.DataModel
 		/// <param name="queryKey">the query's key</param>
 		/// <param name="criteria">an match specification</param>
 		/// <returns></returns>
-		public abstract IDataModelQueryCommandBuilder<TModel, TDbConnection, TCriteria> MakeQueryCommand<TCriteria>(
+		public abstract IDataModelCommandBuilder<TModel, TDbConnection, TCriteria> MakeQueryCommand<TCriteria>(
 			string queryKey,
 			TCriteria criteria);
 
@@ -88,7 +88,7 @@ namespace FlitBit.Data.DataModel
 		public abstract void Initialize();
 
 
-		public abstract IDataModelQueryCommandBuilder<TModel, TDbConnection, TParam> MakeQueryCommand<TParam>(string queryKey);
+		public abstract IDataModelCommandBuilder<TModel, TDbConnection, TParam> MakeQueryCommand<TParam>(string queryKey);
 
 		public abstract IDataModelCommandBuilder<TModel, TDbConnection, TParam, TParam1> MakeQueryCommand<TParam, TParam1>(
 			string queryKey);
@@ -293,5 +293,7 @@ namespace FlitBit.Data.DataModel
 		}
 
 		public abstract IDataModelRepository<TModel, TIdentityKey> MakeRepository();
+
+	  public abstract IDataModelJoinCommandBuilder<TModel, TDbConnection, TJoin> MakeJoinCommand<TJoin>(string queryKey);
 	}
 }

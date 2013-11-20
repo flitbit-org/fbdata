@@ -419,5 +419,13 @@ namespace FlitBit.Data.DataModel
 		{
 			throw new NotImplementedException();
 		}
-	}
+
+
+    public IDataModelJoinCommandBuilder<TDataModel, TDbConnection, TJoin> Join<TJoin>(string queryKey, Expression<Func<TDataModel, TJoin, bool>> predicate)
+    {
+      return
+        Binder.MakeJoinCommand<TJoin>(
+          queryKey).Join(predicate);
+    }
+  }
 }

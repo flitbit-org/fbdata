@@ -201,13 +201,13 @@ namespace FlitBit.Data.SqlServer
 			return _repository.Item2;
 		}
 		
-		public override IDataModelQueryCommandBuilder<TDataModel, SqlConnection, TCriteria> MakeQueryCommand<TCriteria>(string queryKey, TCriteria input)
+		public override IDataModelCommandBuilder<TDataModel, SqlConnection, TCriteria> MakeQueryCommand<TCriteria>(string queryKey, TCriteria input)
 		{
-			return new SqlDataModelQueryCommandBuilder<TDataModel, TModelImpl, TCriteria>(queryKey, _sqlWriter);
+			return new SqlDataModelCommandBuilder<TDataModel, TModelImpl, TCriteria>(queryKey, _sqlWriter);
 		}
-		public override IDataModelQueryCommandBuilder<TDataModel, SqlConnection, TParam> MakeQueryCommand<TParam>(string queryKey)
+		public override IDataModelCommandBuilder<TDataModel, SqlConnection, TParam> MakeQueryCommand<TParam>(string queryKey)
 		{
-			return new SqlDataModelQueryCommandBuilder<TDataModel, TModelImpl, TParam>(queryKey, _sqlWriter);
+			return new SqlDataModelCommandBuilder<TDataModel, TModelImpl, TParam>(queryKey, _sqlWriter);
 		}
 		public override IDataModelCommandBuilder<TDataModel, SqlConnection, TParam, TParam1> MakeQueryCommand
 			<TParam, TParam1>(string queryKey)
@@ -254,5 +254,10 @@ namespace FlitBit.Data.SqlServer
 		{
 			return new SqlDataModelQueryCommandBuilder<TDataModel, TModelImpl, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>(queryKey, _sqlWriter);
 		}
-	}
+
+    public override IDataModelJoinCommandBuilder<TDataModel, SqlConnection, TJoin> MakeJoinCommand<TJoin>(string queryKey)
+    {
+      return new SqlDataModelJoinCommandBuilder<TDataModel, TIdentityKey, TModelImpl, TJoin>(this, queryKey, _sqlWriter);
+    }
+  }
 }

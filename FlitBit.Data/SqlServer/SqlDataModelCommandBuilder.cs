@@ -8,12 +8,12 @@ using FlitBit.Data.SPI;
 
 namespace FlitBit.Data.SqlServer
 {
-	public class SqlDataModelQueryCommandBuilder<TDataModel, TImpl, TParam> :
-		DataModelQueryCommandBuilder<TDataModel, SqlConnection, TParam>
+	public class SqlDataModelCommandBuilder<TDataModel, TImpl, TParam> :
+		DataModelCommandBuilder<TDataModel, SqlConnection, TParam>
 		where TImpl: class, IDataModel, TDataModel, new()
 	{
 
-		public SqlDataModelQueryCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
+		public SqlDataModelCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
 			: base(queryKey, sqlWriter)
 		{
 		}

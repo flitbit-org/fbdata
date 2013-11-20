@@ -546,6 +546,7 @@ namespace FlitBit.Data.DataModel
 		/// <returns></returns>
 		IDataModelQueryResult<TDataModel> ExecuteMany<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>(IDataModelQueryManyCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9> cmd,
 			IDbContext cx, QueryBehavior behavior, TParam param, TParam1 param1, TParam2 param2, TParam3 param3, TParam4 param4, TParam5 param5, TParam6 param6, TParam7 param7, TParam8 param8, TParam9 param9);
-	
+
+    IDataModelJoinCommandBuilder<TDataModel, TDbConnection, TJoin> Join<TJoin>(string queryKey, Expression<Func<TDataModel, TJoin, bool>> predicate);
 	}
 }

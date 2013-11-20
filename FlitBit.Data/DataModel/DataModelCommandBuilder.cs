@@ -313,5 +313,4 @@ namespace FlitBit.Data.DataModel
 						&& it.Type == typeof(TDataModel);
 		}
 	}
-
 }

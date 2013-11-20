@@ -100,7 +100,7 @@ namespace FlitBit.Data.DataModel
 		/// <param name="criteria"></param>
 		/// <typeparam name="TCriteria"></typeparam>
 		/// <returns></returns>
-		IDataModelQueryCommandBuilder<TModel, TDbConnection, TCriteria> MakeQueryCommand<TCriteria>(string queryKey,
+		IDataModelCommandBuilder<TModel, TDbConnection, TCriteria> MakeQueryCommand<TCriteria>(string queryKey,
 			TCriteria criteria);
 		
 		/// <summary>
@@ -109,7 +109,7 @@ namespace FlitBit.Data.DataModel
 		/// <typeparam name="TParam"></typeparam>
 		/// <param name="queryKey">unique key identifying the query</param>
 		/// <returns></returns>
-		IDataModelQueryCommandBuilder<TModel, TDbConnection, TParam> MakeQueryCommand<TParam>(string queryKey);
+		IDataModelCommandBuilder<TModel, TDbConnection, TParam> MakeQueryCommand<TParam>(string queryKey);
 
 		/// <summary>
 		/// Makes a query command that binds to the specified parameter types.
@@ -228,5 +228,12 @@ namespace FlitBit.Data.DataModel
 		/// <returns></returns>
 		IDataModelCommandBuilder<TModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9> MakeQueryCommand<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>(string queryKey);
 
+    /// <summary>
+    /// Makes a query command builder for joining the data model to another type.
+    /// </summary>
+    /// <typeparam name="TJoin">join type T</typeparam>
+    /// <param name="queryKey">unique key identifying the query</param>
+    /// <returns></returns>
+    IDataModelJoinCommandBuilder<TModel, TDbConnection, TJoin> MakeJoinCommand<TJoin>(string queryKey);
 	}
 }

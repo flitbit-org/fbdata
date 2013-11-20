@@ -7,21 +7,21 @@ using FlitBit.Data.SqlServer;
 
 namespace FlitBit.Data.DataModel
 {
-	  /// <summary>
+  /// <summary>
     /// Builds SQL commands over a data model.
     /// </summary>
     /// <typeparam name="TDataModel">data model's type</typeparam>
     /// <typeparam name="TDbConnection">db connection type</typeparam>
     /// <typeparam name="TParam"></typeparam>
-    public abstract class DataModelQueryCommandBuilder<TDataModel, TDbConnection, TParam> : DataModelCommandBuilder<TDataModel>,
-        IDataModelQueryCommandBuilder<TDataModel, TDbConnection, TParam>
+    public abstract class DataModelCommandBuilder<TDataModel, TDbConnection, TParam> : DataModelCommandBuilder<TDataModel>,
+        IDataModelCommandBuilder<TDataModel, TDbConnection, TParam>
     {
         /// <summary>
         /// Creates a new instance.
         /// </summary>
         /// <param name="queryKey">the query's key</param>
         /// <param name="sqlWriter">a writer</param>
-        protected DataModelQueryCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
+        protected DataModelCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
             : base(queryKey, sqlWriter)
         {
         }
