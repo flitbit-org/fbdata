@@ -21,7 +21,7 @@ namespace FlitBit.Data.SqlServer
     /// </summary>
     /// <param name="constraints"></param>
     /// <returns></returns>
-    protected override IDataModelQueryCommand<TDataModel, SqlConnection, TParam> ConstructCommandOnConstraints
+    protected IDataModelQueryCommand<TDataModel, SqlConnection, TParam> ConstructCommandOnConstraints
       <TParam>(Constraints constraints)
     {
       var cmd = OneClassOneTableEmitter.MakeQueryCommand<TDataModel, TModelImpl, TParam>(Mapping, QueryKey, constraints);
@@ -30,6 +30,11 @@ namespace FlitBit.Data.SqlServer
       return
         (IDataModelQueryCommand<TDataModel, SqlConnection, TParam>)
         Activator.CreateInstance(cmd, all, Writer.WriteSelectWithPaging(constraints, null), Writer.ColumnOffsets);
+    }
+
+    protected override IDataModelQueryCommand<TDataModel, SqlConnection, TParam> ConstructCommandOnConstraints<TParam>(DataModelSqlExpression<TDataModel> sql)
+    {
+      throw new NotImplementedException();
     }
   }
 }

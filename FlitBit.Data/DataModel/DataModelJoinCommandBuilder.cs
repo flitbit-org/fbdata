@@ -43,8 +43,8 @@ namespace FlitBit.Data.DataModel
 
       var sql = new DataModelSqlExpression<TDataModel>(Mapping, Binder, Writer.SelfRef);
       var parms = new List<ParameterExpression>(lambda.Parameters);
-      sql.SelfParameter(parms[0]);
-      sql.JoinParameter(parms[1]);
+      sql.AddSelfParameter(parms[0]);
+      sql.JoinParameter(parms[1], false);
       sql.AddValueParameter(parms[2]);
 
       sql.IngestExpresion(lambda.Body);
