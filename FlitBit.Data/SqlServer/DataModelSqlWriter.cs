@@ -386,7 +386,7 @@ namespace FlitBit.Data.SqlServer
 			// Perform necessary joins and write join clauses...
 			if (cns.Joins != null)
 			{
-				foreach (Join join in cns.Joins.Values.OrderBy(j => j.Ordinal))
+				foreach (Join join in cns.Joins)
 				{
 					var stack = new Stack<Tuple<Condition, bool>>();
 					ProcessConditionsFor(@join, cns.Conditions, stack);
@@ -402,8 +402,8 @@ namespace FlitBit.Data.SqlServer
 				writer.Outdent();
 			}
 		}
-
-		private void ProcessConditionsFor(Join join, Condition condition, Stack<Tuple<Condition, bool>> path)
+    
+	  private void ProcessConditionsFor(Join join, Condition condition, Stack<Tuple<Condition, bool>> path)
 		{
 			if (condition != null)
 			{
@@ -438,7 +438,7 @@ namespace FlitBit.Data.SqlServer
 			foreach (Join j in joins)
 			{
 				IMapping toMapping = j.Mapping;
-				ColumnMapping fromCol = fromMapping.Columns.Single(c => c.Member == j.Member);
+			  ColumnMapping fromCol = null; //fromMapping.Columns.Single(c => c.Member == j.Member);
 				string toRef = mapping.QuoteObjectName(Convert.ToString(j.Ordinal));
 				ColumnMapping toCol = toMapping.Columns.Single(c => c.Member == fromCol.ReferenceTargetMember);
 				if (!j.IsJoined)

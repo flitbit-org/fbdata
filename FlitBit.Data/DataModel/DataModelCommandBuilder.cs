@@ -25,20 +25,29 @@ namespace FlitBit.Data.DataModel
 		/// </summary>
 		/// <param name="queryKey">the query's key.</param>
 		/// <param name="sqlWriter">a writer</param>
-		protected DataModelCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
+		protected DataModelCommandBuilder(IDataModelBinder<TDataModel> binder, string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
 		{
-			Contract.Requires<ArgumentNullException>(queryKey != null);
+      Contract.Requires<ArgumentNullException>(binder != null);
+      Contract.Requires<ArgumentNullException>(queryKey != null);
 			Contract.Requires<ArgumentException>(queryKey.Length > 0);
 			Contract.Requires<ArgumentNullException>(sqlWriter != null);
 			QueryKey = queryKey;
 			_sqlWriter = sqlWriter;
-			Mapping = DataModel<TDataModel>.Mapping;
+		  Binder = binder;
+		  JoinTypes = new List<Type>();
 		}
+
+    protected IList<Type> JoinTypes { get; private set; }
+
+    /// <summary>
+    /// Gets the data model's binder.
+    /// </summary>
+    public IDataModelBinder<TDataModel> Binder { get; private set; } 
 
 		/// <summary>
 		/// Gets the data model's mapping.
 		/// </summary>
-		public IMapping<TDataModel> Mapping { get; private set; }
+		public IMapping<TDataModel> Mapping { get { return Binder.Mapping; }}
 
 		/// <summary>
 		/// Gets the builder's sql writer.
@@ -150,6 +159,7 @@ namespace FlitBit.Data.DataModel
 
 		ValueReference FormatValueReference(Expression expr, Constraints cns)
 		{
+		  ParameterValueReference joinParm = null;
 			var mapping = Mapping;
 			var helper = mapping.GetDbProviderHelper();
 			ValueReference res;
@@ -158,12 +168,12 @@ namespace FlitBit.Data.DataModel
 				var m = ((MemberExpression) expr).Member;
 				if (IsMemberOfSelf(expr))
 				{
-					var j = AddJoinPaths(expr, cns.Joins);
+					var j = AddJoinPaths(expr, cns, mapping);
 					if (j == null)
 					{
 						var col = mapping.Columns.Single(c => c.Member == m);
 						res = new ValueReference(ValueReferenceKind.Self) {
-							Value = String.Concat(mapping.QuoteObjectName("self"), '.',
+              Value = String.Concat(_sqlWriter.SelfRef, '.',
 								mapping.QuoteObjectName(col.TargetName))
 						};
 						res.AssociateColumn(col);
@@ -180,6 +190,34 @@ namespace FlitBit.Data.DataModel
 						res.AssociateColumn(foreignColumn);
 					}
 				}
+			  if ((joinParm = IsMemberOfJoin(expr, cns)) != null)
+			  {
+			    var joinMapping = Mappings.AccessMappingFor(joinParm.RuntimeType);
+          var j = AddJoinPaths(expr, cns, joinMapping);
+          if (j == null)
+          {
+            var col = joinMapping.Columns.Single(c => c.Member == m);
+            res = new ValueReference(ValueReferenceKind.Self)
+            {
+              Value = String.Concat(mapping.QuoteObjectName(Convert.ToString(joinParm.Join.Ordinal)), '.',
+                mapping.QuoteObjectName(col.TargetName)),
+              Join = joinParm.Join
+            };
+            res.AssociateColumn(col);
+          }
+          else
+          {
+            var foreignColumn = j.Mapping.Columns.Single(c => c.Member == m);
+            res = new MemberValueReference(ValueReferenceKind.Join, m)
+            {
+              Join = j,
+              Value =
+                String.Concat(mapping.QuoteObjectName(Convert.ToString(j.Ordinal)), ".",
+                  mapping.QuoteObjectName(foreignColumn.TargetName))
+            };
+            res.AssociateColumn(foreignColumn);
+          }
+			  }
 				else
 				{
 					var p = AddParameter(expr, cns);
@@ -229,7 +267,6 @@ namespace FlitBit.Data.DataModel
 		Parameter AddParameter(Expression expr, Constraints cns)
 		{
 			var stack = new Stack<MemberExpression>();
-			var parms = cns.Parameters;
 			Expression it = expr;
 			while (it.NodeType == ExpressionType.MemberAccess)
 			{
@@ -244,9 +281,9 @@ namespace FlitBit.Data.DataModel
 			var name = stack.Aggregate(parmExpr.Name,
 				(current, m) => String.Concat(current, '_', m.Member.Name));
 			Parameter p;
-			if (!parms.TryGetValue(name, out p))
+			if (!cns.TryGetParameter(name, out p))
 			{
-				parms.Add(name, p = new Parameter
+				cns.TryAddParameter(name, p = new Parameter
 				{
 					Name = name,
 					Argument = arg,
@@ -256,7 +293,7 @@ namespace FlitBit.Data.DataModel
 			return p;
 		}
 
-		Join AddJoinPaths(Expression expr, Dictionary<string, Join> joins)
+		Join AddJoinPaths(Expression expr, Constraints cns, IMapping mapping)
 		{
 			var stack = new Stack<MemberExpression>();
 			var item = ((MemberExpression) expr).Expression;
@@ -265,18 +302,15 @@ namespace FlitBit.Data.DataModel
 				stack.Push((MemberExpression) item);
 				item = ((MemberExpression) item).Expression;
 			}
-			if (item.NodeType != ExpressionType.Parameter
-					|| item.Type != typeof(TDataModel))
-				throw new NotSupportedException();
-			var key = "";
+			var key = mapping.RuntimeType.Name;
 			var outer = default(Join);
-			IMapping fromMapping = Mapping;
+			IMapping fromMapping = mapping;
 			foreach (var it in stack)
 			{
 				var m = it.Member;
 				key = (key.Length > 0) ? String.Concat(key, '.', m.Name) : m.Name;
 				Join j;
-				if (!joins.TryGetValue(key, out j))
+				if (!cns.TryGetJoin(key, out j))
 				{
 					var toDep = fromMapping.Dependencies.SingleOrDefault(d => d.Member == m);
 					if (toDep == null)
@@ -285,14 +319,12 @@ namespace FlitBit.Data.DataModel
 							fromMapping.RuntimeType.GetReadableSimpleName(),
 							" to ", m.DeclaringType.GetReadableSimpleName(), " via the property `", m.Name, "'."));
 					}
-					joins.Add(key,
+					cns.TryAddJoin(key,
 						j = new Join
 						{
-							Ordinal = joins.Count,
 							Key = key,
 							Path = outer,
 							Mapping = toDep.Target,
-							Member = m
 						});
 				}
 				fromMapping = j.Mapping;
@@ -312,5 +344,20 @@ namespace FlitBit.Data.DataModel
 			return it.NodeType == ExpressionType.Parameter
 						&& it.Type == typeof(TDataModel);
 		}
+
+    ParameterValueReference IsMemberOfJoin(Expression expr, Constraints cns)
+    {
+      var it = expr;
+      while (it.NodeType == ExpressionType.MemberAccess)
+      {
+        it = ((MemberExpression)it).Expression;
+      }
+      if (it.NodeType == ExpressionType.Parameter
+          && JoinTypes.Contains(it.Type))
+      {
+        return cns.Arguments.First(p => p.Name == ((ParameterExpression)it).Name);
+      }
+      return null;
+    }
 	}
 }

@@ -21,8 +21,8 @@ namespace FlitBit.Data.DataModel
         /// </summary>
         /// <param name="queryKey">the query's key</param>
         /// <param name="sqlWriter">a writer</param>
-        protected DataModelUpdateCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
-            : base(queryKey, sqlWriter)
+        protected DataModelUpdateCommandBuilder(IDataModelBinder<TDataModel> binder, string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
+            : base(binder, queryKey, sqlWriter)
         {
         }
 
@@ -37,8 +37,10 @@ namespace FlitBit.Data.DataModel
             var cns = new Constraints();
             var lambda = (LambdaExpression)predicate;
             var i = 0;
-            cns.Arguments = lambda.Parameters.Select(p => new ParameterValueReference(p.Name, i++, p.Type));
-
+            foreach (var parm in lambda.Parameters)
+            {
+              cns.Arguments.Add(new ParameterValueReference(parm.Name, i++, parm.Type));
+            }
             return ConstructCommandOnConstraints(
                 PrepareTranslateExpression(cns, lambda.Body)
                 );
@@ -67,8 +69,8 @@ namespace FlitBit.Data.DataModel
         /// </summary>
         /// <param name="queryKey">the query's key</param>
         /// <param name="sqlWriter">a writer</param>
-        protected DataModelUpdateCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
-            : base(queryKey, sqlWriter)
+        protected DataModelUpdateCommandBuilder(IDataModelBinder<TDataModel> binder, string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
+            : base(binder, queryKey, sqlWriter)
         {
         }
 
@@ -83,8 +85,10 @@ namespace FlitBit.Data.DataModel
             var cns = new Constraints();
             var lambda = (LambdaExpression)predicate;
             var i = 0;
-            cns.Arguments = lambda.Parameters.Select(p => new ParameterValueReference(p.Name, i++, p.Type));
-
+            foreach (var parm in lambda.Parameters)
+            {
+              cns.Arguments.Add(new ParameterValueReference(parm.Name, i++, parm.Type));
+            }
             return ConstructCommandOnConstraints(
                 PrepareTranslateExpression(cns, lambda.Body)
                 );
@@ -115,8 +119,8 @@ namespace FlitBit.Data.DataModel
         /// </summary>
         /// <param name="queryKey">the query's key</param>
         /// <param name="sqlWriter">a writer</param>
-        protected DataModelUpdateCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
-            : base(queryKey, sqlWriter)
+        protected DataModelUpdateCommandBuilder(IDataModelBinder<TDataModel> binder, string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
+            : base(binder, queryKey, sqlWriter)
         {
         }
 
@@ -131,8 +135,10 @@ namespace FlitBit.Data.DataModel
             var cns = new Constraints();
             var lambda = (LambdaExpression)predicate;
             var i = 0;
-            cns.Arguments = lambda.Parameters.Select(p => new ParameterValueReference(p.Name, i++, p.Type));
-
+            foreach (var parm in lambda.Parameters)
+            {
+              cns.Arguments.Add(new ParameterValueReference(parm.Name, i++, parm.Type));
+            }
             return ConstructCommandOnConstraints(
                 PrepareTranslateExpression(cns, lambda.Body)
                 );
@@ -163,8 +169,8 @@ namespace FlitBit.Data.DataModel
         /// </summary>
         /// <param name="queryKey">the query's key</param>
         /// <param name="sqlWriter">a writer</param>
-        protected DataModelUpdateCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
-            : base(queryKey, sqlWriter)
+        protected DataModelUpdateCommandBuilder(IDataModelBinder<TDataModel> binder, string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
+            : base(binder, queryKey, sqlWriter)
         {
         }
 
@@ -179,8 +185,10 @@ namespace FlitBit.Data.DataModel
             var cns = new Constraints();
             var lambda = (LambdaExpression)predicate;
             var i = 0;
-            cns.Arguments = lambda.Parameters.Select(p => new ParameterValueReference(p.Name, i++, p.Type));
-
+            foreach (var parm in lambda.Parameters)
+            {
+              cns.Arguments.Add(new ParameterValueReference(parm.Name, i++, parm.Type));
+            }
             return ConstructCommandOnConstraints(
                 PrepareTranslateExpression(cns, lambda.Body)
                 );
@@ -212,8 +220,8 @@ namespace FlitBit.Data.DataModel
         /// </summary>
         /// <param name="queryKey">the query's key</param>
         /// <param name="sqlWriter">a writer</param>
-        protected DataModelUpdateCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
-            : base(queryKey, sqlWriter)
+        protected DataModelUpdateCommandBuilder(IDataModelBinder<TDataModel> binder, string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
+            : base(binder, queryKey, sqlWriter)
         {
         }
 
@@ -228,8 +236,10 @@ namespace FlitBit.Data.DataModel
             var cns = new Constraints();
             var lambda = (LambdaExpression)predicate;
             var i = 0;
-            cns.Arguments = lambda.Parameters.Select(p => new ParameterValueReference(p.Name, i++, p.Type));
-
+            foreach (var parm in lambda.Parameters)
+            {
+              cns.Arguments.Add(new ParameterValueReference(parm.Name, i++, parm.Type));
+            }
             return ConstructCommandOnConstraints(
                 PrepareTranslateExpression(cns, lambda.Body)
                 );
@@ -262,8 +272,8 @@ namespace FlitBit.Data.DataModel
         /// </summary>
         /// <param name="queryKey">the query's key</param>
         /// <param name="sqlWriter">a writer</param>
-        protected DataModelUpdateCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
-            : base(queryKey, sqlWriter)
+        protected DataModelUpdateCommandBuilder(IDataModelBinder<TDataModel> binder, string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
+            : base(binder, queryKey, sqlWriter)
         {
         }
 
@@ -278,8 +288,10 @@ namespace FlitBit.Data.DataModel
             var cns = new Constraints();
             var lambda = (LambdaExpression)predicate;
             var i = 0;
-            cns.Arguments = lambda.Parameters.Select(p => new ParameterValueReference(p.Name, i++, p.Type));
-
+            foreach (var parm in lambda.Parameters)
+            {
+              cns.Arguments.Add(new ParameterValueReference(parm.Name, i++, parm.Type));
+            }
             return ConstructCommandOnConstraints(
                 PrepareTranslateExpression(cns, lambda.Body)
                 );
@@ -313,8 +325,8 @@ namespace FlitBit.Data.DataModel
         /// </summary>
         /// <param name="queryKey">the query's key</param>
         /// <param name="sqlWriter">a writer</param>
-        protected DataModelUpdateCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
-            : base(queryKey, sqlWriter)
+        protected DataModelUpdateCommandBuilder(IDataModelBinder<TDataModel> binder, string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
+            : base(binder, queryKey, sqlWriter)
         {
         }
 
@@ -329,8 +341,10 @@ namespace FlitBit.Data.DataModel
             var cns = new Constraints();
             var lambda = (LambdaExpression)predicate;
             var i = 0;
-            cns.Arguments = lambda.Parameters.Select(p => new ParameterValueReference(p.Name, i++, p.Type));
-
+            foreach (var parm in lambda.Parameters)
+            {
+              cns.Arguments.Add(new ParameterValueReference(parm.Name, i++, parm.Type));
+            }
             return ConstructCommandOnConstraints(
                 PrepareTranslateExpression(cns, lambda.Body)
                 );
@@ -365,8 +379,8 @@ namespace FlitBit.Data.DataModel
         /// </summary>
         /// <param name="queryKey">the query's key</param>
         /// <param name="sqlWriter">a writer</param>
-        protected DataModelUpdateCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
-            : base(queryKey, sqlWriter)
+        protected DataModelUpdateCommandBuilder(IDataModelBinder<TDataModel> binder, string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
+            : base(binder, queryKey, sqlWriter)
         {
         }
 
@@ -381,8 +395,10 @@ namespace FlitBit.Data.DataModel
             var cns = new Constraints();
             var lambda = (LambdaExpression)predicate;
             var i = 0;
-            cns.Arguments = lambda.Parameters.Select(p => new ParameterValueReference(p.Name, i++, p.Type));
-
+            foreach (var parm in lambda.Parameters)
+            {
+              cns.Arguments.Add(new ParameterValueReference(parm.Name, i++, parm.Type));
+            }
             return ConstructCommandOnConstraints(
                 PrepareTranslateExpression(cns, lambda.Body)
                 );
@@ -418,8 +434,8 @@ namespace FlitBit.Data.DataModel
         /// </summary>
         /// <param name="queryKey">the query's key</param>
         /// <param name="sqlWriter">a writer</param>
-        protected DataModelUpdateCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
-            : base(queryKey, sqlWriter)
+        protected DataModelUpdateCommandBuilder(IDataModelBinder<TDataModel> binder, string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
+            : base(binder, queryKey, sqlWriter)
         {
         }
 
@@ -434,8 +450,10 @@ namespace FlitBit.Data.DataModel
             var cns = new Constraints();
             var lambda = (LambdaExpression)predicate;
             var i = 0;
-            cns.Arguments = lambda.Parameters.Select(p => new ParameterValueReference(p.Name, i++, p.Type));
-
+            foreach (var parm in lambda.Parameters)
+            {
+              cns.Arguments.Add(new ParameterValueReference(parm.Name, i++, parm.Type));
+            }
             return ConstructCommandOnConstraints(
                 PrepareTranslateExpression(cns, lambda.Body)
                 );
@@ -472,8 +490,8 @@ namespace FlitBit.Data.DataModel
         /// </summary>
         /// <param name="queryKey">the query's key</param>
         /// <param name="sqlWriter">a writer</param>
-        protected DataModelUpdateCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
-            : base(queryKey, sqlWriter)
+        protected DataModelUpdateCommandBuilder(IDataModelBinder<TDataModel> binder, string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
+            : base(binder, queryKey, sqlWriter)
         {
         }
 
@@ -488,8 +506,10 @@ namespace FlitBit.Data.DataModel
             var cns = new Constraints();
             var lambda = (LambdaExpression)predicate;
             var i = 0;
-            cns.Arguments = lambda.Parameters.Select(p => new ParameterValueReference(p.Name, i++, p.Type));
-
+            foreach (var parm in lambda.Parameters)
+            {
+              cns.Arguments.Add(new ParameterValueReference(parm.Name, i++, parm.Type));
+            }
             return ConstructCommandOnConstraints(
                 PrepareTranslateExpression(cns, lambda.Body)
                 );

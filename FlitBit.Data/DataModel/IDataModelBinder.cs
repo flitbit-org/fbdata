@@ -35,17 +35,26 @@ namespace FlitBit.Data.DataModel
 		void Initialize();
 	}
 
-	/// <summary>
+  /// <summary>
+  ///   Binds a model to an underlying database structure.
+  /// </summary>
+  /// <typeparam name="TModel">the model's type.</typeparam>
+  /// <typeparam name="TIdentityKey">the model's identity type</typeparam>
+  public interface IDataModelBinder<TModel> : IDataModelBinder
+  {
+    /// <summary>
+    /// Gets the model's mapping.
+    /// </summary>
+    IMapping<TModel> Mapping { get; }
+  }
+
+  /// <summary>
 	///   Binds a model to an underlying database structure.
 	/// </summary>
 	/// <typeparam name="TModel">the model's type.</typeparam>
 	/// <typeparam name="TIdentityKey">the model's identity type</typeparam>
-	public interface IDataModelBinder<TModel, TIdentityKey> : IDataModelBinder
+	public interface IDataModelBinder<TModel, TIdentityKey> : IDataModelBinder<TModel>
 	{
-		/// <summary>
-		/// Gets the model's mapping.
-		/// </summary>
-		IMapping<TModel> Mapping { get; }
 		/// <summary>
 		/// Makes a repository for the data model.
 		/// </summary>

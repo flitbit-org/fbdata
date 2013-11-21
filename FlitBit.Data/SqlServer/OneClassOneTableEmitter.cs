@@ -577,7 +577,7 @@ namespace FlitBit.Data.SqlServer
 				{
 					var parm = il.DeclareLocal(typeof(SqlParameter));
 					var flag = il.DeclareLocal(typeof(bool));
-					foreach (var p in cns.Parameters.Values)
+					foreach (var p in cns.Parameters)
 					{
 						var arg = p.Argument;
 						Action<ILGenerator> loadSource = (stream) => stream.LoadArg(paramOffset + arg.Ordinal);

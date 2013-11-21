@@ -12,5 +12,7 @@ namespace FlitBit.Data.Expressions
 		public MemberInfo[] Members { get; set; }
 
 		public ColumnMapping Column { get; set; }
-	}
+
+    public int Ordinal { get; set; }
+  }
 }

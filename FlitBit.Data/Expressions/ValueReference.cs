@@ -1,6 +1,4 @@
-﻿using System;
-using System.Reflection;
-using FlitBit.Data.Meta;
+﻿using FlitBit.Data.Meta;
 
 namespace FlitBit.Data.Expressions
 {
@@ -11,7 +9,9 @@ namespace FlitBit.Data.Expressions
 			Kind = kind;
 		}
 		public ValueReferenceKind Kind { get; private set; }
+
 		public string Value { get; set; }
+
 		public Join Join { get; set; }
 
 		internal bool IsLiftCandidateFor(Join j)
@@ -36,38 +36,5 @@ namespace FlitBit.Data.Expressions
 			}
 			return this;
 		}
-	}
-
-	public class MemberValueReference : ValueReference
-	{
-		public MemberValueReference(MemberInfo member)
-			: this(ValueReferenceKind.Member, member)
-		{
-		}
-
-		public MemberValueReference(ValueReferenceKind kind, MemberInfo member)
-			: base(kind)
-		{
-			Member = member;
-		}
-
-		public MemberInfo Member { get; private set; }
-	}
-
-	public class ParameterValueReference : ValueReference
-	{
-		public ParameterValueReference(string name, int ordinal, Type type)
-			: base(ValueReferenceKind.Parameter)
-		{
-			Name = name;
-			Ordinal = ordinal;
-			RuntimeType = type;
-		}
-
-		public Type RuntimeType { get; set; }
-
-		public int Ordinal { get; set; }
-
-		public string Name { get; set; }
 	}
 }

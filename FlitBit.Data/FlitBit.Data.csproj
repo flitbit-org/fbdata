@@ -175,8 +175,12 @@
     <Compile Include="DataModel\DbTypeEmitters\MappedUInt32Emitter.cs" />
     <Compile Include="DataModel\DbTypeEmitters\MappedUInt64Emitter.cs" />
     <Compile Include="DataModel\IDataModelJoinCommandBuilder.cs" />
+    <Compile Include="DataModel\IDataModelRepositoryExtensions.cs" />
     <Compile Include="DataModel\LookupListDataModelRepository.cs" />
     <Compile Include="DataModel\MappedDbTypeEmitter.cs" />
+    <Compile Include="Expressions\MemberValueReference.cs" />
+    <Compile Include="Expressions\ParameterValueReference.cs" />
+    <Compile Include="Expressions\SqlExpression.cs" />
     <Compile Include="Repositories\AbstractCachingRepository.cs" />
     <Compile Include="Catalog\IMappedType.cs" />
     <Compile Include="Catalog\StaticCatalog.cs" />
@@ -218,6 +222,7 @@
     <Compile Include="Meta\MappedSortColumn.cs" />
     <Compile Include="Meta\SortOrderKind.cs" />
     <Compile Include="SimpleContextCache.cs" />
+    <Compile Include="SqlServer\BaseSqlDataModelBinder.cs" />
     <Compile Include="SqlServer\DynamicSql.cs" />
     <Compile Include="SqlServer\MultiKeySelectManyCommand.cs" />
     <Compile Include="SqlServer\OneClassOneTableEmitter.cs" />

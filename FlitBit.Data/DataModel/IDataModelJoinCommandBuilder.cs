@@ -11,20 +11,12 @@ namespace FlitBit.Data.DataModel
 	/// <typeparam name="TJoin"></typeparam>
 	public interface IDataModelJoinCommandBuilder<TDataModel, TDbConnection, TJoin>
 	{
-		/// <summary>
-		/// Specifies join conditions for the data model. The expression must evaluate like a predicate in order to be translated to SQL.
-		/// </summary>
-		/// <param name="predicate">a predicate expression defining the joinery between the types</param>
-		/// <returns></returns>
-    IDataModelJoinCommandBuilder<TDataModel, TDbConnection, TJoin> Join(
-			Expression<Func<TDataModel, TJoin, bool>> predicate);
-
     /// <summary>
     /// Specifies constraints on the data model. The expression must evaluate like a predicate in order to be translated to SQL.
     /// </summary>
     /// <param name="predicate">a predicate expression</param>
     /// <returns></returns>
-    IDataModelQueryCommand<TDataModel, TDbConnection, TJoin, TParam> Where<TParam>(
+    IDataModelQueryCommand<TDataModel, TDbConnection, TParam> Where<TParam>(
       Expression<Func<TDataModel, TJoin, TParam, bool>> predicate);
 	}
 }

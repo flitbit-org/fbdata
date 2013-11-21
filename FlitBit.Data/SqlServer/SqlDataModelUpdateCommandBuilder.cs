@@ -11,7 +11,7 @@ namespace FlitBit.Data.SqlServer
     public class SqlDataModelUpdateCommandBuilder<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9> 
         : DataModelUpdateCommandBuilder<TDataModel, SqlConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>
     {
-	    public SqlDataModelUpdateCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter) : base(queryKey, sqlWriter)
+	    public SqlDataModelUpdateCommandBuilder(IDataModelBinder<TDataModel> binder, string queryKey, DataModelSqlWriter<TDataModel> sqlWriter) : base(binder, queryKey, sqlWriter)
 	    {
 	    }
 

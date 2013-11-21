@@ -13,7 +13,7 @@ namespace FlitBit.Data.SqlServer
 	/// </summary>
 	/// <typeparam name="TModel">the data model type TModel</typeparam>
 	/// <typeparam name="TImpl">the implementation type TImpl</typeparam>
-	public class DataModelQueryManyCommand<TModel, TImpl> : IDataModelQueryManyCommand<TModel, SqlConnection>
+	public class SqlDataModelQueryManyCommand<TModel, TImpl> : IDataModelQueryManyCommand<TModel, SqlConnection>
 		where TImpl : TModel, IDataModel, new()
 	{
 		readonly DynamicSql _selectAll;
@@ -24,7 +24,7 @@ namespace FlitBit.Data.SqlServer
 		/// <summary>
 		/// Creates a new instance.
 		/// </summary>
-		public DataModelQueryManyCommand(DynamicSql all, DynamicSql page, int[] offsets)
+		public SqlDataModelQueryManyCommand(DynamicSql all, DynamicSql page, int[] offsets)
 		{
 			_selectAll = all;
 			_selectPage = page;

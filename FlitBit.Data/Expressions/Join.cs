@@ -5,11 +5,17 @@ namespace FlitBit.Data.Expressions
 {
 	public class Join
 	{
-		public int Ordinal { get; set; }
-		public string Key { get; set; }
-		public Join Path { get; set; }
-		public MemberInfo Member { get; set; }
 
+		public int Ordinal { get; set; }
+
+		public string Key { get; set; }
+
+		public Join Path { get; set; }
+
+    public IMapping Mapping { get; set; }
+
+    public IMapping ToMapping { get; set; }
+    
 		public Condition Conditions { get; set; }
 
 		internal void AddCondition(Condition condition)
@@ -18,8 +24,6 @@ namespace FlitBit.Data.Expressions
 			var existing = this.Conditions;
 			this.Conditions = existing == null ? lifted : existing.And(lifted);
 		}
-
-		public IMapping Mapping { get; set; }
 
 		public bool IsJoined { get; set; }
 	}

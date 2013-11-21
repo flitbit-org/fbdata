@@ -13,8 +13,8 @@ namespace FlitBit.Data.SqlServer
 		where TImpl: class, IDataModel, TDataModel, new()
 	{
 
-		public SqlDataModelCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
-			: base(queryKey, sqlWriter)
+		public SqlDataModelCommandBuilder(IDataModelBinder<TDataModel> binder, string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
+			: base(binder, queryKey, sqlWriter)
 		{
 		}
 
@@ -45,8 +45,8 @@ namespace FlitBit.Data.SqlServer
 		/// </summary>
 		/// <param name="queryKey"></param>
 		/// <param name="sqlWriter"></param>
-		public SqlDataModelQueryCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
-			: base(queryKey, sqlWriter)
+		public SqlDataModelQueryCommandBuilder(IDataModelBinder<TDataModel> binder, string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
+			: base(binder, queryKey, sqlWriter)
 		{
 		}
 
@@ -82,8 +82,8 @@ namespace FlitBit.Data.SqlServer
 		/// </summary>
 		/// <param name="queryKey"></param>
 		/// <param name="sqlWriter"></param>
-		public SqlDataModelQueryCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
-			: base(queryKey, sqlWriter)
+		public SqlDataModelQueryCommandBuilder(IDataModelBinder<TDataModel> binder, string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
+			: base(binder, queryKey, sqlWriter)
 		{
 		}
 
@@ -120,8 +120,8 @@ namespace FlitBit.Data.SqlServer
 		/// </summary>
 		/// <param name="queryKey"></param>
 		/// <param name="sqlWriter"></param>
-		public SqlDataModelQueryCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
-			: base(queryKey, sqlWriter)
+		public SqlDataModelQueryCommandBuilder(IDataModelBinder<TDataModel> binder, string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
+			: base(binder, queryKey, sqlWriter)
 		{
 		}
 
@@ -159,8 +159,8 @@ namespace FlitBit.Data.SqlServer
 		/// </summary>
 		/// <param name="queryKey"></param>
 		/// <param name="sqlWriter"></param>
-		public SqlDataModelQueryCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
-			: base(queryKey, sqlWriter)
+		public SqlDataModelQueryCommandBuilder(IDataModelBinder<TDataModel> binder, string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
+			: base(binder, queryKey, sqlWriter)
 		{
 		}
 
@@ -199,8 +199,8 @@ namespace FlitBit.Data.SqlServer
 		/// </summary>
 		/// <param name="queryKey"></param>
 		/// <param name="sqlWriter"></param>
-		public SqlDataModelQueryCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
-			: base(queryKey, sqlWriter)
+		public SqlDataModelQueryCommandBuilder(IDataModelBinder<TDataModel> binder, string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
+			: base(binder, queryKey, sqlWriter)
 		{
 		}
 
@@ -240,8 +240,8 @@ namespace FlitBit.Data.SqlServer
 		/// </summary>
 		/// <param name="queryKey"></param>
 		/// <param name="sqlWriter"></param>
-		public SqlDataModelQueryCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
-			: base(queryKey, sqlWriter)
+		public SqlDataModelQueryCommandBuilder(IDataModelBinder<TDataModel> binder, string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
+			: base(binder, queryKey, sqlWriter)
 		{
 		}
 
@@ -282,8 +282,8 @@ namespace FlitBit.Data.SqlServer
 		/// </summary>
 		/// <param name="queryKey"></param>
 		/// <param name="sqlWriter"></param>
-		public SqlDataModelQueryCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
-			: base(queryKey, sqlWriter)
+		public SqlDataModelQueryCommandBuilder(IDataModelBinder<TDataModel> binder, string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
+			: base(binder, queryKey, sqlWriter)
 		{
 		}
 
@@ -325,8 +325,8 @@ namespace FlitBit.Data.SqlServer
 		/// </summary>
 		/// <param name="queryKey"></param>
 		/// <param name="sqlWriter"></param>
-		public SqlDataModelQueryCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
-			: base(queryKey, sqlWriter)
+		public SqlDataModelQueryCommandBuilder(IDataModelBinder<TDataModel> binder, string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
+			: base(binder, queryKey, sqlWriter)
 		{
 		}
 
@@ -369,8 +369,8 @@ namespace FlitBit.Data.SqlServer
 		/// </summary>
 		/// <param name="queryKey"></param>
 		/// <param name="sqlWriter"></param>
-		public SqlDataModelQueryCommandBuilder(string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
-			: base(queryKey, sqlWriter)
+		public SqlDataModelQueryCommandBuilder(IDataModelBinder<TDataModel> binder, string queryKey, DataModelSqlWriter<TDataModel> sqlWriter)
+			: base(binder, queryKey, sqlWriter)
 		{
 		}
 
