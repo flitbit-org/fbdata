@@ -139,6 +139,27 @@ namespace FlitBit.Data.SqlServer
       }
     }
 
+    [SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
+    internal static Type MakeQueryCommand<TDataModel, TImpl, TParam>(IMapping<TDataModel> mapping, string queryKey, DataModelSqlExpression<TDataModel> sql)
+      where TImpl : class, IDataModel, TDataModel, new()
+    {
+      Contract.Requires<ArgumentNullException>(queryKey != null);
+      Contract.Requires<ArgumentException>(queryKey.Length > 0);
+      Contract.Requires<ArgumentNullException>(sql != null);
+      Contract.Ensures(Contract.Result<Type>() != null);
+
+      var targetType = typeof(TDataModel);
+      var typeName = RuntimeAssemblies.PrepareTypeName(targetType, queryKey);
+
+      var module = Module;
+      lock (module)
+      {
+        var type = module.Builder.GetType(typeName, false, false) ??
+                  EmitImplementation<TDataModel, TImpl>.BuildQueryCommand(module, typeName, mapping, sql, typeof(SqlDataModelQueryCommand<TDataModel, TImpl, TParam>));
+        return type;
+      }
+    }
+
 		[SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
 		internal static Type MakeQueryCommand<TDataModel, TImpl, TParam>(IMapping<TDataModel> mapping, string queryKey, Constraints cns)
 			where TImpl : class, IDataModel, TDataModel, new()
@@ -559,6 +580,55 @@ namespace FlitBit.Data.SqlServer
 
 				builder.Compile();
 				return builder.Ref.Target;
+			}
+
+      public static void ImplementBindQueryCommand(EmittedClass builder, Type baseType, IMapping<TDataModel> mapping, DataModelSqlExpression<TDataModel> sql)
+			{
+				var method =
+					builder.DefineOverrideMethod(baseType.GetMethod("BindCommand", BindingFlags.NonPublic | BindingFlags.Instance));
+				var helper = mapping.GetDbProviderHelper();
+				var args = new
+				{
+					self = 0,
+					cmd = 1,
+					offsets = 2
+				};
+				const int paramOffset = 3;
+				method.ContributeInstructions((m, il) =>
+				{
+					var parm = il.DeclareLocal(typeof(SqlParameter));
+					var flag = il.DeclareLocal(typeof(bool));
+				  var i = 0;
+					foreach (var p in sql.ValueParameters)
+					{
+					  var ofs = paramOffset + (i++);
+						Action<ILGenerator> loadSource = (stream) => stream.LoadArg(ofs);
+            //if (p.Members != null && p.Members.Length > 0)
+            //{
+            //  // Optimization: Consider evaluating dotted notation to resolve properties to local variable only once when binding several.
+            //  foreach (PropertyInfo prop in p.Members)
+            //  {
+            //    loadSource(il);
+            //    var dotted = il.DeclareLocal(prop.GetTypeOfValue());
+            //    il.LoadValue(prop.GetGetMethod());
+            //    il.StoreLocal(dotted);
+            //    // TODO: test for null and if so fallout to bind DBNull
+            //    loadSource = stream => stream.LoadLocal(dotted);
+            //  }
+            //}
+            //else
+						{
+							var emitter = p.Column.Emitter;
+							emitter.BindParameterOnDbCommand<SqlParameter>(method.Builder, p.Column, p.Text,
+								parm,
+								gen => gen.LoadArg(args.cmd),
+								loadSource,
+								gen => { },
+								flag
+								);
+						}
+					}
+				});
 			}
 
 			public static void ImplementBindQueryCommand(EmittedClass builder, Type baseType, IMapping<TDataModel> mapping, Constraints cns)
@@ -1043,6 +1113,37 @@ namespace FlitBit.Data.SqlServer
 				builder.Compile();
 				return builder.Ref.Target;
 			}
+
+      internal static Type BuildQueryCommand(EmittedModule module, string typeName, IMapping<TDataModel> mapping, DataModelSqlExpression<TDataModel> sql, Type baseType)
+      {
+        Contract.Requires<ArgumentNullException>(module != null);
+        Contract.Requires<ArgumentNullException>(typeName != null);
+        Contract.Requires<ArgumentException>(typeName.Length > 0);
+        Contract.Requires<InvalidOperationException>(mapping.HasBinder);
+        Contract.Ensures(Contract.Result<Type>() != null);
+
+        var builder = module.DefineClass(typeName, EmittedClass.DefaultTypeAttributes,
+          baseType, null);
+        builder.Attributes = TypeAttributes.Sealed | TypeAttributes.Public | TypeAttributes.BeforeFieldInit;
+
+        var ctor = builder.DefineCtor();
+        ctor.DefineParameter("all", typeof(DynamicSql));
+        ctor.DefineParameter("page", typeof(DynamicSql));
+        ctor.DefineParameter("offsets", typeof(int[]));
+        ctor.ContributeInstructions((m, il) =>
+        {
+          il.LoadArg_0();
+          il.LoadArg_1();
+          il.LoadArg_2();
+          il.LoadArg_3();
+          il.Call(baseType.GetConstructor(BindingFlags.Instance | BindingFlags.NonPublic, null, new[] { typeof(DynamicSql), typeof(DynamicSql), typeof(int[]) }, null));
+        });
+
+        EmitImplementation<TDataModel>.ImplementBindQueryCommand(builder, baseType, mapping, sql);
+
+        builder.Compile();
+        return builder.Ref.Target;
+      }
 
 		}
 

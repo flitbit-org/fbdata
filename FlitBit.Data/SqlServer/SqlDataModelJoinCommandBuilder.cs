@@ -34,7 +34,12 @@ namespace FlitBit.Data.SqlServer
 
     protected override IDataModelQueryCommand<TDataModel, SqlConnection, TParam> ConstructCommandOnConstraints<TParam>(DataModelSqlExpression<TDataModel> sql)
     {
-      throw new NotImplementedException();
+      var all = Writer.WriteSelect(sql);
+      var paging = Writer.WriteSelectWithPaging(sql, null);
+
+      var cmd = OneClassOneTableEmitter.MakeQueryCommand<TDataModel, TModelImpl, TParam>(Mapping, QueryKey, sql);
+      return
+        (IDataModelQueryCommand<TDataModel, SqlConnection, TParam>)Activator.CreateInstance(cmd, all, paging, Writer.ColumnOffsets);
     }
   }
 }

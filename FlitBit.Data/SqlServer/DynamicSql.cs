@@ -8,9 +8,6 @@ namespace FlitBit.Data.SqlServer
 	/// </summary>
 	public class DynamicSql
 	{
-		private string p1;
-		private int p2;
-
 		/// <summary>
 		/// Creates a new empty SQL statement.
 		/// </summary>

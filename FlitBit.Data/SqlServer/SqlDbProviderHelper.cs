@@ -41,6 +41,11 @@ WHERE name = @schema"
 			base.Initialize();
 			MapRuntimeType<bool>(new SqlMappedBoolAsBitEmitter());
 			MapRuntimeType<bool?>(new SqlMappedNullableBoolAsBitEmitter());
+      MapRuntimeType<double>(new SqlMappedDoubleEmitter());
+      MapRuntimeType<double?>(new SqlMappedNullableDoubleEmitter());
+      MapRuntimeType<float>(new SqlMappedSingleEmitter());
+      MapRuntimeType<float?>(new SqlMappedNullableSingleEmitter());
+
 			MapRuntimeType<DateTime>(new SqlMappedDateTimeEmitter(SqlDbType.DateTime2));
 			MapRuntimeType<DateTime?>(new SqlMappedNullableDateTimeEmitter(SqlDbType.DateTime2));
 			MapRuntimeType<Int16>(new SqlMappedInt16Emitter());

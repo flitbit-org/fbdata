@@ -133,7 +133,7 @@ namespace FlitBit.Data.SqlServer
 
 		public DynamicSql SelectInPrimaryKeyOrderWithPaging
 		{
-			get { return WriteSelectWithPaging(null, null); }
+			get { return WriteSelectWithPaging(default(Constraints), null); }
 		}
 
 		public OrderBy PrimaryKeyOrder
@@ -274,6 +274,53 @@ namespace FlitBit.Data.SqlServer
 				return res;
 			}
 		}
+
+	  public DynamicSql WriteSelect(DataModelSqlExpression<TDataModel> sql)
+	  {
+      var writer = new SqlWriter().Append(Select.Text);
+      sql.Write(writer);
+      return new DynamicSql(writer.Text, CommandType.Text, CommandBehavior.SingleResult | CommandBehavior.SequentialAccess);
+	  }
+
+    public DynamicSql WriteSelectWithPaging(DataModelSqlExpression<TDataModel> sql, OrderBy orderBy)
+    {
+      IMapping<TDataModel> mapping = Mapping;
+      // Default to PK order...
+      OrderBy order = orderBy ?? PrimaryKeyOrder;
+
+      var res = new DynamicSql(null, CommandType.Text, CommandBehavior.SingleResult | CommandBehavior.SequentialAccess);
+      res.BindLimitParameter = "@pageSize";
+      res.BindStartRowParameter = "@startRow";
+
+      var writer = new SqlWriter(_bufferLength, Environment.NewLine, _indent);
+      string[] colList = QuotedColumnNames.Select(c => String.Concat(_selfRef, ".", c)).ToArray();
+
+      writer.Append("DECLARE @endRow INT = @startRow + (@pageSize - 1);")
+        .NewLine("WITH dataset AS(").Indent()
+        .NewLine("SELECT ");
+      AppendColumns(writer, colList);
+      writer.Append(",").NewLine("ROW_NUMBER() OVER(");
+      var orderByStatement = new SqlWriter();
+      var inverseOrderByStatement = new SqlWriter();
+      order.WriteOrderBy(mapping, orderByStatement, _selfRef, false);
+      order.WriteOrderBy(mapping, inverseOrderByStatement, _selfRef, true);
+      writer.Append(orderByStatement.ToString()).Append(") AS seq,")
+        .NewLine("ROW_NUMBER() OVER(")
+        .Append(inverseOrderByStatement.ToString())
+        .Append(") AS rev_seq")
+        .Outdent();
+      sql.Write(writer);
+      writer.Outdent().NewLine(")")
+        .NewLine(@"SELECT TOP (@pageSize) ");
+      AppendColumns(writer, colList);
+      writer.Append(",").NewLine("rev_seq + seq -1 as [RowCount]")
+        .Outdent().NewLine("FROM dataset AS [self]")
+        .NewLine("WHERE seq >= @startRow")
+        .NewLine("ORDER BY seq");
+
+      res.Text = writer.Text;
+      return res;
+    }
 
 		public DynamicSql WriteSelectWithPaging(Constraints cns, OrderBy orderBy)
 		{

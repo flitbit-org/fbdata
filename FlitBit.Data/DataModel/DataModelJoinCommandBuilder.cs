@@ -48,13 +48,7 @@ namespace FlitBit.Data.DataModel
       sql.AddValueParameter(parms[2]);
 
       sql.IngestExpresion(lambda.Body);
-      var writer = new SqlWriter().Append(this.Writer.Select.Text);
-      sql.Write(writer);
-      
-      throw new NotImplementedException();
-      //return ConstructCommandOnConstraints<TParam>(
-      //  PrepareTranslateExpression(cns, lambda.Body)
-      //  );
+      return ConstructCommandOnConstraints<TParam>(sql);
     }
 
     /// <summary>
