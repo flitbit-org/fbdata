@@ -1,10 +1,12 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Data;
 using System.Data.SqlClient;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
 using FlitBit.Data.DataModel;
+using FlitBit.Data.Expressions;
 using FlitBit.Data.Meta;
 using FlitBit.Data.SPI;
 
@@ -20,7 +22,6 @@ namespace FlitBit.Data.SqlServer
     BaseSqlDataModelBinder<TDataModel, TIdentityKey, TModelImpl>
     where TModelImpl : class, TDataModel, IDataModel, new()
   {
-    bool _initialized;
 
     /// <summary>
     ///   Creates a new instance.
@@ -32,6 +33,8 @@ namespace FlitBit.Data.SqlServer
       Contract.Requires<ArgumentNullException>(mapping != null);
       Contract.Requires<ArgumentException>(mapping.Strategy == MappingStrategy.OneClassOneTable);
     }
+
+
 
     public override void BuildDdlBatch(StringBuilder batch, IList<Type> members)
     {
@@ -98,18 +101,27 @@ namespace FlitBit.Data.SqlServer
       }
     }
 
+    public override object ConstructQueryCommand(DataModelRepository<TDataModel, TIdentityKey, SqlConnection> repo, Guid key, DataModelSqlExpression<TDataModel> sql, IDataModelWriter<TDataModel> writer)
+    {
+      var all = LegacyWriter.WriteSelect(sql);
+      var paging = LegacyWriter.WriteSelectWithPaging(sql, null);
+
+      var cmd = OneClassOneTableEmitter.MakeQueryCommand<TDataModel, TModelImpl>(Mapping, key, sql);
+      return Activator.CreateInstance(cmd, all, paging, LegacyWriter.ColumnOffsets);
+    }
+
     protected override IDataModelQueryManyCommand<TDataModel, SqlConnection> ConstructGetAllCommand()
     {
       return
         new SqlDataModelQueryManyCommand<TDataModel, TModelImpl>(
-          Writer.Select,
-          Writer.SelectInPrimaryKeyOrderWithPaging,
+          LegacyWriter.Select,
+          LegacyWriter.SelectInPrimaryKeyOrderWithPaging,
           Offsets);
     }
 
     protected override IDataModelQuerySingleCommand<TDataModel, SqlConnection, TDataModel> ConstructGetCreateCommand()
     {
-      var createStatement = Writer.DynamicInsertStatement;
+      var createStatement = LegacyWriter.DynamicInsertStatement;
 
       return (IDataModelQuerySingleCommand<TDataModel, SqlConnection, TDataModel>)
              Activator.CreateInstance(
@@ -121,7 +133,7 @@ namespace FlitBit.Data.SqlServer
 
     protected override IDataModelNonQueryCommand<TDataModel, SqlConnection, TIdentityKey> ConstructGetDeleteCommand()
     {
-      var deleteStatement = Writer.DeleteByPrimaryKey;
+      var deleteStatement = LegacyWriter.DeleteByPrimaryKey;
       return
         (IDataModelNonQueryCommand<TDataModel, SqlConnection, TIdentityKey>)
         Activator.CreateInstance(
@@ -133,7 +145,7 @@ namespace FlitBit.Data.SqlServer
 
     protected override IDataModelQuerySingleCommand<TDataModel, SqlConnection, TIdentityKey> ConstructReadCommand()
     {
-      var readStatement = Writer.SelectByPrimaryKey;
+      var readStatement = LegacyWriter.SelectByPrimaryKey;
       return
         (IDataModelQuerySingleCommand<TDataModel, SqlConnection, TIdentityKey>)
         Activator.CreateInstance(
@@ -145,7 +157,7 @@ namespace FlitBit.Data.SqlServer
 
     protected override IDataModelQuerySingleCommand<TDataModel, SqlConnection, TDataModel> ConstructUpdateCommand()
     {
-      var updateStatement = Writer.DynamicUpdateStatement;
+      var updateStatement = LegacyWriter.DynamicUpdateStatement;
       return
         (IDataModelQuerySingleCommand<TDataModel, SqlConnection, TDataModel>)
         Activator.CreateInstance(

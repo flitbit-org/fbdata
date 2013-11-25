@@ -3,7 +3,9 @@ using System.Collections.Generic;
 using System.Data.Common;
 using System.Linq.Expressions;
 using System.Text;
+using FlitBit.Data.Expressions;
 using FlitBit.Data.Meta;
+using FlitBit.Data.SqlServer;
 
 namespace FlitBit.Data.DataModel
 {
@@ -72,6 +74,8 @@ namespace FlitBit.Data.DataModel
 	public interface IDataModelBinder<TModel, TIdentityKey, TDbConnection> : IDataModelBinder<TModel, TIdentityKey>
 		where TDbConnection: DbConnection
 	{
+    IDataModelWriter<TModel> Writer { get; }
+
 		/// <summary>
 		///   Gets a model command for selecting all models of the type TModel.
 		/// </summary>
@@ -102,147 +106,6 @@ namespace FlitBit.Data.DataModel
 		/// <returns></returns>
 		IDataModelQuerySingleCommand<TModel, TDbConnection, TModel> GetUpdateCommand();
 
-		/// <summary>
-		/// Creates a command builder for the specified criteria.
-		/// </summary>
-		/// <param name="queryKey">unique key identifying the query</param>
-		/// <param name="criteria"></param>
-		/// <typeparam name="TCriteria"></typeparam>
-		/// <returns></returns>
-		IDataModelCommandBuilder<TModel, TDbConnection, TCriteria> MakeQueryCommand<TCriteria>(string queryKey,
-			TCriteria criteria);
-		
-		/// <summary>
-		/// Makes a query command that binds to the specified parameter types.
-		/// </summary>
-		/// <typeparam name="TParam"></typeparam>
-		/// <param name="queryKey">unique key identifying the query</param>
-		/// <returns></returns>
-		IDataModelCommandBuilder<TModel, TDbConnection, TParam> MakeQueryCommand<TParam>(string queryKey);
-
-		/// <summary>
-		/// Makes a query command that binds to the specified parameter types.
-		/// </summary>
-		/// <typeparam name="TParam"></typeparam>
-		/// <typeparam name="TParam1"></typeparam>
-		/// <param name="queryKey">unique key identifying the query</param>
-		/// <returns></returns>
-		IDataModelCommandBuilder<TModel, TDbConnection, TParam, TParam1> MakeQueryCommand<TParam, TParam1>(string queryKey);
-
-		/// <summary>
-		/// Makes a query command that binds to the specified parameter types.
-		/// </summary>
-		/// <typeparam name="TParam"></typeparam>
-		/// <typeparam name="TParam1"></typeparam>
-		/// <typeparam name="TParam2"></typeparam>
-		/// <param name="queryKey">unique key identifying the query</param>
-		/// <returns></returns>
-		IDataModelCommandBuilder<TModel, TDbConnection, TParam, TParam1, TParam2> MakeQueryCommand<TParam, TParam1, TParam2>(string queryKey);
-
-		/// <summary>
-		/// Makes a query command that binds to the specified parameter types.
-		/// </summary>
-		/// <typeparam name="TParam"></typeparam>
-		/// <typeparam name="TParam1"></typeparam>
-		/// <typeparam name="TParam2"></typeparam>
-		/// <typeparam name="TParam3"></typeparam>
-		/// <param name="queryKey">unique key identifying the query</param>
-		/// <returns></returns>
-		IDataModelCommandBuilder<TModel, TDbConnection, TParam, TParam1, TParam2, TParam3> MakeQueryCommand<TParam, TParam1, TParam2, TParam3>(string queryKey);
-
-		/// <summary>
-		/// Makes a query command that binds to the specified parameter types.
-		/// </summary>
-		/// <typeparam name="TParam"></typeparam>
-		/// <typeparam name="TParam1"></typeparam>
-		/// <typeparam name="TParam2"></typeparam>
-		/// <typeparam name="TParam3"></typeparam>
-		/// <typeparam name="TParam4"></typeparam>
-		/// <param name="queryKey">unique key identifying the query</param>
-		/// <returns></returns>
-		IDataModelCommandBuilder<TModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4> MakeQueryCommand<TParam, TParam1, TParam2, TParam3, TParam4>(string queryKey);
-
-		/// <summary>
-		/// Makes a query command that binds to the specified parameter types.
-		/// </summary>
-		/// <typeparam name="TParam"></typeparam>
-		/// <typeparam name="TParam1"></typeparam>
-		/// <typeparam name="TParam2"></typeparam>
-		/// <typeparam name="TParam3"></typeparam>
-		/// <typeparam name="TParam4"></typeparam>
-		/// <typeparam name="TParam5"></typeparam>
-		/// <param name="queryKey">unique key identifying the query</param>
-		/// <returns></returns>
-		IDataModelCommandBuilder<TModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5> MakeQueryCommand<TParam, TParam1, TParam2, TParam3, TParam4, TParam5>(string queryKey);
-
-		/// <summary>
-		/// Makes a query command that binds to the specified parameter types.
-		/// </summary>
-		/// <typeparam name="TParam"></typeparam>
-		/// <typeparam name="TParam1"></typeparam>
-		/// <typeparam name="TParam2"></typeparam>
-		/// <typeparam name="TParam3"></typeparam>
-		/// <typeparam name="TParam4"></typeparam>
-		/// <typeparam name="TParam5"></typeparam>
-		/// <typeparam name="TParam6"></typeparam>
-		/// <param name="queryKey">unique key identifying the query</param>
-		/// <returns></returns>
-		IDataModelCommandBuilder<TModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6> MakeQueryCommand<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6>(string queryKey);
-
-		/// <summary>
-		/// Makes a query command that binds to the specified parameter types.
-		/// </summary>
-		/// <typeparam name="TParam"></typeparam>
-		/// <typeparam name="TParam1"></typeparam>
-		/// <typeparam name="TParam2"></typeparam>
-		/// <typeparam name="TParam3"></typeparam>
-		/// <typeparam name="TParam4"></typeparam>
-		/// <typeparam name="TParam5"></typeparam>
-		/// <typeparam name="TParam6"></typeparam>
-		/// <typeparam name="TParam7"></typeparam>
-		/// <param name="queryKey">unique key identifying the query</param>
-		/// <returns></returns>
-		IDataModelCommandBuilder<TModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7> MakeQueryCommand<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7>(string queryKey);
-
-		/// <summary>
-		/// Makes a query command that binds to the specified parameter types.
-		/// </summary>
-		/// <typeparam name="TParam"></typeparam>
-		/// <typeparam name="TParam1"></typeparam>
-		/// <typeparam name="TParam2"></typeparam>
-		/// <typeparam name="TParam3"></typeparam>
-		/// <typeparam name="TParam4"></typeparam>
-		/// <typeparam name="TParam5"></typeparam>
-		/// <typeparam name="TParam6"></typeparam>
-		/// <typeparam name="TParam7"></typeparam>
-		/// <typeparam name="TParam8"></typeparam>
-		/// <param name="queryKey">unique key identifying the query</param>
-		/// <returns></returns>
-		IDataModelCommandBuilder<TModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8> MakeQueryCommand<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8>(string queryKey);
-
-		/// <summary>
-		/// Makes a query command that binds to the specified parameter types.
-		/// </summary>
-		/// <typeparam name="TParam"></typeparam>
-		/// <typeparam name="TParam1"></typeparam>
-		/// <typeparam name="TParam2"></typeparam>
-		/// <typeparam name="TParam3"></typeparam>
-		/// <typeparam name="TParam4"></typeparam>
-		/// <typeparam name="TParam5"></typeparam>
-		/// <typeparam name="TParam6"></typeparam>
-		/// <typeparam name="TParam7"></typeparam>
-		/// <typeparam name="TParam8"></typeparam>
-		/// <typeparam name="TParam9"></typeparam>
-		/// <param name="queryKey">unique key identifying the query</param>
-		/// <returns></returns>
-		IDataModelCommandBuilder<TModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9> MakeQueryCommand<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>(string queryKey);
-
-    /// <summary>
-    /// Makes a query command builder for joining the data model to another type.
-    /// </summary>
-    /// <typeparam name="TJoin">join type T</typeparam>
-    /// <param name="queryKey">unique key identifying the query</param>
-    /// <returns></returns>
-    IDataModelJoinCommandBuilder<TModel, TDbConnection, TJoin> MakeJoinCommand<TJoin>(string queryKey);
+    object ConstructQueryCommand(DataModelRepository<TModel, TIdentityKey, TDbConnection> repo, Guid key, DataModelSqlExpression<TModel> sql, IDataModelWriter<TModel> writer);
 	}
 }

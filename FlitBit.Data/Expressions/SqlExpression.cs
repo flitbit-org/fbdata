@@ -14,12 +14,15 @@ namespace FlitBit.Data.Expressions
   public class DataModelSqlExpression<TDataModel>
   {
     readonly string _selfRef;
+    private int _joinOrd = 0;
 
     readonly Dictionary<Expression, SqlExpression> _translations =
       new Dictionary<Expression, SqlExpression>();
 
     readonly List<SqlParameterExpression> _params = new List<SqlParameterExpression>();
-    readonly List<SqlJoinExpression> _joins = new List<SqlJoinExpression>();
+    readonly List<SqlJoinExpression> _explicitJoins = new List<SqlJoinExpression>();
+    readonly List<SqlJoinExpression> _impliedJoins = new List<SqlJoinExpression>();
+
 
     SqlExpression _whereExpression;
 
@@ -39,7 +42,9 @@ namespace FlitBit.Data.Expressions
 
     public SqlParameterExpression SelfParameter { get; private set; }
 
-    public IList<SqlParameterExpression> ValueParameters { get { return _params; } }
+    public IList<SqlParameterExpression> ValueParameters { get { return _params.AsReadOnly(); } }
+
+    public IList<SqlJoinExpression> ExplicitJoins { get { return _explicitJoins.AsReadOnly(); } }
 
     internal void AddSelfParameter(ParameterExpression parm)
     {
@@ -49,7 +54,13 @@ namespace FlitBit.Data.Expressions
       _translations.Add(parm, SelfParameter);
     }
 
-    internal void JoinParameter(ParameterExpression parm, bool inferOnExpression)
+    internal void DuplicateSelfParameter(ParameterExpression parm)
+    {
+      Contract.Requires<InvalidOperationException>(SelfParameter != null);
+      _translations.Add(parm, SelfParameter);
+    }
+
+    internal void AddJoinParameter(ParameterExpression parm, bool inferOnExpression)
     {
       Contract.Requires<InvalidOperationException>(SelfParameter != null);
 
@@ -76,8 +87,21 @@ namespace FlitBit.Data.Expressions
           );
       }
       _translations.Add(parm, expr);
-      expr.Join = new SqlJoinExpression(parm.Type, _joins.Count, joinMapping.DbObjectReference, asAlias, onExpression);
-      _joins.Add(expr.Join);
+      var ord = _joinOrd++;
+      expr.Join = new SqlJoinExpression(parm.Type, ord, joinMapping.DbObjectReference, asAlias, onExpression);
+      _explicitJoins.Add(expr.Join);
+      expr.Join.ReferenceExpression = expr;
+    }
+
+    internal void DuplicateJoinParameter(int ord, ParameterExpression parm)
+    {
+      Contract.Requires<ArgumentOutOfRangeException>(ExplicitJoins.Count > ord && ord >= 0);
+
+      var join = _explicitJoins[ord];
+      var existing =
+        _translations.Values.First(
+          it => it.Kind == SqlExpressionKind.Join && ((SqlJoinParameterExpression) it).Join == join);
+      _translations.Add(parm, existing);
     }
 
     internal SqlParameterExpression AddValueParameter(ParameterExpression parm)
@@ -89,7 +113,31 @@ namespace FlitBit.Data.Expressions
       return res;
     }
 
-    internal void IngestExpresion(Expression expr)
+    internal void DuplicateValueParameter(int ord, ParameterExpression parm)
+    {
+      Contract.Requires<ArgumentOutOfRangeException>(ValueParameters.Count > ord && ord >= 0);
+      Contract.Requires<ArgumentOutOfRangeException>(ValueParameters[ord].Type == parm.Type);
+
+      _translations.Add(parm, _params[0]);
+    }
+
+    internal void IngestJoinExpression(ParameterExpression parm, Expression expr)
+    {
+      SqlExpression joinParm;
+      if (!_translations.TryGetValue(parm, out joinParm) || joinParm.Kind != SqlExpressionKind.Join)
+      {
+        throw new ArgumentException("Parameter expression must identify a join already added to the SQL expression.", "parm");
+      }
+      var binary = expr as BinaryExpression;
+      if (binary == null)
+      {
+        throw new NotSupportedException(String.Concat("Expression not supported: ", expr.NodeType));
+      }
+      var onStatement = HandleBinaryExpression(binary);
+      ((SqlJoinParameterExpression)joinParm).Join.AddExpression(onStatement);
+    }
+
+    internal void IngestExpression(Expression expr)
     {
       var binary = expr as BinaryExpression;
       if (binary == null)
@@ -98,11 +146,9 @@ namespace FlitBit.Data.Expressions
       }
       var where = HandleBinaryExpression(binary);
       if (where != null
-          && _joins.Count > 0)
+          && _joinOrd > 0)
       {
-        foreach (var ea in _translations.Values.Where(t => t.Kind == SqlExpressionKind.Join)
-                                        .Cast<SqlJoinParameterExpression>()
-                                        .OrderBy(p => p.Join.Ordinal))
+        foreach (var ea in _explicitJoins.Concat(_impliedJoins).OrderBy(j => j.Ordinal))
         {
           where = OptimizeJoinConditionsFromWhere(ea, where);
           if (where == null)
@@ -114,77 +160,77 @@ namespace FlitBit.Data.Expressions
       _whereExpression = where;
     }
 
-    SqlExpression OptimizeJoinConditionsFromWhere(SqlJoinParameterExpression param, SqlExpression where)
+    SqlExpression OptimizeJoinConditionsFromWhere(SqlJoinExpression @join, SqlExpression where)
     {
       var res = where;
       if (res.Kind == SqlExpressionKind.AndAlso
           || res.Kind == SqlExpressionKind.OrElse
           || res.Kind == SqlExpressionKind.Comparison)
       {
-        res = RecursiveDescentTryOptimizeJoin(param, (SqlBinaryExpression)res);
+        res = RecursiveDescentTryOptimizeJoin(@join, (SqlBinaryExpression)res);
       }
       return res;
     }
 
-    SqlExpression RecursiveDescentTryOptimizeJoin(SqlJoinParameterExpression param, SqlBinaryExpression binary)
+    SqlExpression RecursiveDescentTryOptimizeJoin(SqlJoinExpression @join, SqlBinaryExpression binary)
     {
       var left = binary.Left;
       var right = binary.Right;
       if (binary.Kind == SqlExpressionKind.AndAlso)
       {
-        if (RecursiveCanLift(param, left))
+        if (RecursiveCanLift(@join, left))
         {
-          if (RecursiveCanLift(param, right))
+          if (RecursiveCanLift(@join, right))
           {
-            param.Join.AddExpression(binary);
+            @join.AddExpression(binary);
             return null;
           }
-          param.Join.AddExpression(binary.Left);
+          @join.AddExpression(binary.Left);
           if (right is SqlBinaryExpression)
           {
-            return RecursiveDescentTryOptimizeJoin(param, (SqlBinaryExpression)right);
+            return RecursiveDescentTryOptimizeJoin(@join, (SqlBinaryExpression)right);
           }
           return binary.Right;
         }
         if (left is SqlBinaryExpression)
         {
-          left = RecursiveDescentTryOptimizeJoin(param, (SqlBinaryExpression)left);
+          left = RecursiveDescentTryOptimizeJoin(@join, (SqlBinaryExpression)left);
         }
-        if (RecursiveCanLift(param, right))
+        if (RecursiveCanLift(@join, right))
         {
-          param.Join.AddExpression(right);
+          @join.AddExpression(right);
           return left;
         }
         if (right is SqlBinaryExpression)
         {
           return new SqlAndAlsoExpression(left,
-            RecursiveDescentTryOptimizeJoin(param, (SqlBinaryExpression)right)
+            RecursiveDescentTryOptimizeJoin(@join, (SqlBinaryExpression)right)
             );
         }
       }
-      if (RecursiveCanLift(param, binary))
+      if (RecursiveCanLift(@join, binary))
       {
-        param.Join.AddExpression(binary);
+        @join.AddExpression(binary);
         return null;
       }
       return binary;
     }
 
-    bool RecursiveCanLift(SqlJoinParameterExpression param, SqlExpression expr)
+    bool RecursiveCanLift(SqlJoinExpression join, SqlExpression expr)
     {
       if (expr.Kind == SqlExpressionKind.AndAlso
           || expr.Kind == SqlExpressionKind.OrElse
           || expr.Kind == SqlExpressionKind.Comparison)
       {
-        return RecursiveCanLift(param, ((SqlBinaryExpression)expr).Left)
-               && RecursiveCanLift(param, ((SqlBinaryExpression)expr).Right);
+        return RecursiveCanLift(join, ((SqlBinaryExpression)expr).Left)
+               && RecursiveCanLift(join, ((SqlBinaryExpression)expr).Right);
       }
       var value = expr as SqlValueExpression;
       if (value != null)
       {
-        if (value.Source.Kind == SqlExpressionKind.Join)
+        if (value.Source.Kind == SqlExpressionKind.Join || value.Source.Kind == SqlExpressionKind.JoinReference)
         {
-          return (value.Source == param || ((SqlJoinParameterExpression)value.Source).Join.Ordinal < param.Join.Ordinal);
+          return (value.Source == join.ReferenceExpression || value.Source.Join.Ordinal < join.Ordinal);
         }
         return true;
       }
@@ -315,18 +361,27 @@ namespace FlitBit.Data.Expressions
         _translations.TryGetValue(expr, out res);
         return (SqlValueExpression)res;
       }
+      if (expr.NodeType == ExpressionType.Constant)
+      {
+        SqlExpression res;
+        if (!_translations.TryGetValue(expr, out res))
+        {
+          _translations.Add(expr, res = new SqlConstantExpression(expr.Type, ((ConstantExpression)expr).Value));
+        }
+        return (SqlValueExpression)res; 
+      }
       throw new NotSupportedException(String.Concat("Expression not supported as a value expression: ",
         expr.NodeType));
     }
 
-    SqlValueExpression HandleValueReferencePath(Expression expr)
+    private SqlValueExpression HandleValueReferencePath(Expression expr)
     {
       var stack = new Stack<MemberExpression>();
       var item = expr;
       while (item.NodeType == ExpressionType.MemberAccess)
       {
-        stack.Push((MemberExpression)item);
-        item = ((MemberExpression)item).Expression;
+        stack.Push((MemberExpression) item);
+        item = ((MemberExpression) item).Expression;
       }
       if (item.NodeType != ExpressionType.Parameter)
       {
@@ -335,60 +390,151 @@ namespace FlitBit.Data.Expressions
 
       // The inner-most is a parameter...
       var inner = FormatValueReference(item);
-      var fromMapping = (inner.Type == typeof(TDataModel)) ? Mapping : Mappings.AccessMappingFor(inner.Type);
+      if (inner.Kind == SqlExpressionKind.Self)
+      {
+        return MapExpressionFromSelf(inner, stack);
+      }
+      return MapExpressionFromJoin(inner, stack);
+    }
+
+    private SqlValueExpression MapExpressionFromSelf(SqlValueExpression first, Stack<MemberExpression> stack)
+    {
+      IMapping fromMapping = Mapping;
+      var path = "self";
+      var inner = first;
       while (stack.Count > 0)
       {
         var it = stack.Pop();
+        var m = it.Member;
         SqlExpression res;
         if (_translations.TryGetValue(it, out res))
         {
-          inner = (SqlValueExpression)res;
-          fromMapping = (inner.Type == typeof(TDataModel)) ? Mapping : Mappings.AccessMappingFor(inner.Type);
+          inner = (SqlValueExpression) res;
+          fromMapping = (inner.Type == typeof (TDataModel)) ? Mapping : Mappings.AccessMappingFor(inner.Type);
         }
         else
         {
-          var m = it.Member;
-          if (Mappings.ExistsFor(it.Type))
+          var col = fromMapping.Columns.Single(c => c.Member == m);
+          if (inner.Kind == SqlExpressionKind.MemberAccess && ((SqlMemberAccessExpression) inner).Column.IsReference)
           {
-            var toDep = fromMapping.Dependencies.SingleOrDefault(d => d.Member == m);
-            if (toDep == null)
-            {
-              throw new NotSupportedException(String.Concat("A dependency path is not known from ",
-                fromMapping.RuntimeType.GetReadableSimpleName(),
-                " to ", m.DeclaringType.GetReadableSimpleName(), " via the property `", m.Name, "'."));
-            }
-            var toCol = fromMapping.Columns.Single(c => c.Member == m);
-            var text = Mapping.QuoteObjectName(toCol.TargetName);
-            inner = new SqlMemberAccessExpression(text, it.Type, toCol, inner);
-            fromMapping = (it.Type == typeof(TDataModel)) ? Mapping : Mappings.AccessMappingFor(it.Type);
+            inner = InferJoinForMember((SqlMemberAccessExpression) inner, path);
+          }
+          if (col.IsIdentity
+              && (inner.Kind == SqlExpressionKind.MemberAccess
+                  && ((SqlMemberAccessExpression) inner).Column.ReferenceTargetMember == m))
+          {
+            // special case for identity references.
+            _translations.Add(it, inner);
           }
           else
           {
-            var toCol = fromMapping.Columns.Single(c => c.Member == m);
-            if (toCol.IsIdentity
-                && (inner is SqlMemberAccessExpression
-                    && ((SqlMemberAccessExpression)inner).Column.ReferenceTargetMember == m))
+            inner = new SqlMemberAccessExpression(fromMapping.QuoteObjectName(col.TargetName), col.RuntimeType, col, inner);
+            if (col.IsReference)
             {
-              // special case for identity references.
-              _translations.Add(it, inner);
+              fromMapping = Mappings.AccessMappingFor(col.RuntimeType);
+              path = path + "." + m.Name;
             }
-            else
-            {
-              var text = Mapping.QuoteObjectName(toCol.TargetName);
-              inner = new SqlMemberAccessExpression(text, it.Type, toCol, inner);
-              _translations.Add(it, inner);
-            }
+            _translations.Add(it, inner);
           }
         }
       }
       return inner;
     }
 
+    private SqlValueExpression InferJoinForMember(SqlMemberAccessExpression item, string path)
+    {
+      if (item.Join == null)
+      {
+        var captureName = Mapping.QuoteObjectName(path);
+        var join = _impliedJoins.SingleOrDefault(j => j.AsAlias == captureName);
+        if (join == null)
+        {
+          var col = item.Column;
+          var foreignMapping = Mappings.AccessMappingFor(col.ReferenceTargetType);
+          var foreignCol = foreignMapping.Columns.Single(c => c.Member == col.ReferenceTargetMember);
+          join = new SqlJoinExpression(foreignMapping.RuntimeType, _joinOrd++, foreignMapping.DbObjectReference,
+            captureName, null);
+          join.AddExpression(
+            new SqlComparisonExpression(ExpressionType.Equal,
+              item,
+              new SqlMemberAccessExpression(Mapping.QuoteObjectName(foreignCol.TargetName), foreignCol.RuntimeType,
+                foreignCol,
+                join.ReferenceExpression))
+            );
+          _impliedJoins.Add(join);
+        }
+        item.Join = join;
+      }
+      return item.Join.ReferenceExpression;
+    }
+
+    private SqlValueExpression MapExpressionFromJoin(SqlValueExpression inner, Stack<MemberExpression> stack)
+    {
+      var item = inner;
+      var fromMapping = (item.Type == typeof(TDataModel)) ? Mapping : Mappings.AccessMappingFor(item.Type);
+      while (stack.Count > 0)
+      {
+        var it = stack.Pop();
+        SqlExpression res;
+        if (_translations.TryGetValue(it, out res))
+        {
+          item = (SqlValueExpression)res;
+          fromMapping = (item.Type == typeof(TDataModel)) ? Mapping : Mappings.AccessMappingFor(item.Type);
+        }
+        else
+        {
+          var m = it.Member;
+          if (it.Type.IsClass || it.Type.IsInterface && Mappings.ExistsFor(it.Type))
+          {
+            var toDep = fromMapping.Dependencies.SingleOrDefault(d => d.Member == m);
+            if (toDep == null)
+            {
+              throw new NotSupportedException(String.Concat("A dependency path is not known from ",
+                fromMapping.RuntimeType.GetReadableSimpleName(),
+                " to ", it.Type.GetReadableSimpleName(), " via the property `", m.Name, "'."));
+            }
+            var toCol = fromMapping.Columns.Single(c => c.Member == m);
+            var text = Mapping.QuoteObjectName(toCol.TargetName);
+            item = new SqlMemberAccessExpression(text, it.Type, toCol, item);
+            fromMapping = (it.Type == typeof(TDataModel)) ? Mapping : Mappings.AccessMappingFor(it.Type);
+          }
+          else
+          {
+            var toCol = fromMapping.Columns.Single(c => c.Member == m);
+            if (toCol.IsIdentity
+                && (item is SqlMemberAccessExpression
+                    && ((SqlMemberAccessExpression)item).Column.ReferenceTargetMember == m))
+            {
+              // special case for identity references.
+              _translations.Add(it, item);
+            }
+            else
+            {
+              var text = Mapping.QuoteObjectName(toCol.TargetName);
+              item = new SqlMemberAccessExpression(text, it.Type, toCol, item);
+              _translations.Add(it, item);
+            }
+          }
+        }
+      }
+      return item;
+    }
+
+    public string Text
+    {
+      get
+      {
+        var writer = new SqlWriter();
+        Write(writer);
+        return writer.Text;
+      }
+    }
+
     public void Write(SqlWriter writer)
     {
       Contract.Requires<InvalidOperationException>(SelfParameter != null);
 
-      foreach (var join in _joins)
+      foreach (var join in _explicitJoins.Concat(_impliedJoins).OrderBy(j => j.Ordinal))
       {
         join.Write(writer);
       }
@@ -401,19 +547,19 @@ namespace FlitBit.Data.Expressions
     }
   }
 
-  [Flags]
   public enum SqlExpressionKind
   {
     Unknown = 0,
     Self = 1,
     Join = 2,
-    Parameter = 3,
-    Constant = 4,
-    Null = 5,
-    MemberAccess = 6,
-    Comparison = 7,
-    AndAlso = 8,
-    OrElse = 9,
+    JoinReference = 3,
+    Parameter = 4,
+    Constant = 5,
+    Null = 6,
+    MemberAccess = 7,
+    Comparison = 8,
+    AndAlso = 9,
+    OrElse = 10,
   }
 
   public abstract class SqlExpression
@@ -439,6 +585,8 @@ namespace FlitBit.Data.Expressions
 
   public class SqlJoinExpression : SqlExpression
   {
+    private SqlValueExpression _reference;
+
     public SqlJoinExpression(Type joinType, int ordinal, string dbObjectReference, string asAlias,
       SqlExpression onExpression)
       : base(SqlExpressionKind.Join)
@@ -463,8 +611,29 @@ namespace FlitBit.Data.Expressions
     public void AddExpression(SqlExpression expr)
     {
       if (OnExpression != null)
-      {}
-      OnExpression = expr;
+      {
+        OnExpression = new SqlAndAlsoExpression(OnExpression, expr);
+      }
+      else
+      {
+        OnExpression = expr;
+      }
+    }
+
+    public SqlValueExpression ReferenceExpression
+    {
+      get
+      {
+        if (_reference == null)
+        {
+          _reference = new SqlValueExpression(SqlExpressionKind.JoinReference, AsAlias, Type);
+        }
+        return _reference;
+      }
+      internal set
+      {
+        _reference = value;
+      }
     }
 
     public override void Write(SqlWriter writer)
@@ -502,10 +671,47 @@ namespace FlitBit.Data.Expressions
 
     public SqlValueExpression Source { get; protected set; }
 
+    /// <summary>
+    /// For values mapped onto joins, gets the join.
+    /// </summary>
+    public SqlJoinExpression Join { get; internal set; }
+
     public override void Write(SqlWriter writer) { writer.Append(_text); }
   }
 
-  public class SqlParameterExpression : SqlValueExpression
+
+  public class SqlColumnTranslatedExpression : SqlValueExpression
+  {
+    public SqlColumnTranslatedExpression(SqlExpressionKind nodeType, string text, Type type)
+      : base(nodeType, text, type)
+    { }
+
+    public ColumnMapping Column { get; set; }
+  }
+
+  public class SqlConstantExpression : SqlColumnTranslatedExpression
+  {
+    public SqlConstantExpression(Type type, object value)
+      : base(SqlExpressionKind.Constant, Convert.ToString(value), type)
+    {
+      Value = value;
+    }
+
+    public object Value { get; private set; }
+
+    public ColumnMapping Column { get; set; }
+
+    public override void Write(SqlWriter writer)
+    {
+      if (Column != null)
+      {
+        writer.Append(Column.Emitter.PrepareConstantValueForSql(Value));
+      }
+      base.Write(writer);
+    }
+  }
+
+  public class SqlParameterExpression : SqlColumnTranslatedExpression
   {
     public SqlParameterExpression(SqlExpressionKind nodeType, string text, Type type)
       : base(nodeType, text, type)
@@ -520,7 +726,6 @@ namespace FlitBit.Data.Expressions
       : base(SqlExpressionKind.Join, text, type)
     {}
 
-    public SqlJoinExpression Join { get; internal set; }
   }
 
   public class SqlMemberAccessExpression : SqlValueExpression

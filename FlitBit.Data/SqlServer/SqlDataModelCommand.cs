@@ -1,4 +1,6 @@
-﻿namespace FlitBit.Data.SqlServer
+﻿using FlitBit.Data.DataModel;
+
+namespace FlitBit.Data.SqlServer
 {
     /// <summary>
     /// Basic data model query command for queries with one parameter.

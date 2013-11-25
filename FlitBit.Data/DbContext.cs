@@ -122,7 +122,7 @@ namespace FlitBit.Data
 		}
 
 		public TConnection SharedOrNewConnection<TConnection>(string connectionName)
-			where TConnection : DbConnection, new()
+			where TConnection : DbConnection
 		{
 			DbConnection cn, capture = null;
 			cn = _connections.GetOrAdd(connectionName,
@@ -142,7 +142,7 @@ namespace FlitBit.Data
 		}
 
 		public TConnection NewConnection<TConnection>(string connectionName)
-			where TConnection : DbConnection, new()
+			where TConnection : DbConnection
 		{
 			var cn = DbExtensions.CreateConnection<TConnection>(connectionName);
 			var disposals = 0;

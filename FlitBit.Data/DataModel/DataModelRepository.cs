@@ -1,17 +1,22 @@
-﻿using FlitBit.Data.Repositories;
+﻿using System.Data.SqlClient;
+using System.Threading;
+using FlitBit.Data.Expressions;
+using FlitBit.Data.Repositories;
 using System;
 using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics.Contracts;
 using System.Linq.Expressions;
+using FlitBit.Data.SqlServer;
 
 namespace FlitBit.Data.DataModel
 {
 	public abstract class DataModelRepository<TDataModel, TIdentityKey, TDbConnection> 
     : AbstractCachingRepository<TDataModel, TIdentityKey>, IDataModelRepository<TDataModel, TIdentityKey, TDbConnection>
-		where TDbConnection : DbConnection, new()
+		where TDbConnection : DbConnection
 	{
+	  private readonly Lazy<IDataModelQueryBuilder<TDataModel, TIdentityKey, TDbConnection>> _queryBuilder; 
 		private readonly IDataModelBinder<TDataModel, TIdentityKey, TDbConnection> _binder;
 		private readonly IMapping<TDataModel> _mapping;
 
@@ -21,78 +26,20 @@ namespace FlitBit.Data.DataModel
 			Contract.Requires<ArgumentException>(mapping.HasBinder);
 			_mapping = mapping;
 			_binder = (IDataModelBinder<TDataModel, TIdentityKey, TDbConnection>) mapping.GetBinder();
+      _queryBuilder = new Lazy<IDataModelQueryBuilder<TDataModel, TIdentityKey, TDbConnection>>(() => new DataModelQueryBuilder<TDataModel, TIdentityKey, TDbConnection>(this, Writer), LazyThreadSafetyMode.ExecutionAndPublication);
 		}
 
 		public IDataModelBinder<TDataModel, TIdentityKey, TDbConnection> Binder { get { return _binder; } }
 
-		public IDataModelQueryCommand<TDataModel, TDbConnection, TParam> Where<TParam>(string queryKey,
-			Expression<Func<TDataModel, TParam, bool>> predicate)
-		{
-			return _binder.MakeQueryCommand<TParam>(queryKey).Where(predicate);
-		}
+    public IDataModelWriter<TDataModel> Writer { get { return Binder.Writer; } }
 
-		public IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1> Where<TParam, TParam1>(string queryKey,
-			Expression<Func<TDataModel, TParam, TParam1, bool>> predicate)
-		{
-			return _binder.MakeQueryCommand<TParam, TParam1>(queryKey).Where(predicate);
-		}
-
-		public IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2> Where<TParam, TParam1, TParam2>(
-			string queryKey, Expression<Func<TDataModel, TParam, TParam1, TParam2, bool>> predicate)
-		{
-			return Binder.MakeQueryCommand<TParam, TParam1, TParam2>(queryKey).Where(predicate);
-		}
-
-		public IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3> Where<TParam, TParam1, TParam2, TParam3>(string queryKey,
-				Expression<Func<TDataModel, TParam, TParam1, TParam2, TParam3, bool>> predicate)
-		{
-			return Binder.MakeQueryCommand<TParam, TParam1, TParam2, TParam3>(queryKey).Where(predicate);
-		}
-
-		public IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4> Where<TParam, TParam1, TParam2, TParam3, TParam4>(string queryKey,
-				Expression<Func<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, bool>> predicate)
-		{
-			return Binder.MakeQueryCommand<TParam, TParam1, TParam2, TParam3, TParam4>(queryKey).Where(predicate);
-		}
-
-		public IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5> Where<TParam, TParam1, TParam2, TParam3, TParam4, TParam5>(string queryKey,
-				Expression<Func<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, bool>> predicate)
-		{
-			return Binder.MakeQueryCommand<TParam, TParam1, TParam2, TParam3, TParam4, TParam5>(queryKey).Where(predicate);
-		}
-
-		public IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6> Where<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6>(string queryKey,
-				Expression<Func<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, bool>> predicate)
-		{
-			return
-				Binder.MakeQueryCommand<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6>(queryKey).Where(predicate);
-		}
-
-		public IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7> Where<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7>(string queryKey,
-				Expression<Func<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, bool>> predicate)
-		{
-			return
-				Binder.MakeQueryCommand<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7>(queryKey)
-					.Where(predicate);
-		}
-
-		public IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8> Where<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8>(string queryKey,
-				Expression<Func<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, bool>>
-					predicate)
-		{
-			return
-				Binder.MakeQueryCommand<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8>(queryKey)
-					.Where(predicate);
-		}
-
-		public IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9> Where<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>(string queryKey,
-				Expression<Func<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9, bool>>
-					predicate)
-		{
-			return
-				Binder.MakeQueryCommand<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>(
-					queryKey).Where(predicate);
-		}
+	  public IDataModelQueryBuilder<TDataModel, TIdentityKey, TDbConnection> QueryBuilder
+	  {
+	    get
+	    {
+	      return _queryBuilder.Value;
+	    }
+	  }
 
 		public TDataModel ExecuteSingle<TParam>(
 			IDataModelQuerySingleCommand<TDataModel, TDbConnection, TParam> cmd,
@@ -420,11 +367,10 @@ namespace FlitBit.Data.DataModel
 			throw new NotImplementedException();
 		}
 
-
-    public IDataModelJoinCommandBuilder<TDataModel, TDbConnection, TJoin> Join<TJoin>(string queryKey)
-    {
-      return
-        Binder.MakeJoinCommand<TJoin>(queryKey);
-    }
-  }
+	  public virtual object ConstructQueryCommand(Guid key, DataModelSqlExpression<TDataModel> sql)
+	  {
+	    return Binder.ConstructQueryCommand(this, key, sql, Writer);
+      
+	  }
+	}
 }

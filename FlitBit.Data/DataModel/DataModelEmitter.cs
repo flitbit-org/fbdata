@@ -1030,6 +1030,7 @@ namespace FlitBit.Data.DataModel
 				const int parameterOffset = 3;
 				var commandType = default(Type);
 				var repositoryType = typeof(IDataModelRepository<,,>).MakeGenericType(referencedType, referencedIdentityKeyType, referencedDbConnectionType);
+        var queryBuilderType = typeof(IDataModelQueryBuilder<,,>).MakeGenericType(referencedType, referencedIdentityKeyType, referencedDbConnectionType);
 				switch (paramTypes.Length)
 				{
 					case 4: commandType = typeof(IDataModelQueryCommand<,,>).MakeGenericType(referencedType, referencedDbConnectionType, paramTypes[parameterOffset]); break;
@@ -1053,7 +1054,7 @@ namespace FlitBit.Data.DataModel
 					// Build the Expression tree representing the join, and rely on the referent's repository to build a suitable command...
 					//
 					//   var repository = (IDataModelRepository<TReferent, TReferentIdentitKey, TDbConnection>) DataModel<TReferent>.GetRepository<TReferentIdentitKey>();
-					//   return repository.Where<TParam>("<TReferent_ReferencedProperty[0]>", (model, param) => model.<LocalJoinProperty[0]> == param);
+					//   return repository.QueryBuilder.Where<TParam>((model, param) => model.<LocalJoinProperty[0]> == param);
 					//
 
 					var repo = il.DeclareLocal(repositoryType);
@@ -1066,7 +1067,7 @@ namespace FlitBit.Data.DataModel
 					var selfExpr = il.DeclareLocal<ParameterExpression>();
 
 					il.LoadLocal(repo);
-					il.LoadValue(String.Concat(rec.Collection.ReferencedType.Name, "_", rec.Source.Name));
+					il.CallVirtual(repositoryType.GetProperty("QueryBuilder").GetGetMethod());
 
 					il.LoadToken(typeof (TDataModel));
 					il.Call<Type>("GetTypeFromHandle", BindingFlags.Static | BindingFlags.Public, typeof(RuntimeTypeHandle));
@@ -1133,7 +1134,7 @@ namespace FlitBit.Data.DataModel
 						case 1:
 							funType = typeof(Func<,,>).MakeGenericType(referencedType, exprParams[0].Item2, typeof(bool));
 							exprType = typeof(Expression<>).MakeGenericType(funType);
-							whereMethod = repositoryType.MatchGenericMethod("Where", 1, commandType, typeof(String), exprType)
+              whereMethod = queryBuilderType.MatchGenericMethod("Where", 1, commandType, exprType)
 								.MakeGenericMethod(exprParams[0].Item2);
 							break;
 					}

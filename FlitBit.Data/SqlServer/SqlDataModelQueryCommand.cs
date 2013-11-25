@@ -40,7 +40,10 @@ namespace FlitBit.Data.SqlServer
 			var page = behavior.Page - 1;
 			var res = new List<TDataModel>();
 			var totalRows = 0;
-			cn.EnsureConnectionIsOpen();
+      if (cn.State != ConnectionState.Open)
+      {
+        cn.Open();
+      }
 			var query = (limited) ? PagingQuery : AllQuery;
 
 			using (var cmd = cn.CreateCommand(query.Text, query.CommandType))

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data.SqlClient;
 using System.Text;
 using FlitBit.Data.DataModel;
+using FlitBit.Data.Expressions;
 using FlitBit.Data.Meta;
 using FlitBit.Data.SPI;
 
@@ -25,9 +26,15 @@ namespace FlitBit.Data.SqlServer
     /// <param name="strategy"></param>
     public DynamicHybridInheritanceTreeBinder(IMapping<TModel> mapping, MappingStrategy strategy)
       : base(mapping, strategy)
-    {}
+    {
+    }
 
     public override void BuildDdlBatch(StringBuilder batch, IList<Type> members)
+    {
+      throw new NotImplementedException();
+    }
+
+    public override object ConstructQueryCommand(DataModelRepository<TModel, TIdentityKey, SqlConnection> repo, Guid key, DataModelSqlExpression<TModel> sql, IDataModelWriter<TModel> writer)
     {
       throw new NotImplementedException();
     }

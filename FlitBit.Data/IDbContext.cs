@@ -46,11 +46,11 @@ namespace FlitBit.Data
 		DbConnection NewConnection(string connection);
 
 		TConnection NewConnection<TConnection>(string connectionName)
-			where TConnection : DbConnection, new();
+			where TConnection : DbConnection;
 
 		DbConnection SharedOrNewConnection(string connectionName);
 
 		TConnection SharedOrNewConnection<TConnection>(string connectionName)
-			where TConnection : DbConnection, new();
+			where TConnection : DbConnection;
 	}
 }

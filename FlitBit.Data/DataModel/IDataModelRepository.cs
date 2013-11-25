@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Data.Common;
 using System.Linq.Expressions;
+using FlitBit.Data.Expressions;
 
 namespace FlitBit.Data.DataModel
 {
@@ -12,6 +13,7 @@ namespace FlitBit.Data.DataModel
 	public interface IDataModelRepository<TDataModel, TIdentityKey> :
 		IDataRepository<TDataModel, TIdentityKey>
 	{
+    IDataModelWriter<TDataModel> Writer { get; }
 	}
 
   /// <summary>
@@ -28,95 +30,10 @@ namespace FlitBit.Data.DataModel
 		/// </summary>
 		IDataModelBinder<TDataModel, TIdentityKey, TDbConnection> Binder { get; }
 
-		/// <summary>
-		/// Creates a query command for the criteria specified.
-		/// </summary>
-		/// <param name="queryKey"></param>
-		/// <param name="predicate">a predicate expression</param>
-		/// <returns></returns>
-		IDataModelQueryCommand<TDataModel, TDbConnection, TParam> Where<TParam>(string queryKey,
-			Expression<Func<TDataModel, TParam, bool>> predicate);
-
-		/// <summary>
-		/// Creates a query command for the criteria specified.
-		/// </summary>
-		/// <param name="queryKey"></param>
-		/// <param name="predicate">a predicate expression</param>
-		/// <returns></returns>
-		IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1> Where<TParam, TParam1>(string queryKey,
-			Expression<Func<TDataModel, TParam, TParam1, bool>> predicate);
-
-		/// <summary>
-		/// Creates a query command for the criteria specified.
-		/// </summary>
-		/// <param name="queryKey"></param>
-		/// <param name="predicate">a predicate expression</param>
-		/// <returns></returns>
-		IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2> Where<TParam, TParam1, TParam2>(string queryKey,
-			Expression<Func<TDataModel, TParam, TParam1, TParam2, bool>> predicate);
-
-		/// <summary>
-		/// Creates a query command for the criteria specified.
-		/// </summary>
-		/// <param name="queryKey"></param>
-		/// <param name="predicate">a predicate expression</param>
-		/// <returns></returns>
-		IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3> Where<TParam, TParam1, TParam2, TParam3>(string queryKey,
-			Expression<Func<TDataModel, TParam, TParam1, TParam2, TParam3, bool>> predicate);
-
-		/// <summary>
-		/// Creates a query command for the criteria specified.
-		/// </summary>
-		/// <param name="queryKey"></param>
-		/// <param name="predicate">a predicate expression</param>
-		/// <returns></returns>
-		IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4> Where<TParam, TParam1, TParam2, TParam3, TParam4>(string queryKey,
-			Expression<Func<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, bool>> predicate);
-
-		/// <summary>
-		/// Creates a query command for the criteria specified.
-		/// </summary>
-		/// <param name="queryKey"></param>
-		/// <param name="predicate">a predicate expression</param>
-		/// <returns></returns>
-		IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5> Where<TParam, TParam1, TParam2, TParam3, TParam4, TParam5>(string queryKey,
-			Expression<Func<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, bool>> predicate);
-
-		/// <summary>
-		/// Creates a query command for the criteria specified.
-		/// </summary>
-		/// <param name="queryKey"></param>
-		/// <param name="predicate">a predicate expression</param>
-		/// <returns></returns>
-		IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6> Where<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6>(string queryKey,
-			Expression<Func<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, bool>> predicate);
-
-		/// <summary>
-		/// Creates a query command for the criteria specified.
-		/// </summary>
-		/// <param name="queryKey"></param>
-		/// <param name="predicate">a predicate expression</param>
-		/// <returns></returns>
-		IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7> Where<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7>(string queryKey,
-			Expression<Func<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, bool>> predicate);
-
-		/// <summary>
-		/// Creates a query command for the criteria specified.
-		/// </summary>
-		/// <param name="queryKey"></param>
-		/// <param name="predicate">a predicate expression</param>
-		/// <returns></returns>
-		IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8> Where<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8>(string queryKey,
-			Expression<Func<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, bool>> predicate);
-
-		/// <summary>
-		/// Creates a query command for the criteria specified.
-		/// </summary>
-		/// <param name="queryKey"></param>
-		/// <param name="predicate">a predicate expression</param>
-		/// <returns></returns>
-		IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9> Where<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>(string queryKey,
-			Expression<Func<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9, bool>> predicate);
+    /// <summary>
+    /// Gets the repository's query builder.
+    /// </summary>
+    IDataModelQueryBuilder<TDataModel, TIdentityKey, TDbConnection> QueryBuilder { get; }
 
 		/// <summary>
 		/// Executes the external command, binding the specified parameters, and returning a single data model instance.
@@ -546,6 +463,12 @@ namespace FlitBit.Data.DataModel
 		IDataModelQueryResult<TDataModel> ExecuteMany<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>(IDataModelQueryManyCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9> cmd,
 			IDbContext cx, QueryBehavior behavior, TParam param, TParam1 param1, TParam2 param2, TParam3 param3, TParam4 param4, TParam5 param5, TParam6 param6, TParam7 param7, TParam8 param8, TParam9 param9);
 
-    IDataModelJoinCommandBuilder<TDataModel, TDbConnection, TJoin> Join<TJoin>(string queryKey);
-	}
+    /// <summary>
+    /// Callback used by the framework to generate query commands from query builder expressions.
+    /// </summary>
+    /// <param name="key">the query's key</param>
+    /// <param name="sql"></param>
+    /// <returns></returns>
+    object ConstructQueryCommand(Guid key, DataModelSqlExpression<TDataModel> sql);
+  }
 }

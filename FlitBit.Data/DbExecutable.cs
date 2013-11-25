@@ -19,7 +19,7 @@ namespace FlitBit.Data
 	public partial class DbExecutable<THelper, TConnection, TCommand, TDbDataReader, TDataBinder>
 		: Disposable, IDbExecutable
 		where THelper : DbProviderHelper, new()
-		where TConnection : DbConnection, new()
+		where TConnection : DbConnection
 		where TCommand : DbCommand, new()
 		where TDbDataReader : DbDataReader
 		where TDataBinder : class, IDataParameterBinder, new()

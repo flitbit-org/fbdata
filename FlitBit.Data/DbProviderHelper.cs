@@ -352,47 +352,5 @@ WHERE TABLE_CATALOG = '{0}'
 		{
 			throw new NotImplementedException();	
 		}
-
-		public virtual string TranslateComparison(ExpressionType exprType, ValueReference left, ValueReference right)
-		{
-			
-			switch (exprType)
-			{
-				case ExpressionType.Equal:
-					if (left.Kind == ValueReferenceKind.Null)
-					{
-						if (right.Kind == ValueReferenceKind.Null)
-						{
-							return "1 = 1"; // dumb, but writer expects a condition and writing such an expression is likewise.
-						}
-						return String.Concat(right.Value, " IS NULL");
-					}
-					return right.Kind == ValueReferenceKind.Null 
-						? String.Concat(left.Value, " IS NULL") 
-						: String.Concat(left.Value, " = ", right.Value);
-				case ExpressionType.GreaterThan:
-					return String.Concat(left.Value, " > ", right.Value);
-				case ExpressionType.GreaterThanOrEqual:
-					return String.Concat(left.Value, " >= ", right.Value);
-				case ExpressionType.LessThan:
-					return String.Concat(left.Value, " < ", right.Value);
-				case ExpressionType.LessThanOrEqual:
-					return String.Concat(left.Value, " <= ", right.Value);
-				case ExpressionType.NotEqual:
-					if (left.Kind == ValueReferenceKind.Null)
-					{
-						if (right.Kind == ValueReferenceKind.Null)
-						{
-							return "0 = 1"; // dumb, but writer expects a condition and writing such an expression is likewise.
-						}
-						return String.Concat(right.Value, " IS NOT NULL");
-					}
-					return right.Kind == ValueReferenceKind.Null 
-						? String.Concat(left.Value, " IS NOT NULL") 
-						: String.Concat(left.Value, " <> ", right.Value);
-				}
-			throw new ArgumentOutOfRangeException("exprType");
-
-		}
 	}
 }

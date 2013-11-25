@@ -4,283 +4,270 @@ using System.Data;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Linq;
-using System.Transactions;
 using FlitBit.Core;
 using FlitBit.Data.DataModel;
 using FlitBit.Data.Expressions;
 using FlitBit.Data.Meta;
-using FlitBit.Data.Meta.DDL;
-using Microsoft.CSharp.RuntimeBinder;
 
 namespace FlitBit.Data.SqlServer
 {
-	public class DataModelSqlWriter<TDataModel>
-	{
-		public static readonly string DefaultSelfName = "self";
-		public static readonly string DefaultIndent = "  ";
+  public class DataModelSqlWriter<TDataModel> : IDataModelWriter<TDataModel>
+  {
+    public static readonly string DefaultSelfName = "self";
+    public static readonly string DefaultIndent = "  ";
 
-		[DebuggerBrowsable(DebuggerBrowsableState.Never)] private readonly int _bufferLength;
-		[DebuggerBrowsable(DebuggerBrowsableState.Never)] private readonly bool _hasTimestamp;
-		[DebuggerBrowsable(DebuggerBrowsableState.Never)] private readonly ColumnMapping _idCol;
-		[DebuggerBrowsable(DebuggerBrowsableState.Never)] private readonly string _indent;
-		[DebuggerBrowsable(DebuggerBrowsableState.Never)] private readonly IMapping<TDataModel> _mapping =
-			DataModel<TDataModel>.Mapping;
-		[DebuggerBrowsable(DebuggerBrowsableState.Never)] private readonly string _selfRef;
-		[DebuggerBrowsable(DebuggerBrowsableState.Never)] private bool _hasSyntheticId;
-		[DebuggerBrowsable(DebuggerBrowsableState.Never)] private readonly bool _hasTimestampOnUpdate;
-		[DebuggerBrowsable(DebuggerBrowsableState.Never)] private OrderBy _primaryKeyOrder;
-		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
-		private Tuple<int, string[]> _quotedColumnNames;
-		[DebuggerBrowsable(DebuggerBrowsableState.Never)]
-		private Tuple<int, int[]> _columnOffsets;
-		[DebuggerBrowsable(DebuggerBrowsableState.Never)]private readonly string _dbObjectReference;
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)] private readonly int _bufferLength;
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)] private readonly string _dbObjectReference;
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)] private readonly bool _hasTimestamp;
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)] private readonly bool _hasTimestampOnUpdate;
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)] private readonly ColumnMapping _idCol;
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)] private readonly string _indent;
 
-		public DataModelSqlWriter()
-			: this(DefaultSelfName, DefaultIndent)
-		{
-		}
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)] private readonly IMapping<TDataModel> _mapping =
+      DataModel<TDataModel>.Mapping;
 
-		public DataModelSqlWriter(string selfName, string indent)
-		{
-			Contract.Requires<ArgumentNullException>(selfName != null);
-			Contract.Requires<ArgumentException>(selfName.Length > 0);
-			Contract.Requires<ArgumentNullException>(indent != null);
-			_selfRef = Mapping.QuoteObjectName(selfName);
-			_dbObjectReference = Mapping.DbObjectReference;
-			_indent = indent;
-			_bufferLength = _mapping.Columns.Count()*40;
-			_idCol = _mapping.Identity.Columns[0].Column;
-			_hasTimestamp = _mapping.Columns.Any(c => c.IsTimestampOnInsert || c.IsTimestampOnUpdate);
-			_hasTimestampOnUpdate = _mapping.Columns.Any(c => c.IsTimestampOnUpdate);
-			_hasSyntheticId = _mapping.Columns.Any(c => c.IsSynthetic);
-		}
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)] private readonly string _selfRef;
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)] private Tuple<int, int[]> _columnOffsets;
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)] private bool _hasSyntheticId;
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)] private OrderBy _primaryKeyOrder;
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)] private Tuple<int, string[]> _quotedColumnNames;
 
-		public IMapping<TDataModel> Mapping
-		{
-			get { return _mapping; }
-		}
+    public DataModelSqlWriter()
+      : this(DefaultSelfName, DefaultIndent)
+    {
+    }
 
-		public string SelfRef
-		{
-			get { return _selfRef; }
-		}
+    public DataModelSqlWriter(string selfName, string indent)
+    {
+      Contract.Requires<ArgumentNullException>(selfName != null);
+      Contract.Requires<ArgumentException>(selfName.Length > 0);
+      Contract.Requires<ArgumentNullException>(indent != null);
+      SelfName = selfName;
+      _selfRef = Mapping.QuoteObjectName(selfName);
+      _dbObjectReference = Mapping.DbObjectReference;
+      _indent = indent;
+      _bufferLength = _mapping.Columns.Count()*40;
+      _idCol = _mapping.Identity.Columns[0].Column;
+      _hasTimestamp = _mapping.Columns.Any(c => c.IsTimestampOnInsert || c.IsTimestampOnUpdate);
+      _hasTimestampOnUpdate = _mapping.Columns.Any(c => c.IsTimestampOnUpdate);
+      _hasSyntheticId = _mapping.Columns.Any(c => c.IsSynthetic);
+    }
 
-		public int[] ColumnOffsets
-		{
-			get
-			{
-				IMapping<TDataModel> m = Mapping;
-				if (_columnOffsets == null || _columnOffsets.Item1 < m.Revision)
-				{
-					var helper = m.GetDbProviderHelper();
-					_columnOffsets = Tuple.Create(m.Revision,
-						Enumerable.Range(0, m.Columns.Count()).ToArray()
-						);
-				}
-				return _columnOffsets.Item2;
-			}
-		}
+    public IMapping<TDataModel> Mapping
+    {
+      get { return _mapping; }
+    }
 
-		public string[] QuotedColumnNames
-		{
-			get
-			{
-				IMapping<TDataModel> m = Mapping;
-				if (_quotedColumnNames == null || _quotedColumnNames.Item1 < m.Revision)
-				{
-					var helper = m.GetDbProviderHelper();
-					_quotedColumnNames = Tuple.Create(m.Revision,
-						m.Columns
-							.OrderBy(c => c.Ordinal)
-							.Select(c => helper.QuoteObjectName(c.TargetName)).ToArray()
-						);
-				}
-				return _quotedColumnNames.Item2;
-			}
-		}
+    public DynamicSql SelectInPrimaryKeyOrder
+    {
+      get
+      {
+        SqlWriter writer = new SqlWriter(_bufferLength, Environment.NewLine, _indent)
+          .Append(Select.Text)
+          .NewLine();
+        PrimaryKeyOrder.WriteOrderBy(Mapping, writer, _selfRef, false);
+        return new DynamicSql(writer.ToString(), CommandType.Text,
+          CommandBehavior.SingleResult | CommandBehavior.SequentialAccess);
+      }
+    }
 
-		public DynamicSql Select
-		{
-			get
-			{
-				IMapping<TDataModel> mapping = Mapping;
-				var helper = mapping.GetDbProviderHelper();
-				var writer = new SqlWriter(_bufferLength, Environment.NewLine, _indent);
-				writer.Append("SELECT ");
-				AppendColumns(writer, mapping.Columns.OrderBy(c => c.Ordinal),
-					c => String.Concat(_selfRef, ".", helper.QuoteObjectName(c.TargetName)));
-				writer.Outdent().NewLine()
-					.Append("FROM ").Append(_dbObjectReference)
-					.Append(" AS ").Append(_selfRef);
+    public DynamicSql SelectInPrimaryKeyOrderWithPaging
+    {
+      get { return WriteSelectWithPaging(null, null); }
+    }
 
-				return new DynamicSql(writer.ToString(), CommandType.Text,
-					CommandBehavior.SingleResult | CommandBehavior.SequentialAccess);
-			}
-		}
+    public OrderBy PrimaryKeyOrder
+    {
+      get
+      {
+        return Util.NonBlockingLazyInitializeVolatile(ref _primaryKeyOrder, () =>
+        {
+          var res = new OrderBy();
+          foreach (MappedSortColumn id in Mapping.Identity.Columns)
+          {
+            res.Add(id.Column, id.Kind);
+          }
+          return res;
+        });
+      }
+    }
 
-		public DynamicSql SelectInPrimaryKeyOrder
-		{
-			get
-			{
-				SqlWriter writer = new SqlWriter(_bufferLength, Environment.NewLine, _indent)
-					.Append(Select.Text)
-					.NewLine();
-				PrimaryKeyOrder.WriteOrderBy(Mapping, writer, _selfRef, false);
-				return new DynamicSql(writer.ToString(), CommandType.Text,
-					CommandBehavior.SingleResult | CommandBehavior.SequentialAccess);
-			}
-		}
+    public DynamicSql DynamicInsertStatement
+    {
+      get
+      {
+        Contract.Ensures(Contract.Result<DynamicSql>() != null);
+        IMapping<TDataModel> mapping = Mapping;
+        DbProviderHelper helper = mapping.GetDbProviderHelper();
+        string idStr = helper.FormatParameterName("@identity");
+        var res = new DynamicSql(null, CommandType.Text, CommandBehavior.SingleResult | CommandBehavior.SequentialAccess)
+        {
+          SyntheticIdentityVar = idStr
+        };
+        var writer = new SqlWriter(_bufferLength, Environment.NewLine, _indent);
+        if (_hasTimestamp)
+        {
+          res.CalculatedTimestampVar = "@generated_timestamp";
+          writer.NewLine("DECLARE @generated_timestamp DATETIME2 = GETUTCDATE()");
+        }
+        writer.NewLine();
+        _idCol.Emitter.DeclareScriptVariable(writer, _idCol, helper, idStr);
+        writer.NewLine();
+        writer.NewLine("INSERT INTO ").Append(_dbObjectReference).Append(" (").Indent();
+        writer.NewLine("{0}");
+        writer.Outdent().NewLine(")").NewLine("VALUES (").Indent();
+        writer.NewLine("{1}");
+        writer.Outdent().NewLine(")")
+          .NewLine("SET ").Append(idStr).Append(" = SCOPE_IDENTITY()")
+          .NewLine(Select.Text)
+          .NewLine("WHERE ")
+          .Append(_selfRef)
+          .Append(".")
+          .Append(helper.QuoteObjectName(_idCol.TargetName))
+          .Append(" = ")
+          .Append(idStr);
+        res.Text = writer.ToString();
+        return res;
+      }
+    }
 
-		public DynamicSql SelectInPrimaryKeyOrderWithPaging
-		{
-			get { return WriteSelectWithPaging(default(Constraints), null); }
-		}
+    public DynamicSql DynamicUpdateStatement
+    {
+      get
+      {
+        Contract.Ensures(Contract.Result<DynamicSql>() != null);
 
-		public OrderBy PrimaryKeyOrder
-		{
-			get
-			{
-				return Util.NonBlockingLazyInitializeVolatile(ref _primaryKeyOrder, () =>
-				{
-					var res = new OrderBy();
-					foreach (MappedSortColumn id in Mapping.Identity.Columns)
-					{
-						res.Add(id.Column, id.Kind);
-					}
-					return res;
-				});
-			}
-		}
+        DbProviderHelper helper = Mapping.GetDbProviderHelper();
+        string idStr = helper.FormatParameterName(_idCol.DbTypeDetails.BindingName);
+        var res = new DynamicSql(null, CommandType.Text, CommandBehavior.SingleResult | CommandBehavior.SequentialAccess)
+        {
+          BindIdentityParameter = idStr
+        };
+        var writer = new SqlWriter(_bufferLength, Environment.NewLine, _indent);
+        if (_hasTimestampOnUpdate)
+        {
+          res.CalculatedTimestampVar = "@generated_timestamp";
+          writer.NewLine("DECLARE @generated_timestamp DATETIME2 = GETUTCDATE()");
+        }
+        writer.NewLine();
+        writer.NewLine("UPDATE ").Append(_dbObjectReference).Indent()
+          .NewLine("SET {0}");
+        writer
+          .NewLine("WHERE ").Append(helper.QuoteObjectName(_idCol.TargetName)).Append(" = ").Append(idStr)
+          .NewLine().Outdent()
+          .NewLine(Select.Text)
+          .NewLine("WHERE ")
+          .Append(_selfRef)
+          .Append(".")
+          .Append(helper.QuoteObjectName(_idCol.TargetName))
+          .Append(" = ")
+          .Append(idStr);
+        res.Text = writer.ToString();
+        return res;
+      }
+    }
 
-		public DynamicSql DynamicInsertStatement
-		{
-			get
-			{
-				Contract.Ensures(Contract.Result<DynamicSql>() != null);
-				var mapping = Mapping;
-				var helper = mapping.GetDbProviderHelper();
-				var idStr = helper.FormatParameterName("@identity");
-				var res = new DynamicSql(null, CommandType.Text, CommandBehavior.SingleResult | CommandBehavior.SequentialAccess) {SyntheticIdentityVar = idStr};
-				var writer = new SqlWriter(_bufferLength, Environment.NewLine, _indent);
-				if (_hasTimestamp)
-				{
-					res.CalculatedTimestampVar = "@generated_timestamp";
-					writer.NewLine("DECLARE @generated_timestamp DATETIME2 = GETUTCDATE()");
-				}
-				writer.NewLine();
-				_idCol.Emitter.DeclareScriptVariable(writer, _idCol, helper, idStr);
-				writer.NewLine();
-				writer.NewLine("INSERT INTO ").Append(_dbObjectReference).Append(" (").Indent();
-				writer.NewLine("{0}");
-				writer.Outdent().NewLine(")").NewLine("VALUES (").Indent();
-				writer.NewLine("{1}");
-				writer.Outdent().NewLine(")")
-					.NewLine("SET ").Append(idStr).Append(" = SCOPE_IDENTITY()")
-					.NewLine(Select.Text)
-					.NewLine("WHERE ").Append(_selfRef).Append(".").Append(helper.QuoteObjectName(_idCol.TargetName)).Append(" = ").Append(idStr);
-				res.Text = writer.ToString();
-				return res;
-			}
-		}
+    public DynamicSql SelectByPrimaryKey
+    {
+      get
+      {
+        DbProviderHelper helper = Mapping.GetDbProviderHelper();
+        string idStr = helper.FormatParameterName(_idCol.DbTypeDetails.BindingName);
+        var res = new DynamicSql(null, CommandType.Text, CommandBehavior.SingleResult | CommandBehavior.SequentialAccess)
+        {
+          BindIdentityParameter = idStr
+        };
+        SqlWriter writer = new SqlWriter(_bufferLength, Environment.NewLine, _indent)
+          .Append(Select.Text)
+          .NewLine("WHERE ").Append(helper.QuoteObjectName(_idCol.TargetName)).Append(" = ").Append(idStr);
+        res.Text = writer.ToString();
+        return res;
+      }
+    }
 
-		public DynamicSql DynamicUpdateStatement
-		{
-			get
-			{
-				Contract.Ensures(Contract.Result<DynamicSql>() != null);
-				
-				var helper = Mapping.GetDbProviderHelper();
-				var idStr = helper.FormatParameterName(_idCol.DbTypeDetails.BindingName);
-				var res = new DynamicSql(null, CommandType.Text, CommandBehavior.SingleResult | CommandBehavior.SequentialAccess) { BindIdentityParameter = idStr };
-				var writer = new SqlWriter(_bufferLength, Environment.NewLine, _indent);
-				if (_hasTimestampOnUpdate)
-				{
-					res.CalculatedTimestampVar = "@generated_timestamp";
-					writer.NewLine("DECLARE @generated_timestamp DATETIME2 = GETUTCDATE()");
-				}
-				writer.NewLine();
-				writer.NewLine("UPDATE ").Append(_dbObjectReference).Indent()
-					.NewLine("SET {0}");
-				writer
-					.NewLine("WHERE ").Append(helper.QuoteObjectName(_idCol.TargetName)).Append(" = ").Append(idStr)
-					.NewLine().Outdent()
-					.NewLine(Select.Text)
-					.NewLine("WHERE ").Append(_selfRef).Append(".").Append(helper.QuoteObjectName(_idCol.TargetName)).Append(" = ").Append(idStr);
-				res.Text = writer.ToString();
-				return res;
-			}
-		}
+    public DynamicSql DeleteByPrimaryKey
+    {
+      get
+      {
+        DbProviderHelper helper = Mapping.GetDbProviderHelper();
+        string idStr = helper.FormatParameterName(_idCol.DbTypeDetails.BindingName);
+        var res = new DynamicSql(null, CommandType.Text, CommandBehavior.SingleResult | CommandBehavior.SequentialAccess)
+        {
+          BindIdentityParameter = idStr
+        };
+        SqlWriter writer = new SqlWriter(_bufferLength, Environment.NewLine, _indent)
+          .Append("DELETE FROM ").Append(Mapping.DbObjectReference)
+          .NewLine("WHERE ").Append(helper.QuoteObjectName(_idCol.TargetName)).Append(" = ").Append(idStr);
+        res.Text = writer.ToString();
+        return res;
+      }
+    }
 
-		public DynamicSql WriteUpdate(Constraints cns)
-		{
-			Contract.Ensures(Contract.Result<DynamicSql>() != null);
+    public string SelfRef
+    {
+      get { return _selfRef; }
+    }
 
-			var helper = Mapping.GetDbProviderHelper();
-			var idStr = helper.FormatParameterName(_idCol.DbTypeDetails.BindingName);
-			var res = new DynamicSql(null, CommandType.Text, CommandBehavior.SingleResult | CommandBehavior.SequentialAccess) { BindIdentityParameter = idStr };
-			var writer = new SqlWriter(_bufferLength, Environment.NewLine, _indent);
-			if (_hasTimestampOnUpdate)
-			{
-				res.CalculatedTimestampVar = "@generated_timestamp";
-				writer.NewLine("DECLARE @generated_timestamp DATETIME2 = GETUTCDATE()");
-			}
-			writer.NewLine();
-			writer.NewLine("UPDATE ").Append(_dbObjectReference).Indent()
-				.NewLine("SET {0}");
-			writer
-				.NewLine("WHERE ").Append(helper.QuoteObjectName(_idCol.TargetName)).Append(" = ").Append(idStr);
-			res.Text = writer.ToString();
-			return res;
-		}
+    public int[] ColumnOffsets
+    {
+      get
+      {
+        IMapping<TDataModel> m = Mapping;
+        if (_columnOffsets == null || _columnOffsets.Item1 < m.Revision)
+        {
+          DbProviderHelper helper = m.GetDbProviderHelper();
+          _columnOffsets = Tuple.Create(m.Revision,
+            Enumerable.Range(0, m.Columns.Count()).ToArray()
+            );
+        }
+        return _columnOffsets.Item2;
+      }
+    }
 
-		public DynamicSql WriteDeleteWhere(Constraints cns)
-		{
-			Contract.Ensures(Contract.Result<DynamicSql>() != null);
+    public string[] QuotedColumnNames
+    {
+      get
+      {
+        IMapping<TDataModel> m = Mapping;
+        if (_quotedColumnNames == null || _quotedColumnNames.Item1 < m.Revision)
+        {
+          DbProviderHelper helper = m.GetDbProviderHelper();
+          _quotedColumnNames = Tuple.Create(m.Revision,
+            m.Columns
+              .OrderBy(c => c.Ordinal)
+              .Select(c => helper.QuoteObjectName(c.TargetName)).ToArray()
+            );
+        }
+        return _quotedColumnNames.Item2;
+      }
+    }
 
-			var res = new DynamicSql();
-			var writer = new SqlWriter(_bufferLength, Environment.NewLine, _indent);
-			writer.NewLine("DELETE ");
-			PrepareFromAndWhereStatement(_selfRef, cns, writer);
-			res.Text = writer.ToString();
-			return res;
-		}
+    public DynamicSql Select
+    {
+      get
+      {
+        IMapping<TDataModel> mapping = Mapping;
+        DbProviderHelper helper = mapping.GetDbProviderHelper();
+        var writer = new SqlWriter(_bufferLength, Environment.NewLine, _indent);
+        writer.Append("SELECT ");
+        AppendColumns(writer, mapping.Columns.OrderBy(c => c.Ordinal),
+          c => String.Concat(_selfRef, ".", helper.QuoteObjectName(c.TargetName)));
+        writer.Outdent().NewLine()
+          .Append("FROM ").Append(_dbObjectReference)
+          .Append(" AS ").Append(_selfRef);
 
-		public DynamicSql SelectByPrimaryKey
-		{
-			get
-			{
-				var helper = Mapping.GetDbProviderHelper();
-				var idStr = helper.FormatParameterName(_idCol.DbTypeDetails.BindingName);
-				var res = new DynamicSql(null, CommandType.Text, CommandBehavior.SingleResult | CommandBehavior.SequentialAccess) { BindIdentityParameter = idStr };
-				var writer = new SqlWriter(_bufferLength, Environment.NewLine, _indent)
-					.Append(Select.Text)
-					.NewLine("WHERE ").Append(helper.QuoteObjectName(_idCol.TargetName)).Append(" = ").Append(idStr);
-				res.Text = writer.ToString();
-				return res;
-			}
-		}
+        return new DynamicSql(writer.ToString(), CommandType.Text,
+          CommandBehavior.SingleResult | CommandBehavior.SequentialAccess);
+      }
+    }
 
-		public DynamicSql DeleteByPrimaryKey
-		{
-			get
-			{
-				var helper = Mapping.GetDbProviderHelper();
-				var idStr = helper.FormatParameterName(_idCol.DbTypeDetails.BindingName);
-				var res = new DynamicSql(null, CommandType.Text, CommandBehavior.SingleResult | CommandBehavior.SequentialAccess) { BindIdentityParameter = idStr };
-				var writer = new SqlWriter(_bufferLength, Environment.NewLine, _indent)
-					.Append("DELETE FROM ").Append(Mapping.DbObjectReference)
-					.NewLine("WHERE ").Append(helper.QuoteObjectName(_idCol.TargetName)).Append(" = ").Append(idStr);
-				res.Text = writer.ToString();
-				return res;
-			}
-		}
-
-	  public DynamicSql WriteSelect(DataModelSqlExpression<TDataModel> sql)
-	  {
-      var writer = new SqlWriter().Append(Select.Text);
+    public DynamicSql WriteSelect(DataModelSqlExpression<TDataModel> sql)
+    {
+      SqlWriter writer = new SqlWriter().Append(Select.Text);
       sql.Write(writer);
-      return new DynamicSql(writer.Text, CommandType.Text, CommandBehavior.SingleResult | CommandBehavior.SequentialAccess);
-	  }
+      return new DynamicSql(writer.Text, CommandType.Text,
+        CommandBehavior.SingleResult | CommandBehavior.SequentialAccess);
+    }
 
     public DynamicSql WriteSelectWithPaging(DataModelSqlExpression<TDataModel> sql, OrderBy orderBy)
     {
@@ -308,8 +295,13 @@ namespace FlitBit.Data.SqlServer
         .NewLine("ROW_NUMBER() OVER(")
         .Append(inverseOrderByStatement.ToString())
         .Append(") AS rev_seq")
-        .Outdent();
-      sql.Write(writer);
+        .Outdent()
+        .NewLine()
+        .Append("FROM ").Append(_dbObjectReference).Append(" AS ").Append(_selfRef);
+      if (sql != null)
+      {
+        sql.Write(writer);
+      }
       writer.Outdent().NewLine(")")
         .NewLine(@"SELECT TOP (@pageSize) ");
       AppendColumns(writer, colList);
@@ -322,195 +314,44 @@ namespace FlitBit.Data.SqlServer
       return res;
     }
 
-		public DynamicSql WriteSelectWithPaging(Constraints cns, OrderBy orderBy)
-		{
-			IMapping<TDataModel> mapping = Mapping;
-			var helper = Mapping.GetDbProviderHelper();
-			// Default to PK order...
-			OrderBy order = orderBy ?? PrimaryKeyOrder;
+    private void AppendColumns(SqlWriter writer, IEnumerable<string> colums)
+    {
+      int i = 0;
+      foreach (string c in colums)
+      {
+        if (i++ > 0)
+        {
+          writer.Append(',').NewLine(c);
+        }
+        else
+        {
+          writer.Append(c);
+          writer.Indent();
+        }
+      }
+    }
 
-			var res = new DynamicSql(null, CommandType.Text, CommandBehavior.SingleResult | CommandBehavior.SequentialAccess);
-			res.BindLimitParameter = "@pageSize";
-			res.BindStartRowParameter = "@startRow";
+    private void AppendColumns(SqlWriter writer, IEnumerable<ColumnMapping> columns,
+      Func<ColumnMapping, string> eaColumn)
+    {
+      int i = 0;
+      foreach (string c in columns.Select(eaColumn))
+      {
+        if (i++ > 0)
+        {
+          writer.Append(',').NewLine(c);
+        }
+        else
+        {
+          writer.Append(c);
+          writer.Indent();
+        }
+      }
+    }
 
-			var writer = new SqlWriter(_bufferLength, Environment.NewLine, _indent);
-			string[] colList = QuotedColumnNames.Select(c => String.Concat(_selfRef, ".", c)).ToArray();
-
-			writer.Append("DECLARE @endRow INT = @startRow + (@pageSize - 1);")
-				.NewLine("WITH dataset AS(").Indent()
-				.NewLine("SELECT ");
-			AppendColumns(writer, colList);
-			writer.Append(",").NewLine("ROW_NUMBER() OVER(");
-			var orderByStatement = new SqlWriter();
-			var inverseOrderByStatement = new SqlWriter();
-			order.WriteOrderBy(mapping, orderByStatement, _selfRef, false);
-			order.WriteOrderBy(mapping, inverseOrderByStatement, _selfRef, true);
-			writer.Append(orderByStatement.ToString()).Append(") AS seq,")
-				.NewLine("ROW_NUMBER() OVER(")
-				.Append(inverseOrderByStatement.ToString())
-				.Append(") AS rev_seq")
-				.Outdent();
-			PrepareFromAndWhereStatement(_selfRef, cns, writer);
-			writer.Outdent().NewLine(")")
-				.NewLine(@"SELECT TOP (@pageSize) ");
-			AppendColumns(writer, colList);
-			writer.Append(",").NewLine("rev_seq + seq -1 as [RowCount]")
-				.Outdent().NewLine("FROM dataset AS [self]")
-				.NewLine("WHERE seq >= @startRow")
-				.NewLine("ORDER BY seq");
-
-			res.Text = writer.Text;
-			return res;
-		}
-
-		public string WriteSelect(Constraints cns, OrderBy orderBy)
-		{
-			return WriteSelect(_selfRef, cns, orderBy);
-		}
-
-		public string WriteSelect(string refName, Constraints cns, OrderBy orderBy)
-		{
-			IMapping<TDataModel> mapping = Mapping;
-			var writer = new SqlWriter(_bufferLength, Environment.NewLine, _indent);
-			writer.Append("SELECT ");
-			AppendColumns(writer, QuotedColumnNames.Select(c => String.Concat(refName, ".", c)));
-			writer.Outdent();
-			PrepareFromAndWhereStatement(refName, cns, writer);
-			if (orderBy != null)
-			{
-				orderBy.WriteOrderBy(mapping, writer, refName, false);
-			}
-			return writer.ToString();
-		}
-
-		private void AppendColumns(SqlWriter writer, IEnumerable<string> colums)
-		{
-			int i = 0;
-			foreach (string c in colums)
-			{
-				if (i++ > 0)
-				{
-					writer.Append(',').NewLine(c);
-				}
-				else
-				{
-					writer.Append(c);
-					writer.Indent();
-				}
-			}
-		}
-
-		private void AppendColumns(SqlWriter writer, IEnumerable<ColumnMapping> columns, Func<ColumnMapping, string> eaColumn)
-		{
-			int i = 0;
-			foreach (string c in columns.Select(eaColumn))
-			{
-				if (i++ > 0)
-				{
-					writer.Append(',').NewLine(c);
-				}
-				else
-				{
-					writer.Append(c);
-					writer.Indent();
-				}
-			}
-		}
-
-		public void PrepareFromAndWhereStatement(string refName, Constraints cns, SqlWriter writer)
-		{
-			PrepareFromAndWhereStatement(refName, true, cns, writer);
-		}
-		
-		public void PrepareFromAndWhereStatement(string refName, bool writeInitialFromClause, Constraints cns, SqlWriter writer)
-		{
-			if (writeInitialFromClause)
-			{
-				writer.NewLine("FROM ").Append(Mapping.DbObjectReference).Append(" AS ").Append(refName);
-			}
-			if (cns == null) return;
-
-			// Perform necessary joins and write join clauses...
-			if (cns.Joins != null)
-			{
-				foreach (Join join in cns.Joins)
-				{
-					var stack = new Stack<Tuple<Condition, bool>>();
-					ProcessConditionsFor(@join, cns.Conditions, stack);
-					MapJoinFrom(refName, @join, cns);
-				}
-			}
-			// Write the primary statement's conditions...
-			Condition c = cns.Conditions;
-			if (c != null && !c.IsLifted)
-			{
-				writer.NewLine().Indent().Append("WHERE ");
-				c.WriteConditions(_mapping, writer);
-				writer.Outdent();
-			}
-		}
-    
-	  private void ProcessConditionsFor(Join join, Condition condition, Stack<Tuple<Condition, bool>> path)
-		{
-			if (condition != null)
-			{
-				if (condition.IsLiftCandidateFor(join))
-				{
-					join.AddCondition(condition);
-				}
-				else
-				{
-					if (condition.Kind == ConditionKind.AndAlso)
-					{
-						ProcessConditionsFor(join, ((AndCondition) condition).Left, path);
-						ProcessConditionsFor(join, ((AndCondition) condition).Right, path);
-					}
-				}
-			}
-		}
-
-		private void MapJoinFrom(string refName, Join join, Constraints cns)
-		{
-			SqlWriter writer = cns.Writer;
-			Join jj = join;
-			var joins = new Stack<Join>();
-			while (jj != null)
-			{
-				joins.Push(jj);
-				jj = jj.Path;
-			}
-			var mapping = _mapping;
-			IMapping fromMapping = mapping;
-			string fromRef = refName;
-			foreach (Join j in joins)
-			{
-				IMapping toMapping = j.Mapping;
-			  ColumnMapping fromCol = null; //fromMapping.Columns.Single(c => c.Member == j.Member);
-				string toRef = mapping.QuoteObjectName(Convert.ToString(j.Ordinal));
-				ColumnMapping toCol = toMapping.Columns.Single(c => c.Member == fromCol.ReferenceTargetMember);
-				if (!j.IsJoined)
-				{
-					writer.Indent()
-						.NewLine().Append("JOIN ").Append(_dbObjectReference).Append(" AS ").Append(toRef)
-						.Indent()
-						.NewLine()
-						.Append("ON ")
-						.Append(toRef).Append(".").Append(mapping.QuoteObjectName(toCol.TargetName))
-						.Append(" = ")
-						.Append(fromRef).Append('.').Append(mapping.QuoteObjectName(fromCol.TargetName));
-					Condition conditions = join.Conditions;
-					if (conditions != null)
-					{
-						writer.Indent().NewLine().Append("AND ");
-						conditions.WriteConditions(mapping, writer);
-						writer.Outdent();
-					}
-					writer.Outdent().Outdent();
-					j.IsJoined = true;
-				}
-				fromMapping = toMapping;
-				fromRef = toRef;
-			}
-		}
-	}
+    public string SelfName
+    {
+      get; private set;
+    }
+  }
 }

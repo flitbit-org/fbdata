@@ -4,7 +4,9 @@ using System.Data.Common;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
+using FlitBit.Data.Expressions;
 using FlitBit.Data.Meta;
+using FlitBit.Data.SqlServer;
 
 namespace FlitBit.Data.DataModel
 {
@@ -72,58 +74,9 @@ namespace FlitBit.Data.DataModel
 		public abstract IDataModelQuerySingleCommand<TModel, TDbConnection, TModel> GetUpdateCommand();
 
 		/// <summary>
-		///   Makes a read-match command.
-		/// </summary>
-		/// <typeparam name="TCriteria">the match's type</typeparam>
-		/// <param name="queryKey">the query's key</param>
-		/// <param name="criteria">an match specification</param>
-		/// <returns></returns>
-		public abstract IDataModelCommandBuilder<TModel, TDbConnection, TCriteria> MakeQueryCommand<TCriteria>(
-			string queryKey,
-			TCriteria criteria);
-
-		/// <summary>
 		///   Initializes the binder.
 		/// </summary>
 		public abstract void Initialize();
-
-
-		public abstract IDataModelCommandBuilder<TModel, TDbConnection, TParam> MakeQueryCommand<TParam>(string queryKey);
-
-		public abstract IDataModelCommandBuilder<TModel, TDbConnection, TParam, TParam1> MakeQueryCommand<TParam, TParam1>(
-			string queryKey);
-
-		public abstract IDataModelCommandBuilder<TModel, TDbConnection, TParam, TParam1, TParam2> MakeQueryCommand
-			<TParam, TParam1, TParam2>(string queryKey);
-
-		public abstract IDataModelCommandBuilder<TModel, TDbConnection, TParam, TParam1, TParam2, TParam3> MakeQueryCommand
-			<TParam, TParam1, TParam2, TParam3>(string queryKey);
-
-		public abstract IDataModelCommandBuilder<TModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4>
-			MakeQueryCommand<TParam, TParam1, TParam2, TParam3, TParam4>(string queryKey);
-
-		public abstract IDataModelCommandBuilder<TModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5>
-			MakeQueryCommand<TParam, TParam1, TParam2, TParam3, TParam4, TParam5>(string queryKey);
-
-		public abstract
-			IDataModelCommandBuilder<TModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6>
-			MakeQueryCommand<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6>(string queryKey);
-
-		public abstract
-			IDataModelCommandBuilder
-				<TModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7> MakeQueryCommand
-			<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7>(string queryKey);
-
-		public abstract
-			IDataModelCommandBuilder
-				<TModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8>
-			MakeQueryCommand<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8>(string queryKey);
-
-		public abstract
-			IDataModelCommandBuilder
-				<TModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>
-			MakeQueryCommand<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>(
-			string queryKey);
 
 		protected virtual void AddGeneratorMethodsForLcgColumns(IMapping<TModel> mapping, StringBuilder sql)
 		{
@@ -294,6 +247,10 @@ namespace FlitBit.Data.DataModel
 
 		public abstract IDataModelRepository<TModel, TIdentityKey> MakeRepository();
 
-	  public abstract IDataModelJoinCommandBuilder<TModel, TDbConnection, TJoin> MakeJoinCommand<TJoin>(string queryKey);
-	}
+	  public abstract object ConstructQueryCommand(
+      DataModelRepository<TModel, TIdentityKey, TDbConnection> repo, Guid key, DataModelSqlExpression<TModel> sql,
+      IDataModelWriter<TModel> writer);
+
+    public abstract IDataModelWriter<TModel> Writer { get; }
+  }
 }

@@ -87,13 +87,14 @@ namespace FlitBit.Data
 		}
 
 		internal static TConnection CreateConnection<TConnection>(string connectionName)
-			where TConnection : DbConnection, new()
+			where TConnection : DbConnection
 		{
-			var connectionString = AccessProvider(connectionName)
+		  var provider = AccessProvider(connectionName);
+			var connectionString = provider
 				.ConnectionString;
-			var cn = new TConnection();
+		  var cn = provider.Provider.CreateConnection();
 			cn.ConnectionString = connectionString;
-			return cn;
+			return (TConnection)cn;
 		}
 
 		private static ProviderRecord AccessProvider(string name)
