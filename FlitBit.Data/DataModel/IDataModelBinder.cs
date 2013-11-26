@@ -1,41 +1,39 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.Common;
-using System.Linq.Expressions;
 using System.Text;
 using FlitBit.Data.Expressions;
 using FlitBit.Data.Meta;
-using FlitBit.Data.SqlServer;
 
 namespace FlitBit.Data.DataModel
 {
-	/// <summary>
-	///   Binds a model to an underlying database structure.
-	/// </summary>
-	public interface IDataModelBinder
-	{
-		/// <summary>
-		/// Gets the model's mapping (untyped).
-		/// </summary>
-		IMapping UntypedMapping { get; }
+  /// <summary>
+  ///   Binds a model to an underlying database structure.
+  /// </summary>
+  public interface IDataModelBinder
+  {
+    /// <summary>
+    ///   Gets the model's mapping (untyped).
+    /// </summary>
+    IMapping UntypedMapping { get; }
 
-		/// <summary>
-		///   Indicates the binder's mapping stretegy.
-		/// </summary>
-		MappingStrategy Strategy { get; }
+    /// <summary>
+    ///   Indicates the binder's mapping stretegy.
+    /// </summary>
+    MappingStrategy Strategy { get; }
 
-		/// <summary>
-		/// Adds the model's DDL to a string builder.
-		/// </summary>
-		/// <param name="batch"></param>
-		/// <param name="members"></param>
-		void BuildDdlBatch(StringBuilder batch, IList<Type> members);
+    /// <summary>
+    ///   Adds the model's DDL to a string builder.
+    /// </summary>
+    /// <param name="batch"></param>
+    /// <param name="members"></param>
+    void BuildDdlBatch(StringBuilder batch, IList<Type> members);
 
-		/// <summary>
-		/// Initializes the binder.
-		/// </summary>
-		void Initialize();
-	}
+    /// <summary>
+    ///   Initializes the binder.
+    /// </summary>
+    void Initialize();
+  }
 
   /// <summary>
   ///   Binds a model to an underlying database structure.
@@ -45,67 +43,67 @@ namespace FlitBit.Data.DataModel
   public interface IDataModelBinder<TModel> : IDataModelBinder
   {
     /// <summary>
-    /// Gets the model's mapping.
+    ///   Gets the model's mapping.
     /// </summary>
     IMapping<TModel> Mapping { get; }
   }
 
   /// <summary>
-	///   Binds a model to an underlying database structure.
-	/// </summary>
-	/// <typeparam name="TModel">the model's type.</typeparam>
-	/// <typeparam name="TIdentityKey">the model's identity type</typeparam>
-	public interface IDataModelBinder<TModel, TIdentityKey> : IDataModelBinder<TModel>
-	{
-		/// <summary>
-		/// Makes a repository for the data model.
-		/// </summary>
-		/// <returns></returns>
-		IDataModelRepository<TModel, TIdentityKey> MakeRepository();
+  ///   Binds a model to an underlying database structure.
+  /// </summary>
+  /// <typeparam name="TModel">the model's type.</typeparam>
+  /// <typeparam name="TIdentityKey">the model's identity type</typeparam>
+  public interface IDataModelBinder<TModel, TIdentityKey> : IDataModelBinder<TModel>
+  {
+    /// <summary>
+    ///   Makes a repository for the data model.
+    /// </summary>
+    /// <returns></returns>
+    IDataModelRepository<TModel, TIdentityKey> MakeRepository();
+  }
 
-	}
-
-	/// <summary>
-	///   Binds a model to an underlying database structure.
-	/// </summary>
-	/// <typeparam name="TModel">the model's type.</typeparam>
-	/// <typeparam name="TIdentityKey">the model's identity type</typeparam>
-	/// <typeparam name="TDbConnection">database connection type TDbConnection</typeparam>
-	public interface IDataModelBinder<TModel, TIdentityKey, TDbConnection> : IDataModelBinder<TModel, TIdentityKey>
-		where TDbConnection: DbConnection
-	{
+  /// <summary>
+  ///   Binds a model to an underlying database structure.
+  /// </summary>
+  /// <typeparam name="TModel">the model's type.</typeparam>
+  /// <typeparam name="TIdentityKey">the model's identity type</typeparam>
+  /// <typeparam name="TDbConnection">database connection type TDbConnection</typeparam>
+  public interface IDataModelBinder<TModel, TIdentityKey, TDbConnection> : IDataModelBinder<TModel, TIdentityKey>
+    where TDbConnection : DbConnection
+  {
     IDataModelWriter<TModel> Writer { get; }
 
-		/// <summary>
-		///   Gets a model command for selecting all models of the type TModel.
-		/// </summary>
-		/// <returns></returns>
-		IDataModelQueryManyCommand<TModel, TDbConnection> GetAllCommand();
+    /// <summary>
+    ///   Gets a model command for selecting all models of the type TModel.
+    /// </summary>
+    /// <returns></returns>
+    IDataModelQueryManyCommand<TModel, TDbConnection> GetAllCommand();
 
-		/// <summary>
-		///   Gets a create command.
-		/// </summary>
-		/// <returns></returns>
-		IDataModelQuerySingleCommand<TModel, TDbConnection, TModel> GetCreateCommand();
+    /// <summary>
+    ///   Gets a create command.
+    /// </summary>
+    /// <returns></returns>
+    IDataModelQuerySingleCommand<TModel, TDbConnection, TModel> GetCreateCommand();
 
-		/// <summary>
-		///   Gets a delete (by ID) command.
-		/// </summary>
-		/// <returns></returns>
-		IDataModelNonQueryCommand<TModel, TDbConnection, TIdentityKey> GetDeleteCommand();
+    /// <summary>
+    ///   Gets a delete (by ID) command.
+    /// </summary>
+    /// <returns></returns>
+    IDataModelNonQueryCommand<TModel, TDbConnection, TIdentityKey> GetDeleteCommand();
 
-		/// <summary>
-		///   Gets a read (by ID) command.
-		/// </summary>
-		/// <returns></returns>
-		IDataModelQuerySingleCommand<TModel, TDbConnection, TIdentityKey> GetReadCommand();
+    /// <summary>
+    ///   Gets a read (by ID) command.
+    /// </summary>
+    /// <returns></returns>
+    IDataModelQuerySingleCommand<TModel, TDbConnection, TIdentityKey> GetReadCommand();
 
-		/// <summary>
-		///   Gets an update command.
-		/// </summary>
-		/// <returns></returns>
-		IDataModelQuerySingleCommand<TModel, TDbConnection, TModel> GetUpdateCommand();
+    /// <summary>
+    ///   Gets an update command.
+    /// </summary>
+    /// <returns></returns>
+    IDataModelQuerySingleCommand<TModel, TDbConnection, TModel> GetUpdateCommand();
 
-    object ConstructQueryCommand(DataModelRepository<TModel, TIdentityKey, TDbConnection> repo, Guid key, DataModelSqlExpression<TModel> sql, IDataModelWriter<TModel> writer);
-	}
+    object ConstructQueryCommand(IDataModelRepository<TModel, TIdentityKey, TDbConnection> repo, Guid key,
+      DataModelSqlExpression<TModel> sql, IDataModelWriter<TModel> writer);
+  }
 }

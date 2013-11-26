@@ -1,6 +1,7 @@
 using System;
 using System.Collections.Generic;
 using System.Data.Common;
+using System.Data.SqlClient;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
@@ -248,7 +249,7 @@ namespace FlitBit.Data.DataModel
 		public abstract IDataModelRepository<TModel, TIdentityKey> MakeRepository();
 
 	  public abstract object ConstructQueryCommand(
-      DataModelRepository<TModel, TIdentityKey, TDbConnection> repo, Guid key, DataModelSqlExpression<TModel> sql,
+      IDataModelRepository<TModel, TIdentityKey, TDbConnection> repo, Guid key, DataModelSqlExpression<TModel> sql,
       IDataModelWriter<TModel> writer);
 
     public abstract IDataModelWriter<TModel> Writer { get; }

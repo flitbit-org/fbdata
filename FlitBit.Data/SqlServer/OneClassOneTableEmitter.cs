@@ -154,8 +154,98 @@ namespace FlitBit.Data.SqlServer
       switch (parms.Count)
       {
         case 1:
-          cmdType = typeof (SqlDataModelQueryCommand<,,>).MakeGenericType(typeof (TDataModel), typeof (TImpl),
+          cmdType = typeof(SqlDataModelQueryCommand<,,>).MakeGenericType(typeof(TDataModel), typeof(TImpl),
             parms[0].Type);
+          break;
+        case 2:
+          cmdType = typeof(SqlDataModelQueryCommand<,,,>).MakeGenericType(typeof(TDataModel), typeof(TImpl),
+            parms[0].Type,
+            parms[1].Type
+            );
+          break;
+        case 3:
+          cmdType = typeof(SqlDataModelQueryCommand<,,,,>).MakeGenericType(typeof(TDataModel), typeof(TImpl),
+            parms[0].Type,
+            parms[1].Type,
+            parms[2].Type
+            );
+          break;
+        case 4:
+          cmdType = typeof(SqlDataModelQueryCommand<,,,,,>).MakeGenericType(typeof(TDataModel), typeof(TImpl),
+            parms[0].Type,
+            parms[1].Type,
+            parms[2].Type,
+            parms[3].Type
+            );
+          break;
+        case 5:
+          cmdType = typeof(SqlDataModelQueryCommand<,,,,,,>).MakeGenericType(typeof(TDataModel), typeof(TImpl),
+            parms[0].Type,
+            parms[1].Type,
+            parms[2].Type,
+            parms[3].Type,
+            parms[4].Type
+            );
+          break;
+        case 6:
+          cmdType = typeof(SqlDataModelQueryCommand<,,,,,,,>).MakeGenericType(typeof(TDataModel), typeof(TImpl),
+            parms[0].Type,
+            parms[1].Type,
+            parms[2].Type,
+            parms[3].Type,
+            parms[4].Type,
+            parms[5].Type
+            );
+          break;
+        case 7:
+          cmdType = typeof(SqlDataModelQueryCommand<,,,,,,,,>).MakeGenericType(typeof(TDataModel), typeof(TImpl),
+            parms[0].Type,
+            parms[1].Type,
+            parms[2].Type,
+            parms[3].Type,
+            parms[4].Type,
+            parms[5].Type,
+            parms[6].Type
+            );
+          break;
+        case 8:
+          cmdType = typeof(SqlDataModelQueryCommand<,,,,,,,,,>).MakeGenericType(typeof(TDataModel), typeof(TImpl),
+            parms[0].Type,
+            parms[1].Type,
+            parms[2].Type,
+            parms[3].Type,
+            parms[4].Type,
+            parms[5].Type,
+            parms[6].Type,
+            parms[7].Type
+            );
+          break;
+        case 9:
+          cmdType = typeof(SqlDataModelQueryCommand<,,,,,,,,,,>).MakeGenericType(typeof(TDataModel), typeof(TImpl),
+            parms[0].Type,
+            parms[1].Type,
+            parms[2].Type,
+            parms[3].Type,
+            parms[4].Type,
+            parms[5].Type,
+            parms[6].Type,
+            parms[7].Type,
+            parms[8].Type
+            );
+          break;
+        case 10:
+          cmdType = typeof(SqlDataModelQueryCommand<,,,,,,,,,,,>).MakeGenericType(typeof(TDataModel), typeof(TImpl),
+            parms[0].Type,
+            parms[1].Type,
+            parms[2].Type,
+            parms[3].Type,
+            parms[4].Type,
+            parms[5].Type,
+            parms[6].Type,
+            parms[7].Type,
+            parms[8].Type,
+            parms[9].Type
+            );
           break;
         default: throw new NotImplementedException("Emitter cannot construct commands with " + parms.Count + " parameters yet.");
       }

@@ -101,7 +101,7 @@ namespace FlitBit.Data.SqlServer
       }
     }
 
-    public override object ConstructQueryCommand(DataModelRepository<TDataModel, TIdentityKey, SqlConnection> repo, Guid key, DataModelSqlExpression<TDataModel> sql, IDataModelWriter<TDataModel> writer)
+    public override object ConstructQueryCommand(IDataModelRepository<TDataModel, TIdentityKey, SqlConnection> repo, Guid key, DataModelSqlExpression<TDataModel> sql, IDataModelWriter<TDataModel> writer)
     {
       var all = LegacyWriter.WriteSelect(sql);
       var paging = LegacyWriter.WriteSelectWithPaging(sql, null);

@@ -34,7 +34,7 @@ namespace FlitBit.Data.SqlServer
       throw new NotImplementedException();
     }
 
-    public override object ConstructQueryCommand(DataModelRepository<TModel, TIdentityKey, SqlConnection> repo, Guid key, DataModelSqlExpression<TModel> sql, IDataModelWriter<TModel> writer)
+    public override object ConstructQueryCommand(IDataModelRepository<TModel, TIdentityKey, SqlConnection> repo, Guid key, DataModelSqlExpression<TModel> sql, IDataModelWriter<TModel> writer)
     {
       throw new NotImplementedException();
     }

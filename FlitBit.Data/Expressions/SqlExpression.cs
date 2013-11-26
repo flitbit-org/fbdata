@@ -311,18 +311,18 @@ namespace FlitBit.Data.Expressions
     {
       var lhs = FormatValueReference(binary.Left);
       var rhs = FormatValueReference(binary.Right);
-      
-      if (lhs.Kind == SqlExpressionKind.Parameter 
-        && ((SqlParameterExpression)lhs).Column == null
+
+      if (lhs is SqlColumnTranslatedExpression
+        && ((SqlColumnTranslatedExpression)lhs).Column == null
         && rhs.Kind == SqlExpressionKind.MemberAccess)
       {
-        ((SqlParameterExpression)lhs).Column = ((SqlMemberAccessExpression)rhs).Column;
+        ((SqlColumnTranslatedExpression)lhs).Column = ((SqlMemberAccessExpression)rhs).Column;
       }
-      if (rhs.Kind == SqlExpressionKind.Parameter
-        && ((SqlParameterExpression)rhs).Column == null
+      if (rhs is SqlColumnTranslatedExpression
+        && ((SqlColumnTranslatedExpression)rhs).Column == null
         && lhs.Kind == SqlExpressionKind.MemberAccess)
       {
-        ((SqlParameterExpression)rhs).Column = ((SqlMemberAccessExpression)lhs).Column;
+        ((SqlColumnTranslatedExpression)rhs).Column = ((SqlMemberAccessExpression)lhs).Column;
       }
 
       var selfRef = SelfReferenceColumn;
@@ -366,7 +366,17 @@ namespace FlitBit.Data.Expressions
         SqlExpression res;
         if (!_translations.TryGetValue(expr, out res))
         {
-          _translations.Add(expr, res = new SqlConstantExpression(expr.Type, ((ConstantExpression)expr).Value));
+          var value = ((ConstantExpression)expr).Value;
+          if (expr.Type.IsClass
+              || expr.Type.IsInterface)
+          {
+            res = new SqlNullExpression(expr.Type);
+          }
+          else
+          {
+            res = new SqlConstantExpression(expr.Type, value);
+          }
+          _translations.Add(expr, res);
         }
         return (SqlValueExpression)res; 
       }
@@ -699,15 +709,22 @@ namespace FlitBit.Data.Expressions
 
     public object Value { get; private set; }
 
-    public ColumnMapping Column { get; set; }
-
     public override void Write(SqlWriter writer)
     {
       if (Column != null)
       {
         writer.Append(Column.Emitter.PrepareConstantValueForSql(Value));
+        return;
       }
       base.Write(writer);
+    }
+  }
+
+  public class SqlNullExpression : SqlColumnTranslatedExpression
+  {
+    public SqlNullExpression(Type type)
+      : base(SqlExpressionKind.Null, "NULL", type)
+    {
     }
   }
 
@@ -716,8 +733,6 @@ namespace FlitBit.Data.Expressions
     public SqlParameterExpression(SqlExpressionKind nodeType, string text, Type type)
       : base(nodeType, text, type)
     {}
-
-    public ColumnMapping Column { get; set; }
   }
 
   public class SqlJoinParameterExpression : SqlParameterExpression

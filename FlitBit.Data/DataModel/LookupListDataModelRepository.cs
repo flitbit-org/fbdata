@@ -550,7 +550,7 @@ namespace FlitBit.Data.DataModel
 
     public object ConstructQueryCommand(Guid key, DataModelSqlExpression<TDataModel> sql)
     {
-      throw new NotImplementedException();
+      return Binder.ConstructQueryCommand(this, key, sql, Writer);
     }
   }
 }
