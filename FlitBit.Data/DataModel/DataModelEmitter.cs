@@ -1049,108 +1049,253 @@ namespace FlitBit.Data.DataModel
 				make.ClearAttributes();
 				make.IncludeAttributes(MethodAttributes.Private | MethodAttributes.Static);
 				make.ReturnType = TypeRef.FromType(commandType);
-				make.ContributeInstructions((m, il) =>
-				{
-					// Build the Expression tree representing the join, and rely on the referent's repository to build a suitable command...
-					//
-					//   var repository = (IDataModelRepository<TReferent, TReferentIdentitKey, TDbConnection>) DataModel<TReferent>.GetRepository<TReferentIdentitKey>();
-					//   return repository.QueryBuilder.Where<TParam>((model, param) => model.<LocalJoinProperty[0]> == param);
-					//
-
-					var repo = il.DeclareLocal(repositoryType);
-					var res = il.DeclareLocal(commandType);
-					var dataModelT = typeof(DataModel<>).MakeGenericType(referencedType);
-					il.Call(dataModelT.GetMethod("GetRepository").MakeGenericMethod(referencedIdentityKeyType));
-					il.CastClass(repositoryType);
-					il.StoreLocal(repo);
-
-					var selfExpr = il.DeclareLocal<ParameterExpression>();
-
-					il.LoadLocal(repo);
-					il.CallVirtual(repositoryType.GetProperty("QueryBuilder").GetGetMethod());
-
-					il.LoadToken(typeof (TDataModel));
-					il.Call<Type>("GetTypeFromHandle", BindingFlags.Static | BindingFlags.Public, typeof(RuntimeTypeHandle));
-					il.LoadValue("self");
-					il.Call<Expression>("Parameter", BindingFlags.Static | BindingFlags.Public, typeof(Type), typeof(string));
-					il.StoreLocal(selfExpr);
-
-					var exprParams = new List<Tuple<string, Type, LocalBuilder>>();
-					for (var i = parameterOffset; i < paramTypes.Length; i++)
-					{
-						var p = rec.Collection.LocalProperties[i - parameterOffset];
-						var name = p.Name.Pascalize();
-						var type = paramTypes[i];
-						var expr = il.DeclareLocal<ParameterExpression>();
-						exprParams.Add(Tuple.Create(name, type, expr));
-						il.LoadToken(type);
-						il.Call<Type>("GetTypeFromHandle", BindingFlags.Static | BindingFlags.Public, typeof(RuntimeTypeHandle));
-						il.LoadValue(name);
-						il.Call<Expression>("Parameter", BindingFlags.Static | BindingFlags.Public, typeof(Type), typeof(string));
-						il.StoreLocal(expr);
-					}
-
-					for (var i = 0; i < exprParams.Count; i++)
-					{
-						var p = (PropertyInfo)rec.Collection.ReferencedProperties[i];
-						var c = rec.Collection.ReferencedMapping.Columns.First(ea => ea.Member == p);
-						il.LoadLocal(selfExpr);
-						il.Emit(OpCodes.Ldtoken, p.GetGetMethod());
-						il.Call<MethodBase>("GetMethodFromHandle", BindingFlags.Static | BindingFlags.Public, typeof(RuntimeMethodHandle));
-						il.CastClass<MethodInfo>();
-						il.Call<Expression>("Property", BindingFlags.Static | BindingFlags.Public, typeof(Expression), typeof(MethodInfo));
-						if (c.IsReference)
-						{
-							var id = c.Mapping.Columns.First(pp => pp.IsIdentity);
-							il.Emit(OpCodes.Ldtoken, ((PropertyInfo)id.Member).GetGetMethod());
-							il.Call<MethodBase>("GetMethodFromHandle", BindingFlags.Static | BindingFlags.Public, typeof(RuntimeMethodHandle));
-							il.CastClass<MethodInfo>();
-							il.Call<Expression>("Property", BindingFlags.Static | BindingFlags.Public, typeof(Expression), typeof(MethodInfo));
-						}
-						il.LoadLocal(exprParams[i].Item3);
-						il.Call<Expression>("Equal", BindingFlags.Static | BindingFlags.Public, typeof(Expression), typeof(Expression));
-					}
-					var arr = il.DeclareLocal<ParameterExpression[]>();
-					il.NewArr(typeof(ParameterExpression), exprParams.Count + 1);
-					il.StoreLocal(arr);
-					il.LoadLocal(arr);
-					il.Load_I4_0();
-					il.LoadLocal(selfExpr);
-					il.StoreElementRef();
-					for (var i = 0; i < exprParams.Count; i++)
-					{
-						il.LoadLocal(arr);
-						il.Load_I4(i + 1);
-						il.LoadLocal(exprParams[i].Item3);
-						il.StoreElementRef();
-					}
-
-					il.LoadLocal(arr);
-					var funType = default(Type);
-					var exprType = default(Type);
-					var whereMethod = default(MethodInfo);
-					switch (exprParams.Count)
-					{
-						case 1:
-							funType = typeof(Func<,,>).MakeGenericType(referencedType, exprParams[0].Item2, typeof(bool));
-							exprType = typeof(Expression<>).MakeGenericType(funType);
-              whereMethod = queryBuilderType.MatchGenericMethod("Where", 1, commandType, exprType)
-								.MakeGenericMethod(exprParams[0].Item2);
-							break;
-					}
-					il.Call(typeof(Expression).MatchGenericMethod("Lambda", BindingFlags.Static | BindingFlags.Public, 1, exprType, typeof(Expression), typeof(ParameterExpression[]))
-						.MakeGenericMethod(funType));
-					il.CallVirtual(whereMethod);
-					il.StoreLocal(res);
-
-					var dumb = il.DefineLabel();
-					il.Branch_ShortForm(dumb);
-					il.MarkLabel(dumb);
-
-					il.LoadLocal(res);
-				});
+			  if (rec.Collection.JoinType != null)
+			  {
+          Type joinQueryBuilderType;
+          switch (paramTypes.Length)
+          {
+            case 4: joinQueryBuilderType = typeof(IDataModelJoinQueryBuilder<,,,,>).MakeGenericType(referencedType, referencedIdentityKeyType, referencedDbConnectionType, rec.Collection.JoinType, paramTypes[parameterOffset]); break;
+            default:
+              throw new NotImplementedException("DataModelEmitter missing implementation for DataModelCollectionReference<...> with " + paramTypes.Length + " type arguments.");
+          }
+          ImplementMakeResolveCollectionForManyToMany(rec, make, repositoryType, queryBuilderType, joinQueryBuilderType, paramTypes, parameterOffset, commandType, referencedType,
+            referencedIdentityKeyType);
+			  }
+			  else
+			  {
+          ImplementMakeResolveCollection(rec, make, repositoryType, queryBuilderType, paramTypes, parameterOffset, commandType, referencedType,
+            referencedIdentityKeyType);
+			  }
+				
 				rec.CollectionMakeResolve = make;
 			}
+      private static void ImplementMakeResolveCollection(MemberRec rec, EmittedMethod make, Type repositoryType, Type queryBuilderType, Type[] paramTypes, int parameterOffset, Type commandType, Type referencedType, Type referencedIdentityKeyType)
+      {
+        make.ContributeInstructions((m, il) =>
+        {
+          // Build the Expression tree representing the join, and rely on the referent's repository to build a suitable command...
+          //
+          //   var repository = (IDataModelRepository<TReferent, TReferentIdentitKey, TDbConnection>) DataModel<TReferent>.GetRepository<TReferentIdentitKey>();
+          //   return repository.QueryBuilder.Where<TParam>((model, param) => model.<LocalJoinProperty[0]> == param);
+          //
+
+          var repo = il.DeclareLocal(repositoryType);
+          var res = il.DeclareLocal(commandType);
+          var dataModelT = typeof(DataModel<>).MakeGenericType(referencedType);
+          il.Call(dataModelT.GetMethod("GetRepository").MakeGenericMethod(referencedIdentityKeyType));
+          il.CastClass(repositoryType);
+          il.StoreLocal(repo);
+
+          var selfExpr = il.DeclareLocal<ParameterExpression>();
+
+          il.LoadLocal(repo);
+          il.CallVirtual(repositoryType.GetProperty("QueryBuilder").GetGetMethod());
+
+          il.LoadToken(typeof(TDataModel));
+          il.Call<Type>("GetTypeFromHandle", BindingFlags.Static | BindingFlags.Public, typeof(RuntimeTypeHandle));
+          il.LoadValue("self");
+          il.Call<Expression>("Parameter", BindingFlags.Static | BindingFlags.Public, typeof(Type), typeof(string));
+          il.StoreLocal(selfExpr);
+
+          var exprParams = new List<Tuple<string, Type, LocalBuilder>>();
+          for (var i = parameterOffset; i < paramTypes.Length; i++)
+          {
+            var p = rec.Collection.LocalProperties[i - parameterOffset];
+            var name = p.Name.Pascalize();
+            var type = paramTypes[i];
+            var expr = il.DeclareLocal<ParameterExpression>();
+            exprParams.Add(Tuple.Create(name, type, expr));
+            il.LoadToken(type);
+            il.Call<Type>("GetTypeFromHandle", BindingFlags.Static | BindingFlags.Public, typeof(RuntimeTypeHandle));
+            il.LoadValue(name);
+            il.Call<Expression>("Parameter", BindingFlags.Static | BindingFlags.Public, typeof(Type), typeof(string));
+            il.StoreLocal(expr);
+          }
+
+          for (var i = 0; i < exprParams.Count; i++)
+          {
+            var p = (PropertyInfo)rec.Collection.ReferencedProperties[i];
+            var c = rec.Collection.ReferencedMapping.Columns.First(ea => ea.Member == p);
+            il.LoadLocal(selfExpr);
+            il.Emit(OpCodes.Ldtoken, p.GetGetMethod());
+            il.Call<MethodBase>("GetMethodFromHandle", BindingFlags.Static | BindingFlags.Public, typeof(RuntimeMethodHandle));
+            il.CastClass<MethodInfo>();
+            il.Call<Expression>("Property", BindingFlags.Static | BindingFlags.Public, typeof(Expression), typeof(MethodInfo));
+            if (c.IsReference)
+            {
+              var id = c.Mapping.GetPreferredReferenceColumn();
+              il.Emit(OpCodes.Ldtoken, ((PropertyInfo)id.Member).GetGetMethod());
+              il.Call<MethodBase>("GetMethodFromHandle", BindingFlags.Static | BindingFlags.Public, typeof(RuntimeMethodHandle));
+              il.CastClass<MethodInfo>();
+              il.Call<Expression>("Property", BindingFlags.Static | BindingFlags.Public, typeof(Expression), typeof(MethodInfo));
+            }
+            il.LoadLocal(exprParams[i].Item3);
+            il.Call<Expression>("Equal", BindingFlags.Static | BindingFlags.Public, typeof(Expression), typeof(Expression));
+          }
+          var arr = il.DeclareLocal<ParameterExpression[]>();
+          il.NewArr(typeof(ParameterExpression), exprParams.Count + 1);
+          il.StoreLocal(arr);
+          il.LoadLocal(arr);
+          il.Load_I4_0();
+          il.LoadLocal(selfExpr);
+          il.StoreElementRef();
+          for (var i = 0; i < exprParams.Count; i++)
+          {
+            il.LoadLocal(arr);
+            il.Load_I4(i + 1);
+            il.LoadLocal(exprParams[i].Item3);
+            il.StoreElementRef();
+          }
+
+          il.LoadLocal(arr);
+          var funType = default(Type);
+          var exprType = default(Type);
+          var whereMethod = default(MethodInfo);
+          switch (exprParams.Count)
+          {
+            case 1:
+              funType = typeof(Func<,,>).MakeGenericType(referencedType, exprParams[0].Item2, typeof(bool));
+              exprType = typeof(Expression<>).MakeGenericType(funType);
+              whereMethod = queryBuilderType.MatchGenericMethod("Where", 1, commandType, exprType)
+                .MakeGenericMethod(exprParams[0].Item2);
+              break;
+          }
+          il.Call(typeof(Expression).MatchGenericMethod("Lambda", BindingFlags.Static | BindingFlags.Public, 1, exprType, typeof(Expression), typeof(ParameterExpression[]))
+            .MakeGenericMethod(funType));
+          il.CallVirtual(whereMethod);
+          il.StoreLocal(res);
+
+          var dumb = il.DefineLabel();
+          il.Branch_ShortForm(dumb);
+          il.MarkLabel(dumb);
+
+          il.LoadLocal(res);
+        });
+      }
+      private static void ImplementMakeResolveCollectionForManyToMany(MemberRec rec, EmittedMethod make, Type repositoryType, Type queryBuilderType, Type joinQueryBuilderType, Type[] paramTypes, int parameterOffset, Type commandType, Type referencedType, Type referencedIdentityKeyType)
+      {
+        make.ContributeInstructions((m, il) =>
+        {
+          // Build the Expression tree representing the join, and rely on the referent's repository to build a suitable command...
+          //
+          //  IDataModelRepository<TReferent, TReferentIdentityKey, TDbConnection> repository = (IDataModelRepository<TReferent, TReferentIdentityKey, TDbConnection>)FlitBit.Data.DataModel.DataModel<TReferent>.GetRepository<TReferentIdentityKey>();
+          //  return repository
+          //         .QueryBuilder
+          //         .Join<TJoin, TParam>((self, join, param) => (join.<ReferencedColumn[0]> == self) && (join.<LocalJoinProperty[0]> == param))
+          //         .Construct();
+          //
+
+          var repo = il.DeclareLocal(repositoryType);
+          var res = il.DeclareLocal(commandType);
+          var dataModelT = typeof(DataModel<>).MakeGenericType(referencedType);
+          il.Call(dataModelT.GetMethod("GetRepository").MakeGenericMethod(referencedIdentityKeyType));
+          il.CastClass(repositoryType);
+          il.StoreLocal(repo);
+
+          var selfExpr = il.DeclareLocal<ParameterExpression>();
+          var joinExpr = il.DeclareLocal<ParameterExpression>();
+
+          il.LoadLocal(repo);
+          il.CallVirtual(repositoryType.GetProperty("QueryBuilder").GetGetMethod());
+
+          il.LoadToken(referencedType);
+          il.Call<Type>("GetTypeFromHandle", BindingFlags.Static | BindingFlags.Public, typeof(RuntimeTypeHandle));
+          il.LoadValue("self");
+          il.Call<Expression>("Parameter", BindingFlags.Static | BindingFlags.Public, typeof(Type), typeof(string));
+          il.StoreLocal(selfExpr);
+
+          il.LoadToken(rec.Collection.JoinType);
+          il.Call<Type>("GetTypeFromHandle", BindingFlags.Static | BindingFlags.Public, typeof(RuntimeTypeHandle));
+          il.LoadValue("join");
+          il.Call<Expression>("Parameter", BindingFlags.Static | BindingFlags.Public, typeof(Type), typeof(string));
+          il.StoreLocal(joinExpr);
+
+          var exprParams = new List<Tuple<string, Type, LocalBuilder>>();
+          for (var i = parameterOffset; i < paramTypes.Length; i++)
+          {
+            var p = rec.Collection.LocalProperties[i - parameterOffset];
+            var name = p.Name.Pascalize();
+            var type = paramTypes[i];
+            var expr = il.DeclareLocal<ParameterExpression>();
+            exprParams.Add(Tuple.Create(name, type, expr));
+            il.LoadToken(type);
+            il.Call<Type>("GetTypeFromHandle", BindingFlags.Static | BindingFlags.Public, typeof(RuntimeTypeHandle));
+            il.LoadValue(name);
+            il.Call<Expression>("Parameter", BindingFlags.Static | BindingFlags.Public, typeof(Type), typeof(string));
+            il.StoreLocal(expr);
+          }
+
+          for (var i = 0; i < exprParams.Count; i++)
+          {
+            var p = (PropertyInfo)rec.Collection.ReferencedProperties[i];
+            var lp = (PropertyInfo)rec.Collection.LocalProperties[i];
+            var j = (PropertyInfo)rec.Collection.JoinProperties[i];
+
+            il.LoadLocal(joinExpr);
+            il.Emit(OpCodes.Ldtoken, j.GetGetMethod());
+            il.Call<MethodBase>("GetMethodFromHandle", BindingFlags.Static | BindingFlags.Public, typeof(RuntimeMethodHandle));
+            il.CastClass<MethodInfo>();
+            il.Call<Expression>("Property", BindingFlags.Static | BindingFlags.Public, typeof(Expression), typeof(MethodInfo));
+            il.LoadLocal(selfExpr);
+            il.Call<Expression>("Equal", BindingFlags.Static | BindingFlags.Public, typeof(Expression), typeof(Expression));
+            il.LoadLocal(joinExpr);
+            il.Emit(OpCodes.Ldtoken, p.GetGetMethod());
+            il.Call<MethodBase>("GetMethodFromHandle", BindingFlags.Static | BindingFlags.Public, typeof(RuntimeMethodHandle));
+            il.CastClass<MethodInfo>();
+            il.Call<Expression>("Property", BindingFlags.Static | BindingFlags.Public, typeof(Expression), typeof(MethodInfo));
+            il.Emit(OpCodes.Ldtoken, lp.GetGetMethod());
+            il.Call<MethodBase>("GetMethodFromHandle", BindingFlags.Static | BindingFlags.Public, typeof(RuntimeMethodHandle));
+            il.CastClass<MethodInfo>();
+            il.Call<Expression>("Property", BindingFlags.Static | BindingFlags.Public, typeof(Expression), typeof(MethodInfo));
+            il.LoadLocal(exprParams[i].Item3);
+            il.Call<Expression>("Equal", BindingFlags.Static | BindingFlags.Public, typeof(Expression), typeof(Expression));
+            il.Call<Expression>("AndAlso", BindingFlags.Static | BindingFlags.Public, typeof(Expression), typeof(Expression));            
+          }
+          var arr = il.DeclareLocal<ParameterExpression[]>();
+          il.NewArr(typeof(ParameterExpression), exprParams.Count + 2);
+          il.StoreLocal(arr);
+          il.LoadLocal(arr);
+          il.Load_I4_0();
+          il.LoadLocal(selfExpr);
+          il.StoreElementRef();
+          il.LoadLocal(arr);
+          il.Load_I4_1();
+          il.LoadLocal(joinExpr);
+          il.StoreElementRef();
+          for (var i = 0; i < exprParams.Count; i++)
+          {
+            il.LoadLocal(arr);
+            il.Load_I4(i + 2);
+            il.LoadLocal(exprParams[i].Item3);
+            il.StoreElementRef();
+          }
+
+          il.LoadLocal(arr);
+          var funType = default(Type);
+          var exprType = default(Type);
+          var joinMethod = default(MethodInfo);
+          switch (exprParams.Count)
+          {
+            case 1:
+              funType = typeof(Func<,,,>).MakeGenericType(referencedType, rec.Collection.JoinType, exprParams[0].Item2, typeof(bool));
+              exprType = typeof(Expression<>).MakeGenericType(funType);
+              joinMethod = queryBuilderType.MatchGenericMethod("Join", 2, joinQueryBuilderType, exprType)
+                .MakeGenericMethod(rec.Collection.JoinType, exprParams[0].Item2);
+              break;
+          }
+          il.Call(typeof(Expression).MatchGenericMethod("Lambda", BindingFlags.Static | BindingFlags.Public, 1, exprType, typeof(Expression), typeof(ParameterExpression[]))
+            .MakeGenericMethod(funType));
+          il.CallVirtual(joinMethod);
+          il.CallVirtual(joinQueryBuilderType.GetMethod("Construct"));
+          il.StoreLocal(res);
+
+          var dumb = il.DefineLabel();
+          il.Branch_ShortForm(dumb);
+          il.MarkLabel(dumb);
+
+          il.LoadLocal(res);
+        });
+      }
 
 			private static void EmitPropertyForReferenceColumn(MemberRec rec, EmittedField dirtyFlags, EmittedMethod propChanged)
 			{

@@ -521,6 +521,7 @@ namespace FlitBit.Data.Meta
 
       var joinType = attr.JoinType;
       var joins = new List<MemberInfo>();
+		  IMapping joinMapping = null;
       
 			var referenced = new List<MemberInfo>();
 		  if (joinType == null)
@@ -540,7 +541,6 @@ namespace FlitBit.Data.Meta
 		  }
 		  else
 		  {
-		    IMapping joinMapping;
         if (joinType == RuntimeType)
         {
           joinMapping = this;
@@ -588,6 +588,7 @@ namespace FlitBit.Data.Meta
 			coll.LocalProperties = locals;
 		  coll.JoinType = attr.JoinType;
 		  coll.JoinProperties = joins;
+		  coll.JoinMapping = joinMapping;
 		}
 
 		public void MapColumnFromMeta(PropertyInfo p, MapColumnAttribute mapColumn)

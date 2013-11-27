@@ -51,7 +51,9 @@ namespace FlitBit.Data.Meta
     public Type JoinType { get; set; }
 
     public IList<MemberInfo> JoinProperties { get; set; }
-    
+
+    public IMapping JoinMapping { get; internal set; }
+
 		internal Type MakeCollectionReferenceType(IMapping mapping)
 		{
 			Contract.Requires<InvalidOperationException>(mapping.HasBinder);
@@ -85,7 +87,8 @@ namespace FlitBit.Data.Meta
 					" uses a local property that is not mapped to a column: ", LocalMapping.RuntimeType.Name, ".", local.Name)
 					);
 			}
-			var rcolumn = ReferencedMapping.Columns.SingleOrDefault(c => c.Member == reference);
+		  var rmapping = JoinMapping ?? ReferencedMapping;
+      var rcolumn = rmapping.Columns.SingleOrDefault(c => c.Member == reference);
 			if (rcolumn == null)
 			{
 				throw new MappingException(String.Concat("The mapped collection on ", LocalMapping.RuntimeType.Name, ".", LocalMember.Name,
