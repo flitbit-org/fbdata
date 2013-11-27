@@ -35,7 +35,7 @@ namespace FlitBit.Data.Tests.Catalog
 			var sql = builder.ToString();
 			Assert.IsNotNull(sql);
 
-			var byRuntimeType = repo.Where<Type>("ByRuntimeType", (model, runtimeType) => model.RuntimeType == runtimeType);
+			var byRuntimeType = repo.QueryBuilder.Where<Type>((model, runtimeType) => model.RuntimeType == runtimeType);
 
 			using (var cx = DbContext.NewContext())
 			{
