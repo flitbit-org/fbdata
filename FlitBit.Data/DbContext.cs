@@ -40,12 +40,12 @@ namespace FlitBit.Data
 			_behaviors = behaviors;
 			if (parent != null)
 			{
-				_parent = (IDbContext) parent.ParallelShare();
+				_parent = parent.ShareContext();
 			}
 			_scope = new CleanupScope(this, true);
 			if (!behaviors.HasFlag(DbContextBehaviors.NoContextFlow))
 			{
-				ContextFlow.Push<IDbContext>(this);
+				DbContextFlowProvider.Push(this);
 			}
 		}
 
@@ -55,7 +55,8 @@ namespace FlitBit.Data
 			{
 				return false;
 			}
-			if (!ContextFlow.TryPop<IDbContext>(this) && DbTraceEvents.ShouldTrace(TraceEventType.Warning))
+
+      if (!DbContextFlowProvider.TryPop(this) && DbTraceEvents.ShouldTrace(TraceEventType.Warning))
 			{
 				try
 				{
@@ -158,7 +159,7 @@ namespace FlitBit.Data
 			return cn;
 		}
 
-		public object ParallelShare()
+		public IDbContext ShareContext()
 		{
 			Interlocked.Increment(ref _disposers);
 			return this;

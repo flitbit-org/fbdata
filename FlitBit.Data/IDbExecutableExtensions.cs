@@ -12,6 +12,7 @@ using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
 using System.Linq.Expressions;
 using System.Reflection;
+using System.Threading.Tasks;
 using FlitBit.Core;
 using FlitBit.Core.Parallel;
 using FlitBit.Data.Properties;
@@ -170,53 +171,7 @@ namespace FlitBit.Data
 			after(exe, exe.ExecuteNonQuery());
 		}
 
-		public static Completion<DbResult<int>> ExecuteNonQueryWithCompletion(this IDbExecutable exe,
-			Continuation<DbResult<int>> continuation)
-		{
-			Contract.Requires<ArgumentNullException>(exe != null);
-
-			var result = new Completion<DbResult<int>>(exe);
-			exe.ExecuteNonQuery((e, res) =>
-			{
-				if (e != null)
-				{
-					result.MarkFaulted(e);
-				}
-				else
-				{
-					result.MarkCompleted(res);
-				}
-			});
-			if (continuation != null)
-			{
-				result.Continue(continuation);
-			}
-			return result;
-		}
-
-		public static Completion<DbResult<DbDataReader>> ExecuteReaderWithCompletion(this IDbExecutable exe,
-			Continuation<DbResult<DbDataReader>> continuation)
-		{
-			Contract.Requires<ArgumentNullException>(exe != null);
-
-			var result = new Completion<DbResult<DbDataReader>>(exe);
-			exe.ExecuteReader((e, res) =>
-			{
-				if (e != null)
-				{
-					result.MarkFaulted(e);
-				}
-				else
-				{
-					result.MarkCompleted(res);
-				}
-			});
-			if (continuation != null)
-			{
-				result.Continue(continuation);
-			}
-			return result;
-		}
+		
 
 		public static void ExecuteScalar<T>(this IDbExecutable exe, Action<IDbExecutable, T> after)
 		{
@@ -224,30 +179,6 @@ namespace FlitBit.Data
 			Contract.Requires<ArgumentNullException>(after != null);
 
 			after(exe, exe.ExecuteScalar<T>());
-		}
-
-		public static Completion<DbResult<T>> ExecuteScalarWithCompletion<T>(this IDbExecutable exe,
-			Continuation<DbResult<T>> continuation)
-		{
-			Contract.Requires<ArgumentNullException>(exe != null);
-
-			var result = new Completion<DbResult<T>>(exe);
-			exe.ExecuteScalar<T>((e, res) =>
-			{
-				if (e != null)
-				{
-					result.MarkFaulted(e);
-				}
-				else
-				{
-					result.MarkCompleted(res);
-				}
-			});
-			if (continuation != null)
-			{
-				result.Continue(continuation);
-			}
-			return result;
 		}
 
 		public static T ExecuteSingle<T>(this IDbExecutable command, Func<IDataRecord, T> transform)

@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics.Contracts;
+using System.Threading.Tasks;
 using FlitBit.Core;
 using FlitBit.Core.Parallel;
 using FlitBit.Data.CodeContracts;
@@ -16,6 +17,8 @@ using FlitBit.Data.Properties;
 
 namespace FlitBit.Data
 {
+  public delegate void Continuation<T>(Exception e, T result);
+
 	[ContractClass(typeof(ContractForIDbExecutable))]
 	public interface IDbExecutable : IInterrogateDisposable
 	{
@@ -41,12 +44,17 @@ namespace FlitBit.Data
 		IDbExecutable ExcludeBehaviors(CommandBehaviors behaviors);
 		IEnumerable<IDataRecord> ExecuteEnumerable();
 		int ExecuteNonQuery();
-
+	  
 		void ExecuteNonQuery(Continuation<DbResult<int>> continuation);
 		void ExecuteReader(Action<DbResult<DbDataReader>> action);
 		void ExecuteReader(Continuation<DbResult<DbDataReader>> continuation);
 		T ExecuteScalar<T>();
 		void ExecuteScalar<T>(Continuation<DbResult<T>> continuation);
+
+    Task<int> ExecuteNonQueryAsync();
+    Task<DbDataReader> ExecuteReaderAsync();
+    Task<T> ExecuteScalarAsync<T>();
+
 		IDbExecutable IncludeBehaviors(CommandBehaviors behaviors);
 	}
 
@@ -58,8 +66,7 @@ namespace FlitBit.Data
 		[ContractClassFor(typeof(IDbExecutable))]
 		internal abstract class ContractForIDbExecutable : IDbExecutable
 		{
-			#region IDbExecutable Members
-
+			
 			public CommandBehaviors Behaviors { get { throw new NotImplementedException(); } }
 
 			public string CommandText { get { throw new NotImplementedException(); } }
@@ -179,7 +186,28 @@ namespace FlitBit.Data
 				}
 			}
 
-			#endregion
-		}
+      public Task<int> ExecuteNonQueryAsync()
+      {
+        Contract.Requires<InvalidOperationException>(this.IsExecutableCommand, Resources.Chk_CannotExecutCommandDefinition);
+        Contract.Ensures(Contract.Result<int>() != null);
+
+        throw new NotImplementedException();
+      }
+
+      public Task<DbDataReader> ExecuteReaderAsync()
+      {
+        Contract.Requires<InvalidOperationException>(this.IsExecutableCommand, Resources.Chk_CannotExecutCommandDefinition);
+        Contract.Ensures(Contract.Result<DbDataReader>() != null);
+
+        throw new NotImplementedException();
+      }
+
+      public Task<T> ExecuteScalarAsync<T>()
+      {
+        Contract.Requires<InvalidOperationException>(this.IsExecutableCommand, Resources.Chk_CannotExecutCommandDefinition);
+
+        throw new NotImplementedException();
+      }
+    }
 	}
 }

@@ -12,7 +12,7 @@ using FlitBit.Data.Repositories;
 
 namespace FlitBit.Data
 {
-	public interface IDbContext : IInterrogateDisposable, IParallelShared
+	public interface IDbContext : IInterrogateDisposable
 	{
 		DbContextBehaviors Behaviors { get; }
 		int CacheAttempts { get; }
@@ -52,5 +52,11 @@ namespace FlitBit.Data
 
 		TConnection SharedOrNewConnection<TConnection>(string connectionName)
 			where TConnection : DbConnection;
+
+	  /// <summary>
+	  /// Prepares the context to be shared across threads. Each result must be disposed.
+	  /// </summary>
+	  /// <returns></returns>
+	  IDbContext ShareContext();
 	}
 }

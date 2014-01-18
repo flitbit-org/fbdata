@@ -10,6 +10,7 @@ using System.Data;
 using System.Data.Common;
 using System.Diagnostics.Contracts;
 using System.Linq;
+using System.Threading.Tasks;
 using FlitBit.Core;
 using FlitBit.Core.Parallel;
 using FlitBit.Data.Properties;
@@ -271,7 +272,9 @@ namespace FlitBit.Data
 			}
 		}
 
-		/// <summary>
+	  public Task<T> ExecuteScalarAsync<T>() { throw new NotImplementedException(); }
+
+	  /// <summary>
 		///   Ensures the command includes the given behaviors.
 		/// </summary>
 		/// <param name="behaviors">behaviors being included</param>
@@ -397,11 +400,43 @@ namespace FlitBit.Data
 				var cmd = MakeDbCommand();
 				var needsPostProcessing = PrepareDbCommandForExecute(cmd);
 				var ar = helper.BeginExecuteReader(cmd,
-																					res => { continuation(null, new DbResult<int>(this, helper.EndExecuteNonQuery(cmd, res))); }, null);
+				  res =>
+				  {
+            if (!res.CompletedSynchronously)
+				    try
+				    {
+				      continuation(null, new DbResult<int>(this, helper.EndExecuteNonQuery(cmd, res)));
+				    }
+				    catch (Exception e)
+				    {
+				      continuation(e, null);
+				    }
+				  }, null);
+			  if (ar.CompletedSynchronously)
+			  {
+          try
+          {
+            continuation(null, new DbResult<int>(this, helper.EndExecuteNonQuery(cmd, ar)));
+          }
+          catch (Exception e)
+          {
+            continuation(e, null);
+          }
+			  }
 			}
 			else
 			{
-				Go.Parallel(() => new DbResult<int>(this, ExecuteNonQuery()), continuation);
+			  Task.Factory.StartNew(ContextFlow.Capture(() =>
+			  {
+			    try
+			    {
+			      continuation(null, new DbResult<int>(this, ExecuteNonQuery()));
+			    }
+			    catch (Exception e)
+			    {
+			      continuation(e, null);
+			    }
+			  }));
 			}
 		}
 
@@ -409,56 +444,146 @@ namespace FlitBit.Data
 		{
 			var cn = MakeDbConnection();
 			var helper = DbProviderHelpers.GetDbProviderHelperForDbConnection(cn);
-			if (helper.SupportsAsynchronousProcessing(cn))
-			{
 				var cmd = MakeDbCommand();
 				var needsPostProcessing = PrepareDbCommandForExecute(cmd);
+			if (helper.SupportsAsynchronousProcessing(cn))
+			{
 				var ar = helper.BeginExecuteReader(cmd, res =>
 				{
-					if (!res.CompletedSynchronously)
-					{
-						using (var reader = helper.EndExecuteReader(cmd, res))
-						{
-							continuation(null, new DbResult<DbDataReader>(this, reader));
-						}
-					}
+				  if (res.CompletedSynchronously) { return; }
+				  DbDataReader reader;
+				  try
+				  {
+				    reader = helper.EndExecuteReader(cmd, res);
+				  }
+				  catch (Exception e)
+				  {
+				    continuation(e, null);
+				    return;
+				  }
+				  using (reader)
+				  {
+				    continuation(null, new DbResult<DbDataReader>(this, reader));
+				  }
 				}, null);
 				if (ar.CompletedSynchronously)
 				{
-					using (var reader = helper.EndExecuteReader(cmd, ar))
-					{
-						continuation(null, new DbResult<DbDataReader>(this, reader));
-					}
+          DbDataReader reader;
+          try
+          {
+            reader = helper.EndExecuteReader(cmd, ar);
+          }
+          catch (Exception e)
+          {
+            continuation(e, null);
+            return;
+          }
+          using (reader)
+          {
+            continuation(null, new DbResult<DbDataReader>(this, reader));
+          }
 				}
 			}
 			else
 			{
-				try
-				{
-					ExecuteReader(res =>
-					{
-						try
-						{
-							continuation(null, res);
-						}
-						catch (Exception ee)
-						{
-							Go.NotifyUncaughtException(continuation.Target, ee);
-						}
-					});
-				}
-				catch (Exception e)
-				{
-					continuation(e, default(DbResult<DbDataReader>));
-				}
+			  Task.Factory.StartNew(ContextFlow.Capture(() =>
+			  {
+			    DbDataReader reader;
+			    try
+			    {
+			      reader = cmd.ExecuteReader();
+			    }
+			    catch (Exception e)
+			    {
+			      continuation(e, null);
+			      return;
+			    }
+			    using (reader)
+			    {
+			      continuation(null, new DbResult<DbDataReader>(this, reader));
+			    }
+			  }));
 			}
 		}
 
 		public void ExecuteScalar<T>(Continuation<DbResult<T>> continuation)
 		{
-			Go.Parallel(() => new DbResult<T>(this, ExecuteScalar<T>()), continuation);
+		  Task.Factory.StartNew(ContextFlow.Capture(() =>
+		  {
+		    T res;
+		    try
+		    {
+		      res = ExecuteScalar<T>();
+		    }
+		    catch (Exception e)
+		    {
+		      continuation(e, null);
+		      return;
+		    }
+        continuation(null, new DbResult<T>(this, res));
+		  }));
 		}
 
-		#endregion
+	  public Task<int> ExecuteNonQueryAsync()
+	  {
+	    var cn = MakeDbConnection();
+			var helper = DbProviderHelpers.GetDbProviderHelperForDbConnection(cn);
+      var cmd = MakeDbCommand();
+      PrepareDbCommandForExecute(cmd);
+      if (helper.SupportsAsynchronousProcessing(cn))
+	    {
+	      var completion = new TaskCompletionSource<int>();
+	      helper.BeginExecuteReader(cmd,
+	        res =>
+	        {
+	          try
+	          {
+	            completion.TrySetResult(helper.EndExecuteNonQuery(cmd, res));
+	          }
+	          catch (OperationCanceledException)
+	          {
+	            completion.TrySetCanceled();
+	          }
+	          catch (Exception exc)
+	          {
+	            completion.TrySetException(exc);
+	          }
+	        }, null);
+	      return completion.Task;
+	    }
+	    return Task.FromResult(cmd.ExecuteNonQuery());
+	  }
+
+	  public Task<DbDataReader> ExecuteReaderAsync()
+	  {
+      var cn = MakeDbConnection();
+      var helper = DbProviderHelpers.GetDbProviderHelperForDbConnection(cn);
+      var cmd = MakeDbCommand();
+      PrepareDbCommandForExecute(cmd);
+      if (helper.SupportsAsynchronousProcessing(cn))
+      {
+        var completion = new TaskCompletionSource<DbDataReader>();
+        helper.BeginExecuteReader(cmd,
+          res =>
+          {
+            try
+            {
+              completion.TrySetResult(helper.EndExecuteReader(cmd, res));
+            }
+            catch (OperationCanceledException)
+            {
+              completion.TrySetCanceled();
+            }
+            catch (Exception exc)
+            {
+              completion.TrySetException(exc);
+            }
+          }, null);
+        return completion.Task;
+      }
+	    return Task.FromResult(cmd.ExecuteReader());
+	  }
+
+	  #endregion
 	}
 }

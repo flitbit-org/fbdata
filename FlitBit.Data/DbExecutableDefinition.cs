@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Linq;
+using System.Threading.Tasks;
 using FlitBit.Core;
 using FlitBit.Core.Parallel;
 
@@ -38,8 +39,6 @@ namespace FlitBit.Data
 			return true;
 		}
 
-		#region IDbExecutable Members
-
 		public CommandBehaviors Behaviors { get; internal set; }
 
 		public string CommandText { get; internal set; }
@@ -54,7 +53,9 @@ namespace FlitBit.Data
 
 		public IDbContext Context { get; internal set; }
 
-		/// <summary>
+	  public Task<T> ExecuteScalarAsync<T>() { throw new NotImplementedException(); }
+
+	  /// <summary>
 		///   Ensures the command includes the given behaviors.
 		/// </summary>
 		/// <param name="behaviors">behaviors being included</param>
@@ -110,7 +111,10 @@ namespace FlitBit.Data
 			throw new NotImplementedException();
 		}
 
-		public IDbExecutable CreateOnConnection(DbConnection connection)
+	  public Task<int> ExecuteNonQueryAsync() { throw new NotImplementedException(); }
+	  public Task<DbDataReader> ExecuteReaderAsync() { throw new NotImplementedException(); }
+
+	  public IDbExecutable CreateOnConnection(DbConnection connection)
 		{
 			var helper = DbProviderHelpers.GetDbProviderHelperForDbConnection(connection);
 			return helper.DefineExecutableOnConnection(connection, this);
@@ -139,6 +143,5 @@ namespace FlitBit.Data
 			}
 		}
 
-		#endregion
 	}
 }

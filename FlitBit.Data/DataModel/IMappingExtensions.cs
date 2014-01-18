@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using FlitBit.Core;
+using FlitBit.Core.Log;
 using FlitBit.Data.Meta;
 using FlitBit.Data.Meta.DDL;
 
@@ -11,6 +12,8 @@ namespace FlitBit.Data.DataModel
 {
 	public static class IMappingExtensions
 	{
+    static readonly ILogSink LogSink = typeof(IMappingExtensions).GetLogSink();
+
 		public static DDLBatch GetDdlBatch(this IMapping mapping, DDLBatch batch, Stack<IMapping> stack)
 		{
 			Contract.Requires<ArgumentNullException>(mapping != null);
@@ -54,17 +57,17 @@ namespace FlitBit.Data.DataModel
 			finally
 			{
 				var bottom = stack.Pop();
-				if (!ReferenceEquals(bottom, mapping))
-				{
-					LogSink.OnTraceEvent(typeof(IMappingExtensions), TraceEventType.Warning,
-															String.Concat(
-																					 "GetDdlBatch encountered an error in the stack while generating DDL; stack contained {0} instead of {1} on exit.",
-																					bottom.GetType()
-																								.GetReadableFullName(),
-																					mapping.GetType()
-																								.GetReadableFullName())
-						);
-				}
+			  if (!ReferenceEquals(bottom, mapping))
+			  {
+			    LogSink.Warning(
+			      String.Concat(
+			        "GetDdlBatch encountered an error in the stack while generating DDL; stack contained {0} instead of {1} on exit.",
+			        bottom.GetType()
+			              .GetReadableFullName(),
+			        mapping.GetType()
+			               .GetReadableFullName())
+			      );
+			  }
 			}
 			return batch;
 		}
@@ -72,7 +75,7 @@ namespace FlitBit.Data.DataModel
 		public static DDLBatch GetDdlBatch(this IMapping mapping, DDLBehaviors behaviors)
 		{
 			Contract.Requires<ArgumentNullException>(mapping != null);
-			Contract.Requires<InvalidOperationException>(mapping.ConnectionName != null && mapping.ConnectionName.Length > 0,
+			Contract.Requires<InvalidOperationException>(!string.IsNullOrEmpty(mapping.ConnectionName),
 																									"ConnectionName must be set before creating SQL commands for an entity");
 			Contract.Ensures(Contract.Result<DDLBatch>() != null);
 
@@ -83,15 +86,13 @@ namespace FlitBit.Data.DataModel
 		{
 			if (mapping.IsEnum)
 			{
-				var idcol = mapping.Columns.Where(c => c.RuntimeType.IsEnum && c.IsIdentity)
-													.FirstOrDefault();
+				var idcol = mapping.Columns.FirstOrDefault(c => c.RuntimeType.IsEnum && c.IsIdentity);
 				if (idcol == null)
 				{
 					throw new MappingException(String.Concat("Entity type '", mapping.RuntimeType.GetReadableFullName(),
 																									"' declares behavior EntityBehaviors.MapEnum but the enum type cannot be determined. Specify an identity column of enum type."));
 				}
-				var namecol = mapping.Columns.Where(c => c.RuntimeType == typeof(String) && c.IsAlternateKey)
-														.FirstOrDefault();
+				var namecol = mapping.Columns.FirstOrDefault(c => c.RuntimeType == typeof(String) && c.IsAlternateKey);
 				if (namecol == null)
 				{
 					throw new MappingException(String.Concat("Entity type '", mapping.RuntimeType.GetReadableFullName(),
@@ -105,7 +106,7 @@ namespace FlitBit.Data.DataModel
 					: namecol;
 			}
 
-			var candidates = mapping.Columns.Where(c => c.IsIdentity);
+			var candidates = mapping.Columns.Where(c => c.IsIdentity).ToArray();
 			var candidateCount = candidates.Count();
 			if (candidateCount == 0)
 			{
@@ -118,25 +119,22 @@ namespace FlitBit.Data.DataModel
 										|| col.RuntimeType == typeof(long))
 								select col).SingleOrDefault();
 			}
-			else if (candidateCount == 1)
-			{
-				return candidates.Single();
-			}
-			else
-			{
-				// Try for a column called ID...
-				var candidate = (from col in candidates
-												where col.Member.Name == "ID"
-												select col).SingleOrDefault();
-				if (candidate == null)
-				{
-					// Try for first column ending in "ID", such as "MyTypeID"
-					candidate = (from col in candidates
-											where col.Member.Name.EndsWith("ID")
-											select col).FirstOrDefault();
-				}
-				return candidate;
-			}
+		  if (candidateCount == 1)
+		  {
+		    return candidates.Single();
+		  }
+		  // Try for a column called ID...
+		  var candidate = (from col in candidates
+		                   where col.Member.Name == "ID"
+		                   select col).SingleOrDefault();
+		  if (candidate == null)
+		  {
+		    // Try for first column ending in "ID", such as "MyTypeID"
+		    candidate = (from col in candidates
+		                 where col.Member.Name.EndsWith("ID")
+		                 select col).FirstOrDefault();
+		  }
+		  return candidate;
 		}
 	}
 }
