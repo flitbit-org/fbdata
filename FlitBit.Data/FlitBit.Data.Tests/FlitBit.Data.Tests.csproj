@@ -103,10 +103,6 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="FlitBit.Copy, Version=2.9.0.0, Culture=neutral, PublicKeyToken=38f03d0878531ff3, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\..\packages\FlitBit.Copy.2.9.0\lib\net451\FlitBit.Copy.dll</HintPath>
-    </Reference>
     <Reference Include="FlitBit.Core, Version=3.1.0.0, Culture=neutral, PublicKeyToken=38f03d0878531ff3, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\packages\FlitBit.Core.3.1.0\lib\net451\FlitBit.Core.dll</HintPath>
@@ -118,6 +114,10 @@
     <Reference Include="FlitBit.ObjectIdentity, Version=1.4.0.0, Culture=neutral, PublicKeyToken=38f03d0878531ff3, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\packages\FlitBit.ObjectIdentity.1.4.0\lib\net451\FlitBit.ObjectIdentity.dll</HintPath>
+    </Reference>
+    <Reference Include="FlitBit.Registrar, Version=1.1.0.0, Culture=neutral, PublicKeyToken=38f03d0878531ff3, processorArchitecture=MSIL">
+      <SpecificVersion>False</SpecificVersion>
+      <HintPath>..\..\packages\FlitBit.Registrar.1.1.0\lib\net451\FlitBit.Registrar.dll</HintPath>
     </Reference>
     <Reference Include="FlitBit.Wireup, Version=3.2.0.0, Culture=neutral, PublicKeyToken=38f03d0878531ff3, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>

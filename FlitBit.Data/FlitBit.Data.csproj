@@ -104,10 +104,6 @@
     <Prefer32Bit>false</Prefer32Bit>
   </PropertyGroup>
   <ItemGroup>
-    <Reference Include="FlitBit.Copy, Version=2.9.0.0, Culture=neutral, PublicKeyToken=38f03d0878531ff3, processorArchitecture=MSIL">
-      <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\FlitBit.Copy.2.9.0\lib\net451\FlitBit.Copy.dll</HintPath>
-    </Reference>
     <Reference Include="FlitBit.Core, Version=3.1.0.0, Culture=neutral, PublicKeyToken=38f03d0878531ff3, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\packages\FlitBit.Core.3.1.0\lib\net451\FlitBit.Core.dll</HintPath>
@@ -150,6 +146,7 @@
     <Compile Include="..\AssemblyInfo.corporate.cs">
       <Link>Properties\AssemblyInfo.corporate.cs</Link>
     </Compile>
+    <Compile Include="AssemblyWireup.cs" />
     <Compile Include="ContextCache.cs" />
     <Compile Include="DataModel\DataModelJoinQueryBuilder.cs" />
     <Compile Include="DataModel\DataModelQueryBuilder.cs" />
@@ -184,7 +181,9 @@
     <Compile Include="DataModel\LookupListDataModelRepository.cs" />
     <Compile Include="DataModel\MappedDbTypeEmitter.cs" />
     <Compile Include="Expressions\SqlExpression.cs" />
+    <Compile Include="ExternalWireup\Dependency.FlitBit.Wireup.cs" />
     <Compile Include="Inflector.cs" />
+    <Compile Include="Properties\AssemblyInfo.version.cs" />
     <Compile Include="Repositories\AbstractCachingRepository.cs" />
     <Compile Include="Catalog\IMappedType.cs" />
     <Compile Include="Catalog\StaticCatalog.cs" />
@@ -350,10 +349,13 @@
     <Compile Include="Terminology\ITranslatedTerm.cs" />
     <Compile Include="Terminology\Terms.cs" />
     <Compile Include="TransactionScopeHelper.cs" />
-    <Compile Include="Wireup.cs" />
+    <Compile Include="HookWirupCoordinatorsTask.cs">
+      <SubType>Code</SubType>
+    </Compile>
   </ItemGroup>
   <ItemGroup>
     <None Include="app.config" />
+    <Content Include="ExternalWireup\Dependency.FlitBit.Data.cs.pp" />
     <None Include="FlitBit.Data.nuspec" />
     <None Include="packages.config" />
   </ItemGroup>
