@@ -73,8 +73,6 @@ WHERE [", SchemaName, @"].[Peeps].[ID] = @ID");
 		[TestInitialize]
 		public void SetupTestCatalog()
 		{
-			WireupCoordinator.SelfConfigure();
-
 			using (var cx = DbContext.NewContext())
 			{
 				using (var cn = cx.NewConnection("test"))

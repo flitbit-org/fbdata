@@ -218,7 +218,6 @@ DROP TABLE [{0}].[Peeps]";
             var ran = new Random(Environment.TickCount);
             var gen = new DataGenerator();
 
-            WireupCoordinator.SelfConfigure();
             while (_original.Count < 1000)
             {
                 string name = gen.GetWords(ran.Next(1, 3));

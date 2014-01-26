@@ -1091,7 +1091,7 @@ namespace FlitBit.Data.DataModel
           il.LoadLocal(repo);
           il.CallVirtual(repositoryType.GetProperty("QueryBuilder").GetGetMethod());
 
-          il.LoadToken(typeof(TDataModel));
+          il.LoadToken(referencedType);
           il.Call<Type>("GetTypeFromHandle", BindingFlags.Static | BindingFlags.Public, typeof(RuntimeTypeHandle));
           il.LoadValue("self");
           il.Call<Expression>("Parameter", BindingFlags.Static | BindingFlags.Public, typeof(Type), typeof(string));
@@ -1123,8 +1123,8 @@ namespace FlitBit.Data.DataModel
             il.Call<Expression>("Property", BindingFlags.Static | BindingFlags.Public, typeof(Expression), typeof(MethodInfo));
             if (c.IsReference)
             {
-              var id = c.Mapping.GetPreferredReferenceColumn();
-              il.Emit(OpCodes.Ldtoken, ((PropertyInfo)id.Member).GetGetMethod());
+              var id = c.ReferenceTargetMember;
+              il.Emit(OpCodes.Ldtoken, ((PropertyInfo)id).GetGetMethod());
               il.Call<MethodBase>("GetMethodFromHandle", BindingFlags.Static | BindingFlags.Public, typeof(RuntimeMethodHandle));
               il.CastClass<MethodInfo>();
               il.Call<Expression>("Property", BindingFlags.Static | BindingFlags.Public, typeof(Expression), typeof(MethodInfo));

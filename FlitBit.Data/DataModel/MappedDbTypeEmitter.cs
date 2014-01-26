@@ -517,9 +517,22 @@ namespace FlitBit.Data.DataModel
 			
 			if (IsLengthRequired)
 			{
-				il.LoadLocal(parm);
-				il.LoadValue(details.Length.Value);
-				il.CallVirtual<TDbParameter>("set_Size", typeof(int));
+			  if (details.Length.HasValue)
+			  {
+			    il.LoadLocal(parm);
+			    il.LoadValue(details.Length.Value);
+			    il.CallVirtual<TDbParameter>("set_Size", typeof(int));
+			  }
+        else if (TreatMissingLengthAsMaximum)
+        {
+          il.LoadLocal(parm);
+          il.LoadValue(MissingLengthBindValue);
+          il.CallVirtual<TDbParameter>("set_Size", typeof(int));
+        }
+			  else 
+			  {
+          throw new MappingException("Column definition requires a length: " + column.Member.Name + '.');
+			  }
 			}
 			else if (IsPrecisionRequired)
 			{
@@ -613,7 +626,9 @@ namespace FlitBit.Data.DataModel
 		{
 			return Convert.ToString(value);
 		}
-	}
+
+    public int MissingLengthBindValue { get; set; }
+  }
 
 	internal abstract class MappedDbTypeEmitter<T> : MappedDbTypeEmitter
 	{

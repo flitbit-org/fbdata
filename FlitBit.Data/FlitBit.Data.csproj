@@ -360,7 +360,7 @@
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>
-    <Content Include="SqlServer\Scripts\SyntheticID.sql" />
+    <None Include="SqlServer\Scripts\SyntheticID.sql" />
   </ItemGroup>
   <ItemGroup>
     <EmbeddedResource Include="Properties\Resources.resx">

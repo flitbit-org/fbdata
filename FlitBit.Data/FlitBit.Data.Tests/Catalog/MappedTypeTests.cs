@@ -15,13 +15,6 @@ namespace FlitBit.Data.Tests.Catalog
 	[TestClass]
 	public class MappedTypeTests
 	{
-		[TestInitialize]
-		public void Initialize()
-		{
-			WireupCoordinator.SelfConfigure();
-			// force the dynamic assembly to disk so we can put eyeballs on the code...
-			RuntimeAssemblies.WriteDynamicAssemblyOnExit = true;
-		}
 
 		[TestMethod]
 		public void OneTypeOneTableMappingTest()

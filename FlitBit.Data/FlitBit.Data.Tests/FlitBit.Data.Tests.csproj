@@ -138,6 +138,7 @@
       <SpecificVersion>False</SpecificVersion>
       <HintPath>..\..\packages\Microsoft.Tpl.Dataflow.4.5.14\lib\portable-net45+win8\System.Threading.Tasks.Dataflow.dll</HintPath>
     </Reference>
+    <Reference Include="System.Transactions" />
     <Reference Include="System.Xml" />
   </ItemGroup>
   <ItemGroup>
@@ -146,11 +147,13 @@
     </CodeAnalysisDependentAssemblyPaths>
   </ItemGroup>
   <ItemGroup>
+    <Compile Include="AssemblySetup.cs" />
     <Compile Include="BasicDbCommandTests.cs" />
     <Compile Include="Catalog\MappedTypeTests.cs" />
     <Compile Include="DataRepositoryTests.cs" />
     <Compile Include="DbConnectionExtensionTests.cs" />
     <Compile Include="DbContextTests.cs" />
+    <Compile Include="ExternalWireup\Dependency.FlitBit.Wireup.cs" />
     <Compile Include="Meta\HierarchyMappingTests.cs" />
     <Compile Include="Meta\MappingTests.cs" />
     <Compile Include="Meta\Models\EmailVerificationStates.cs" />
@@ -163,8 +166,10 @@
     <Compile Include="Meta\Models\IPhone.cs" />
     <Compile Include="Meta\Models\IPhoneKind.cs" />
     <Compile Include="Meta\Models\IParty.cs" />
+    <Compile Include="Patterns\IDescription.cs" />
     <Compile Include="Model\Peep.cs" />
     <Compile Include="Model\PeepsRepository.cs" />
+    <Compile Include="Patterns\DescriptionTest.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Wireup.cs" />
   </ItemGroup>
@@ -178,6 +183,7 @@
     <None Include="app.config">
       <SubType>Designer</SubType>
     </None>
+    <Compile Include="ExternalWireup\Dependency.FlitBit.Data.cs" />
     <None Include="packages.config" />
   </ItemGroup>
   <ItemGroup>

@@ -84,9 +84,9 @@ namespace FlitBit.Data.Meta.Tests
 			Assert.IsFalse(ext.IsTimestampOnUpdate);
 			Assert.AreEqual(0, ext.VariableLength);
 
-			var nm = Enumerable.First(from c in columns
-																where c.TargetName == "Name"
-																select c);
+			var nm = (from c in columns
+			          where c.TargetName == "Name"
+			          select c).First();
 
 			Assert.AreEqual("[TestPerson].[Name]", nm.DbObjectReference);
 			// things we specified...		

@@ -11,6 +11,9 @@ using System.Transactions;
 
 namespace FlitBit.Data
 {
+	/// <summary>
+	/// Static helper class for working with transactions (distributed).
+	/// </summary>
 	public static class TransactionScopeHelper
 	{
 		public static readonly bool AutoForceTransactionPromotion = false;
@@ -18,6 +21,10 @@ namespace FlitBit.Data
 		public static readonly TimeSpan DefaultTransactionTimeout = TimeSpan.FromSeconds(-1);
 		internal static readonly string __TransactionPropagationTokenName = "TransactionPropagationToken";
 
+    /// <summary>
+    /// Ensures that an ambient transaction is present.
+    /// </summary>
+    /// <exception cref="InvalidOperationException">thrown if there is not currently an ambient transaction.</exception>
 		public static void AssertTransaction()
 		{
 			if (Transaction.Current == null)
@@ -26,16 +33,31 @@ namespace FlitBit.Data
 			}
 		}
 
+    /// <summary>
+    /// Creates a new transaction using defaults.
+    /// </summary>
+    /// <returns></returns>
 		public static TransactionScope CreateScope_RequireNew()
 		{
 			return CreateScope_RequireNew(DefaultIsolationLevel, DefaultTransactionTimeout);
 		}
 
+    /// <summary>
+    /// Creates a new transaction with the specified transaction isolation level.
+    /// </summary>
+    /// <param name="isolation"></param>
+    /// <returns></returns>
 		public static TransactionScope CreateScope_RequireNew(IsolationLevel isolation)
 		{
 			return CreateScope_RequireNew(isolation, DefaultTransactionTimeout);
 		}
 
+    /// <summary>
+    /// Creates a new transaction with the specified transaction isolation level and timeout.
+    /// </summary>
+    /// <param name="isolation"></param>
+    /// <param name="timeout"></param>
+    /// <returns></returns>
 		[SuppressMessage("Microsoft.Reliability", "CA2000",
 			Justification = "By design; the purpose of the method is to construct a TransactionScope")]
 		public static TransactionScope CreateScope_RequireNew(IsolationLevel isolation, TimeSpan timeout)
@@ -55,21 +77,45 @@ namespace FlitBit.Data
 			return result;
 		}
 
+    /// <summary>
+    /// Shares the current transaction scope, creating one if there isn't an ambient transaction already
+    /// in place.
+    /// </summary>
+    /// <returns></returns>
 		public static TransactionScope CreateScope_ShareCurrentOrCreate()
 		{
 			return CreateScope_ShareCurrentOrCreate(DefaultIsolationLevel, DefaultTransactionTimeout);
 		}
 
+    /// <summary>
+    /// Shares the current transaction scope, creating one with the specified transaction isolation level
+    /// if there isn't an ambient transaction already in place.
+    /// </summary>
+    /// <param name="isolation"></param>
+    /// <returns></returns>
 		public static TransactionScope CreateScope_ShareCurrentOrCreate(IsolationLevel isolation)
 		{
 			return CreateScope_ShareCurrentOrCreate(isolation, DefaultTransactionTimeout);
 		}
 
+    /// <summary>
+    /// Shares the current transaction scope, creating one with the specified timeout
+    /// if there isn't an ambient transaction already in place.
+    /// </summary>
+    /// <param name="timeout"></param>
+    /// <returns></returns>
 		public static TransactionScope CreateScope_ShareCurrentOrCreate(TimeSpan timeout)
 		{
 			return CreateScope_ShareCurrentOrCreate(DefaultIsolationLevel, timeout);
 		}
 
+    /// <summary>
+    /// Shares the current transaction scope, creating one with the specified transaction
+    /// isolation level and timeout if there isn't an ambient transaction already in place.
+    /// </summary>
+    /// <param name="isolation"></param>
+    /// <param name="timeout"></param>
+    /// <returns></returns>
 		[SuppressMessage("Microsoft.Reliability", "CA2000",
 			Justification = "By design; the purpose of the method is to construct a TransactionScope")]
 		public static TransactionScope CreateScope_ShareCurrentOrCreate(IsolationLevel isolation, TimeSpan timeout)
@@ -90,6 +136,10 @@ namespace FlitBit.Data
 			return result;
 		}
 
+    /// <summary>
+    /// Creates a transaction scope to suppress the ambient transaction.
+    /// </summary>
+    /// <returns></returns>
 		public static TransactionScope CreateScope_Suppress()
 		{
 			return new TransactionScope(TransactionScopeOption.Suppress);
@@ -123,8 +173,12 @@ namespace FlitBit.Data
 			return new TransactionScope(TransactionScopeOption.Suppress, options, EnterpriseServicesInteropOption.Automatic);
 		}
 
+    /// <summary>
+    /// Forceably promotes the ambient transaction to a distributed transaction. 
+    /// </summary>
 		public static void ForcePromotionOfCurrentTransaction()
 		{
+      AssertTransaction();
 			TransactionInterop.GetTransmitterPropagationToken(Transaction.Current);
 		}
 
@@ -174,10 +228,13 @@ namespace FlitBit.Data
 		}
 	}
 
+	/// <summary>
+	/// Call context wrapper for distributing the ambient transaction.
+	/// </summary>
 	[Serializable]
 	public class TransactionCallContext : ILogicalThreadAffinative
 	{
-		byte[] _token;
+	  readonly byte[] _token;
 
 		internal TransactionCallContext(byte[] token, bool voteNoConfidence)
 		{
@@ -188,8 +245,17 @@ namespace FlitBit.Data
 		TransactionCallContext()
 		{}
 
+		/// <summary>
+		/// Indicates the remote end does not have confidence in its end of the
+		/// transactioned operations. The local side should not complete the 
+		/// transaction.
+		/// </summary>
 		public bool RemoteVoteOfNoConfidence { get; private set; }
 
+    /// <summary>
+    /// Gets the transaction propagation token.
+    /// </summary>
+    /// <returns></returns>
 		public byte[] GetPropagationToken()
 		{
 			return _token;
