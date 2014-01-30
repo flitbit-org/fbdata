@@ -31,16 +31,9 @@ namespace FlitBit.Data.DataModel.DbTypeEmitters
 			il.CallVirtual<DbDataReader>("GetInt16", typeof(int));
 		}
 
-		/// <summary>
-		/// Emits IL to translate the runtime type to the dbtype.
-		/// </summary>
-		/// <param name="il"></param>
-		/// <remarks>
-		/// At the time of the call the runtime value is on top of the stack.
-		/// When the method returns the translated type must be on the top of the stack.
-		/// </remarks>
-		protected override void EmitTranslateRuntimeType(ILGenerator il)
-		{
+		protected override void EmitTranslateRuntimeType(ILGenerator il, LocalBuilder local)
+    {
+      il.LoadLocal(local);
 			il.Call(typeof(Convert).GetMethod("ToInt16", BindingFlags.Public | BindingFlags.Static, null, new[] { typeof(object) }, null));
 		}
 	}

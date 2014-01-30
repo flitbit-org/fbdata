@@ -41,17 +41,10 @@ namespace FlitBit.Data.SqlServer
 			base.EmitColumnConstraintsDDL(buffer, mapping, col, tableConstraints);
 		}
 
-		/// <summary>
-		///   Emits IL to translate the runtime type to the dbtype.
-		/// </summary>
-		/// <param name="il"></param>
-		/// <remarks>
-		///   At the time of the call the runtime value is on top of the stack.
-		///   When the method returns the translated type must be on the top of the stack.
-		/// </remarks>
-		protected override void EmitTranslateRuntimeType(ILGenerator il)
-		{
-			il.NewObj(typeof(SqlGuid).GetConstructor(new[] { typeof(Guid) }));
+    protected override void EmitTranslateRuntimeType(ILGenerator il, LocalBuilder local)
+    {
+      il.LoadLocal(local);
+      il.NewObj(typeof(SqlGuid).GetConstructor(new[] { typeof(Guid) }));
 			il.Box(typeof(SqlGuid));
 		}
 	}
@@ -90,17 +83,10 @@ namespace FlitBit.Data.SqlServer
 			base.EmitColumnConstraintsDDL(buffer, mapping, col, tableConstraints);
 		}
 
-		/// <summary>
-		///   Emits IL to translate the runtime type to the dbtype.
-		/// </summary>
-		/// <param name="il"></param>
-		/// <remarks>
-		///   At the time of the call the runtime value is on top of the stack.
-		///   When the method returns the translated type must be on the top of the stack.
-		/// </remarks>
-		protected override void EmitTranslateRuntimeType(ILGenerator il)
-		{
-			il.NewObj(typeof (SqlGuid).GetConstructor(new[] {typeof (Guid)}));
+    protected override void EmitTranslateRuntimeType(ILGenerator il, LocalBuilder local)
+    {
+      il.LoadLocal(local);
+      il.NewObj(typeof(SqlGuid).GetConstructor(new[] { typeof(Guid) }));
 			il.Box(typeof (SqlGuid));
 		}
 

@@ -30,14 +30,9 @@ namespace FlitBit.Data.SqlServer
 			il.CallVirtual<SqlParameter>("set_SqlDbType", typeof(SqlDbType));
 		}
 
-		protected internal override void EmitDbParameterSetValue(ILGenerator il, ColumnMapping column, LocalBuilder parm,
-			LocalBuilder local,
-			LocalBuilder flag)
-		{
-			il.LoadLocal(parm);
-			il.LoadLocal(local);
-			EmitTranslateRuntimeType(il);
-			il.CallVirtual<SqlParameter>("set_SqlValue", typeof(object));
-		}
+    protected override void EmitInvokeDbParameterSetValue(ILGenerator il)
+    {
+      il.CallVirtual<SqlParameter>("set_SqlValue", typeof(object));
+    }
 	}
 }

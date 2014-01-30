@@ -487,17 +487,24 @@ namespace FlitBit.Data.DataModel
 		{
 		}
 
-		/// <summary>
-		///   Emits IL to translate the runtime type to the dbtype.
-		/// </summary>
-		/// <param name="il"></param>
-		/// <remarks>
-		///   At the time of the call the runtime value is on top of the stack.
-		///   When the method returns the translated type must be on the top of the stack.
-		/// </remarks>
-		protected virtual void EmitTranslateRuntimeType(ILGenerator il)
+	  /// <summary>
+	  ///   Emits IL to translate the runtime type to the dbtype.
+	  /// </summary>
+	  /// <param name="il"></param>
+	  /// <param name="local"></param>
+	  /// <remarks>
+	  ///   It is the responsibility of this method to ensure the local is loaded,
+	  /// translated, and on the top of the stack.
+	  /// </remarks>
+	  protected virtual void EmitTranslateRuntimeType(ILGenerator il, LocalBuilder local)
 		{
+      il.LoadLocal(local);
 		}
+
+    protected virtual void EmitInvokeDbParameterSetValue(ILGenerator il)
+    {
+      il.CallVirtual<DbParameter>("set_Value");
+    }
 
 		public virtual void BindParameterOnDbCommand<TDbParameter>(MethodBuilder method, ColumnMapping column,
 			string bindingName, LocalBuilder parm, Action<ILGenerator> loadCmd, Action<ILGenerator> loadModel, Action<ILGenerator> loadProp,
@@ -587,17 +594,15 @@ namespace FlitBit.Data.DataModel
 				il.Branch(fin);
 				il.MarkLabel(ifelse);
 				il.LoadLocal(parm);
-				il.LoadLocal(local);
-				EmitTranslateRuntimeType(il);
-				il.CallVirtual<DbParameter>("set_Value");
+				EmitTranslateRuntimeType(il, local);
+			  EmitInvokeDbParameterSetValue(il);
 				il.MarkLabel(fin);
 			}
 			else
 			{
 				il.LoadLocal(parm);
-				il.LoadLocal(local);
-				EmitTranslateRuntimeType(il);
-				il.CallVirtual<DbParameter>("set_Value");
+				EmitTranslateRuntimeType(il, local);
+        EmitInvokeDbParameterSetValue(il);
 			}
 		}
 

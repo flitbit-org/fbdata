@@ -20,16 +20,9 @@ namespace FlitBit.Data.SqlServer
 			il.CallVirtual<DbDataReader>("GetBoolean", typeof(int));
 		}
 
-		/// <summary>
-		///   Emits IL to translate the runtime type to the dbtype.
-		/// </summary>
-		/// <param name="il"></param>
-		/// <remarks>
-		///   At the time of the call the runtime value is on top of the stack.
-		///   When the method returns the translated type must be on the top of the stack.
-		/// </remarks>
-		protected override void EmitTranslateRuntimeType(ILGenerator il)
-		{
+		protected override void EmitTranslateRuntimeType(ILGenerator il, LocalBuilder local)
+    {
+      il.LoadLocal(local);
 			il.NewObj(typeof(SqlBoolean).GetConstructor(new[] { typeof(bool) }));
 			il.Box(typeof(SqlBoolean));
 		}
