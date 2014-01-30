@@ -1,12 +1,10 @@
-﻿using System;
+﻿using FlitBit.Data.DataModel;
+using FlitBit.Data.DataModel.DbTypeEmitters;
+using FlitBit.Emit;
+using System;
 using System.Data;
 using System.Data.SqlClient;
-using System.Reflection;
 using System.Reflection.Emit;
-using System.Text;
-using FlitBit.Data.DataModel;
-using FlitBit.Data.Meta;
-using FlitBit.Emit;
 
 namespace FlitBit.Data.SqlServer
 {
@@ -15,7 +13,6 @@ namespace FlitBit.Data.SqlServer
 		internal SqlDbTypeEmitter(DbType dbType, SqlDbType sqlDbType)
 			: this(dbType, sqlDbType, typeof (T))
 		{
-			
 		}
 
 		internal SqlDbTypeEmitter(DbType dbType, SqlDbType sqlDbType, Type underlying)
@@ -29,10 +26,21 @@ namespace FlitBit.Data.SqlServer
 			il.LoadValue(this.SpecializedDbTypeValue);
 			il.CallVirtual<SqlParameter>("set_SqlDbType", typeof(SqlDbType));
 		}
-
-    protected override void EmitInvokeDbParameterSetValue(ILGenerator il)
-    {
-      il.CallVirtual<SqlParameter>("set_SqlValue", typeof(object));
-    }
 	}
+
+  internal abstract class SqlDbTypeNullableEmitter<T> : MappedNullableTypeEmitter<T, SqlDbType>
+    where T: struct
+  {
+    internal SqlDbTypeNullableEmitter(DbType dbType, SqlDbType sqlDbType)
+      : base(dbType, sqlDbType)
+    {
+    }
+    
+    internal protected override void EmitDbParameterSetDbType(ILGenerator il, LocalBuilder parm)
+    {
+      il.LoadLocal(parm);
+      il.LoadValue(this.SpecializedDbTypeValue);
+      il.CallVirtual<SqlParameter>("set_SqlDbType", typeof(SqlDbType));
+    }
+  }
 }

@@ -138,16 +138,23 @@ namespace FlitBit.Data.DataModel
 
 		public string DelimitedQuoteChars { get; protected set; }
 
-		/// <summary>
-		///   Emits MSIL that loads a value from a DbDataReader, translates it to the RuntimeType, and leaves the value on the
-		///   stack.
-		/// </summary>
-		/// <param name="method">the method under construction.</param>
-		/// <param name="reader">a reference to the reader.</param>
-		/// <param name="columnIndex">a reference to the column's index within the reader.</param>
-		/// <param name="details">mapping detail for the column.</param>
-		public abstract void LoadValueFromDbReader(MethodBuilder method, IValueRef reader, IValueRef columnIndex,
-			DbTypeDetails details);
+	  /// <summary>
+	  ///   Emits MSIL that loads a value from a DbDataReader, translates it to the RuntimeType, and leaves the value on the
+	  ///   stack.
+	  /// </summary>
+	  /// <param name="method">the method under construction.</param>
+	  /// <param name="reader">a reference to the reader.</param>
+	  /// <param name="columnIndex">a reference to the column's index within the reader.</param>
+	  /// <param name="details">mapping detail for the column.</param>
+	  public virtual void LoadValueFromDbReader(MethodBuilder method, IValueRef reader, IValueRef columnIndex,
+	    DbTypeDetails details)
+	  {
+      var il = method.GetILGenerator();
+      reader.LoadValue(il);
+      columnIndex.LoadValue(il);
+      il.CallVirtual<DbDataReader>(DbDataReaderGetValueMethodName, typeof(int));
+      EmitTranslateDbType(il);
+	  }
 
 		public void DescribeColumn(StringBuilder buffer, ColumnMapping mapping)
 		{
@@ -499,6 +506,10 @@ namespace FlitBit.Data.DataModel
 	  protected virtual void EmitTranslateRuntimeType(ILGenerator il, LocalBuilder local)
 		{
       il.LoadLocal(local);
+	    if (RuntimeType.IsValueType)
+	    {
+	      il.Box(RuntimeType);
+	    }
 		}
 
     protected virtual void EmitInvokeDbParameterSetValue(ILGenerator il)
@@ -543,14 +554,28 @@ namespace FlitBit.Data.DataModel
 			}
 			else if (IsPrecisionRequired)
 			{
-				il.LoadLocal(parm);
-				il.LoadValue(details.Length.Value);
-				il.CallVirtual<TDbParameter>("set_Precision", typeof(byte));
-				if (IsScaleRequired || (IsScaleOptional && details.Scale.HasValue))
+			  if (details.Length.HasValue)
+			  {
+			    il.LoadLocal(parm);
+			    il.LoadValue(details.Length.Value);
+			    il.CallVirtual<TDbParameter>("set_Precision", typeof(byte));
+			  }
+			  else
+			  {
+          throw new MappingException("Column definition requires a precision: " + column.Member.Name + '.');
+			  }
+			  if (IsScaleRequired || IsScaleOptional) 
 				{
-					il.LoadLocal(parm);
-					il.LoadValue(details.Scale.Value);
-					il.CallVirtual<TDbParameter>("set_Scale", typeof(byte));
+				  if (details.Scale.HasValue)
+				  {
+				    il.LoadLocal(parm);
+				    il.LoadValue(details.Scale.Value);
+				    il.CallVirtual<TDbParameter>("set_Scale", typeof(byte));
+				  }
+          else if (!IsScaleOptional)
+          {
+            throw new MappingException("Column definition requires a scale: " + column.Member.Name + '.');
+          }
 				}
 			}
 			
@@ -588,9 +613,7 @@ namespace FlitBit.Data.DataModel
 				il.StoreLocal(flag);
 				il.LoadLocal(flag);
 				il.BranchIfTrue(ifelse);
-				il.LoadLocal(parm);
-				il.LoadField(typeof (DBNull).GetField("Value", BindingFlags.Static | BindingFlags.Public));
-				il.CallVirtual<DbParameter>("set_Value");
+			  EmitDbParameterSetDbNull(il, parm);
 				il.Branch(fin);
 				il.MarkLabel(ifelse);
 				il.LoadLocal(parm);
@@ -605,6 +628,13 @@ namespace FlitBit.Data.DataModel
         EmitInvokeDbParameterSetValue(il);
 			}
 		}
+
+    protected internal virtual void EmitDbParameterSetDbNull(ILGenerator il, LocalBuilder parm)
+    {
+      il.LoadLocal(parm);
+      il.LoadField(typeof(DBNull).GetField("Value", BindingFlags.Static | BindingFlags.Public));
+      EmitInvokeDbParameterSetValue(il);
+    }
 
 		protected internal virtual void EmitDbParameterSetDbType(ILGenerator il, LocalBuilder parm)
 		{
@@ -633,6 +663,8 @@ namespace FlitBit.Data.DataModel
 		}
 
     public int MissingLengthBindValue { get; set; }
+
+    public string DbDataReaderGetValueMethodName { get; protected set; }
   }
 
 	internal abstract class MappedDbTypeEmitter<T> : MappedDbTypeEmitter

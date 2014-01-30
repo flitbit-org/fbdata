@@ -18,14 +18,9 @@ namespace FlitBit.Data.SqlServer
 		{
 			this.IsQuoteRequired = true;
 			this.QuoteChars = "'";
+		  DbDataReaderGetValueMethodName = "GetGuid";
 		}
-		public override void LoadValueFromDbReader(MethodBuilder method, IValueRef reader, IValueRef columnIndex, DbTypeDetails details)
-		{
-			var il = method.GetILGenerator();
-			reader.LoadValue(il);
-			columnIndex.LoadValue(il);
-			il.CallVirtual<DbDataReader>("GetGuid", typeof(int));
-		}
+
 		public override void EmitColumnConstraintsDDL<TModel>(StringBuilder buffer, IMapping<TModel> mapping, ColumnMapping<TModel> col, System.Collections.Generic.List<string> tableConstraints)
 		{
 			if (col.IsIdentity && mapping.Identity.Columns.Count() == 1)
@@ -41,12 +36,12 @@ namespace FlitBit.Data.SqlServer
 			base.EmitColumnConstraintsDDL(buffer, mapping, col, tableConstraints);
 		}
 
-    protected override void EmitTranslateRuntimeType(ILGenerator il, LocalBuilder local)
-    {
-      il.LoadLocal(local);
-      il.NewObj(typeof(SqlGuid).GetConstructor(new[] { typeof(Guid) }));
-			il.Box(typeof(SqlGuid));
-		}
+    //protected override void EmitTranslateRuntimeType(ILGenerator il, LocalBuilder local)
+    //{
+    //  il.LoadLocal(local);
+    //  il.NewObj(typeof(SqlGuid).GetConstructor(new[] { typeof(Guid) }));
+    //  il.Box(typeof(SqlGuid));
+    //}
 	}
 
 	internal class SqlMappedNullableGuidEmitter : SqlDbTypeEmitter<Guid>

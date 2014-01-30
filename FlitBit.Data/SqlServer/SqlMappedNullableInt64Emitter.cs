@@ -6,33 +6,13 @@ using FlitBit.Emit;
 
 namespace FlitBit.Data.SqlServer
 {
-	internal class SqlMappedNullableInt64Emitter : SqlDbTypeEmitter<long?>
+  internal class SqlMappedNullableInt64Emitter : SqlDbTypeNullableEmitter<long>
 	{
 		internal SqlMappedNullableInt64Emitter()
-			: base(DbType.Int64, SqlDbType.BigInt, typeof(long))
+			: base(DbType.Int64, SqlDbType.BigInt)
 		{
-		}
-		public override void LoadValueFromDbReader(MethodBuilder method, IValueRef reader, IValueRef columnIndex, DbTypeDetails details)
-		{
-			var il = method.GetILGenerator();
-			reader.LoadValue(il);
-			columnIndex.LoadValue(il);
-			il.CallVirtual<DbDataReader>("GetInt64", typeof(int));
-			EmitTranslateDbType(il);
+		  DbDataReaderGetValueMethodName = "GetInt64";
 		}
 
-		protected override void EmitTranslateRuntimeType(ILGenerator il, LocalBuilder local)
-    {
-      il.LoadLocalAddress(local);
-      il.CallVirtual<long?>("get_Value");
-			il.NewObj(typeof(SqlInt64).GetConstructor(new[] { typeof(long) }));
-			il.Box(typeof(SqlInt64));
-		}
-
-
-		protected override void EmitTranslateDbType(ILGenerator il)
-		{
-			il.NewObj(typeof(long?).GetConstructor(new[] { typeof(long) }));
-		}
 	}
 }

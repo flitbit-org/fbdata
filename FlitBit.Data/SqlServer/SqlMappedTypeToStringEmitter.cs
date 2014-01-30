@@ -19,10 +19,19 @@ namespace FlitBit.Data.SqlServer
 			il.Call<Type>("GetType", BindingFlags.Static | BindingFlags.Public, typeof(string));
 		}
 
-		protected internal override void EmitTranslateRuntimeType(ILGenerator il)
-		{
-			il.CallVirtual<Type>("get_FullName");
-			base.EmitTranslateRuntimeType(il);
+	  /// <summary>
+	  ///   Emits IL to translate the runtime type to the dbtype.
+	  /// </summary>
+	  /// <param name="il"></param>
+	  /// <param name="local"></param>
+	  /// <remarks>
+	  ///   It is the responsibility of this method to ensure the local is loaded,
+	  /// translated, and on the top of the stack.
+	  /// </remarks>
+	  protected override void EmitTranslateRuntimeType(ILGenerator il, LocalBuilder local)
+	  {
+      il.LoadLocal(local);
+	  	il.CallVirtual<Type>("get_FullName");
 		}
 
 		public override DbTypeDetails GetDbTypeDetails(ColumnMapping column)

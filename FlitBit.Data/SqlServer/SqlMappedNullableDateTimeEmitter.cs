@@ -7,7 +7,7 @@ using FlitBit.Emit;
 
 namespace FlitBit.Data.SqlServer
 {
-	internal class SqlMappedNullableDateTimeEmitter : SqlDbTypeEmitter<DateTime?>
+  internal class SqlMappedNullableDateTimeEmitter : SqlDbTypeNullableEmitter<DateTime>
 	{
 		internal SqlMappedNullableDateTimeEmitter(SqlDbType dbType)
 			: base(default(DbType), dbType)
@@ -35,28 +35,9 @@ namespace FlitBit.Data.SqlServer
 					break;
 				default:
 					throw new ArgumentOutOfRangeException("dbType");
-			}		
-		}
-		public override void LoadValueFromDbReader(MethodBuilder method, IValueRef reader, IValueRef columnIndex, DbTypeDetails details)
-		{
-			var il = method.GetILGenerator();
-			reader.LoadValue(il);
-			columnIndex.LoadValue(il);
-			il.CallVirtual<DbDataReader>("GetDateTime", typeof(int));
-			EmitTranslateDbType(il);
+			}
+		  DbDataReaderGetValueMethodName = "GetDateTime";
 		}
 
-    protected override void EmitTranslateRuntimeType(ILGenerator il, LocalBuilder local)
-    {
-      il.LoadLocalAddress(local);
-      il.CallVirtual<DateTime?>("get_Value");
-      il.NewObj(typeof(SqlDateTime).GetConstructor(new[] { typeof(DateTime) }));
-			il.Box(typeof(SqlDateTime));
-		}
-
-		protected override void EmitTranslateDbType(ILGenerator il)
-		{
-			il.NewObj(typeof(DateTime?).GetConstructor(new[] { typeof(DateTime) }));
-		}
 	}
 }

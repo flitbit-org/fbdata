@@ -14,14 +14,9 @@ namespace FlitBit.Data.SqlServer
 		internal SqlMappedInt16Emitter()
 			: base(DbType.Int16, SqlDbType.SmallInt)
 		{
+		  DbDataReaderGetValueMethodName = "GetInt16";
 		}
-		public override void LoadValueFromDbReader(MethodBuilder method, IValueRef reader, IValueRef columnIndex, DbTypeDetails details)
-		{
-			var il = method.GetILGenerator();
-			reader.LoadValue(il);
-			columnIndex.LoadValue(il);
-			il.CallVirtual<DbDataReader>("GetInt16", typeof(int));
-		}
+
 		public override void EmitColumnInitializationDDL<TModel>(StringBuilder buffer, IMapping<TModel> mapping, ColumnMapping<TModel> col)
 		{
 			if (col.IsSynthetic)
@@ -30,11 +25,11 @@ namespace FlitBit.Data.SqlServer
 			}
 		}
 
-		protected override void EmitTranslateRuntimeType(ILGenerator il, LocalBuilder local)
-    {
-      il.LoadLocal(local);
-			il.NewObj(typeof(SqlInt16).GetConstructor(new[] { typeof(short) }));
-			il.Box(typeof(SqlInt16));
-		}
+    //protected override void EmitTranslateRuntimeType(ILGenerator il, LocalBuilder local)
+    //{
+    //  il.LoadLocal(local);
+    //  il.NewObj(typeof(SqlInt16).GetConstructor(new[] { typeof(short) }));
+    //  il.Box(typeof(SqlInt16));
+    //}
 	}
 }

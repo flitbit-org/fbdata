@@ -11,13 +11,7 @@ namespace FlitBit.Data.SqlServer
 		internal SqlMappedByteEmitter()
 			: base(DbType.Byte, SqlDbType.TinyInt)
 		{
-		}
-		public override void LoadValueFromDbReader(MethodBuilder method, IValueRef reader, IValueRef columnIndex, DbTypeDetails details)
-		{
-			var il = method.GetILGenerator();
-			reader.LoadValue(il);
-			columnIndex.LoadValue(il);
-			il.CallVirtual<DbDataReader>("GetByte", typeof(int));
+		  DbDataReaderGetValueMethodName = "GetByte";
 		}
 
 		protected override void EmitTranslateRuntimeType(ILGenerator il, LocalBuilder local)

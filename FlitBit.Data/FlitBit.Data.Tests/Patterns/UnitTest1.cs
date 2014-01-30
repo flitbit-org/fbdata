@@ -1,10 +1,10 @@
 ﻿using System;
 using System.Text;
 using FlitBit.Core;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
 using FlitBit.Data.DataModel;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
-namespace FlitBit.Data.Tests.Model
+namespace FlitBit.Data.Tests.Patterns
 {
   [TestClass]
   public class NullableDateTimeTests

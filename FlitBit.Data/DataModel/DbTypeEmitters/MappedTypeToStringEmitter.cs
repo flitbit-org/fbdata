@@ -8,9 +8,11 @@ namespace FlitBit.Data.DataModel.DbTypeEmitters
 {
 	internal class MappedTypeToStringEmitter: MappedAnyToStringEmitter<Type>
 	{
-		public MappedTypeToStringEmitter(DbType dbType)
-			: base(dbType)
-		{}
+	  public MappedTypeToStringEmitter(DbType dbType)
+	    : base(dbType)
+	  {
+	    
+	  }
 
 		protected override void EmitTranslateType(MethodBuilder method)
 		{

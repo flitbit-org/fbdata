@@ -87,8 +87,6 @@ namespace FlitBit.Data
 			public TModel Create(IDbContext context, TModel model)
 			{
 				Contract.Requires<ArgumentNullException>(context != null);
-				Contract.Requires<ArgumentNullException>(model != null);
-				Contract.Ensures(Contract.Result<TModel>() != null);
 
 				throw new NotImplementedException();
 			}
@@ -103,8 +101,6 @@ namespace FlitBit.Data
 			public TModel Update(IDbContext context, TModel model)
 			{
 				Contract.Requires<ArgumentNullException>(context != null);
-				Contract.Requires<ArgumentNullException>(model != null);
-				Contract.Ensures(Contract.Result<TModel>() != null);
 
 				throw new NotImplementedException();
 			}

@@ -166,8 +166,9 @@
     <Compile Include="Meta\Models\IPhone.cs" />
     <Compile Include="Meta\Models\IPhoneKind.cs" />
     <Compile Include="Meta\Models\IParty.cs" />
-    <Compile Include="Model\ITestNullableDateTime.cs" />
-    <Compile Include="Model\UnitTest1.cs" />
+    <Compile Include="Patterns\ITestNullableDateTime.cs" />
+    <Compile Include="Patterns\NullableDateTimeInsertCommand.cs" />
+    <Compile Include="Patterns\UnitTest1.cs" />
     <Compile Include="Patterns\IDescription.cs" />
     <Compile Include="Model\Peep.cs" />
     <Compile Include="Model\PeepsRepository.cs" />

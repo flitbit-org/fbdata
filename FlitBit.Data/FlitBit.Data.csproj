@@ -166,6 +166,7 @@
     <Compile Include="DataModel\DbTypeEmitters\MappedInt32Emitter.cs" />
     <Compile Include="DataModel\DbTypeEmitters\MappedInt64Emitter.cs" />
     <Compile Include="DataModel\DbTypeEmitters\MappedNullableBooleanEmitter.cs" />
+    <Compile Include="DataModel\DbTypeEmitters\MappedNullableTypeEmitter.cs" />
     <Compile Include="DataModel\DbTypeEmitters\MappedSByteEmitter.cs" />
     <Compile Include="DataModel\DbTypeEmitters\MappedSingleEmitter.cs" />
     <Compile Include="DataModel\DbTypeEmitters\MappedStringEmitter.cs" />

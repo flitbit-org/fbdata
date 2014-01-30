@@ -6,32 +6,12 @@ using FlitBit.Emit;
 
 namespace FlitBit.Data.SqlServer
 {
-	internal class SqlMappedNullableBoolAsBitEmitter : SqlDbTypeEmitter<bool?>
+  internal class SqlMappedNullableBoolAsBitEmitter : SqlDbTypeNullableEmitter<bool>
 	{
 		internal SqlMappedNullableBoolAsBitEmitter()
 			: base(DbType.Boolean, SqlDbType.Bit)
 		{
-		}
-		public override void LoadValueFromDbReader(MethodBuilder method, IValueRef reader, IValueRef columnIndex, DbTypeDetails details)
-		{
-			var il = method.GetILGenerator();
-			reader.LoadValue(il);
-			columnIndex.LoadValue(il);
-			il.CallVirtual<DbDataReader>("GetBoolean", typeof(int));
-			EmitTranslateDbType(il);
-		}
-
-    protected override void EmitTranslateRuntimeType(ILGenerator il, LocalBuilder local)
-    {
-      il.LoadLocalAddress(local);
-      il.CallVirtual<bool?>("get_Value");
-			il.NewObj(typeof(SqlBoolean).GetConstructor(new[] { typeof(bool) }));
-			il.Box(typeof(SqlBoolean));
-		}
-
-		protected override void EmitTranslateDbType(ILGenerator il)
-		{
-			il.NewObj(typeof(bool?).GetConstructor(new[] { typeof(bool) }));
+		  DbDataReaderGetValueMethodName = "GetBoolean";
 		}
 
 		protected override string TransformConstantValueToString(object value)

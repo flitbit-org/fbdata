@@ -14,23 +14,12 @@ namespace FlitBit.Data.SqlServer
     internal SqlMappedSingleEmitter()
       : base(DbType.Single, SqlDbType.Real)
     {
+      DbDataReaderGetValueMethodName = "GetFloat";
     }
-    public override void LoadValueFromDbReader(MethodBuilder method, IValueRef reader, IValueRef columnIndex, DbTypeDetails details)
-    {
-      var il = method.GetILGenerator();
-      reader.LoadValue(il);
-      columnIndex.LoadValue(il);
-      il.CallVirtual<DbDataReader>("GetFloat", typeof(int));
-    }
+
     public override void EmitColumnInitializationDDL<TModel>(StringBuilder buffer, IMapping<TModel> mapping, ColumnMapping<TModel> col)
     {
     }
 
-    protected override void EmitTranslateRuntimeType(ILGenerator il, LocalBuilder local)
-    {
-      il.LoadLocal(local);
-      il.NewObj(typeof(SqlSingle).GetConstructor(new[] { typeof(float) }));
-      il.Box(typeof(SqlSingle));
-    }
   }
 }
