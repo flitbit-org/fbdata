@@ -6,17 +6,19 @@ namespace FlitBit.Data
 	public struct DbTypeDetails
 	{
 		private string _bindingName;
-		private int? _length;
+    private int? _length;
 		private string _name;
-		private byte? _scale;
+    private short? _precision;
+    private byte? _scale;
 
-		public DbTypeDetails(string name, string bindingName, int? len,
+		public DbTypeDetails(string name, string bindingName, int? len, short? precision,
 			byte? scale)
 		{
 			Contract.Requires<ArgumentNullException>(name != null);
 			_name = name;
 			_bindingName = bindingName ?? name;
 			_length = len;
+		  _precision = precision;
 			_scale = scale;
 		}
 
@@ -39,6 +41,11 @@ namespace FlitBit.Data
 		{
 			get { return _length; }
 		}
+
+	  public short? Precision
+	  {
+      get { return _precision; }
+	  }
 
 		public byte? Scale
 		{

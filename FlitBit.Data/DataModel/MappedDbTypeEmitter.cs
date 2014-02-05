@@ -165,26 +165,35 @@ namespace FlitBit.Data.DataModel
 				.Append(NameDelimiterEnd)
 				.Append(' ')
 				.Append(SpecializedSqlTypeName);
-			if (IsLengthRequired || IsPrecisionRequired)
-			{
-				if (details.Length.HasValue)
-				{
-					buffer.Append(LengthDelimiterBegin)
-						.Append(details.Length);
-					if (IsScaleRequired && details.Scale.HasValue)
-					{
-						buffer.Append(PrecisionScaleSeparator)
-							.Append(details.Scale);
-					}
-					buffer.Append(LengthDelimiterEnd);
-				}
-				else if (TreatMissingLengthAsMaximum)
-				{
-					buffer.Append(LengthDelimiterBegin)
-						.Append(LengthMaximum)
-						.Append(LengthDelimiterEnd);
-				}
-			}
+      if (IsLengthRequired)
+      {
+        if (details.Length.HasValue)
+        {
+          buffer.Append(LengthDelimiterBegin)
+            .Append(details.Length)
+            .Append(LengthDelimiterEnd);
+        }
+        else if (TreatMissingLengthAsMaximum)
+        {
+          buffer.Append(LengthDelimiterBegin)
+            .Append(LengthMaximum)
+            .Append(LengthDelimiterEnd);
+        }
+      }
+      else if (IsPrecisionRequired && details.Precision.HasValue)
+      {
+        buffer
+          .Append(LengthDelimiterBegin)
+          .Append(details.Precision);
+        if (details.Scale.HasValue)
+        {
+          buffer
+            .Append(PrecisionScaleSeparator)
+            .Append(details.Scale);
+
+        }
+        buffer.Append(LengthDelimiterEnd);
+      }
 			if (mapping.IsTimestampOnInsert)
 			{
 				buffer.Append(" ON INSERT");
@@ -235,34 +244,44 @@ namespace FlitBit.Data.DataModel
 			writer.Append("DECLARE ")
 				.Append(" ").Append(bindName ?? details.BindingName).Append(" ")
 				.Append(SpecializedSqlTypeName);
-			if (IsLengthRequired || IsPrecisionRequired)
-			{
-				if (details.Length.HasValue)
-				{
-					writer.Append(LengthDelimiterBegin)
-						.Append(Convert.ToString(details.Length));
-					if (IsScaleRequired && details.Scale.HasValue)
-					{
-						writer.Append(PrecisionScaleSeparator)
-							.Append(Convert.ToString(details.Scale));
-					}
-					writer.Append(LengthDelimiterEnd);
-				}
-				else if (TreatMissingLengthAsMaximum)
-				{
-					writer.Append(LengthDelimiterBegin)
-						.Append(LengthMaximum)
-						.Append(LengthDelimiterEnd);
-				}
-			}
+      if (IsLengthRequired)
+      {
+        if (details.Length.HasValue)
+        {
+          writer.Append(LengthDelimiterBegin)
+            .Append(Convert.ToString(details.Length))
+            .Append(LengthDelimiterEnd);
+        }
+        else if (TreatMissingLengthAsMaximum)
+        {
+          writer.Append(LengthDelimiterBegin)
+            .Append(LengthMaximum)
+            .Append(LengthDelimiterEnd);
+        }
+      }
+      else if (IsPrecisionRequired && details.Precision.HasValue)
+      {
+        writer
+          .Append(LengthDelimiterBegin)
+          .Append(Convert.ToString(details.Precision));
+        if (details.Scale.HasValue)
+        {
+          writer
+            .Append(PrecisionScaleSeparator)
+            .Append(Convert.ToString(details.Scale));
+        }
+        writer.Append(LengthDelimiterEnd);
+      }
 		}
 
 		public virtual DbTypeDetails GetDbTypeDetails(ColumnMapping column)
 		{
 			Debug.Assert(column.Member.DeclaringType != null, "column.Member.DeclaringType != null");
 			string bindingName = String.Concat(column.Member.DeclaringType.Name, "_", column.Member.Name);
-			int? len = (column.VariableLength != 0) ? column.VariableLength : (int?) null;
-			return new DbTypeDetails(column.Member.Name, bindingName, len, null);
+      int? len = (column.VariableLength != 0) ? column.VariableLength : (int?)null;
+      short? precision = (column.Precision != 0) ? column.Precision : (short?)null;
+      byte? scale = (column.Scale != 0) ? column.Scale : (byte?)null;
+			return new DbTypeDetails(column.Member.Name, bindingName, len, precision, scale);
 		}
 
 		public virtual object EmitColumnDDL<TModel>(StringBuilder buffer, int ordinal, IMapping<TModel> mapping,
@@ -281,18 +300,13 @@ namespace FlitBit.Data.DataModel
 				.Append(NameDelimiterEnd)
 				.Append(' ')
 				.Append(SpecializedSqlTypeName);
-			if (IsLengthRequired || IsPrecisionRequired)
+			if (IsLengthRequired)
 			{
 				if (details.Length.HasValue)
 				{
 					buffer.Append(LengthDelimiterBegin)
-						.Append(details.Length);
-					if (IsScaleRequired && details.Scale.HasValue)
-					{
-						buffer.Append(PrecisionScaleSeparator)
-							.Append(details.Scale);
-					}
-					buffer.Append(LengthDelimiterEnd);
+						.Append(details.Length)
+            .Append(LengthDelimiterEnd);
 				}
 				else if (TreatMissingLengthAsMaximum)
 				{
@@ -301,7 +315,22 @@ namespace FlitBit.Data.DataModel
 						.Append(LengthDelimiterEnd);
 				}
 			}
-			if (col.IsSynthetic)
+		  else if (IsPrecisionRequired && details.Precision.HasValue)
+		  {
+		    buffer
+		      .Append(LengthDelimiterBegin)
+		      .Append(details.Precision);
+		    if (details.Scale.HasValue)
+		    {
+		      buffer
+		        .Append(PrecisionScaleSeparator)
+		        .Append(details.Scale);
+
+		    }
+		    buffer.Append(LengthDelimiterEnd);
+		  }
+
+		  if (col.IsSynthetic)
 			{
 				EmitColumnInitializationDDL(buffer, mapping, col);
 			}
@@ -439,26 +468,35 @@ namespace FlitBit.Data.DataModel
 				.Append(NameDelimiterEnd)
 				.Append(' ')
 				.Append(SpecializedSqlTypeName);
-			if (IsLengthRequired || IsPrecisionRequired)
-			{
-				if (details.Length.HasValue)
-				{
-					buffer.Append(LengthDelimiterBegin)
-						.Append(details.Length);
-					if (IsScaleRequired && details.Scale.HasValue)
-					{
-						buffer.Append(PrecisionScaleSeparator)
-							.Append(details.Scale);
-					}
-					buffer.Append(LengthDelimiterEnd);
-				}
-				else if (TreatMissingLengthAsMaximum)
-				{
-					buffer.Append(LengthDelimiterBegin)
-						.Append(LengthMaximum)
-						.Append(LengthDelimiterEnd);
-				}
-			}
+      if (IsLengthRequired)
+      {
+        if (details.Length.HasValue)
+        {
+          buffer.Append(LengthDelimiterBegin)
+            .Append(details.Length)
+            .Append(LengthDelimiterEnd);
+        }
+        else if (TreatMissingLengthAsMaximum)
+        {
+          buffer.Append(LengthDelimiterBegin)
+            .Append(LengthMaximum)
+            .Append(LengthDelimiterEnd);
+        }
+      }
+      else if (IsPrecisionRequired && details.Precision.HasValue)
+      {
+        buffer
+          .Append(LengthDelimiterBegin)
+          .Append(details.Precision);
+        if (details.Scale.HasValue)
+        {
+          buffer
+            .Append(PrecisionScaleSeparator)
+            .Append(details.Scale);
+
+        }
+        buffer.Append(LengthDelimiterEnd);
+      }
 
 			if (!col.IsNullable)
 			{
@@ -554,10 +592,10 @@ namespace FlitBit.Data.DataModel
 			}
 			else if (IsPrecisionRequired)
 			{
-			  if (details.Length.HasValue)
+			  if (details.Precision.HasValue)
 			  {
 			    il.LoadLocal(parm);
-			    il.LoadValue(details.Length.Value);
+			    il.LoadValue(details.Precision.Value);
 			    il.CallVirtual<TDbParameter>("set_Precision", typeof(byte));
 			  }
 			  else

@@ -38,7 +38,7 @@ namespace FlitBit.Data.SqlServer
 		{
 			Debug.Assert(column.Member.DeclaringType != null, "column.Member.DeclaringType != null");
 			var bindingName = String.Concat(column.Member.DeclaringType.Name, "_", column.Member.Name);
-			return new DbTypeDetails(column.Member.Name, bindingName, 400, null);
+			return new DbTypeDetails(column.Member.Name, bindingName, 400, null, null);
 		}
 
 	}

@@ -10,7 +10,7 @@ namespace FlitBit.Data.Tests.Patterns
   public class NullableDateTimeTests
   {
     [TestMethod]
-    public void TestMethod1()
+    public void SqlClientMapping_CanReadAndWriteNullableDateTime()
     {
       var binder = DataModel<ITestNullableDateTime>.Binder;
 

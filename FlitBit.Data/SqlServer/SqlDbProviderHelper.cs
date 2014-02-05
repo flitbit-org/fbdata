@@ -45,6 +45,8 @@ WHERE name = @schema"
       MapRuntimeType<double?>(new SqlMappedNullableDoubleEmitter());
       MapRuntimeType<float>(new SqlMappedSingleEmitter());
       MapRuntimeType<float?>(new SqlMappedNullableSingleEmitter());
+      MapRuntimeType<decimal>(new SqlMappedDecimalEmitter());
+      MapRuntimeType<decimal?>(new SqlMappedNullableDecimalEmitter());
 
 			MapRuntimeType<DateTime>(new SqlMappedDateTimeEmitter(SqlDbType.DateTime2));
 			MapRuntimeType<DateTime?>(new SqlMappedNullableDateTimeEmitter(SqlDbType.DateTime2));

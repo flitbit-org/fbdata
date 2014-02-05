@@ -6,7 +6,8 @@ using FlitBit.Emit;
 
 namespace FlitBit.Data.SqlServer
 {
-  internal class SqlMappedNullableDoubleEmitter : SqlDbTypeNullableEmitter<double>
+
+  internal class SqlMappedNullableDoubleEmitter : SqlDbTypeNullableEmitter<decimal>
   {
     internal SqlMappedNullableDoubleEmitter()
       : base(DbType.Double, SqlDbType.Float)

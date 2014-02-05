@@ -91,7 +91,12 @@ namespace FlitBit.Data.Meta
 		}
 
 		public string TargetName { get; set; }
+
 		public int VariableLength { get; internal set; }
+
+    public short Precision { get; internal set; }
+
+    public byte Scale { get; internal set; }
 
 		internal Type ReferenceTargetType
 		{

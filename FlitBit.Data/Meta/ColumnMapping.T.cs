@@ -60,6 +60,19 @@ namespace FlitBit.Data.Meta
 			return this;
 		}
 
+    public ColumnMapping<T> WithPrecision(short precision)
+    {
+      Contract.Requires<ArgumentException>(precision >= 0, "precision must be greater than zero");
+      this.Precision = precision;
+      return this;
+    }
+
+    public ColumnMapping<T> WithScale(byte scale)
+    {
+      this.Scale = scale;
+      return this;
+    }
+
 		internal ColumnMapping<T> DefineReference(ColumnMapping foreignColumn,
 			ReferenceBehaviors behaviors = ReferenceBehaviors.Lazy)
 		{

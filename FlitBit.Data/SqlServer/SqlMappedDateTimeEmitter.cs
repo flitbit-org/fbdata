@@ -43,11 +43,6 @@ namespace FlitBit.Data.SqlServer
 	    DbDataReaderGetValueMethodName = "GetDateTime";
 	  }
 
-	  protected override void EmitTranslateRuntimeType(ILGenerator il, LocalBuilder local)
-    {
-      il.LoadLocal(local);
-      il.NewObj(typeof(SqlDateTime).GetConstructor(new[] { typeof(DateTime) }));
-			il.Box(typeof(SqlDateTime));
-		}
+	 
 	}
 }

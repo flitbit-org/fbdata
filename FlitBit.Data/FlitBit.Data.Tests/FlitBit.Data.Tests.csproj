@@ -167,12 +167,14 @@
     <Compile Include="Meta\Models\IPhoneKind.cs" />
     <Compile Include="Meta\Models\IParty.cs" />
     <Compile Include="Patterns\ITestNullableDateTime.cs" />
+    <Compile Include="Patterns\ITestNullableDecimal.cs" />
     <Compile Include="Patterns\NullableDateTimeInsertCommand.cs" />
-    <Compile Include="Patterns\UnitTest1.cs" />
+    <Compile Include="Patterns\NullableDateTimeTests.cs" />
     <Compile Include="Patterns\IDescription.cs" />
     <Compile Include="Model\Peep.cs" />
     <Compile Include="Model\PeepsRepository.cs" />
     <Compile Include="Patterns\DescriptionTest.cs" />
+    <Compile Include="Patterns\NullableDecimalTests.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
     <Compile Include="Wireup.cs" />
   </ItemGroup>

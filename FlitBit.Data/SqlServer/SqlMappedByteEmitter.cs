@@ -14,11 +14,5 @@ namespace FlitBit.Data.SqlServer
 		  DbDataReaderGetValueMethodName = "GetByte";
 		}
 
-		protected override void EmitTranslateRuntimeType(ILGenerator il, LocalBuilder local)
-    {
-      il.LoadLocal(local);
-			il.NewObj(typeof (SqlByte).GetConstructor(new[] {typeof (byte)}));
-			il.Box(typeof (SqlByte));
-		}
 	}
 }

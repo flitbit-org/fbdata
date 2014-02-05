@@ -10,6 +10,8 @@ namespace FlitBit.Data.DataModel.DbTypeEmitters
 		internal MappedDecimalEmitter()
 			: base(DbType.Decimal, DbType.Decimal)
 		{
+      this.LengthRequirements = DbTypeLengthRequirements.Precision | DbTypeLengthRequirements.Scale | DbTypeLengthRequirements.OptionalScale;
+
 		  DbDataReaderGetValueMethodName = "GetDecimal";
 		}
 

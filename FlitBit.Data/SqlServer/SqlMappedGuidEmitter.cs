@@ -78,16 +78,16 @@ namespace FlitBit.Data.SqlServer
 			base.EmitColumnConstraintsDDL(buffer, mapping, col, tableConstraints);
 		}
 
-    protected override void EmitTranslateRuntimeType(ILGenerator il, LocalBuilder local)
-    {
-      il.LoadLocal(local);
-      il.NewObj(typeof(SqlGuid).GetConstructor(new[] { typeof(Guid) }));
-			il.Box(typeof (SqlGuid));
-		}
+    //protected override void EmitTranslateRuntimeType(ILGenerator il, LocalBuilder local)
+    //{
+    //  il.LoadLocal(local);
+    //  il.NewObj(typeof(SqlGuid).GetConstructor(new[] { typeof(Guid) }));
+    //  il.Box(typeof (SqlGuid));
+    //}
 
-		protected override void EmitTranslateDbType(ILGenerator il)
-		{
-			il.NewObj(typeof (Guid?).GetConstructor(new[] {typeof (Guid)}));
-		}
+    //protected override void EmitTranslateDbType(ILGenerator il)
+    //{
+    //  il.NewObj(typeof (Guid?).GetConstructor(new[] {typeof (Guid)}));
+    //}
 	}
 }

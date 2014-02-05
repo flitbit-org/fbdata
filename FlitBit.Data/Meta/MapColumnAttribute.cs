@@ -20,7 +20,9 @@ namespace FlitBit.Data.Meta
 	[AttributeUsage(AttributeTargets.Field | AttributeTargets.Property)]
 	public sealed class MapColumnAttribute : Attribute
 	{
-		private int _size;
+		private int? _size;
+	  short? _precision;
+	  byte? _scale;
 
 		/// <summary>
 		///   Creates a new instance.
@@ -182,11 +184,11 @@ namespace FlitBit.Data.Meta
     public DbType SuggestedDbType { get; set; }
 
 		/// <summary>
-		///   Gets and sets the mapped column's length/size.
+		///   Gets and sets the mapped column's length/size. When length is set scale is ignored.
 		/// </summary>
 		public int Length
 		{
-			get { return _size; }
+			get { return _size.HasValue ? _size.Value : 0; }
 			set { _size = value; }
 		}
 
@@ -201,17 +203,30 @@ namespace FlitBit.Data.Meta
 		/// </summary>
 		public IEnumerable<string> References { get; set; }
 
+    /// <summary>
+    ///   Gets and sets the column's precision.
+    /// </summary>
+    public short Precision
+    {
+      get { return _precision.HasValue ? _precision.Value : (short)0; }
+      set { _precision = value; }
+    }
+
 		/// <summary>
 		///   Gets and sets the column's scale.
 		/// </summary>
-		public byte Scale { get; set; }
+    public byte Scale
+    {
+      get { return _scale.HasValue ? _scale.Value : (byte)0; }
+      set { _scale = value; }
+    }
 
 		/// <summary>
 		///   Gets and sets the column's size/length.
 		/// </summary>
 		public int Size
 		{
-			get { return _size; }
+			get { return _size.HasValue ? _size.Value : 0; }
 			set { _size = value; }
 		}
 
@@ -238,9 +253,9 @@ namespace FlitBit.Data.Meta
 				behaviors |= ColumnBehaviors.Nullable;
 			}
 			column.WithBehaviors(behaviors);
-			if (Length > 0)
+			if (_size.HasValue)
 			{
-				column.WithVariableLength(Length);
+				column.WithVariableLength(_size.Value);
 			}
 			else if (p.PropertyType.IsEnum)
 			{
@@ -252,6 +267,14 @@ namespace FlitBit.Data.Meta
 					column.WithVariableLength(mapEnum.MaxAnticipatedNameLength);
 				}
 			}
+      if (_precision.HasValue)
+      {
+        column.WithPrecision(_precision.Value);
+      }
+      if (_scale.HasValue)
+      {
+        column.WithScale(_scale.Value);
+      }
 			if (column.Behaviors.HasFlag(ColumnBehaviors.Identity))
 			{
 				mapping.Identity.AddColumn(column, SortOrderKind.Asc);

@@ -223,10 +223,12 @@
     <Compile Include="SqlServer\SqlDataModelUpdateCommand.cs" />
     <Compile Include="SqlServer\SqlDbTypeEmitter.cs" />
     <Compile Include="SqlServer\SqlMappedByteEmitter.cs" />
+    <Compile Include="SqlServer\SqlMappedDecimalEmitter.cs" />
     <Compile Include="SqlServer\SqlMappedDoubleEmitter.cs" />
     <Compile Include="SqlServer\SqlMappedEmumAsInt16Emitter.cs" />
     <Compile Include="SqlServer\SqlMappedEmumAsInt32Emitter.cs" />
     <Compile Include="SqlServer\SqlMappedBoolAsBitEmitter.cs" />
+    <Compile Include="SqlServer\SqlMappedNullableDecimalEmitter.cs" />
     <Compile Include="SqlServer\SqlMappedSingleEmitter.cs" />
     <Compile Include="SqlServer\SqlMappedInt16Emitter.cs" />
     <Compile Include="SqlServer\SqlMappedInt32Emitter.cs" />
