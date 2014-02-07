@@ -230,7 +230,7 @@ namespace FlitBit.Data.Expressions
       {
         if (value.Source.Kind == SqlExpressionKind.Join || value.Source.Kind == SqlExpressionKind.JoinReference)
         {
-          return (value.Source == join.ReferenceExpression || value.Source.Join.Ordinal < join.Ordinal);
+          return (value.Source == join.ReferenceExpression || (value.Source.Join != null && value.Source.Join.Ordinal < join.Ordinal));
         }
         return true;
       }
