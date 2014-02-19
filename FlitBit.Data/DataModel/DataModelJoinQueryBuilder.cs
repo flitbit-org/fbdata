@@ -17,10 +17,18 @@ namespace FlitBit.Data.DataModel
 
     public DataModelJoinQueryBuilder(IDataModelRepository<TDataModel, TIdentityKey, TDbConnection> repo,
       IDataModelWriter<TDataModel> writer, DataModelSqlExpression<TDataModel> sql)
-      : base(repo, writer)
+      : this(repo, writer, Guid.NewGuid().ToString("N"), sql)
+    {
+    }
+
+    public DataModelJoinQueryBuilder(IDataModelRepository<TDataModel, TIdentityKey, TDbConnection> repo,
+      IDataModelWriter<TDataModel> writer, string key, DataModelSqlExpression<TDataModel> sql)
+      : base(repo, writer, key)
     {
       Contract.Requires<ArgumentNullException>(repo != null);
       Contract.Requires<ArgumentNullException>(writer != null);
+      Contract.Requires<ArgumentNullException>(key != null);
+      Contract.Requires<ArgumentException>(key.Length > 0);
       Contract.Requires<ArgumentNullException>(sql != null);
       _sql = sql;
     }
@@ -57,10 +65,18 @@ namespace FlitBit.Data.DataModel
 
     public DataModelJoinQueryBuilder(IDataModelRepository<TDataModel, TIdentityKey, TDbConnection> repo,
       IDataModelWriter<TDataModel> writer, DataModelSqlExpression<TDataModel> sql)
-      : base(repo, writer)
+      : this(repo, writer, Guid.NewGuid().ToString("N"), sql)
+    {
+    }
+
+    public DataModelJoinQueryBuilder(IDataModelRepository<TDataModel, TIdentityKey, TDbConnection> repo,
+      IDataModelWriter<TDataModel> writer, string key, DataModelSqlExpression<TDataModel> sql)
+      : base(repo, writer, key)
     {
       Contract.Requires<ArgumentNullException>(repo != null);
       Contract.Requires<ArgumentNullException>(writer != null);
+      Contract.Requires<ArgumentNullException>(key != null);
+      Contract.Requires<ArgumentException>(key.Length > 0);
       Contract.Requires<ArgumentNullException>(sql != null);
       _sql = sql;
     }

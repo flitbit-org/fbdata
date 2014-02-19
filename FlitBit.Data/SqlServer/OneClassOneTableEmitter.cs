@@ -140,14 +140,14 @@ namespace FlitBit.Data.SqlServer
     }
 
     [SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design.")]
-    internal static Type MakeQueryCommand<TDataModel, TImpl>(IMapping<TDataModel> mapping, Guid queryKey, DataModelSqlExpression<TDataModel> sql)
+    internal static Type MakeQueryCommand<TDataModel, TImpl>(IMapping<TDataModel> mapping, string queryKey, DataModelSqlExpression<TDataModel> sql)
       where TImpl : class, IDataModel, TDataModel, new()
     {
       Contract.Requires<ArgumentNullException>(sql != null);
       Contract.Ensures(Contract.Result<Type>() != null);
 
       var targetType = typeof(TDataModel);
-      var typeName = RuntimeAssemblies.PrepareTypeName(targetType, queryKey.ToString("N"));
+      var typeName = RuntimeAssemblies.PrepareTypeName(targetType, queryKey);
 
       var cmdType = default(Type);
       var parms = sql.ValueParameters;

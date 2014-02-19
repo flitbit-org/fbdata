@@ -103,7 +103,7 @@ namespace FlitBit.Data.DataModel
     /// <returns></returns>
     IDataModelQuerySingleCommand<TModel, TDbConnection, TModel> GetUpdateCommand();
 
-    object ConstructQueryCommand(IDataModelRepository<TModel, TIdentityKey, TDbConnection> repo, Guid key,
+    object ConstructQueryCommand(IDataModelRepository<TModel, TIdentityKey, TDbConnection> repo, string key,
       DataModelSqlExpression<TModel> sql, IDataModelWriter<TModel> writer);
   }
 }

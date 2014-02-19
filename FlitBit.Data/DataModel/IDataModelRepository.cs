@@ -31,9 +31,14 @@ namespace FlitBit.Data.DataModel
 		IDataModelBinder<TDataModel, TIdentityKey, TDbConnection> Binder { get; }
 
     /// <summary>
-    /// Gets the repository's query builder.
+    /// Gets a query builder bound to the repository.
     /// </summary>
     IDataModelQueryBuilder<TDataModel, TIdentityKey, TDbConnection> QueryBuilder { get; }
+
+    /// <summary>
+    /// Gets a query builder bound to the repository.
+    /// </summary>
+    IDataModelQueryBuilder<TDataModel, TIdentityKey, TDbConnection> MakeNamedQueryBuilder(string name);
 
 		/// <summary>
 		/// Executes the external command, binding the specified parameters, and returning a single data model instance.
@@ -469,6 +474,6 @@ namespace FlitBit.Data.DataModel
     /// <param name="key">the query's key</param>
     /// <param name="sql"></param>
     /// <returns></returns>
-    object ConstructQueryCommand(Guid key, DataModelSqlExpression<TDataModel> sql);
+    object ConstructQueryCommand(string key, DataModelSqlExpression<TDataModel> sql);
   }
 }

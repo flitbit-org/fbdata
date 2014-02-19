@@ -11,18 +11,27 @@ namespace FlitBit.Data.DataModel
   public class BasicDataModelQueryBuilder<TDataModel, TIdentityKey, TDbConnection>
     where TDbConnection : DbConnection
   {
-    
+
+    public BasicDataModelQueryBuilder(IDataModelRepository<TDataModel, TIdentityKey, TDbConnection> repo,
+      IDataModelWriter<TDataModel> writer)
+      : this(repo, writer, Guid.NewGuid().ToString("N"))
+    {
+    }
+
     /// <summary>
     /// Creates a new instance.
     /// </summary>
     /// <param name="repo">the data model's repository</param>
     /// <param name="writer"></param>
+    /// <param name="key"></param>
     public BasicDataModelQueryBuilder(IDataModelRepository<TDataModel, TIdentityKey, TDbConnection> repo,
-      IDataModelWriter<TDataModel> writer)
+      IDataModelWriter<TDataModel> writer, string key)
     {
       Contract.Requires<ArgumentNullException>(repo != null);
       Contract.Requires<ArgumentNullException>(writer != null);
-      Key = Guid.NewGuid();
+      Contract.Requires<ArgumentNullException>(key != null);
+      Contract.Requires<ArgumentException>(key.Length > 0);
+      Key = key;
       Repository = repo;
       Writer = writer;
     }
@@ -37,7 +46,7 @@ namespace FlitBit.Data.DataModel
     /// The query's identity key.
     /// </summary>
     [IdentityKey]
-    public Guid Key { get; private set; }
+    public string Key { get; private set; }
 
     /// <summary>
     /// Gets the data model's writer.
@@ -74,14 +83,27 @@ namespace FlitBit.Data.DataModel
     , IDataModelQueryBuilder<TDataModel, TIdentityKey, TDbConnection>
     where TDbConnection : DbConnection
   {
-    
     /// <summary>
     /// Creates a new instance.
     /// </summary>
     /// <param name="repo">the data model's repository</param>
     /// <param name="writer"></param>
-    public DataModelQueryBuilder(IDataModelRepository<TDataModel, TIdentityKey, TDbConnection> repo, IDataModelWriter<TDataModel> writer)
+    public DataModelQueryBuilder(IDataModelRepository<TDataModel, TIdentityKey, TDbConnection> repo,
+      IDataModelWriter<TDataModel> writer)
       : base(repo, writer)
+    {
+      Contract.Requires<ArgumentNullException>(repo != null);
+      Contract.Requires<ArgumentNullException>(writer != null);
+    }
+
+    /// <summary>
+    /// Creates a new instance.
+    /// </summary>
+    /// <param name="repo">the data model's repository</param>
+    /// <param name="writer"></param>
+    /// <param name="key"></param>
+    public DataModelQueryBuilder(IDataModelRepository<TDataModel, TIdentityKey, TDbConnection> repo, IDataModelWriter<TDataModel> writer, string key)
+      : base(repo, writer, key)
     {
       Contract.Requires<ArgumentNullException>(repo != null);
       Contract.Requires<ArgumentNullException>(writer != null);
@@ -94,7 +116,7 @@ namespace FlitBit.Data.DataModel
       sql.AddSelfParameter(Expression.Parameter(typeof (TDataModel), Writer.SelfName));
       sql.AddJoinParameter(Expression.Parameter(typeof(TJoin), "join"), true);
 
-      return new DataModelJoinQueryBuilder<TDataModel, TIdentityKey, TDbConnection, TJoin>(repo, Writer, sql);
+      return new DataModelJoinQueryBuilder<TDataModel, TIdentityKey, TDbConnection, TJoin>(repo, Writer, Key, sql);
     }
 
     public IDataModelJoinQueryBuilder<TDataModel, TIdentityKey, TDbConnection, TJoin> Join<TJoin>(Expression<Func<TDataModel, TJoin, bool>> predicate)
@@ -108,7 +130,7 @@ namespace FlitBit.Data.DataModel
       sql.AddJoinParameter(parms[1], false);
       sql.IngestJoinExpression(parms[1], lambda.Body);
 
-      return new DataModelJoinQueryBuilder<TDataModel, TIdentityKey, TDbConnection, TJoin>(repo, Writer, sql);
+      return new DataModelJoinQueryBuilder<TDataModel, TIdentityKey, TDbConnection, TJoin>(repo, Writer, Key, sql);
     }
 
     public IDataModelJoinQueryBuilder<TDataModel, TIdentityKey, TDbConnection, TJoin, TParam> Join<TJoin, TParam>(Expression<Func<TDataModel, TJoin, TParam, bool>> predicate)
@@ -123,7 +145,7 @@ namespace FlitBit.Data.DataModel
       sql.AddValueParameter(parms[2]);
       sql.IngestJoinExpression(parms[1], lambda.Body);
 
-      return new DataModelJoinQueryBuilder<TDataModel, TIdentityKey, TDbConnection, TJoin, TParam>(repo, Writer, sql);
+      return new DataModelJoinQueryBuilder<TDataModel, TIdentityKey, TDbConnection, TJoin, TParam>(repo, Writer, Key, sql);
     }
 
     public IDataModelQueryCommand<TDataModel, TDbConnection, TParam> Where<TParam>(Expression<Func<TDataModel, TParam, bool>> predicate)

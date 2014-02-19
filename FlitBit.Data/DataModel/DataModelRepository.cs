@@ -13,7 +13,6 @@ namespace FlitBit.Data.DataModel
     : AbstractCachingRepository<TDataModel, TIdentityKey>, IDataModelRepository<TDataModel, TIdentityKey, TDbConnection>
     where TDbConnection : DbConnection
   {
-    readonly Lazy<IDataModelQueryBuilder<TDataModel, TIdentityKey, TDbConnection>> _queryBuilder;
     readonly IDataModelBinder<TDataModel, TIdentityKey, TDbConnection> _binder;
     readonly IMapping<TDataModel> _mapping;
 
@@ -24,10 +23,6 @@ namespace FlitBit.Data.DataModel
       Contract.Requires<ArgumentException>(mapping.HasBinder);
       _mapping = mapping;
       _binder = (IDataModelBinder<TDataModel, TIdentityKey, TDbConnection>)mapping.GetBinder();
-      _queryBuilder =
-        new Lazy<IDataModelQueryBuilder<TDataModel, TIdentityKey, TDbConnection>>(
-          () => new DataModelQueryBuilder<TDataModel, TIdentityKey, TDbConnection>(this, Writer),
-          LazyThreadSafetyMode.ExecutionAndPublication);
     }
 
     public IDataModelBinder<TDataModel, TIdentityKey, TDbConnection> Binder { get { return _binder; } }
@@ -36,7 +31,12 @@ namespace FlitBit.Data.DataModel
 
     public IDataModelQueryBuilder<TDataModel, TIdentityKey, TDbConnection> QueryBuilder
     {
-      get { return _queryBuilder.Value; }
+      get { return new DataModelQueryBuilder<TDataModel, TIdentityKey, TDbConnection>(this, Writer); }
+    }
+
+    public IDataModelQueryBuilder<TDataModel, TIdentityKey, TDbConnection> MakeNamedQueryBuilder(string name)
+    {
+      return new DataModelQueryBuilder<TDataModel, TIdentityKey, TDbConnection>(this, Writer, name);
     }
 
     public TDataModel ExecuteSingle<TParam>(
@@ -404,7 +404,7 @@ namespace FlitBit.Data.DataModel
       throw new NotImplementedException();
     }
 
-    public virtual object ConstructQueryCommand(Guid key, DataModelSqlExpression<TDataModel> sql)
+    public virtual object ConstructQueryCommand(string key, DataModelSqlExpression<TDataModel> sql)
     {
       return Binder.ConstructQueryCommand(this, key, sql, Writer);
     }

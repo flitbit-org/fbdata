@@ -39,7 +39,7 @@ namespace FlitBit.Data.DataModel
     /// The query's identity key.
     /// </summary>
     [IdentityKey]
-    Guid Key { get; }
+    string Key { get; }
   }
 
   public interface IDataModelJoinQueryBuilder<TDataModel, TIdentityKey, TDbConnection, TJoin, TParam>
@@ -56,7 +56,7 @@ namespace FlitBit.Data.DataModel
     /// The query's identity key.
     /// </summary>
     [IdentityKey]
-    Guid Key { get; }
+    string Key { get; }
   }
 
   public interface IDataModelJoin2QueryBuilder<TDataModel, TIdentityKey, TDbConnection, TJoin, TJoin1>
@@ -77,7 +77,7 @@ namespace FlitBit.Data.DataModel
     /// The query's identity key.
     /// </summary>
     [IdentityKey]
-    Guid Key { get; }
+    string Key { get; }
   }
 
   public interface IDataModelJoin2QueryBuilder<TDataModel, TIdentityKey, TDbConnection, TJoin, TJoin1, TParam>
@@ -89,6 +89,6 @@ namespace FlitBit.Data.DataModel
     /// The query's identity key.
     /// </summary>
     [IdentityKey]
-    Guid Key { get; }
+    string Key { get; }
   }
 }

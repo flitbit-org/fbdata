@@ -21,7 +21,6 @@ namespace FlitBit.Data.DataModel
     readonly ConcurrentDictionary<TIdentityKey, Tuple<TDataModel, DateTime>> _items =
       new ConcurrentDictionary<TIdentityKey, Tuple<TDataModel, DateTime>>();
 
-    private readonly Lazy<IDataModelQueryBuilder<TDataModel, TIdentityKey, TDbConnection>> _queryBuilder; 
     object _itemsInDefaultOrder;
     readonly DbProviderHelper _helper;
     readonly EqualityComparer<TDataModel> _comparer = EqualityComparer<TDataModel>.Default;
@@ -41,8 +40,7 @@ namespace FlitBit.Data.DataModel
       _binder = (IDataModelBinder<TDataModel, TIdentityKey, TDbConnection>)mapping.GetBinder();
       ConnectionName = _mapping.ConnectionName;
       _helper = DbProviderHelpers.GetDbProviderHelperForDbConnection(ConnectionName);
-      _cacheRefreshSpan = cacheRefreshSpan;
-      _queryBuilder = new Lazy<IDataModelQueryBuilder<TDataModel, TIdentityKey, TDbConnection>>(() => new DataModelQueryBuilder<TDataModel, TIdentityKey, TDbConnection>(this, Writer), LazyThreadSafetyMode.ExecutionAndPublication);
+      _cacheRefreshSpan = cacheRefreshSpan;      
     }
 
     public IDataModelWriter<TDataModel> Writer { get { return _binder.Writer; } } 
@@ -178,8 +176,13 @@ namespace FlitBit.Data.DataModel
     {
       get
       {
-        return _queryBuilder.Value;
+        return new DataModelQueryBuilder<TDataModel, TIdentityKey, TDbConnection>(this, Writer);
       }
+    }
+
+    public IDataModelQueryBuilder<TDataModel, TIdentityKey, TDbConnection> MakeNamedQueryBuilder(string name)
+    {
+      return new DataModelQueryBuilder<TDataModel, TIdentityKey, TDbConnection>(this, Writer, name);
     }
 
     public TDataModel ExecuteSingle<TParam>(
@@ -548,7 +551,7 @@ namespace FlitBit.Data.DataModel
       throw new NotImplementedException();
     }
 
-    public object ConstructQueryCommand(Guid key, DataModelSqlExpression<TDataModel> sql)
+    public object ConstructQueryCommand(string key, DataModelSqlExpression<TDataModel> sql)
     {
       return Binder.ConstructQueryCommand(this, key, sql, Writer);
     }

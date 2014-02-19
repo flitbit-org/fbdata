@@ -249,7 +249,7 @@ namespace FlitBit.Data.DataModel
 		public abstract IDataModelRepository<TModel, TIdentityKey> MakeRepository();
 
 	  public abstract object ConstructQueryCommand(
-      IDataModelRepository<TModel, TIdentityKey, TDbConnection> repo, Guid key, DataModelSqlExpression<TModel> sql,
+      IDataModelRepository<TModel, TIdentityKey, TDbConnection> repo, string key, DataModelSqlExpression<TModel> sql,
       IDataModelWriter<TModel> writer);
 
     public abstract IDataModelWriter<TModel> Writer { get; }

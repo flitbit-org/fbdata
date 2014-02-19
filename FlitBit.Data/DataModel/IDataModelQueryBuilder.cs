@@ -184,6 +184,6 @@ namespace FlitBit.Data.DataModel
     /// The query's identity key.
     /// </summary>
     [IdentityKey]
-    Guid Key { get; }
+    string Key { get; }
   }
 }
