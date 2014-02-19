@@ -2,9 +2,7 @@
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Diagnostics.Contracts;
-using System.Linq;
 using System.Linq.Expressions;
-using System.Text;
 using FlitBit.Data.Expressions;
 
 namespace FlitBit.Data.DataModel
