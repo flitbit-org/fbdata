@@ -371,6 +371,7 @@
     </Compile>
   </ItemGroup>
   <ItemGroup>
+    <Content Include="sample.sql" />
     <None Include="app.config" />
     <Content Include="ExternalWireup\Dependency.FlitBit.Data.cs.pp" />
     <None Include="FlitBit.Data.nuspec" />
