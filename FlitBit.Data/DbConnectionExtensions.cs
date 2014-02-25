@@ -123,7 +123,7 @@ namespace FlitBit.Data
 			{
 				prepareCommand(cmd);
 				// Ensure the callback established the command's text...
-				Contract.Assert(cmd.CommandText != null && cmd.CommandText.Length > 0);
+				Contract.Assert(!String.IsNullOrEmpty(cmd.CommandText));
 
 				using (var reader = cmd.ExecuteReader())
 				{
@@ -244,6 +244,39 @@ namespace FlitBit.Data
 				}
 			}
 		}
+
+    /// <summary>
+    ///   Executes the given command on the connection.
+    /// </summary>
+    /// <param name="connection">DbConnection upon which the command will be executed.</param>
+    /// <param name="command">Text of the command to execute</param>
+    /// <returns>An enumerable over the transformed rows.</returns>
+    public static IEnumerable<T> ImmediateExecuteEnumerable<T>(this DbConnection connection, string command,
+      Action<IDataParameterBinder> binder,
+      Func<IDataRecord, T> transform)
+    {
+      Contract.Requires<ArgumentNullException>(connection != null);
+      Contract.Requires<InvalidOperationException>(connection.State.HasFlag(ConnectionState.Open));
+      Contract.Requires<ArgumentNullException>(command != null);
+      Contract.Requires<ArgumentException>(command.Length > 0);
+      Contract.Ensures(Contract.Result<IEnumerable<T>>() != null);
+
+      using (var cmd = connection.CreateCommand(command))
+      {
+        if (binder != null)
+        {
+          var b = DbProviderHelpers.GetDbProviderHelperForDbConnection(connection).MakeParameterBinder(cmd);
+          binder(b);
+        }
+        using (var reader = cmd.ExecuteReader())
+        {
+          while (reader.Read())
+          {
+            yield return transform(reader);
+          }
+        }
+      }
+    }
 
 		/// <summary>
 		///   Executes the given command on the connection.
