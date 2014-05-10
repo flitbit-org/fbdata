@@ -11,6 +11,6 @@
     <requireLicenseAcceptance>false</requireLicenseAcceptance>
     <description>Exotic data access and object-relational mapping for c#</description>
     <releaseNotes>Incremental work towards release 3.</releaseNotes>
-    <copyright>Copyright 2013</copyright>
+    <copyright>COPYRIGHT© 2009-2014 Phillip Clark. All rights reserved.</copyright>
   </metadata>
 </package>

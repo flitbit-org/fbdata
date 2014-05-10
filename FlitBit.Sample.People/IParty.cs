@@ -7,6 +7,7 @@ namespace FlitBit.Sample.People
 	{
 		int ID { get; }
 		string Name { get; set; }
+
 		DateTime DateCreated { get; set; }
 		DateTime DateUpdated { get; set; }
 

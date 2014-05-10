@@ -1,4 +1,8 @@
-﻿using System.Data;
+﻿#region COPYRIGHT© 2009-2014 Phillip Clark. All rights reserved.
+// For licensing information see License.txt (MIT style licensing).
+#endregion
+
+using System.Data;
 using System.Text;
 using FlitBit.Data.DataModel;
 using FlitBit.Data.Meta;

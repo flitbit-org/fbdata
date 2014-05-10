@@ -1,4 +1,8 @@
-﻿using System.Data.SqlClient;
+﻿#region COPYRIGHT© 2009-2014 Phillip Clark. All rights reserved.
+// For licensing information see License.txt (MIT style licensing).
+#endregion
+
+using System.Data.SqlClient;
 using FlitBit.Data.SqlServer;
 using FlitBit.Wireup;
 
@@ -11,8 +15,6 @@ namespace FlitBit.Data
   /// </summary>
   public sealed class AssemblyWireup : IWireupCommand
   {
-    #region IWireupCommand Members
-
     /// <summary>
     ///   Wires up this assembly.
     /// </summary>
@@ -21,7 +23,5 @@ namespace FlitBit.Data
     {
       DbProviderHelpers.RegisterHelper<SqlClientFactory, SqlConnection, SqlCommand, SqlDbProviderHelper>();
     }
-
-    #endregion
   }
 }

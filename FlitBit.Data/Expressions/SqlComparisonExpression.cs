@@ -1,4 +1,8 @@
-﻿using System.Linq.Expressions;
+﻿#region COPYRIGHT© 2009-2014 Phillip Clark. All rights reserved.
+// For licensing information see License.txt (MIT style licensing).
+#endregion
+
+using System.Linq.Expressions;
 
 namespace FlitBit.Data.Expressions
 {

@@ -1,4 +1,8 @@
-﻿namespace FlitBit.Data.DataModel
+﻿#region COPYRIGHT© 2009-2014 Phillip Clark. All rights reserved.
+// For licensing information see License.txt (MIT style licensing).
+#endregion
+
+namespace FlitBit.Data.DataModel
 {
 	/// <summary>
 	/// Interface for querying a single model without criteria.
