@@ -13,124 +13,127 @@ using FlitBit.Data.Configuration;
 
 namespace FlitBit.Data
 {
-	public static class DbExtensions
-	{
-		static ConcurrentDictionary<string, ProviderRecord> __providers = new ConcurrentDictionary<string, ProviderRecord>();
+  public static class DbExtensions
+  {
+    static ConcurrentDictionary<string, ProviderRecord> __providers = new ConcurrentDictionary<string, ProviderRecord>();
 
-		/// <summary>
-		///   Creates and opens a new DbConnection initialized with the specified connection name.
-		///   The connection name must be present in the &lt;connectionStrings&gt; section of the
-		///   application's config file
-		/// </summary>
-		/// <param name="name">A connection string name declared in the application's config file.</param>
-		/// <returns>An open connection to the database specified in the connection string.</returns>
-		/// <exception cref="System.ContractException">thrown if the connection name is not specified.</exception>
-		/// <exception cref="System.Configuration.ConfigurationErrorsException">thrown if the connection name is not found in the application's config file.</exception>
-		public static DbConnection CreateAndOpenConnection(string name)
-		{
-			var result = CreateConnection(name);
-			try
-			{
-				result.Open();
-			}
-			catch
-			{
-				result.Dispose();
-				throw;
-			}
-			return result;
-		}
+    /// <summary>
+    ///   Creates and opens a new DbConnection initialized with the specified connection name.
+    ///   The connection name must be present in the &lt;connectionStrings&gt; section of the
+    ///   application's config file
+    /// </summary>
+    /// <param name="name">A connection string name declared in the application's config file.</param>
+    /// <returns>An open connection to the database specified in the connection string.</returns>
+    /// <exception cref="System.ContractException">thrown if the connection name is not specified.</exception>
+    /// <exception cref="System.Configuration.ConfigurationErrorsException">
+    ///   thrown if the connection name is not found in the
+    ///   application's config file.
+    /// </exception>
+    public static DbConnection CreateAndOpenConnection(string name)
+    {
+      var result = CreateConnection(name);
+      try
+      {
+        result.Open();
+      }
+      catch
+      {
+        result.Dispose();
+        throw;
+      }
+      return result;
+    }
 
-		/// <summary>
-		///   Creates a new DbConnection initialized with the specified connection name. The connection name
-		///   must be present in the &lt;connectionStrings&gt; section of the application's config file
-		/// </summary>
-		/// <param name="name">A connection string name declared in the application's config file.</param>
-		/// <returns>The DbConnection initialized with the specified connection string.</returns>
-		/// <exception cref="System.ContractException">thrown if the connection name is not specified.</exception>
-		/// <exception cref="System.Configuration.ConfigurationErrorsException">thrown if the connection name is not found in the application's config file.</exception>
-		public static DbConnection CreateConnection(string name)
-		{
-			Contract.Requires<ArgumentNullException>(name != null);
-			Contract.Requires(name.Length > 0);
+    /// <summary>
+    ///   Creates a new DbConnection initialized with the specified connection name. The connection name
+    ///   must be present in the &lt;connectionStrings&gt; section of the application's config file
+    /// </summary>
+    /// <param name="name">A connection string name declared in the application's config file.</param>
+    /// <returns>The DbConnection initialized with the specified connection string.</returns>
+    /// <exception cref="System.ContractException">thrown if the connection name is not specified.</exception>
+    /// <exception cref="System.Configuration.ConfigurationErrorsException">
+    ///   thrown if the connection name is not found in the
+    ///   application's config file.
+    /// </exception>
+    public static DbConnection CreateConnection(string name)
+    {
+      Contract.Requires<ArgumentNullException>(name != null);
+      Contract.Requires(name.Length > 0);
 
-			var r = AccessProvider(name);
-			var cn = r.Provider.CreateConnection();
-			cn.ConnectionString = r.ConnectionString;
-			return cn;
-		}
+      var r = AccessProvider(name);
+      var cn = r.Provider.CreateConnection();
+      cn.ConnectionString = r.ConnectionString;
+      return cn;
+    }
 
-		public static DbProviderFactory GetProviderByConnectionName(string name)
-		{
-			Contract.Requires<ArgumentNullException>(name != null);
-			Contract.Requires<ArgumentException>(name.Length > 0);
+    public static DbProviderFactory GetProviderByConnectionName(string name)
+    {
+      Contract.Requires<ArgumentNullException>(name != null);
+      Contract.Requires<ArgumentException>(name.Length > 0);
 
-			return AccessProvider(name)
-				.Provider;
-		}
+      return AccessProvider(name)
+        .Provider;
+    }
 
-		public static string GetProviderName(string name)
-		{
-			Contract.Requires<ArgumentNullException>(name != null);
-			Contract.Requires<ArgumentException>(name.Length > 0);
+    public static string GetProviderName(string name)
+    {
+      Contract.Requires<ArgumentNullException>(name != null);
+      Contract.Requires<ArgumentException>(name.Length > 0);
 
-			return AccessProvider(name)
-				.ProviderName;
-		}
+      return AccessProvider(name)
+        .ProviderName;
+    }
 
-		/// <summary>
-		///   Clears cached providers.
-		/// </summary>
-		public static void ResetProviders()
-		{
-			__providers = new ConcurrentDictionary<string, ProviderRecord>();
-		}
+    /// <summary>
+    ///   Clears cached providers.
+    /// </summary>
+    public static void ResetProviders() { __providers = new ConcurrentDictionary<string, ProviderRecord>(); }
 
-		internal static TConnection CreateConnection<TConnection>(string connectionName)
-			where TConnection : DbConnection
-		{
-		  var provider = AccessProvider(connectionName);
-			var connectionString = provider
-				.ConnectionString;
-		  var cn = provider.Provider.CreateConnection();
-			cn.ConnectionString = connectionString;
-			return (TConnection)cn;
-		}
+    internal static TConnection CreateConnection<TConnection>(string connectionName)
+      where TConnection : DbConnection
+    {
+      var provider = AccessProvider(connectionName);
+      var connectionString = provider
+        .ConnectionString;
+      var cn = provider.Provider.CreateConnection();
+      cn.ConnectionString = connectionString;
+      return (TConnection)cn;
+    }
 
-		private static ProviderRecord AccessProvider(string name)
-		{
-			Contract.Requires<ArgumentNullException>(name != null);
-			Contract.Requires<ArgumentException>(name.Length > 0);
+    static ProviderRecord AccessProvider(string name)
+    {
+      Contract.Requires<ArgumentNullException>(name != null);
+      Contract.Requires<ArgumentException>(name.Length > 0);
 
-			return __providers.GetOrAdd(name, GetProviderRecordFromConfiguration);
-		}
+      return __providers.GetOrAdd(name, GetProviderRecordFromConfiguration);
+    }
 
-		private static ProviderRecord GetProviderRecordFromConfiguration(string name)
-		{
-			var map = DataModelConfigSection.Instance.MapConnectionStrings[name];
-			var n = (map != null) ? map.ToName : name;
+    static ProviderRecord GetProviderRecordFromConfiguration(string name)
+    {
+      var map = DataModelConfigSection.Instance.MapConnectionStrings[name];
+      var n = (map != null) ? map.ToName : name;
 
-			var css = ConfigurationManager.ConnectionStrings[n];
-			if (css == null)
-			{
-				throw new ConfigurationErrorsException(String.Concat("Connection string not found: ", name));
-			}
-			var r = new ProviderRecord
-			{
-				ConnectionName = name,
-				ConnectionString = css.ConnectionString,
-				ProviderName = css.ProviderName,
-				Provider = DbProviderFactories.GetFactory(css.ProviderName)
-			};
-			return r;
-		}
+      var css = ConfigurationManager.ConnectionStrings[n];
+      if (css == null)
+      {
+        throw new ConfigurationErrorsException(String.Concat("Connection string not found: ", name));
+      }
+      var r = new ProviderRecord
+      {
+        ConnectionName = name,
+        ConnectionString = css.ConnectionString,
+        ProviderName = css.ProviderName,
+        Provider = DbProviderFactories.GetFactory(css.ProviderName)
+      };
+      return r;
+    }
 
-		struct ProviderRecord
-		{
-			public string ConnectionName;
-			public string ConnectionString;
-			public DbProviderFactory Provider;
-			public string ProviderName;
-		}
-	}
+    struct ProviderRecord
+    {
+      public string ConnectionName;
+      public string ConnectionString;
+      public DbProviderFactory Provider;
+      public string ProviderName;
+    }
+  }
 }

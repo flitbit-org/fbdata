@@ -6,14 +6,13 @@ using FlitBit.Data.DataModel;
 
 namespace FlitBit.Data.Repositories
 {
-
   public abstract class AbstractCachingRepository<TModel, TIdentityKey> : IDataRepository<TModel, TIdentityKey>
   {
     // ReSharper disable once StaticFieldInGenericType
-    protected static readonly string CCacheKey = typeof (TModel).AssemblyQualifiedName;
+    protected static readonly string CCacheKey = typeof(TModel).AssemblyQualifiedName;
 
-    private readonly EqualityComparer<TModel> _comparer = EqualityComparer<TModel>.Default;
-    private readonly DbProviderHelper _helper;
+    readonly EqualityComparer<TModel> _comparer = EqualityComparer<TModel>.Default;
+    readonly DbProviderHelper _helper;
 
     public AbstractCachingRepository(string connectionName)
     {
@@ -26,10 +25,7 @@ namespace FlitBit.Data.Repositories
 
     protected string ConnectionName { get; private set; }
 
-    protected DbProviderHelper Helper
-    {
-      get { return _helper; }
-    }
+    protected DbProviderHelper Helper { get { return _helper; } }
 
     protected abstract IDataModelQueryResult<TModel> PerformAll(IDbContext context, QueryBehavior behavior);
 
@@ -59,8 +55,8 @@ namespace FlitBit.Data.Repositories
       {
         return PerformDirectQueryBy(context, command, binder, key);
       }
-      ContextCache<TCacheKey, TQueryKey, IEnumerable<TModel>> cache = GetContextCollectionCache(context, cacheKey, key);
-      IEnumerable<TModel> res = cache.Get(key);
+      var cache = GetContextCollectionCache(context, cacheKey, key);
+      var res = cache.Get(key);
       if (res == null)
       {
         res = PerformDirectQueryBy(context, command, binder, key);
@@ -84,8 +80,8 @@ namespace FlitBit.Data.Repositories
       {
         return PerformDirectReadBy(context, command, binder, key);
       }
-      ContextCache<TCacheKey, TItemKey, TModel> cache = GetContextCache(context, cacheKey, key);
-      TModel res = cache.Get(key);
+      var cache = GetContextCache(context, cacheKey, key);
+      var res = cache.Get(key);
       if (_comparer.Equals(default(TModel), res))
       {
         res = PerformDirectReadBy(context, command, binder, key);
@@ -114,8 +110,7 @@ namespace FlitBit.Data.Repositories
 
     protected virtual void HandleContextCacheEnd<TCacheKey, TKey>(IDbContext cx, TCacheKey cacheKey,
       IEnumerable<KeyValuePair<TKey, TModel>> items)
-    {
-    }
+    {}
 
     protected virtual ContextCache<TCacheKey, TKey, IEnumerable<TModel>> GetContextCollectionCache<TCacheKey, TKey>(
       IDbContext context, TCacheKey cacheKey,
@@ -135,8 +130,7 @@ namespace FlitBit.Data.Repositories
 
     protected virtual void HandleContextCollectionCacheEnd<TCacheKey, TKey>(IDbContext cx, TCacheKey cacheKey,
       IEnumerable<KeyValuePair<TKey, IEnumerable<TModel>>> items)
-    {
-    }
+    {}
 
     #region IDataRepository<M,IK> Members
 
@@ -148,9 +142,9 @@ namespace FlitBit.Data.Repositories
       {
         return PerformCreate(context, model);
       }
-      TModel res = PerformCreate(context, model);
-      TIdentityKey id = GetIdentity(model);
-      ContextCache<string, TIdentityKey, TModel> cache = GetContextCache(context, CCacheKey, id);
+      var res = PerformCreate(context, model);
+      var id = GetIdentity(model);
+      var cache = GetContextCache(context, CCacheKey, id);
       cache.Put(id, res);
       return res;
     }
@@ -161,8 +155,8 @@ namespace FlitBit.Data.Repositories
       {
         return PerformRead(context, key);
       }
-      ContextCache<string, TIdentityKey, TModel> cache = GetContextCache(context, CCacheKey, key);
-      TModel res = cache.Get(key);
+      var cache = GetContextCache(context, CCacheKey, key);
+      var res = cache.Get(key);
       if (_comparer.Equals(default(TModel), res))
       {
         res = PerformRead(context, key);
@@ -180,9 +174,9 @@ namespace FlitBit.Data.Repositories
       {
         return PerformUpdate(context, model);
       }
-      TModel res = PerformUpdate(context, model);
-      TIdentityKey id = GetIdentity(model);
-      ContextCache<string, TIdentityKey, TModel> cache = GetContextCache(context, CCacheKey, id);
+      var res = PerformUpdate(context, model);
+      var id = GetIdentity(model);
+      var cache = GetContextCache(context, CCacheKey, id);
       cache.Put(id, res);
       return res;
     }
@@ -193,8 +187,8 @@ namespace FlitBit.Data.Repositories
       {
         return PerformDelete(context, id);
       }
-      bool res = PerformDelete(context, id);
-      ContextCache<string, TIdentityKey, TModel> cache = GetContextCache(context, CCacheKey, id);
+      var res = PerformDelete(context, id);
+      var cache = GetContextCache(context, CCacheKey, id);
       cache.Remove(id);
       return res;
     }

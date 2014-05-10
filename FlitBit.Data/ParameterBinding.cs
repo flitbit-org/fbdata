@@ -10,53 +10,47 @@ using FlitBit.Core;
 
 namespace FlitBit.Data
 {
-	public struct ParameterBinding : IEquatable<ParameterBinding>
-	{
-		static readonly int CHashCodeSeed = typeof(ParameterBinding).AssemblyQualifiedName.GetHashCode();
+  public struct ParameterBinding : IEquatable<ParameterBinding>
+  {
+    static readonly int CHashCodeSeed = typeof(ParameterBinding).AssemblyQualifiedName.GetHashCode();
 
-		DbParamDefinition _definition;
-		object _specializedValue;
+    DbParamDefinition _definition;
+    object _specializedValue;
 
-		public DbParamDefinition Definition { get { return _definition; } set { _definition = value; } }
+    public DbParamDefinition Definition { get { return _definition; } set { _definition = value; } }
 
-		public object SpecializedValue { get { return _specializedValue; } set { _specializedValue = value; } }
+    public object SpecializedValue { get { return _specializedValue; } set { _specializedValue = value; } }
 
-		public override bool Equals(object obj)
-		{
-			return typeof(ParameterBinding).IsInstanceOfType(obj)
-				&& Equals((ParameterBinding) obj);
-		}
+    public override bool Equals(object obj)
+    {
+      return typeof(ParameterBinding).IsInstanceOfType(obj)
+             && Equals((ParameterBinding)obj);
+    }
 
-		public override int GetHashCode()
-		{
-			var prime = Constants.NotSoRandomPrime;
-			var result = CHashCodeSeed * prime;
-			result ^= _definition.GetHashCode() * prime;
-			if (_specializedValue != null)
-			{
-				result ^= _specializedValue.GetHashCode() * prime;
-			}
-			return result;
-		}
+    public override int GetHashCode()
+    {
+      var prime = Constants.NotSoRandomPrime;
+      var result = CHashCodeSeed * prime;
+      result ^= _definition.GetHashCode() * prime;
+      if (_specializedValue != null)
+      {
+        result ^= _specializedValue.GetHashCode() * prime;
+      }
+      return result;
+    }
 
-		public static bool operator ==(ParameterBinding lhs, ParameterBinding rhs)
-		{
-			return lhs.Equals(rhs);
-		}
+    public static bool operator ==(ParameterBinding lhs, ParameterBinding rhs) { return lhs.Equals(rhs); }
 
-		public static bool operator !=(ParameterBinding lhs, ParameterBinding rhs)
-		{
-			return !lhs.Equals(rhs);
-		}
+    public static bool operator !=(ParameterBinding lhs, ParameterBinding rhs) { return !lhs.Equals(rhs); }
 
-		#region IEquatable<ParameterBinding> Members
+    #region IEquatable<ParameterBinding> Members
 
-		public bool Equals(ParameterBinding other)
-		{
-			return EqualityComparer<DbParamDefinition>.Default.Equals(Definition, other.Definition)
-				&& Equals(SpecializedValue, other.SpecializedValue);
-		}
+    public bool Equals(ParameterBinding other)
+    {
+      return EqualityComparer<DbParamDefinition>.Default.Equals(Definition, other.Definition)
+             && Equals(SpecializedValue, other.SpecializedValue);
+    }
 
-		#endregion
-	}
+    #endregion
+  }
 }

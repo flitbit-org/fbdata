@@ -7,56 +7,54 @@
 using System;
 using System.Data.Common;
 using FlitBit.Core;
-using FlitBit.Core.Parallel;
-using FlitBit.Data.Repositories;
 
 namespace FlitBit.Data
 {
-	public interface IDbContext : IInterrogateDisposable
-	{
-		DbContextBehaviors Behaviors { get; }
-		int CacheAttempts { get; }
-		int CacheHits { get; }
-		int CachePuts { get; }
-		int CacheRemoves { get; }
-		int QueryCount { get; }
-		int ObjectsAffected { get; }
-		int ObjectsFetched { get; }
+  public interface IDbContext : IInterrogateDisposable
+  {
+    DbContextBehaviors Behaviors { get; }
+    int CacheAttempts { get; }
+    int CacheHits { get; }
+    int CachePuts { get; }
+    int CacheRemoves { get; }
+    int QueryCount { get; }
+    int ObjectsAffected { get; }
+    int ObjectsFetched { get; }
 
-		T Add<T>(T item)
-			where T : IDisposable;
+    T Add<T>(T item)
+      where T : IDisposable;
 
-		C EnsureCache<K, C>(K key, Func<IDbContext, K, C> factory)
-			where C : ContextCache;
+    C EnsureCache<K, C>(K key, Func<IDbContext, K, C> factory)
+      where C : ContextCache;
 
-		DbProviderHelper HelperForConnection(DbConnection cn);
-		int IncrementQueryCounter();
-		int IncrementQueryCounter(int count);
-		int IncrementObjectsAffected(int count);
-		int IncrementObjectsFetched(int count);
-		int IncrementObjectsFetched();
+    DbProviderHelper HelperForConnection(DbConnection cn);
+    int IncrementQueryCounter();
+    int IncrementQueryCounter(int count);
+    int IncrementObjectsAffected(int count);
+    int IncrementObjectsFetched(int count);
+    int IncrementObjectsFetched();
 
-		int IncrementCacheAttempts();
+    int IncrementCacheAttempts();
 
-		int IncrementCacheHits();
+    int IncrementCacheHits();
 
-		int IncrementCachePuts();
-		int IncrementCacheRemoves();
+    int IncrementCachePuts();
+    int IncrementCacheRemoves();
 
-		DbConnection NewConnection(string connection);
+    DbConnection NewConnection(string connection);
 
-		TConnection NewConnection<TConnection>(string connectionName)
-			where TConnection : DbConnection;
+    TConnection NewConnection<TConnection>(string connectionName)
+      where TConnection : DbConnection;
 
-		DbConnection SharedOrNewConnection(string connectionName);
+    DbConnection SharedOrNewConnection(string connectionName);
 
-		TConnection SharedOrNewConnection<TConnection>(string connectionName)
-			where TConnection : DbConnection;
+    TConnection SharedOrNewConnection<TConnection>(string connectionName)
+      where TConnection : DbConnection;
 
-	  /// <summary>
-	  /// Prepares the context to be shared across threads. Each result must be disposed.
-	  /// </summary>
-	  /// <returns></returns>
-	  IDbContext ShareContext();
-	}
+    /// <summary>
+    ///   Prepares the context to be shared across threads. Each result must be disposed.
+    /// </summary>
+    /// <returns></returns>
+    IDbContext ShareContext();
+  }
 }

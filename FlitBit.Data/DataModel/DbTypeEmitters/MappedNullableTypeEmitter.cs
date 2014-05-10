@@ -1,5 +1,7 @@
 #region COPYRIGHT© 2009-2014 Phillip Clark. All rights reserved.
+
 // For licensing information see License.txt (MIT style licensing).
+
 #endregion
 
 using System;
@@ -12,12 +14,11 @@ using FlitBit.Emit;
 namespace FlitBit.Data.DataModel.DbTypeEmitters
 {
   internal abstract class MappedNullableTypeEmitter<TBaseType, TDbType> : MappedDbTypeEmitter<TBaseType?, TDbType>
-    where TBaseType: struct
-    where TDbType: struct
+    where TBaseType : struct
+    where TDbType : struct
   {
     internal MappedNullableTypeEmitter(DbType dbType, TDbType specializedDbType)
-      : base(dbType, specializedDbType, typeof(TBaseType))
-    {}
+      : base(dbType, specializedDbType, typeof(TBaseType)) { }
 
     protected internal override void EmitDbParameterSetValue(ILGenerator il, ColumnMapping column, LocalBuilder parm,
       LocalBuilder local, LocalBuilder flag)
@@ -64,7 +65,10 @@ namespace FlitBit.Data.DataModel.DbTypeEmitters
 
     protected override void EmitTranslateDbType(ILGenerator il)
     {
-      il.NewObj(typeof(TBaseType?).GetConstructor(new[] { typeof(TBaseType) }));
+      il.NewObj(typeof(TBaseType?).GetConstructor(new[]
+      {
+        typeof(TBaseType)
+      }));
     }
   }
 }

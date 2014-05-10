@@ -1,5 +1,7 @@
 ﻿#region COPYRIGHT© 2009-2014 Phillip Clark. All rights reserved.
+
 // For licensing information see License.txt (MIT style licensing).
+
 #endregion
 
 using System;
@@ -30,15 +32,15 @@ namespace FlitBit.Data.SqlServer
     /// <param name="strategy"></param>
     public DynamicHybridInheritanceTreeBinder(IMapping<TModel> mapping, MappingStrategy strategy)
       : base(mapping, strategy)
-    {
-    }
+    {}
 
     public override void BuildDdlBatch(StringBuilder batch, IList<Type> members)
     {
       throw new NotImplementedException();
     }
 
-    public override object ConstructQueryCommand(IDataModelRepository<TModel, TIdentityKey, SqlConnection> repo, string key, DataModelSqlExpression<TModel> sql, IDataModelWriter<TModel> writer)
+    public override object ConstructQueryCommand(IDataModelRepository<TModel, TIdentityKey, SqlConnection> repo,
+      string key, DataModelSqlExpression<TModel> sql, IDataModelWriter<TModel> writer)
     {
       throw new NotImplementedException();
     }

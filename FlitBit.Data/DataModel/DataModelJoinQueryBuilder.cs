@@ -1,5 +1,7 @@
 ﻿#region COPYRIGHT© 2009-2014 Phillip Clark. All rights reserved.
+
 // For licensing information see License.txt (MIT style licensing).
+
 #endregion
 
 using System;
@@ -11,8 +13,9 @@ using FlitBit.Data.Expressions;
 
 namespace FlitBit.Data.DataModel
 {
-  class DataModelJoinQueryBuilder<TDataModel, TIdentityKey, TDbConnection, TJoin> 
-    : BasicDataModelQueryBuilder<TDataModel, TIdentityKey, TDbConnection>, IDataModelJoinQueryBuilder<TDataModel, TIdentityKey, TDbConnection, TJoin> 
+  internal class DataModelJoinQueryBuilder<TDataModel, TIdentityKey, TDbConnection, TJoin>
+    : BasicDataModelQueryBuilder<TDataModel, TIdentityKey, TDbConnection>,
+      IDataModelJoinQueryBuilder<TDataModel, TIdentityKey, TDbConnection, TJoin>
     where TDbConnection : DbConnection
   {
     readonly DataModelSqlExpression<TDataModel> _sql;
@@ -20,8 +23,7 @@ namespace FlitBit.Data.DataModel
     public DataModelJoinQueryBuilder(IDataModelRepository<TDataModel, TIdentityKey, TDbConnection> repo,
       IDataModelWriter<TDataModel> writer, DataModelSqlExpression<TDataModel> sql)
       : this(repo, writer, Guid.NewGuid().ToString("N"), sql)
-    {
-    }
+    {}
 
     public DataModelJoinQueryBuilder(IDataModelRepository<TDataModel, TIdentityKey, TDbConnection> repo,
       IDataModelWriter<TDataModel> writer, string key, DataModelSqlExpression<TDataModel> sql)
@@ -40,7 +42,8 @@ namespace FlitBit.Data.DataModel
       throw new NotImplementedException();
     }
 
-    public IDataModelJoin2QueryBuilder<TDataModel, TIdentityKey, TDbConnection, TJoin, TJoin1> Join<TJoin1>(Expression<Func<TDataModel, TJoin, TJoin1, bool>> predicate)
+    public IDataModelJoin2QueryBuilder<TDataModel, TIdentityKey, TDbConnection, TJoin, TJoin1> Join<TJoin1>(
+      Expression<Func<TDataModel, TJoin, TJoin1, bool>> predicate)
     {
       throw new NotImplementedException();
     }
@@ -48,19 +51,20 @@ namespace FlitBit.Data.DataModel
     public IDataModelQueryCommand<TDataModel, TDbConnection, TParam> Where<TParam>(
       Expression<Func<TDataModel, TJoin, TParam, bool>> predicate)
     {
-      var lambda = (LambdaExpression) predicate;
+      var lambda = (LambdaExpression)predicate;
       var parms = new List<ParameterExpression>(lambda.Parameters);
       _sql.DuplicateSelfParameter(parms[0]);
       _sql.DuplicateJoinParameter(0, parms[1]);
       _sql.AddValueParameter(parms[2]);
       _sql.IngestExpression(lambda.Body);
 
-      return (IDataModelQueryCommand<TDataModel, TDbConnection, TParam>) Repository.ConstructQueryCommand(Key, _sql);
+      return (IDataModelQueryCommand<TDataModel, TDbConnection, TParam>)Repository.ConstructQueryCommand(Key, _sql);
     }
   }
 
-  class DataModelJoinQueryBuilder<TDataModel, TIdentityKey, TDbConnection, TJoin, TParam>
-    : BasicDataModelQueryBuilder<TDataModel, TIdentityKey, TDbConnection>, IDataModelJoinQueryBuilder<TDataModel, TIdentityKey, TDbConnection, TJoin, TParam>
+  internal class DataModelJoinQueryBuilder<TDataModel, TIdentityKey, TDbConnection, TJoin, TParam>
+    : BasicDataModelQueryBuilder<TDataModel, TIdentityKey, TDbConnection>,
+      IDataModelJoinQueryBuilder<TDataModel, TIdentityKey, TDbConnection, TJoin, TParam>
     where TDbConnection : DbConnection
   {
     readonly DataModelSqlExpression<TDataModel> _sql;
@@ -68,8 +72,7 @@ namespace FlitBit.Data.DataModel
     public DataModelJoinQueryBuilder(IDataModelRepository<TDataModel, TIdentityKey, TDbConnection> repo,
       IDataModelWriter<TDataModel> writer, DataModelSqlExpression<TDataModel> sql)
       : this(repo, writer, Guid.NewGuid().ToString("N"), sql)
-    {
-    }
+    {}
 
     public DataModelJoinQueryBuilder(IDataModelRepository<TDataModel, TIdentityKey, TDbConnection> repo,
       IDataModelWriter<TDataModel> writer, string key, DataModelSqlExpression<TDataModel> sql)
@@ -88,7 +91,8 @@ namespace FlitBit.Data.DataModel
       throw new NotImplementedException();
     }
 
-    public IDataModelJoin2QueryBuilder<TDataModel, TIdentityKey, TDbConnection, TJoin, TJoin1, TParam> Join<TJoin1>(Expression<Func<TDataModel, TJoin, TJoin1, bool>> predicate)
+    public IDataModelJoin2QueryBuilder<TDataModel, TIdentityKey, TDbConnection, TJoin, TJoin1, TParam> Join<TJoin1>(
+      Expression<Func<TDataModel, TJoin, TJoin1, bool>> predicate)
     {
       throw new NotImplementedException();
     }
@@ -104,12 +108,13 @@ namespace FlitBit.Data.DataModel
       _sql.AddValueParameter(parms[3]);
       _sql.IngestExpression(lambda.Body);
 
-      return (IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1>)Repository.ConstructQueryCommand(Key, _sql);
+      return
+        (IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1>)Repository.ConstructQueryCommand(Key, _sql);
     }
 
     public IDataModelQueryCommand<TDataModel, TDbConnection, TParam> Construct()
     {
-      return (IDataModelQueryCommand<TDataModel, TDbConnection, TParam>)Repository.ConstructQueryCommand(Key, _sql);      
+      return (IDataModelQueryCommand<TDataModel, TDbConnection, TParam>)Repository.ConstructQueryCommand(Key, _sql);
     }
   }
 }

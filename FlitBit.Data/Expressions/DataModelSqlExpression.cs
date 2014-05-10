@@ -1,5 +1,7 @@
 ﻿#region COPYRIGHT© 2009-2014 Phillip Clark. All rights reserved.
+
 // For licensing information see License.txt (MIT style licensing).
+
 #endregion
 
 using System;
@@ -15,13 +17,13 @@ using FlitBit.Emit;
 namespace FlitBit.Data.Expressions
 {
   /// <summary>
-  /// An SQL expression builder/helper for target type; translates limited lambda expressions to SQL.
+  ///   An SQL expression builder/helper for target type; translates limited lambda expressions to SQL.
   /// </summary>
   /// <typeparam name="TDataModel">target type TDataModel</typeparam>
   public class DataModelSqlExpression<TDataModel>
   {
     readonly string _selfRef;
-    private int _joinOrd = 0;
+    int _joinOrd;
 
     readonly Dictionary<Expression, SqlExpression> _translations =
       new Dictionary<Expression, SqlExpression>();
@@ -30,11 +32,10 @@ namespace FlitBit.Data.Expressions
     readonly List<SqlJoinExpression> _explicitJoins = new List<SqlJoinExpression>();
     readonly List<SqlJoinExpression> _impliedJoins = new List<SqlJoinExpression>();
 
-
     SqlExpression _whereExpression;
 
     /// <summary>
-    /// Creates a new instance.
+    ///   Creates a new instance.
     /// </summary>
     /// <param name="mapping">the target type's mapping</param>
     /// <param name="binder">the target type's binder</param>
@@ -48,29 +49,29 @@ namespace FlitBit.Data.Expressions
     }
 
     /// <summary>
-    /// The expression's object-relational mapping.
+    ///   The expression's object-relational mapping.
     /// </summary>
     public IMapping<TDataModel> Mapping { get; private set; }
 
     /// <summary>
-    /// The expression's object-relational binder.
+    ///   The expression's object-relational binder.
     /// </summary>
     public IDataModelBinder<TDataModel> Binder { get; private set; }
 
     ColumnMapping SelfReferenceColumn { get; set; }
 
     /// <summary>
-    /// Gets the parameter expression refering to the current target object (self).
+    ///   Gets the parameter expression refering to the current target object (self).
     /// </summary>
     public SqlParameterExpression SelfParameter { get; private set; }
 
     /// <summary>
-    /// Gets the parameter expressions bound to value parameters in the lambda.
+    ///   Gets the parameter expressions bound to value parameters in the lambda.
     /// </summary>
     public IList<SqlParameterExpression> ValueParameters { get { return this._params.AsReadOnly(); } }
 
     /// <summary>
-    /// Gets join expressions generated from explicit lambda joins.
+    ///   Gets join expressions generated from explicit lambda joins.
     /// </summary>
     public IList<SqlJoinExpression> ExplicitJoins { get { return this._explicitJoins.AsReadOnly(); } }
 
@@ -99,7 +100,8 @@ namespace FlitBit.Data.Expressions
       if (inferOnExpression)
       {
         var dep =
-          joinMapping.Dependencies.SingleOrDefault(d => d.Target == this.Mapping && d.Kind.HasFlag(DependencyKind.Direct));
+          joinMapping.Dependencies.SingleOrDefault(
+            d => d.Target == this.Mapping && d.Kind.HasFlag(DependencyKind.Direct));
         if (dep == null)
         {
           throw new NotSupportedException(String.Concat("A direct dependency path is not known from ",
@@ -109,7 +111,8 @@ namespace FlitBit.Data.Expressions
         var fromCol = joinMapping.Columns.Single(c => c.Member == dep.Member);
         var toCol = this.Mapping.Columns.Single(c => c.Member == fromCol.ReferenceTargetMember);
         onExpression = new SqlComparisonExpression(ExpressionType.Equal,
-          new SqlMemberAccessExpression(this.Mapping.QuoteObjectName(fromCol.TargetName), toCol.RuntimeType, fromCol, expr),
+          new SqlMemberAccessExpression(this.Mapping.QuoteObjectName(fromCol.TargetName), toCol.RuntimeType, fromCol,
+            expr),
           new SqlMemberAccessExpression(this.Mapping.QuoteObjectName(toCol.TargetName), toCol.RuntimeType, toCol,
             this.SelfParameter)
           );
@@ -128,7 +131,7 @@ namespace FlitBit.Data.Expressions
       var join = this._explicitJoins[ord];
       var existing =
         this._translations.Values.First(
-          it => it.Kind == SqlExpressionKind.Join && ((SqlJoinParameterExpression) it).Join == join);
+          it => it.Kind == SqlExpressionKind.Join && ((SqlJoinParameterExpression)it).Join == join);
       this._translations.Add(parm, existing);
     }
 
@@ -152,9 +155,11 @@ namespace FlitBit.Data.Expressions
     internal void IngestJoinExpression(ParameterExpression parm, Expression expr)
     {
       SqlExpression joinParm;
-      if (!this._translations.TryGetValue(parm, out joinParm) || joinParm.Kind != SqlExpressionKind.Join)
+      if (!this._translations.TryGetValue(parm, out joinParm)
+          || joinParm.Kind != SqlExpressionKind.Join)
       {
-        throw new ArgumentException("Parameter expression must identify a join already added to the SQL expression.", "parm");
+        throw new ArgumentException("Parameter expression must identify a join already added to the SQL expression.",
+          "parm");
       }
       var binary = expr as BinaryExpression;
       if (binary == null)
@@ -256,9 +261,11 @@ namespace FlitBit.Data.Expressions
       var value = expr as SqlValueExpression;
       if (value != null)
       {
-        if (value.Source.Kind == SqlExpressionKind.Join || value.Source.Kind == SqlExpressionKind.JoinReference)
+        if (value.Source.Kind == SqlExpressionKind.Join
+            || value.Source.Kind == SqlExpressionKind.JoinReference)
         {
-          return (value.Source == join.ReferenceExpression || (value.Source.Join != null && value.Source.Join.Ordinal < join.Ordinal));
+          return (value.Source == join.ReferenceExpression
+                  || (value.Source.Join != null && value.Source.Join.Ordinal < join.Ordinal));
         }
         return true;
       }
@@ -406,20 +413,20 @@ namespace FlitBit.Data.Expressions
           }
           this._translations.Add(expr, res);
         }
-        return (SqlValueExpression)res; 
+        return (SqlValueExpression)res;
       }
       throw new NotSupportedException(String.Concat("Expression not supported as a value expression: ",
         expr.NodeType));
     }
 
-    private SqlValueExpression HandleValueReferencePath(Expression expr)
+    SqlValueExpression HandleValueReferencePath(Expression expr)
     {
       var stack = new Stack<MemberExpression>();
       var item = expr;
       while (item.NodeType == ExpressionType.MemberAccess)
       {
-        stack.Push((MemberExpression) item);
-        item = ((MemberExpression) item).Expression;
+        stack.Push((MemberExpression)item);
+        item = ((MemberExpression)item).Expression;
       }
       if (item.NodeType != ExpressionType.Parameter)
       {
@@ -435,7 +442,7 @@ namespace FlitBit.Data.Expressions
       return MapExpressionFromJoin(inner, stack);
     }
 
-    private SqlValueExpression MapExpressionFromSelf(SqlValueExpression first, Stack<MemberExpression> stack)
+    SqlValueExpression MapExpressionFromSelf(SqlValueExpression first, Stack<MemberExpression> stack)
     {
       IMapping fromMapping = this.Mapping;
       var path = "self";
@@ -447,26 +454,28 @@ namespace FlitBit.Data.Expressions
         SqlExpression res;
         if (this._translations.TryGetValue(it, out res))
         {
-          inner = (SqlValueExpression) res;
-          fromMapping = (inner.Type == typeof (TDataModel)) ? this.Mapping : Mappings.AccessMappingFor(inner.Type);
+          inner = (SqlValueExpression)res;
+          fromMapping = (inner.Type == typeof(TDataModel)) ? this.Mapping : Mappings.AccessMappingFor(inner.Type);
         }
         else
         {
           var col = fromMapping.Columns.Single(c => c.Member == m);
-          if (inner.Kind == SqlExpressionKind.MemberAccess && ((SqlMemberAccessExpression) inner).Column.IsReference)
+          if (inner.Kind == SqlExpressionKind.MemberAccess
+              && ((SqlMemberAccessExpression)inner).Column.IsReference)
           {
-            inner = InferJoinForMember((SqlMemberAccessExpression) inner, path);
+            inner = InferJoinForMember((SqlMemberAccessExpression)inner, path);
           }
           if (col.IsIdentity
               && (inner.Kind == SqlExpressionKind.MemberAccess
-                  && ((SqlMemberAccessExpression) inner).Column.ReferenceTargetMember == m))
+                  && ((SqlMemberAccessExpression)inner).Column.ReferenceTargetMember == m))
           {
             // special case for identity references.
             this._translations.Add(it, inner);
           }
           else
           {
-            inner = new SqlMemberAccessExpression(fromMapping.QuoteObjectName(col.TargetName), col.RuntimeType, col, inner);
+            inner = new SqlMemberAccessExpression(fromMapping.QuoteObjectName(col.TargetName), col.RuntimeType, col,
+              inner);
             if (col.IsReference)
             {
               fromMapping = Mappings.AccessMappingFor(col.RuntimeType);
@@ -479,7 +488,7 @@ namespace FlitBit.Data.Expressions
       return inner;
     }
 
-    private SqlValueExpression InferJoinForMember(SqlMemberAccessExpression item, string path)
+    SqlValueExpression InferJoinForMember(SqlMemberAccessExpression item, string path)
     {
       if (item.Join == null)
       {
@@ -506,7 +515,7 @@ namespace FlitBit.Data.Expressions
       return item.Join.ReferenceExpression;
     }
 
-    private SqlValueExpression MapExpressionFromJoin(SqlValueExpression inner, Stack<MemberExpression> stack)
+    SqlValueExpression MapExpressionFromJoin(SqlValueExpression inner, Stack<MemberExpression> stack)
     {
       var item = inner;
       var fromMapping = (item.Type == typeof(TDataModel)) ? this.Mapping : Mappings.AccessMappingFor(item.Type);
@@ -522,7 +531,8 @@ namespace FlitBit.Data.Expressions
         else
         {
           var m = it.Member;
-          if (it.Type.IsClass || it.Type.IsInterface && Mappings.ExistsFor(it.Type))
+          if (it.Type.IsClass
+              || it.Type.IsInterface && Mappings.ExistsFor(it.Type))
           {
             var toDep = fromMapping.Dependencies.SingleOrDefault(d => d.Member == m);
             if (toDep == null)

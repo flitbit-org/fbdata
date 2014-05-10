@@ -1,5 +1,7 @@
 ﻿#region COPYRIGHT© 2009-2014 Phillip Clark. All rights reserved.
+
 // For licensing information see License.txt (MIT style licensing).
+
 #endregion
 
 using System.Linq.Expressions;
@@ -9,10 +11,7 @@ namespace FlitBit.Data.Expressions
   public class SqlComparisonExpression : SqlBinaryExpression
   {
     public SqlComparisonExpression(ExpressionType comparison, SqlExpression lhs, SqlExpression rhs)
-      : base(SqlExpressionKind.Comparison, lhs, rhs)
-    {
-      this.ComparisonType = comparison;
-    }
+      : base(SqlExpressionKind.Comparison, lhs, rhs) { this.ComparisonType = comparison; }
 
     public ExpressionType ComparisonType { get; private set; }
 

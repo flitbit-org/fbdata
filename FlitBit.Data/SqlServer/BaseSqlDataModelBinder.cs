@@ -1,5 +1,7 @@
 ﻿#region COPYRIGHT© 2009-2014 Phillip Clark. All rights reserved.
+
 // For licensing information see License.txt (MIT style licensing).
+
 #endregion
 
 using System;
@@ -23,25 +25,26 @@ namespace FlitBit.Data.SqlServer
     DataModelBinder<TDataModel, TIdentityKey, SqlConnection>
     where TModelImpl : class, TDataModel, IDataModel, new()
   {
-    [DebuggerBrowsable(DebuggerBrowsableState.Never)] private
-      Tuple<int, IDataModelQuerySingleCommand<TDataModel, SqlConnection, TDataModel>> _create;
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+    Tuple<int, IDataModelQuerySingleCommand<TDataModel, SqlConnection, TDataModel>> _create;
 
-    [DebuggerBrowsable(DebuggerBrowsableState.Never)] private
-      Tuple<int, IDataModelNonQueryCommand<TDataModel, SqlConnection, TIdentityKey>> _delete;
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+    Tuple<int, IDataModelNonQueryCommand<TDataModel, SqlConnection, TIdentityKey>> _delete;
 
-    private bool _initialized;
+    bool _initialized;
 
-    [DebuggerBrowsable(DebuggerBrowsableState.Never)] private
-      Tuple<int, IDataModelQuerySingleCommand<TDataModel, SqlConnection, TIdentityKey>> _read;
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+    Tuple<int, IDataModelQuerySingleCommand<TDataModel, SqlConnection, TIdentityKey>> _read;
 
-    [DebuggerBrowsable(DebuggerBrowsableState.Never)] private Tuple<int, IDataModelRepository<TDataModel, TIdentityKey>>
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+    Tuple<int, IDataModelRepository<TDataModel, TIdentityKey>>
       _repository;
 
-    [DebuggerBrowsable(DebuggerBrowsableState.Never)] private
-      Tuple<int, IDataModelQueryManyCommand<TDataModel, SqlConnection>> _selectAll;
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+    Tuple<int, IDataModelQueryManyCommand<TDataModel, SqlConnection>> _selectAll;
 
-    [DebuggerBrowsable(DebuggerBrowsableState.Never)] private
-      Tuple<int, IDataModelQuerySingleCommand<TDataModel, SqlConnection, TDataModel>> _update;
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+    Tuple<int, IDataModelQuerySingleCommand<TDataModel, SqlConnection, TDataModel>> _update;
 
     /// <summary>
     ///   Creates a new instance.
@@ -59,10 +62,7 @@ namespace FlitBit.Data.SqlServer
 
     protected int[] Offsets { get; private set; }
 
-    public override IDataModelWriter<TDataModel> Writer
-    {
-      get { return LegacyWriter; }
-    }
+    public override IDataModelWriter<TDataModel> Writer { get { return LegacyWriter; } }
 
     protected DataModelSqlWriter<TDataModel> LegacyWriter { get; private set; }
 
@@ -79,8 +79,9 @@ namespace FlitBit.Data.SqlServer
 
     public override IDataModelQueryManyCommand<TDataModel, SqlConnection> GetAllCommand()
     {
-      IMapping<TDataModel> mapping = Mapping;
-      if (_selectAll == null || _selectAll.Item1 < mapping.Revision)
+      var mapping = Mapping;
+      if (_selectAll == null
+          || _selectAll.Item1 < mapping.Revision)
       {
         _selectAll = Tuple.Create(mapping.Revision,
           ConstructGetAllCommand());
@@ -92,8 +93,9 @@ namespace FlitBit.Data.SqlServer
 
     public override IDataModelQuerySingleCommand<TDataModel, SqlConnection, TDataModel> GetCreateCommand()
     {
-      IMapping<TDataModel> mapping = Mapping;
-      if (_create == null || _create.Item1 < mapping.Revision)
+      var mapping = Mapping;
+      if (_create == null
+          || _create.Item1 < mapping.Revision)
       {
         _create = Tuple.Create(mapping.Revision,
           ConstructGetCreateCommand());
@@ -105,8 +107,9 @@ namespace FlitBit.Data.SqlServer
 
     public override IDataModelNonQueryCommand<TDataModel, SqlConnection, TIdentityKey> GetDeleteCommand()
     {
-      IMapping<TDataModel> mapping = Mapping;
-      if (_delete == null || _delete.Item1 < mapping.Revision)
+      var mapping = Mapping;
+      if (_delete == null
+          || _delete.Item1 < mapping.Revision)
       {
         _delete = Tuple.Create(mapping.Revision,
           ConstructGetDeleteCommand());
@@ -118,8 +121,9 @@ namespace FlitBit.Data.SqlServer
 
     public override IDataModelQuerySingleCommand<TDataModel, SqlConnection, TIdentityKey> GetReadCommand()
     {
-      IMapping<TDataModel> mapping = Mapping;
-      if (_read == null || _read.Item1 < mapping.Revision)
+      var mapping = Mapping;
+      if (_read == null
+          || _read.Item1 < mapping.Revision)
       {
         _read = Tuple.Create(mapping.Revision,
           ConstructReadCommand());
@@ -131,8 +135,9 @@ namespace FlitBit.Data.SqlServer
 
     public override IDataModelQuerySingleCommand<TDataModel, SqlConnection, TDataModel> GetUpdateCommand()
     {
-      IMapping<TDataModel> mapping = Mapping;
-      if (_update == null || _update.Item1 < mapping.Revision)
+      var mapping = Mapping;
+      if (_update == null
+          || _update.Item1 < mapping.Revision)
       {
         _update = Tuple.Create(mapping.Revision,
           ConstructUpdateCommand());
@@ -144,8 +149,9 @@ namespace FlitBit.Data.SqlServer
 
     public override IDataModelRepository<TDataModel, TIdentityKey> MakeRepository()
     {
-      IMapping<TDataModel> mapping = Mapping;
-      if (_repository == null || _repository.Item1 < mapping.Revision)
+      var mapping = Mapping;
+      if (_repository == null
+          || _repository.Item1 < mapping.Revision)
       {
         _repository = Tuple.Create(mapping.Revision,
           ConstructRepository());
@@ -154,6 +160,5 @@ namespace FlitBit.Data.SqlServer
     }
 
     protected abstract IDataModelRepository<TDataModel, TIdentityKey> ConstructRepository();
-
   }
 }

@@ -1,15 +1,13 @@
 ﻿#region COPYRIGHT© 2009-2014 Phillip Clark. All rights reserved.
+
 // For licensing information see License.txt (MIT style licensing).
+
 #endregion
 
 using System.Data;
-using System.Data.Common;
-using System.Data.SqlTypes;
-using System.Reflection.Emit;
 using System.Text;
 using FlitBit.Data.DataModel;
 using FlitBit.Data.Meta;
-using FlitBit.Emit;
 
 namespace FlitBit.Data.SqlServer
 {
@@ -20,10 +18,10 @@ namespace FlitBit.Data.SqlServer
     {
       DbDataReaderGetValueMethodName = "GetDouble";
     }
-    
-    public override void EmitColumnInitializationDDL<TModel>(StringBuilder buffer, IMapping<TModel> mapping, ColumnMapping<TModel> col)
-    {
-    }
+
+    public override void EmitColumnInitializationDDL<TModel>(StringBuilder buffer, IMapping<TModel> mapping,
+      ColumnMapping<TModel> col)
+    {}
 
     //protected override void EmitTranslateRuntimeType(ILGenerator il, LocalBuilder local)
     //{

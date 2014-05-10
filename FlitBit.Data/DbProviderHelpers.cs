@@ -11,62 +11,59 @@ using FlitBit.Registrar;
 
 namespace FlitBit.Data
 {
-	public static class DbProviderHelpers
-	{
-		static readonly Registrar<string, Type> __registry = new Registrar<string, Type>();
+  public static class DbProviderHelpers
+  {
+    static readonly Registrar<string, Type> __registry = new Registrar<string, Type>();
 
-		public static DbProviderHelper GetDbProviderHelperForDbConnection(DbConnection connection)
-		{
-			Contract.Requires<ArgumentNullException>(connection != null);
+    public static DbProviderHelper GetDbProviderHelperForDbConnection(DbConnection connection)
+    {
+      Contract.Requires<ArgumentNullException>(connection != null);
 
-			var key = KeyFor(connection);
-			IRegistrationKey<string, Type> registration;
-			if (__registry.TryGetRegistration(key, out registration))
-			{
-				var res = (DbProviderHelper) Activator.CreateInstance(registration.Handback);
-				res.Initialize();
-				return res;
-			}
-			return default(DbProviderHelper);
-		}
+      var key = KeyFor(connection);
+      IRegistrationKey<string, Type> registration;
+      if (__registry.TryGetRegistration(key, out registration))
+      {
+        var res = (DbProviderHelper)Activator.CreateInstance(registration.Handback);
+        res.Initialize();
+        return res;
+      }
+      return default(DbProviderHelper);
+    }
 
-		public static DbProviderHelper GetDbProviderHelperForDbConnection(string connection)
-		{
-			Contract.Requires<ArgumentNullException>(connection != null);
+    public static DbProviderHelper GetDbProviderHelperForDbConnection(string connection)
+    {
+      Contract.Requires<ArgumentNullException>(connection != null);
 
-			var pr = DbExtensions.GetProviderByConnectionName(connection);
-			var key = KeyFor(pr);
-			IRegistrationKey<string, Type> registration;
-			if (__registry.TryGetRegistration(key, out registration))
-			{
-				var res = (DbProviderHelper)Activator.CreateInstance(registration.Handback);
-				res.Initialize();
-				return res;
-			}
-			return default(DbProviderHelper);
-		}
+      var pr = DbExtensions.GetProviderByConnectionName(connection);
+      var key = KeyFor(pr);
+      IRegistrationKey<string, Type> registration;
+      if (__registry.TryGetRegistration(key, out registration))
+      {
+        var res = (DbProviderHelper)Activator.CreateInstance(registration.Handback);
+        res.Initialize();
+        return res;
+      }
+      return default(DbProviderHelper);
+    }
 
-		public static void RegisterHelper<Pr, Cn, Cm, H>()
-			where Pr : DbProviderFactory
-			where Cn : DbConnection
-			where Cm : DbCommand
-			where H : DbProviderHelper
-		{
-			IRegistrationKey<string, Type> registration;
-			__registry.TryRegister(KeyFor<Pr>(), typeof(H), out registration);
-			__registry.TryRegister(KeyFor<Cn>(), typeof(H), out registration);
-			__registry.TryRegister(KeyFor<Cm>(), typeof(H), out registration);
-		}
+    public static void RegisterHelper<Pr, Cn, Cm, H>()
+      where Pr : DbProviderFactory
+      where Cn : DbConnection
+      where Cm : DbCommand
+      where H : DbProviderHelper
+    {
+      IRegistrationKey<string, Type> registration;
+      __registry.TryRegister(KeyFor<Pr>(), typeof(H), out registration);
+      __registry.TryRegister(KeyFor<Cn>(), typeof(H), out registration);
+      __registry.TryRegister(KeyFor<Cm>(), typeof(H), out registration);
+    }
 
-		static string KeyFor<T>()
-		{
-			return typeof(T).AssemblyQualifiedName;
-		}
+    static string KeyFor<T>() { return typeof(T).AssemblyQualifiedName; }
 
-		static string KeyFor(object instance)
-		{
-			return instance.GetType()
-										.AssemblyQualifiedName;
-		}
-	}
+    static string KeyFor(object instance)
+    {
+      return instance.GetType()
+                     .AssemblyQualifiedName;
+    }
+  }
 }

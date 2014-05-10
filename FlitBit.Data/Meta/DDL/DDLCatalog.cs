@@ -6,10 +6,9 @@
 
 namespace FlitBit.Data.Meta.DDL
 {
-	public class DDLCatalog : DDLNode
-	{
-		public DDLCatalog(DDLNode parent, string name, DDLBehaviors behaviors)
-			: base(DDLNodeKind.Catalog, parent, name, behaviors)
-		{}
-	}
+  public class DDLCatalog : DDLNode
+  {
+    public DDLCatalog(DDLNode parent, string name, DDLBehaviors behaviors)
+      : base(DDLNodeKind.Catalog, parent, name, behaviors) { }
+  }
 }

@@ -1,5 +1,7 @@
 ﻿#region COPYRIGHT© 2009-2014 Phillip Clark. All rights reserved.
+
 // For licensing information see License.txt (MIT style licensing).
+
 #endregion
 
 using System;
@@ -9,7 +11,6 @@ using System.Data;
 using System.Data.Common;
 using System.Diagnostics.Contracts;
 using System.Linq;
-using System.Linq.Expressions;
 using System.Threading;
 using FlitBit.Data.Expressions;
 
@@ -44,10 +45,10 @@ namespace FlitBit.Data.DataModel
       _binder = (IDataModelBinder<TDataModel, TIdentityKey, TDbConnection>)mapping.GetBinder();
       ConnectionName = _mapping.ConnectionName;
       _helper = DbProviderHelpers.GetDbProviderHelperForDbConnection(ConnectionName);
-      _cacheRefreshSpan = cacheRefreshSpan;      
+      _cacheRefreshSpan = cacheRefreshSpan;
     }
 
-    public IDataModelWriter<TDataModel> Writer { get { return _binder.Writer; } } 
+    public IDataModelWriter<TDataModel> Writer { get { return _binder.Writer; } }
 
     protected string ConnectionName { get; private set; }
 
@@ -81,10 +82,10 @@ namespace FlitBit.Data.DataModel
       {
         res = PerformRead(context, key);
         ThreadPool.QueueUserWorkItem(
-                                     unused => _items.AddOrUpdate(
-                                                                  key,
-                                                                  k => Tuple.Create(res, DateTime.Now),
-                                                                  (k, _) => Tuple.Create(res, DateTime.Now))
+          unused => _items.AddOrUpdate(
+            key,
+            k => Tuple.Create(res, DateTime.Now),
+            (k, _) => Tuple.Create(res, DateTime.Now))
           );
         return res;
       }
@@ -168,8 +169,8 @@ namespace FlitBit.Data.DataModel
       {
         var item = items[i];
         _items.AddOrUpdate(GetIdentity(item),
-                           k => Tuple.Create(item, timestamp),
-                           (k, _) => Tuple.Create(item, timestamp)
+          k => Tuple.Create(item, timestamp),
+          (k, _) => Tuple.Create(item, timestamp)
           );
       }
     }
@@ -178,10 +179,7 @@ namespace FlitBit.Data.DataModel
 
     public IDataModelQueryBuilder<TDataModel, TIdentityKey, TDbConnection> QueryBuilder
     {
-      get
-      {
-        return new DataModelQueryBuilder<TDataModel, TIdentityKey, TDbConnection>(this, Writer);
-      }
+      get { return new DataModelQueryBuilder<TDataModel, TIdentityKey, TDbConnection>(this, Writer); }
     }
 
     public IDataModelQueryBuilder<TDataModel, TIdentityKey, TDbConnection> MakeNamedQueryBuilder(string name)
@@ -324,7 +322,7 @@ namespace FlitBit.Data.DataModel
       <TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>(
       IDataModelQuerySingleCommand
         <TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8,
-        TParam9> cmd, IDbContext cx, TParam param, TParam1 param1, TParam2 param2, TParam3 param3, TParam4 param4,
+          TParam9> cmd, IDbContext cx, TParam param, TParam1 param1, TParam2 param2, TParam3 param3, TParam4 param4,
       TParam5 param5, TParam6 param6, TParam7 param7, TParam8 param8, TParam9 param9)
     {
       var cn = cx.SharedOrNewConnection<TDbConnection>(ConnectionName);
@@ -473,7 +471,7 @@ namespace FlitBit.Data.DataModel
       <TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>(
       IDataModelQueryManyCommand
         <TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8,
-        TParam9> cmd, IDbContext cx, QueryBehavior behavior, TParam param, TParam1 param1, TParam2 param2,
+          TParam9> cmd, IDbContext cx, QueryBehavior behavior, TParam param, TParam1 param1, TParam2 param2,
       TParam3 param3, TParam4 param4, TParam5 param5, TParam6 param6, TParam7 param7, TParam8 param8, TParam9 param9)
     {
       var cn = cx.SharedOrNewConnection<TDbConnection>(ConnectionName);
@@ -483,7 +481,7 @@ namespace FlitBit.Data.DataModel
       }
 
       return cmd.ExecuteMany(cx, cn, behavior, param, param1, param2, param3, param4, param5, param6, param7, param8,
-                             param9);
+        param9);
     }
 
     protected virtual IDataModelQueryResult<TDataModel> PerformAll(IDbContext context, QueryBehavior behavior)
@@ -543,14 +541,14 @@ namespace FlitBit.Data.DataModel
     }
 
     protected virtual IEnumerable<TDataModel> PerformDirectQueryBy<TItemKey>(IDbContext context, string command,
-                                                                             Action<DbCommand, TItemKey> binder,
-                                                                             TItemKey key)
+      Action<DbCommand, TItemKey> binder,
+      TItemKey key)
     {
       throw new NotImplementedException();
     }
 
     protected virtual TDataModel PerformDirectReadBy<TItemKey>(IDbContext context, string command,
-                                                               Action<DbCommand, TItemKey> binder, TItemKey key)
+      Action<DbCommand, TItemKey> binder, TItemKey key)
     {
       throw new NotImplementedException();
     }

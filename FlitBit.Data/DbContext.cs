@@ -11,200 +11,181 @@ using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Threading;
 using FlitBit.Core;
-using FlitBit.Core.Parallel;
 using FlitBit.Data.Properties;
 
 namespace FlitBit.Data
 {
-	public partial class DbContext : Disposable, IDbContext
-	{
-		DbContextBehaviors _behaviors;
-		ConcurrentDictionary<string, DbConnection> _connections = new ConcurrentDictionary<string, DbConnection>();
-		int _disposers = 1;
+  public partial class DbContext : Disposable, IDbContext
+  {
+    readonly DbContextBehaviors _behaviors;
+    readonly ConcurrentDictionary<string, DbConnection> _connections = new ConcurrentDictionary<string, DbConnection>();
+    int _disposers = 1;
 
-		ConcurrentDictionary<DbConnection, DbProviderHelper> _helpers =
-			new ConcurrentDictionary<DbConnection, DbProviderHelper>();
+    readonly ConcurrentDictionary<DbConnection, DbProviderHelper> _helpers =
+      new ConcurrentDictionary<DbConnection, DbProviderHelper>();
 
-		IDbContext _parent;
-		int _queryCount = 0;
-		int _objectsAffected = 0;
-		int _objectsFetched = 0;
-		ICleanupScope _scope;
+    IDbContext _parent;
+    int _queryCount;
+    int _objectsAffected;
+    int _objectsFetched;
+    ICleanupScope _scope;
 
-		public DbContext()
-			: this(Current, DbContextBehaviors.Default)
-		{}
+    public DbContext()
+      : this(Current, DbContextBehaviors.Default) { }
 
-		public DbContext(IDbContext parent, DbContextBehaviors behaviors)
-		{
-			_behaviors = behaviors;
-			if (parent != null)
-			{
-				_parent = parent.ShareContext();
-			}
-			_scope = new CleanupScope(this, true);
-			if (!behaviors.HasFlag(DbContextBehaviors.NoContextFlow))
-			{
-				DbContextFlowProvider.Push(this);
-			}
-		}
+    public DbContext(IDbContext parent, DbContextBehaviors behaviors)
+    {
+      _behaviors = behaviors;
+      if (parent != null)
+      {
+        _parent = parent.ShareContext();
+      }
+      _scope = new CleanupScope(this, true);
+      if (!behaviors.HasFlag(DbContextBehaviors.NoContextFlow))
+      {
+        DbContextFlowProvider.Push(this);
+      }
+    }
 
-		protected override bool PerformDispose(bool disposing)
-		{
-			if (disposing && Interlocked.Decrement(ref _disposers) > 0)
-			{
-				return false;
-			}
+    protected override bool PerformDispose(bool disposing)
+    {
+      if (disposing && Interlocked.Decrement(ref _disposers) > 0)
+      {
+        return false;
+      }
 
-      if (!DbContextFlowProvider.TryPop(this) && DbTraceEvents.ShouldTrace(TraceEventType.Warning))
-			{
-				try
-				{
-					DbTraceEvents.OnTraceEvent(this, TraceEventType.Warning, Resources.Err_DbContextStackDisposedOutOfOrder);
-				}
-				catch
-				{
-					/* no errors surfaced in GC thread */
-				}
-			}
-			if (disposing)
-			{
-				Util.Dispose(ref _scope);
-				Util.Dispose(ref _parent);
-			}
-			return true;
-		}
+      if (!DbContextFlowProvider.TryPop(this)
+          && DbTraceEvents.ShouldTrace(TraceEventType.Warning))
+      {
+        try
+        {
+          DbTraceEvents.OnTraceEvent(this, TraceEventType.Warning, Resources.Err_DbContextStackDisposedOutOfOrder);
+        }
+        catch
+        {
+          /* no errors surfaced in GC thread */
+        }
+      }
+      if (disposing)
+      {
+        Util.Dispose(ref _scope);
+        Util.Dispose(ref _parent);
+      }
+      return true;
+    }
 
-		#region IDbContext Members
+    #region IDbContext Members
 
-		public DbContextBehaviors Behaviors { get { return _behaviors; } }
+    public DbContextBehaviors Behaviors { get { return _behaviors; } }
 
-		public DbConnection SharedOrNewConnection(string connectionName)
-		{
-			Contract.Requires<ArgumentNullException>(connectionName != null);
-			Contract.Requires<ArgumentException>(connectionName.Length > 0);
+    public DbConnection SharedOrNewConnection(string connectionName)
+    {
+      Contract.Requires<ArgumentNullException>(connectionName != null);
+      Contract.Requires<ArgumentException>(connectionName.Length > 0);
 
-			DbConnection cn, capture = null;
-			cn = _connections.GetOrAdd(connectionName,
-																cs =>
-																{
-																	capture = NewConnection(connectionName);
-																	return capture;
-																});
-			if (capture != null)
-			{
-				if (!ReferenceEquals(cn, capture))
-				{
-					capture.Dispose();
-				}
-			}
-			return cn;
-		}
+      DbConnection cn, capture = null;
+      cn = _connections.GetOrAdd(connectionName,
+        cs =>
+        {
+          capture = NewConnection(connectionName);
+          return capture;
+        });
+      if (capture != null)
+      {
+        if (!ReferenceEquals(cn, capture))
+        {
+          capture.Dispose();
+        }
+      }
+      return cn;
+    }
 
-		public DbConnection NewConnection(string connectionName)
-		{
-			var cn = DbExtensions.CreateConnection(connectionName);
-			var disposals = 0;
-			cn.Disposed += (sender, e) => Interlocked.Increment(ref disposals);
-			_scope.AddAction(
-											 () =>
-											 {
-												if (Thread.VolatileRead(ref disposals) == 0)
-												{
-													cn.Close();
-												}
-											 });
-			return cn;
-		}
+    public DbConnection NewConnection(string connectionName)
+    {
+      var cn = DbExtensions.CreateConnection(connectionName);
+      var disposals = 0;
+      cn.Disposed += (sender, e) => Interlocked.Increment(ref disposals);
+      _scope.AddAction(
+        () =>
+        {
+          if (Thread.VolatileRead(ref disposals) == 0)
+          {
+            cn.Close();
+          }
+        });
+      return cn;
+    }
 
-		public T Add<T>(T item) where T : IDisposable
-		{
-			return (T) _scope.Add(((IDisposable) item));
-		}
+    public T Add<T>(T item) where T : IDisposable { return (T)_scope.Add(((IDisposable)item)); }
 
-		public TConnection SharedOrNewConnection<TConnection>(string connectionName)
-			where TConnection : DbConnection
-		{
-			DbConnection cn, capture = null;
-			cn = _connections.GetOrAdd(connectionName,
-																cs =>
-																{
-																	capture = NewConnection<TConnection>(connectionName);
-																	return capture;
-																});
-			if (capture != null)
-			{
-				if (!ReferenceEquals(cn, capture))
-				{
-					capture.Dispose();
-				}
-			}
-			return (TConnection) cn;
-		}
+    public TConnection SharedOrNewConnection<TConnection>(string connectionName)
+      where TConnection : DbConnection
+    {
+      DbConnection cn, capture = null;
+      cn = _connections.GetOrAdd(connectionName,
+        cs =>
+        {
+          capture = NewConnection<TConnection>(connectionName);
+          return capture;
+        });
+      if (capture != null)
+      {
+        if (!ReferenceEquals(cn, capture))
+        {
+          capture.Dispose();
+        }
+      }
+      return (TConnection)cn;
+    }
 
-		public TConnection NewConnection<TConnection>(string connectionName)
-			where TConnection : DbConnection
-		{
-			var cn = DbExtensions.CreateConnection<TConnection>(connectionName);
-			var disposals = 0;
-			cn.Disposed += (sender, e) => Interlocked.Increment(ref disposals);
-			_scope.AddAction(
-											 () =>
-											 {
-												if (Thread.VolatileRead(ref disposals) == 0)
-												{
-													cn.Close();
-												}
-											 });
-			return cn;
-		}
+    public TConnection NewConnection<TConnection>(string connectionName)
+      where TConnection : DbConnection
+    {
+      var cn = DbExtensions.CreateConnection<TConnection>(connectionName);
+      var disposals = 0;
+      cn.Disposed += (sender, e) => Interlocked.Increment(ref disposals);
+      _scope.AddAction(
+        () =>
+        {
+          if (Thread.VolatileRead(ref disposals) == 0)
+          {
+            cn.Close();
+          }
+        });
+      return cn;
+    }
 
-		public IDbContext ShareContext()
-		{
-			Interlocked.Increment(ref _disposers);
-			return this;
-		}
+    public IDbContext ShareContext()
+    {
+      Interlocked.Increment(ref _disposers);
+      return this;
+    }
 
-		public int QueryCount { get { return Thread.VolatileRead(ref _queryCount); } }
+    public int QueryCount { get { return Thread.VolatileRead(ref _queryCount); } }
 
-		public int ObjectsAffected { get { return Thread.VolatileRead(ref _objectsAffected); } }
+    public int ObjectsAffected { get { return Thread.VolatileRead(ref _objectsAffected); } }
 
-		public int ObjectsFetched { get { return Thread.VolatileRead(ref _objectsFetched); } }
+    public int ObjectsFetched { get { return Thread.VolatileRead(ref _objectsFetched); } }
 
-		public int IncrementQueryCounter()
-		{
-			return Interlocked.Increment(ref _queryCount);
-		}
+    public int IncrementQueryCounter() { return Interlocked.Increment(ref _queryCount); }
 
-		public int IncrementQueryCounter(int count)
-		{
-			return Interlocked.Add(ref _queryCount, count);
-		}
+    public int IncrementQueryCounter(int count) { return Interlocked.Add(ref _queryCount, count); }
 
-		public int IncrementObjectsAffected(int count)
-		{
-			return Interlocked.Add(ref _objectsAffected, count);
-		}
-		public int IncrementObjectsFetched(int count)
-		{
-			return Interlocked.Add(ref _objectsFetched, count);
-		}
-		public int IncrementObjectsFetched()
-		{
-			return Interlocked.Increment(ref _objectsFetched);
-		}
+    public int IncrementObjectsAffected(int count) { return Interlocked.Add(ref _objectsAffected, count); }
+    public int IncrementObjectsFetched(int count) { return Interlocked.Add(ref _objectsFetched, count); }
+    public int IncrementObjectsFetched() { return Interlocked.Increment(ref _objectsFetched); }
 
-		public DbProviderHelper HelperForConnection(DbConnection cn)
-		{
-			var res = default(DbProviderHelper);
-			if (!_helpers.TryGetValue(cn, out res))
-			{
-				res = DbProviderHelpers.GetDbProviderHelperForDbConnection(cn);
-				_helpers.TryAdd(cn, res);
-			}
-			return res;
-		}
+    public DbProviderHelper HelperForConnection(DbConnection cn)
+    {
+      var res = default(DbProviderHelper);
+      if (!_helpers.TryGetValue(cn, out res))
+      {
+        res = DbProviderHelpers.GetDbProviderHelperForDbConnection(cn);
+        _helpers.TryAdd(cn, res);
+      }
+      return res;
+    }
 
-		#endregion
-	}
+    #endregion
+  }
 }

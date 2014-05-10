@@ -1,10 +1,11 @@
 ﻿#region COPYRIGHT© 2009-2014 Phillip Clark. All rights reserved.
+
 // For licensing information see License.txt (MIT style licensing).
+
 #endregion
 
 using System;
 using System.Collections.Generic;
-using System.Data;
 using System.Data.SqlClient;
 using System.Diagnostics.Contracts;
 using System.Linq;
@@ -26,7 +27,6 @@ namespace FlitBit.Data.SqlServer
     BaseSqlDataModelBinder<TDataModel, TIdentityKey, TModelImpl>
     where TModelImpl : class, TDataModel, IDataModel, new()
   {
-
     /// <summary>
     ///   Creates a new instance.
     /// </summary>
@@ -37,8 +37,6 @@ namespace FlitBit.Data.SqlServer
       Contract.Requires<ArgumentNullException>(mapping != null);
       Contract.Requires<ArgumentException>(mapping.Strategy == MappingStrategy.OneClassOneTable);
     }
-
-
 
     public override void BuildDdlBatch(StringBuilder batch, IList<Type> members)
     {
@@ -105,7 +103,8 @@ namespace FlitBit.Data.SqlServer
       }
     }
 
-    public override object ConstructQueryCommand(IDataModelRepository<TDataModel, TIdentityKey, SqlConnection> repo, string key, DataModelSqlExpression<TDataModel> sql, IDataModelWriter<TDataModel> writer)
+    public override object ConstructQueryCommand(IDataModelRepository<TDataModel, TIdentityKey, SqlConnection> repo,
+      string key, DataModelSqlExpression<TDataModel> sql, IDataModelWriter<TDataModel> writer)
     {
       var all = LegacyWriter.WriteSelect(sql);
       var paging = LegacyWriter.WriteSelectWithPaging(sql, null);

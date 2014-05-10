@@ -1,23 +1,18 @@
 ﻿#region COPYRIGHT© 2009-2014 Phillip Clark. All rights reserved.
+
 // For licensing information see License.txt (MIT style licensing).
+
 #endregion
 
 using System.Data;
-using System.Data.Common;
-using System.Data.SqlTypes;
-using System.Reflection.Emit;
-using FlitBit.Emit;
 
 namespace FlitBit.Data.SqlServer
 {
-	internal class SqlMappedEmumAsInt16Emitter<TEnum> : SqlDbTypeEmitter<TEnum>
-		where TEnum : struct
-	{
-		internal SqlMappedEmumAsInt16Emitter()
-			: base(DbType.Int16, SqlDbType.SmallInt, typeof(short))
-		{
-		  DbDataReaderGetValueMethodName = "GetInt16";
-		}
+  internal class SqlMappedEmumAsInt16Emitter<TEnum> : SqlDbTypeEmitter<TEnum>
+    where TEnum : struct
+  {
+    internal SqlMappedEmumAsInt16Emitter()
+      : base(DbType.Int16, SqlDbType.SmallInt, typeof(short)) { DbDataReaderGetValueMethodName = "GetInt16"; }
 
     //protected override void EmitTranslateRuntimeType(ILGenerator il, LocalBuilder local)
     //{
@@ -25,5 +20,5 @@ namespace FlitBit.Data.SqlServer
     //  il.NewObj(typeof(SqlInt16).GetConstructor(new[] { typeof(short) }));
     //  il.Box(typeof(SqlInt16));
     //}
-	}
+  }
 }

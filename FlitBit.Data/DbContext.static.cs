@@ -12,12 +12,13 @@ using FlitBit.Core.Parallel;
 
 namespace FlitBit.Data
 {
-	public partial class DbContext : Disposable, IDbContext
-	{
+  public partial class DbContext : Disposable, IDbContext
+  {
     internal class DbContextFlowProvider : IContextFlowProvider
     {
       static readonly Lazy<DbContextFlowProvider> Provider =
-        new Lazy<DbContextFlowProvider>(CreateAndRegisterContextFlowProvider, LazyThreadSafetyMode.ExecutionAndPublication);
+        new Lazy<DbContextFlowProvider>(CreateAndRegisterContextFlowProvider,
+          LazyThreadSafetyMode.ExecutionAndPublication);
 
       static DbContextFlowProvider CreateAndRegisterContextFlowProvider()
       {
@@ -29,16 +30,9 @@ namespace FlitBit.Data
       [ThreadStatic]
       static Stack<IDbContext> __scopes;
 
-      public DbContextFlowProvider()
-      {
-        this.ContextKey = Guid.NewGuid();
-      }
+      public DbContextFlowProvider() { this.ContextKey = Guid.NewGuid(); }
 
-      public Guid ContextKey
-      {
-        get;
-        private set;
-      }
+      public Guid ContextKey { get; private set; }
 
       public object Capture()
       {
@@ -67,10 +61,7 @@ namespace FlitBit.Data
         }
       }
 
-      private void ReportAndClearOrphanedScopes(Stack<IDbContext> scopes)
-      {
-        scopes.Clear();
-      }
+      void ReportAndClearOrphanedScopes(Stack<IDbContext> scopes) { scopes.Clear(); }
 
       public void Detach(ContextFlow context, object captureKey)
       {
@@ -93,7 +84,8 @@ namespace FlitBit.Data
 
       internal static bool TryPop(IDbContext scope)
       {
-        if (__scopes != null && __scopes.Count > 0)
+        if (__scopes != null
+            && __scopes.Count > 0)
         {
           if (ReferenceEquals(__scopes.Peek(), scope))
           {
@@ -106,17 +98,18 @@ namespace FlitBit.Data
 
       internal static IDbContext Pop()
       {
-        if (__scopes != null && __scopes.Count > 0)
+        if (__scopes != null
+            && __scopes.Count > 0)
         {
           return __scopes.Pop();
         }
         return default(DbContext);
       }
 
-
       internal static IDbContext Peek()
       {
-        if (__scopes != null && __scopes.Count > 0)
+        if (__scopes != null
+            && __scopes.Count > 0)
         {
           return __scopes.Peek();
         }
@@ -124,54 +117,44 @@ namespace FlitBit.Data
       }
     }
 
+    /// <summary>
+    ///   Gets the current "ambient" db context.
+    /// </summary>
+    public static IDbContext Current { get { return DbContextFlowProvider.Peek(); } }
 
-		/// <summary>
-		///   Gets the current "ambient" db context.
-		/// </summary>
-		public static IDbContext Current
-		{
-			get
-			{
-			  return DbContextFlowProvider.Peek();
-			}
-		}
+    /// <summary>
+    ///   Creates a new context.
+    /// </summary>
+    /// <param name="behaviors">indicates the context's behaviors</param>
+    /// <returns>a db context</returns>
+    public static IDbContext NewContext(DbContextBehaviors behaviors)
+    {
+      if (behaviors.HasFlag(DbContextBehaviors.NoContextFlow))
+      {
+        return new DbContext(null, behaviors);
+      }
+      return new DbContext(Current, behaviors);
+    }
 
-		/// <summary>
-		///   Creates a new context.
-		/// </summary>
-		/// <param name="behaviors">indicates the context's behaviors</param>
-		/// <returns>a db context</returns>
-		public static IDbContext NewContext(DbContextBehaviors behaviors)
-		{
-			if (behaviors.HasFlag(DbContextBehaviors.NoContextFlow))
-			{
-				return new DbContext(null, behaviors);
-			}
-			else
-			{
-				return new DbContext(Current, behaviors);
-			}
-		}
+    /// <summary>
+    ///   Creates a new context.
+    /// </summary>
+    /// <returns>a db context</returns>
+    public static IDbContext NewContext()
+    {
+      return new DbContext(Current, DbContextBehaviors.Default);
+    }
 
-		/// <summary>
-		///   Creates a new context.
-		/// </summary>
-		/// <returns>a db context</returns>
-		public static IDbContext NewContext()
-		{
-			return new DbContext(Current, DbContextBehaviors.Default);
-		}
-
-		/// <summary>
-		///   Shares the ambient context if it exists; otherwise, creates a new context.
-		/// </summary>
-		/// <returns>a db context</returns>
-		public static IDbContext SharedOrNewContext()
-		{
-		  IDbContext ambient = DbContextFlowProvider.Peek();
-			return (ambient != null)
-				? ambient.ShareContext()
-				: new DbContext(null, DbContextBehaviors.Default);
-		}
-	}
+    /// <summary>
+    ///   Shares the ambient context if it exists; otherwise, creates a new context.
+    /// </summary>
+    /// <returns>a db context</returns>
+    public static IDbContext SharedOrNewContext()
+    {
+      var ambient = DbContextFlowProvider.Peek();
+      return (ambient != null)
+               ? ambient.ShareContext()
+               : new DbContext(null, DbContextBehaviors.Default);
+    }
+  }
 }

@@ -1,5 +1,7 @@
 ﻿#region COPYRIGHT© 2009-2014 Phillip Clark. All rights reserved.
+
 // For licensing information see License.txt (MIT style licensing).
+
 #endregion
 
 using System;
@@ -9,7 +11,7 @@ namespace FlitBit.Data.Expressions
 {
   public class SqlJoinExpression : SqlExpression
   {
-    private SqlValueExpression _reference;
+    SqlValueExpression _reference;
 
     public SqlJoinExpression(Type joinType, int ordinal, string dbObjectReference, string asAlias,
       SqlExpression onExpression)
@@ -54,10 +56,7 @@ namespace FlitBit.Data.Expressions
         }
         return this._reference;
       }
-      internal set
-      {
-        this._reference = value;
-      }
+      internal set { this._reference = value; }
     }
 
     public override void Write(SqlWriter writer)

@@ -1,5 +1,7 @@
 ﻿#region COPYRIGHT© 2009-2014 Phillip Clark. All rights reserved.
+
 // For licensing information see License.txt (MIT style licensing).
+
 #endregion
 
 using System;
@@ -15,14 +17,14 @@ namespace FlitBit.Data.DataModel
     IDataModelRepository<TDataModel, TIdentityKey, TDbConnection> Repository { get; }
 
     /// <summary>
-    /// Joins the data model to the specified type inferring the associated properties.
+    ///   Joins the data model to the specified type inferring the associated properties.
     /// </summary>
     /// <typeparam name="TJoin"></typeparam>
     /// <returns></returns>
     IDataModelJoin2QueryBuilder<TDataModel, TIdentityKey, TDbConnection, TJoin, TJoin1> Join<TJoin1>();
 
     /// <summary>
-    /// Joins the data model to the specified type according to the specified join predicate.
+    ///   Joins the data model to the specified type according to the specified join predicate.
     /// </summary>
     /// <typeparam name="TJoin"></typeparam>
     /// <param name="predicate"></param>
@@ -31,7 +33,8 @@ namespace FlitBit.Data.DataModel
       Expression<Func<TDataModel, TJoin, TJoin1, bool>> predicate);
 
     /// <summary>
-    /// Specifies constraints on the data model. The expression must evaluate like a predicate in order to be translated to SQL.
+    ///   Specifies constraints on the data model. The expression must evaluate like a predicate in order to be translated to
+    ///   SQL.
     /// </summary>
     /// <typeparam name="TParam"></typeparam>
     /// <param name="predicate">a predicate expression</param>
@@ -40,7 +43,7 @@ namespace FlitBit.Data.DataModel
       Expression<Func<TDataModel, TJoin, TParam, bool>> predicate);
 
     /// <summary>
-    /// The query's identity key.
+    ///   The query's identity key.
     /// </summary>
     [IdentityKey]
     string Key { get; }
@@ -57,7 +60,7 @@ namespace FlitBit.Data.DataModel
     IDataModelQueryCommand<TDataModel, TDbConnection, TParam> Construct();
 
     /// <summary>
-    /// The query's identity key.
+    ///   The query's identity key.
     /// </summary>
     [IdentityKey]
     string Key { get; }
@@ -69,7 +72,8 @@ namespace FlitBit.Data.DataModel
     IDataModelRepository<TDataModel, TIdentityKey, TDbConnection> Repository { get; }
 
     /// <summary>
-    /// Specifies constraints on the data model. The expression must evaluate like a predicate in order to be translated to SQL.
+    ///   Specifies constraints on the data model. The expression must evaluate like a predicate in order to be translated to
+    ///   SQL.
     /// </summary>
     /// <typeparam name="TParam"></typeparam>
     /// <param name="predicate">a predicate expression</param>
@@ -78,7 +82,7 @@ namespace FlitBit.Data.DataModel
       Expression<Func<TDataModel, TJoin, TJoin1, TParam, bool>> predicate);
 
     /// <summary>
-    /// The query's identity key.
+    ///   The query's identity key.
     /// </summary>
     [IdentityKey]
     string Key { get; }
@@ -90,7 +94,7 @@ namespace FlitBit.Data.DataModel
     IDataModelRepository<TDataModel, TIdentityKey, TDbConnection> Repository { get; }
 
     /// <summary>
-    /// The query's identity key.
+    ///   The query's identity key.
     /// </summary>
     [IdentityKey]
     string Key { get; }
