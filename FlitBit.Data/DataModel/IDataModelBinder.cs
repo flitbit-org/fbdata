@@ -83,7 +83,7 @@ namespace FlitBit.Data.DataModel
     ///   Gets a model command for selecting all models of the type TModel.
     /// </summary>
     /// <returns></returns>
-    IDataModelQueryManyCommand<TModel, TDbConnection> GetAllCommand();
+    IDataModelQueryManyCommand<TModel, TDbConnection> GetAllCommand(IDataModelRepository<TModel, TIdentityKey> repository);
 
     /// <summary>
     ///   Gets a create command.

@@ -1,13 +1,12 @@
 #region COPYRIGHT© 2009-2014 Phillip Clark. All rights reserved.
-
 // For licensing information see License.txt (MIT style licensing).
-
 #endregion
 
 using System;
 using System.ComponentModel;
 using System.ComponentModel.DataAnnotations;
 using System.Data.Common;
+using System.IO;
 using FlitBit.Core.Collections;
 
 namespace FlitBit.Data.SPI
@@ -64,5 +63,17 @@ namespace FlitBit.Data.SPI
     /// <param name="reader">a data reader positioned on a row of data</param>
     /// <param name="offsets">column offsets, numbered in the column ordinal order.</param>
     void LoadFromDataReader(DbDataReader reader, int[] offsets);
+
+    /// <summary>
+    /// Captures a binary representation of the data model.
+    /// </summary>
+    /// <param name="writer"></param>
+    void CaptureBufferView(BinaryWriter writer);
+
+    /// <summary>
+    /// Restores a previously captured representation of the data model.
+    /// </summary>
+    /// <param name="reader"></param>
+    void RestoreBufferView(BinaryReader reader);
   }
 }

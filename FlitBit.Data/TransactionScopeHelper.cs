@@ -5,9 +5,12 @@
 #endregion
 
 using System;
+using System.Collections.Generic;
 using System.Diagnostics.CodeAnalysis;
 using System.Runtime.Remoting.Messaging;
+using System.Threading;
 using System.Transactions;
+using FlitBit.Core.Parallel;
 
 namespace FlitBit.Data
 {
@@ -20,6 +23,58 @@ namespace FlitBit.Data
     public static readonly IsolationLevel DefaultIsolationLevel = IsolationLevel.ReadCommitted;
     public static readonly TimeSpan DefaultTransactionTimeout = TimeSpan.FromSeconds(-1);
     internal static readonly string __TransactionPropagationTokenName = "TransactionPropagationToken";
+
+    internal class TransactionScopeContextFlowProvider : IContextFlowProvider
+    {
+      static readonly Lazy<TransactionScopeContextFlowProvider> Provider =
+        new Lazy<TransactionScopeContextFlowProvider>(CreateAndRegisterContextFlowProvider,
+          LazyThreadSafetyMode.ExecutionAndPublication);
+
+      static TransactionScopeContextFlowProvider CreateAndRegisterContextFlowProvider()
+      {
+        var res = new TransactionScopeContextFlowProvider();
+        ContextFlow.RegisterProvider(res);
+        return res;
+      }
+      
+      public TransactionScopeContextFlowProvider() { this.ContextKey = Guid.NewGuid(); }
+
+      public Guid ContextKey { get; private set; }
+
+      public object Capture()
+      {
+        var top = Transaction.Current;
+        if (top != null)
+        {
+          return top.DependentClone(DependentCloneOption.BlockCommitUntilComplete);
+        }
+        return null;
+      }
+
+      public object Attach(ContextFlow context, object captureKey)
+      {
+        var scope = (captureKey as DependentTransaction);
+        if (scope != null)
+        {
+          return new TransactionScope(scope);
+        }
+        return null;
+      }
+      
+      public void Detach(ContextFlow context, object scope, Exception err)
+      {
+        var tx = (scope as TransactionScope);
+        if (tx != null)
+        {
+          if (err == null)
+          {
+            tx.Complete();
+          }
+          tx.Dispose();
+        }
+      }
+    }
+
 
     /// <summary>
     ///   Ensures that an ambient transaction is present.

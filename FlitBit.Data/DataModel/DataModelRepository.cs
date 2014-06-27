@@ -9,7 +9,9 @@ using System.Collections.Generic;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics.Contracts;
+using FlitBit.Data.Cluster;
 using FlitBit.Data.Expressions;
+using FlitBit.Data.Meta;
 using FlitBit.Data.Repositories;
 
 namespace FlitBit.Data.DataModel
@@ -22,13 +24,76 @@ namespace FlitBit.Data.DataModel
     readonly IMapping<TDataModel> _mapping;
 
     protected DataModelRepository(IMapping<TDataModel> mapping)
-      : base(mapping.ConnectionName)
+      : base(mapping.ConnectionName, mapping.CacheTimeToLive)
     {
       Contract.Requires<ArgumentNullException>(mapping != null);
       Contract.Requires<ArgumentException>(mapping.HasBinder);
       _mapping = mapping;
       _binder = (IDataModelBinder<TDataModel, TIdentityKey, TDbConnection>)mapping.GetBinder();
     }
+
+    public override void PromoteCacheItem<T>(string key, T item, bool created)
+    {
+      var mem = ClusterMemory;
+      if (mem != null && _mapping.CacheBehavior.HasFlag(ClusterCacheBehaviors.Cluster))
+      {
+        byte[] buffer = item.CaptureBufferView();
+        mem.Put(key, buffer);
+        var chk = key.Split(':');
+        ClusterNotifier.PublishNotification(chk[0], chk[1], (created) ? "created" : "updated");
+      }
+    }
+
+    public override void PromoteCacheItem<T>(string key, TimeSpan ttl, T item, bool created)
+    {
+      var mem = ClusterMemory;
+      if (mem != null && _mapping.CacheBehavior.HasFlag(ClusterCacheBehaviors.Cluster))
+      {
+        byte[] buffer = item.CaptureBufferView();
+        mem.PutWithExpiration(key, ttl, buffer);
+        var chk = key.Split(':');
+        ClusterNotifier.PublishNotification(chk[0], chk[1], (created) ? "created" : "updated");
+      }
+    }
+
+    public override void PromoteCacheDeletion(string key)
+    {
+      var mem = ClusterMemory;
+      if (mem != null && _mapping.CacheBehavior.HasFlag(ClusterCacheBehaviors.Cluster))
+      {
+        mem.Delete(key);
+        var chk = key.Split(':');
+        ClusterNotifier.PublishNotification(chk[0], chk[1], "deleted");
+      }
+    }
+
+    protected override void PerformCachePut(IDbContext ctx, TIdentityKey id, TDataModel item, bool created)
+    {
+      if (_mapping.CacheBehavior.HasFlag(ClusterCacheBehaviors.Context))
+      {
+        base.PerformCachePut(ctx, id, item, created);
+      }
+    }
+
+    protected override bool PerformTryCacheRead(IDbContext ctx, TIdentityKey key, out TDataModel res)
+    {
+      if (_mapping.CacheBehavior.HasFlag(ClusterCacheBehaviors.Context))
+      {
+        return base.PerformTryCacheRead(ctx, key, out res);
+      }
+      res = default(TDataModel);
+      return false;
+    }
+
+    protected override void PerformCacheDelete(IDbContext ctx, TIdentityKey key)
+    {
+      if (_mapping.CacheBehavior.HasFlag(ClusterCacheBehaviors.Context))
+      {
+        base.PerformCacheDelete(ctx, key);
+      }
+    }
+
+    public IMapping<TDataModel> Mapping { get { return _mapping; } } 
 
     public IDataModelBinder<TDataModel, TIdentityKey, TDbConnection> Binder { get { return _binder; } }
 
@@ -42,6 +107,24 @@ namespace FlitBit.Data.DataModel
     public IDataModelQueryBuilder<TDataModel, TIdentityKey, TDbConnection> MakeNamedQueryBuilder(string name)
     {
       return new DataModelQueryBuilder<TDataModel, TIdentityKey, TDbConnection>(this, Writer, name);
+    }
+
+    protected override string FormatClusteredMemoryKey(string key)
+    {
+      return _mapping.FormatClusteredMemoryKey(key);
+    }
+
+    public TDataModel ExecuteSingle(
+      IDataModelQuerySingleCommand<TDataModel, TDbConnection> cmd,
+      IDbContext cx)
+    {
+      var cn = cx.SharedOrNewConnection<TDbConnection>(ConnectionName);
+      if (!cn.State.HasFlag(ConnectionState.Open))
+      {
+        cn.Open();
+      }
+
+      return cmd.ExecuteSingle(cx, cn);
     }
 
     public TDataModel ExecuteSingle<TParam>(
@@ -189,6 +272,19 @@ namespace FlitBit.Data.DataModel
       }
 
       return cmd.ExecuteSingle(cx, cn, param, param1, param2, param3, param4, param5, param6, param7, param8, param9);
+    }
+
+    public IDataModelQueryResult<TDataModel> ExecuteMany(
+      IDataModelQueryManyCommand<TDataModel, TDbConnection> cmd,
+      IDbContext cx, QueryBehavior behavior)
+    {
+      var cn = cx.SharedOrNewConnection<TDbConnection>(ConnectionName);
+      if (!cn.State.HasFlag(ConnectionState.Open))
+      {
+        cn.Open();
+      }
+
+      return cmd.ExecuteMany(cx, cn, behavior);
     }
 
     public IDataModelQueryResult<TDataModel> ExecuteMany<TParam>(
@@ -343,7 +439,7 @@ namespace FlitBit.Data.DataModel
 
     protected override IDataModelQueryResult<TDataModel> PerformAll(IDbContext context, QueryBehavior behavior)
     {
-      var cmd = _binder.GetAllCommand();
+      var cmd = _binder.GetAllCommand(this);
       var cn = context.SharedOrNewConnection<TDbConnection>(ConnectionName);
       if (!cn.State.HasFlag(ConnectionState.Open))
       {

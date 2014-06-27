@@ -56,7 +56,12 @@ namespace FlitBit.Data.DataModel
     /// </summary>
     protected IDataModelWriter<TDataModel> Writer { get; private set; }
 
-    protected object ConstructQueryCommandFromExpression(LambdaExpression lambda)
+    /// <summary>
+    /// Creates a query command from the expression tree specified.
+    /// </summary>
+    /// <param name="lambda"></param>
+    /// <returns></returns>
+    protected object ConstructQueryCommandFromExpression(LambdaExpression lambda, Action<OrderByBuilder<TDataModel>, TDataModel> orderByClause)
     {
       Contract.Requires<ArgumentNullException>(lambda != null);
       Contract.Ensures(Contract.Result<object>() != null);
@@ -64,7 +69,7 @@ namespace FlitBit.Data.DataModel
       var parms = new List<ParameterExpression>(lambda.Parameters);
 
       var repo = Repository;
-      var sql = new DataModelSqlExpression<TDataModel>(repo.Binder.Mapping, repo.Binder, Writer.SelfRef);
+      var sql = new DataModelSqlExpression<TDataModel>(repo.Binder.Mapping, repo.Binder, Writer.SelfRef, orderByClause);
       sql.AddSelfParameter(parms[0]);
       for (var i = 1; i < parms.Count; i++)
       {
@@ -72,6 +77,29 @@ namespace FlitBit.Data.DataModel
       }
       sql.IngestExpression(lambda.Body);
       return Repository.ConstructQueryCommand(Key, sql);
+    }
+
+    public IDataModelQueryCommand<TDataModel, TDbConnection> OrderBy(
+      Action<OrderByBuilder<TDataModel>, TDataModel> orderByClause)
+    {
+      var self = Expression.Parameter(typeof(TDataModel), "self");
+
+      var repo = Repository;
+      var sql = new DataModelSqlExpression<TDataModel>(repo.Binder.Mapping, repo.Binder, Writer.SelfRef, orderByClause);
+      sql.AddSelfParameter(self);
+      
+      return (IDataModelQueryCommand<TDataModel, TDbConnection>)Repository.ConstructQueryCommand(Key, sql);
+    }
+
+    public IDataModelQueryCommand<TDataModel, TDbConnection> MakeCommand()
+    {
+      var self = Expression.Parameter(typeof(TDataModel), "self");
+
+      var repo = Repository;
+      var sql = new DataModelSqlExpression<TDataModel>(repo.Binder.Mapping, repo.Binder, Writer.SelfRef, null);
+      sql.AddSelfParameter(self);
+
+      return (IDataModelQueryCommand<TDataModel, TDbConnection>)Repository.ConstructQueryCommand(Key, sql);
     }
   }
 
@@ -116,7 +144,7 @@ namespace FlitBit.Data.DataModel
     public IDataModelJoinQueryBuilder<TDataModel, TIdentityKey, TDbConnection, TJoin> Join<TJoin>()
     {
       var repo = Repository;
-      var sql = new DataModelSqlExpression<TDataModel>(repo.Binder.Mapping, repo.Binder, Writer.SelfRef);
+      var sql = new DataModelSqlExpression<TDataModel>(repo.Binder.Mapping, repo.Binder, Writer.SelfRef, null);
       sql.AddSelfParameter(Expression.Parameter(typeof(TDataModel), Writer.SelfName));
       sql.AddJoinParameter(Expression.Parameter(typeof(TJoin), "join"), true);
 
@@ -130,7 +158,7 @@ namespace FlitBit.Data.DataModel
       var parms = new List<ParameterExpression>(lambda.Parameters);
 
       var repo = Repository;
-      var sql = new DataModelSqlExpression<TDataModel>(repo.Binder.Mapping, repo.Binder, Writer.SelfRef);
+      var sql = new DataModelSqlExpression<TDataModel>(repo.Binder.Mapping, repo.Binder, Writer.SelfRef, null);
       sql.AddSelfParameter(parms[0]);
       sql.AddJoinParameter(parms[1], false);
       sql.IngestJoinExpression(parms[1], lambda.Body);
@@ -145,7 +173,7 @@ namespace FlitBit.Data.DataModel
       var parms = new List<ParameterExpression>(lambda.Parameters);
 
       var repo = Repository;
-      var sql = new DataModelSqlExpression<TDataModel>(repo.Binder.Mapping, repo.Binder, Writer.SelfRef);
+      var sql = new DataModelSqlExpression<TDataModel>(repo.Binder.Mapping, repo.Binder, Writer.SelfRef, null);
       sql.AddSelfParameter(parms[0]);
       sql.AddJoinParameter(parms[1], false);
       sql.AddValueParameter(parms[2]);
@@ -160,7 +188,15 @@ namespace FlitBit.Data.DataModel
     {
       return
         (IDataModelQueryCommand<TDataModel, TDbConnection, TParam>)
-        ConstructQueryCommandFromExpression(predicate);
+        ConstructQueryCommandFromExpression(predicate, null);
+    }
+
+    public IDataModelQueryCommand<TDataModel, TDbConnection, TParam> Where<TParam>(
+      Expression<Func<TDataModel, TParam, bool>> predicate, Action<OrderByBuilder<TDataModel>, TDataModel> orderByClause)
+    {
+      return
+        (IDataModelQueryCommand<TDataModel, TDbConnection, TParam>)
+        ConstructQueryCommandFromExpression(predicate, orderByClause);
     }
 
     /// <summary>
@@ -171,16 +207,20 @@ namespace FlitBit.Data.DataModel
     /// <typeparam name="TParam1"></typeparam>
     /// <param name="predicate">a predicate expression</param>
     /// <returns></returns>
-    public
-      IDataModelQueryCommand
-        <TDataModel, TDbConnection, TParam, TParam1> Where<TParam, TParam1>(
-      Expression
-        <Func<TDataModel, TParam, TParam1, bool>>
-        predicate)
+    public IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1> Where<TParam, TParam1>(
+      Expression<Func<TDataModel, TParam, TParam1, bool>> predicate)
     {
       return
         (IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1>)
-        ConstructQueryCommandFromExpression(predicate);
+        ConstructQueryCommandFromExpression(predicate, null);
+    }
+
+    public IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1> Where<TParam, TParam1>(
+      Expression<Func<TDataModel, TParam, TParam1, bool>> predicate, Action<OrderByBuilder<TDataModel>, TDataModel> orderByClause)
+    {
+      return
+        (IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1>)
+        ConstructQueryCommandFromExpression(predicate, orderByClause);
     }
 
     /// <summary>
@@ -192,17 +232,23 @@ namespace FlitBit.Data.DataModel
     /// <typeparam name="TParam2"></typeparam>
     /// <param name="predicate">a predicate expression</param>
     /// <returns></returns>
-    public
-      IDataModelQueryCommand
-        <TDataModel, TDbConnection, TParam, TParam1, TParam2> Where<TParam, TParam1, TParam2>(
-      Expression
-        <Func<TDataModel, TParam, TParam1, TParam2, bool>>
-        predicate)
+    public IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2> Where<TParam, TParam1, TParam2>(
+      Expression<Func<TDataModel, TParam, TParam1, TParam2, bool>>predicate)
     {
       return
         (IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2>)
-        ConstructQueryCommandFromExpression(predicate);
+        ConstructQueryCommandFromExpression(predicate, null);
     }
+
+    public IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2> Where<TParam, TParam1, TParam2>(
+      Expression<Func<TDataModel, TParam, TParam1, TParam2, bool>> predicate, 
+      Action<OrderByBuilder<TDataModel>, TDataModel> orderByClause)
+    {
+      return
+        (IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2>)
+        ConstructQueryCommandFromExpression(predicate, orderByClause);
+    }
+
 
     /// <summary>
     ///   Specifies constraints on the data model. The expression must evaluate like a predicate in order to be translated to
@@ -214,16 +260,21 @@ namespace FlitBit.Data.DataModel
     /// <typeparam name="TParam3"></typeparam>
     /// <param name="predicate">a predicate expression</param>
     /// <returns></returns>
-    public
-      IDataModelQueryCommand
-        <TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3> Where<TParam, TParam1, TParam2, TParam3>(
-      Expression
-        <Func<TDataModel, TParam, TParam1, TParam2, TParam3, bool>>
-        predicate)
+    public IDataModelQueryCommand <TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3> Where<TParam, TParam1, TParam2, TParam3>(
+      Expression<Func<TDataModel, TParam, TParam1, TParam2, TParam3, bool>>predicate)
     {
       return
         (IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3>)
-        ConstructQueryCommandFromExpression(predicate);
+        ConstructQueryCommandFromExpression(predicate, null);
+    }
+
+    public IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3> Where<TParam, TParam1, TParam2, TParam3>(
+  Expression<Func<TDataModel, TParam, TParam1, TParam2, TParam3, bool>> predicate,
+      Action<OrderByBuilder<TDataModel>, TDataModel> orderByClause)
+    {
+      return
+        (IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3>)
+        ConstructQueryCommandFromExpression(predicate, orderByClause);
     }
 
     /// <summary>
@@ -237,17 +288,21 @@ namespace FlitBit.Data.DataModel
     /// <typeparam name="TParam4"></typeparam>
     /// <param name="predicate">a predicate expression</param>
     /// <returns></returns>
-    public
-      IDataModelQueryCommand
-        <TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4> Where
-      <TParam, TParam1, TParam2, TParam3, TParam4>(
-      Expression
-        <Func<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, bool>>
-        predicate)
+    public IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4> Where<TParam, TParam1, TParam2, TParam3, TParam4>(
+      Expression<Func<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, bool>>predicate)
     {
       return
         (IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4>)
-        ConstructQueryCommandFromExpression(predicate);
+        ConstructQueryCommandFromExpression(predicate, null);
+    }
+
+    public IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4> Where<TParam, TParam1, TParam2, TParam3, TParam4>(
+      Expression<Func<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, bool>> predicate,
+      Action<OrderByBuilder<TDataModel>, TDataModel> orderByClause)
+    {
+      return
+        (IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4>)
+        ConstructQueryCommandFromExpression(predicate, orderByClause);
     }
 
     /// <summary>
@@ -262,19 +317,22 @@ namespace FlitBit.Data.DataModel
     /// <typeparam name="TParam5"></typeparam>
     /// <param name="predicate">a predicate expression</param>
     /// <returns></returns>
-    public
-      IDataModelQueryCommand
-        <TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5> Where
-      <TParam, TParam1, TParam2, TParam3, TParam4, TParam5>(
-      Expression
-        <Func<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, bool>>
-        predicate)
+    public IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5> Where<TParam, TParam1, TParam2, TParam3, TParam4, TParam5>(
+      Expression<Func<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, bool>>predicate)
     {
       return
         (IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5>)
-        ConstructQueryCommandFromExpression(predicate);
+        ConstructQueryCommandFromExpression(predicate, null);
     }
 
+    public IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5> Where<TParam, TParam1, TParam2, TParam3, TParam4, TParam5>(
+     Expression<Func<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, bool>> predicate,
+      Action<OrderByBuilder<TDataModel>, TDataModel> orderByClause)
+    {
+      return
+        (IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5>)
+        ConstructQueryCommandFromExpression(predicate, orderByClause);
+    }
     /// <summary>
     ///   Specifies constraints on the data model. The expression must evaluate like a predicate in order to be translated to
     ///   SQL.
@@ -288,18 +346,23 @@ namespace FlitBit.Data.DataModel
     /// <typeparam name="TParam6"></typeparam>
     /// <param name="predicate">a predicate expression</param>
     /// <returns></returns>
-    public
-      IDataModelQueryCommand
-        <TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6> Where
-      <TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6>(
-      Expression
-        <Func<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, bool>>
-        predicate)
+    public IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6> Where<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6>(
+      Expression<Func<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, bool>>predicate)
     {
       return
         (IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6>
         )
-        ConstructQueryCommandFromExpression(predicate);
+        ConstructQueryCommandFromExpression(predicate, null);
+    }
+
+    public IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6> Where<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6>(
+      Expression<Func<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, bool>> predicate,
+      Action<OrderByBuilder<TDataModel>, TDataModel> orderByClause)
+    {
+      return
+        (IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6>
+        )
+        ConstructQueryCommandFromExpression(predicate, orderByClause);
     }
 
     /// <summary>
@@ -309,19 +372,25 @@ namespace FlitBit.Data.DataModel
     /// <typeparam name="TParam"></typeparam>
     /// <param name="predicate">a predicate expression</param>
     /// <returns></returns>
-    public
-      IDataModelQueryCommand
-        <TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7> Where
-      <TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7>(
-      Expression
-        <Func<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, bool>>
-        predicate)
+    public IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7> Where<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7>(
+      Expression<Func<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, bool>> predicate)
     {
       return
         (
         IDataModelQueryCommand
           <TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7>)
-        ConstructQueryCommandFromExpression(predicate);
+        ConstructQueryCommandFromExpression(predicate, null);
+    }
+
+    public IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7> Where<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7>(
+      Expression<Func<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, bool>> predicate,
+      Action<OrderByBuilder<TDataModel>, TDataModel> orderByClause)
+    {
+      return
+        (
+        IDataModelQueryCommand
+          <TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7>)
+        ConstructQueryCommandFromExpression(predicate, orderByClause);
     }
 
     /// <summary>
@@ -339,19 +408,25 @@ namespace FlitBit.Data.DataModel
     /// <typeparam name="TParam8"></typeparam>
     /// <param name="predicate">a predicate expression</param>
     /// <returns></returns>
-    public
-      IDataModelQueryCommand
-        <TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8>
-      Where<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8>(
-      Expression
-        <Func<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, bool>>
-        predicate)
+    public IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8> Where<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8>(
+      Expression<Func<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, bool>> predicate)
     {
       return
         (
         IDataModelQueryCommand
           <TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8>)
-        ConstructQueryCommandFromExpression(predicate);
+        ConstructQueryCommandFromExpression(predicate, null);
+    }
+
+    public IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8> Where<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8>(
+  Expression<Func<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, bool>> predicate,
+      Action<OrderByBuilder<TDataModel>, TDataModel> orderByClause)
+    {
+      return
+        (
+        IDataModelQueryCommand
+          <TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8>)
+        ConstructQueryCommandFromExpression(predicate, orderByClause);
     }
 
     /// <summary>
@@ -370,21 +445,27 @@ namespace FlitBit.Data.DataModel
     /// <typeparam name="TParam9"></typeparam>
     /// <param name="predicate">a predicate expression</param>
     /// <returns></returns>
-    public
-      IDataModelQueryCommand
-        <TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8,
-          TParam9> Where<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>(
-      Expression
-        <Func<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9, bool>
-          >
-        predicate)
+    public IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9> Where<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>(
+      Expression<Func<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9, bool>> predicate)
     {
       return
         (
         IDataModelQueryCommand
           <TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8,
           TParam9>)
-        ConstructQueryCommandFromExpression(predicate);
+        ConstructQueryCommandFromExpression(predicate, null);
+    }
+
+    public IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9> Where<TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9>(
+      Expression<Func<TDataModel, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8, TParam9, bool>> predicate,
+      Action<OrderByBuilder<TDataModel>, TDataModel> orderByClause)
+    {
+      return
+        (
+        IDataModelQueryCommand
+          <TDataModel, TDbConnection, TParam, TParam1, TParam2, TParam3, TParam4, TParam5, TParam6, TParam7, TParam8,
+          TParam9>)
+        ConstructQueryCommandFromExpression(predicate, orderByClause);
     }
   }
 }

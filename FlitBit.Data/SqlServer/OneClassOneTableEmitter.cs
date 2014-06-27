@@ -168,6 +168,9 @@ namespace FlitBit.Data.SqlServer
       var parms = sql.ValueParameters;
       switch (parms.Count)
       {
+        case 0:
+          cmdType = typeof(SqlDataModelQueryCommand<,>).MakeGenericType(typeof(TDataModel), typeof(TImpl));
+          break;
         case 1:
           cmdType = typeof(SqlDataModelQueryCommand<,,>).MakeGenericType(typeof(TDataModel), typeof(TImpl),
             parms[0].Type);
@@ -263,7 +266,7 @@ namespace FlitBit.Data.SqlServer
             );
           break;
         default:
-          throw new NotImplementedException("Emitter cannot construct commands with " + parms.Count + " parameters yet.");
+          throw new NotImplementedException("Emitter cannot construct commands with " + parms.Count + " parameters.");
       }
 
       var module = Module;

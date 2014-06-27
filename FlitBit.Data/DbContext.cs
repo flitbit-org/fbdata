@@ -10,12 +10,13 @@ using System.Data.Common;
 using System.Diagnostics;
 using System.Diagnostics.Contracts;
 using System.Threading;
+using System.Transactions;
 using FlitBit.Core;
 using FlitBit.Data.Properties;
 
 namespace FlitBit.Data
 {
-  public partial class DbContext : Disposable, IDbContext
+  public partial class DbContext
   {
     readonly DbContextBehaviors _behaviors;
     readonly ConcurrentDictionary<string, DbConnection> _connections = new ConcurrentDictionary<string, DbConnection>();
@@ -29,13 +30,18 @@ namespace FlitBit.Data
     int _objectsAffected;
     int _objectsFetched;
     ICleanupScope _scope;
+    TransactionScope _txScope;
 
     public DbContext()
-      : this(Current, DbContextBehaviors.Default) { }
+      : this(Current, Transaction.Current, DbContextBehaviors.Default) { }
 
-    public DbContext(IDbContext parent, DbContextBehaviors behaviors)
+    private DbContext(IDbContext parent, Transaction transaction, TransactionScope scope, DbContextBehaviors behaviors)
+      : this(parent, transaction, behaviors) { _txScope = scope; }
+
+    public DbContext(IDbContext parent, Transaction transaction, DbContextBehaviors behaviors)
     {
       _behaviors = behaviors;
+      this.Transaction = transaction;
       if (parent != null)
       {
         _parent = parent.ShareContext();
@@ -45,6 +51,48 @@ namespace FlitBit.Data
       {
         DbContextFlowProvider.Push(this);
       }
+      if (Transaction == null)
+      {
+        _scope.AddAction(() => ContextOrTransactionCompleted(this, null));
+      }
+      else
+      {
+        Transaction.TransactionCompleted += ContextOrTransactionCompleted;
+      }
+      //var factory = FactoryProvider.Factory;
+      //if (factory.CanConstruct<IClusteredMemory>())
+      //{
+      //  _memory = factory.CreateInstance<IClusteredMemory>();
+      //}
+    }
+
+    internal void Complete()
+    {
+      if (_txScope != null)
+      {
+        _txScope.Complete();
+      }
+    }
+
+    public Transaction Transaction { get; private set; }
+
+    /// <summary>
+    /// Event fired when the db context completes or when it's transaction is completed; whichever occurs later.
+    /// </summary>
+    public event EventHandler<DbContextOrTransactionCompletedEventArgs> OnContextOrTransactionCompleted;
+
+    void ContextOrTransactionCompleted(object sender, TransactionEventArgs ev)
+    {
+      var hasTrans = (ev != null && ev.Transaction != null);
+      var status = hasTrans
+                     ? ev.Transaction.TransactionInformation.Status
+                     : TransactionStatus.Committed;
+      if (OnContextOrTransactionCompleted != null)
+      {
+        var args = new DbContextOrTransactionCompletedEventArgs(hasTrans, status);
+        OnContextOrTransactionCompleted(this, args);
+      }
+      PerformCachePromotion(hasTrans, status);
     }
 
     protected override bool PerformDispose(bool disposing)

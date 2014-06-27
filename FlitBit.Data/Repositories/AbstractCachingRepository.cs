@@ -1,26 +1,78 @@
-﻿using System;
+﻿using FlitBit.Core;
+using FlitBit.Data.Cluster;
+using FlitBit.Data.DataModel;
+using System;
 using System.Collections.Generic;
 using System.Data.Common;
 using System.Diagnostics.Contracts;
-using FlitBit.Data.DataModel;
+using FlitBit.Data.Meta;
 
 namespace FlitBit.Data.Repositories
 {
-  public abstract class AbstractCachingRepository<TModel, TIdentityKey> : IDataRepository<TModel, TIdentityKey>
+  public abstract class AbstractCachingRepository<TModel, TIdentityKey> : IDataRepository<TModel, TIdentityKey>,
+    IClusterNotificationHandler, ICachePromotionHandler
   {
-    // ReSharper disable once StaticFieldInGenericType
-    protected static readonly string CCacheKey = typeof(TModel).AssemblyQualifiedName;
-
     readonly EqualityComparer<TModel> _comparer = EqualityComparer<TModel>.Default;
     readonly DbProviderHelper _helper;
+    readonly TimeSpan _cacheTtl;
+    readonly string _modelMemoryKeyPrefix;
+    readonly IClusteredMemory _mem;
+    ClusterObserver _observer;
 
-    public AbstractCachingRepository(string connectionName)
+    protected AbstractCachingRepository(string connectionName)
+      : this(connectionName, TimeSpan.FromMinutes(5))
+    {}
+
+    protected AbstractCachingRepository(string connectionName, TimeSpan cacheTtl)
+      : this(connectionName, cacheTtl, null)
+    {}
+
+    protected AbstractCachingRepository(string connectionName, TimeSpan cacheTtl, IClusteredMemory mem)
     {
       Contract.Requires<ArgumentNullException>(connectionName != null);
       Contract.Requires<ArgumentException>(connectionName.Length > 0);
 
       ConnectionName = connectionName;
       _helper = DbProviderHelpers.GetDbProviderHelperForDbConnection(connectionName);
+      _cacheTtl = cacheTtl;
+      _modelMemoryKeyPrefix = typeof(TModel).GetReadableFullName();
+      _mem = mem;
+      if (mem == null)
+      {
+        if (FactoryProvider.Factory.CanConstruct<IClusteredMemory>())
+        {
+          _mem = FactoryProvider.Factory.CreateInstance<IClusteredMemory>();
+        }
+      }
+    }
+
+    public IClusteredMemory ClusterMemory { get { return _mem; } }
+
+    protected bool SubscribeClusterNotification(string channel, IEnumerable<string> observations)
+    {
+      var notif = ClusterNotifications.Instance;
+      if (notif != null)
+      {
+        _observer = new ClusterObserver(this, channel, observations);
+        notif.Subscribe(_observer);
+        return true;
+      }
+      return false;
+    }
+
+    protected void UnsubscribeClusterNotification()
+    {
+      if (_observer != null)
+      {
+        ClusterNotifications.Instance.Cancel(_observer.Key);
+      }
+    }
+
+    protected virtual string IdToString(TIdentityKey id) { return Convert.ToString(id); }
+
+    protected virtual TIdentityKey IdFromString(string id)
+    {
+      return (TIdentityKey)Convert.ChangeType(id, typeof(TIdentityKey));
     }
 
     protected string ConnectionName { get; private set; }
@@ -43,161 +95,124 @@ namespace FlitBit.Data.Repositories
 
     protected abstract TModel PerformUpdate(IDbContext context, TModel model);
 
-    protected IEnumerable<TModel> QueryBy<TCacheKey, TQueryKey>(IDbContext context, string command,
-      Action<DbCommand, TQueryKey> binder, TCacheKey cacheKey, TQueryKey key)
-      where TCacheKey : class
+    protected virtual string FormatClusteredMemoryKey(string key)
+    {
+      return String.Concat(_modelMemoryKeyPrefix, ":", key);
+    }
+
+    protected IEnumerable<TModel> QueryBy<TQueryKey>(IDbContext context, string command,
+      Action<DbCommand, TQueryKey> binder, TQueryKey key, string cacheKey)
     {
       Contract.Requires<ArgumentNullException>(context != null);
       Contract.Requires<ArgumentNullException>(command != null);
       Contract.Requires<ArgumentException>(command.Length > 0);
 
-      if (context.Behaviors.HasFlag(DbContextBehaviors.DisableCaching))
-      {
-        return PerformDirectQueryBy(context, command, binder, key);
-      }
-      var cache = GetContextCollectionCache(context, cacheKey, key);
-      var res = cache.Get(key);
-      if (res == null)
-      {
-        res = PerformDirectQueryBy(context, command, binder, key);
-        if (res != null)
-        {
-          cache.Put(key, res);
-        }
-      }
-      return res;
+      return PerformDirectQueryBy(context, command, binder, key);
     }
 
-    protected TModel ReadBy<TCacheKey, TItemKey>(IDbContext context, string command,
-      Action<DbCommand, TItemKey> binder, TCacheKey cacheKey, TItemKey key)
-      where TCacheKey : class
+    protected TModel ReadBy<TItemKey>(IDbContext context, string command,
+      Action<DbCommand, TItemKey> binder, TItemKey key, string cacheKey)
     {
       Contract.Requires<ArgumentNullException>(context != null);
       Contract.Requires<ArgumentNullException>(command != null);
       Contract.Requires<ArgumentException>(command.Length > 0);
 
-      if (context.Behaviors.HasFlag(DbContextBehaviors.DisableCaching))
-      {
-        return PerformDirectReadBy(context, command, binder, key);
-      }
-      var cache = GetContextCache(context, cacheKey, key);
-      var res = cache.Get(key);
-      if (_comparer.Equals(default(TModel), res))
-      {
-        res = PerformDirectReadBy(context, command, binder, key);
-        if (!_comparer.Equals(default(TModel), res))
-        {
-          cache.Put(key, res);
-        }
-      }
-      return res;
+      return PerformDirectReadBy(context, command, binder, key);
     }
-
-    protected virtual ContextCache<TCacheKey, TKey, TModel> GetContextCache<TCacheKey, TKey>(IDbContext context,
-      TCacheKey cacheKey,
-      TKey key)
-      where TCacheKey : class
-    {
-      return context.EnsureCache(cacheKey, MakeContextCache<TCacheKey, TKey>);
-    }
-
-    protected virtual ContextCache<TCacheKey, TKey, TModel> MakeContextCache<TCacheKey, TKey>(IDbContext context,
-      TCacheKey cacheKey)
-      where TCacheKey : class
-    {
-      return new SimpleContextCache<TCacheKey, TKey, TModel>(cacheKey, HandleContextCacheEnd, context);
-    }
-
-    protected virtual void HandleContextCacheEnd<TCacheKey, TKey>(IDbContext cx, TCacheKey cacheKey,
-      IEnumerable<KeyValuePair<TKey, TModel>> items)
-    {}
-
-    protected virtual ContextCache<TCacheKey, TKey, IEnumerable<TModel>> GetContextCollectionCache<TCacheKey, TKey>(
-      IDbContext context, TCacheKey cacheKey,
-      TKey key)
-      where TCacheKey : class
-    {
-      return context.EnsureCache(cacheKey, MakeContextCollectionCache<TCacheKey, TKey>);
-    }
-
-    protected virtual ContextCache<TCacheKey, TKey, IEnumerable<TModel>> MakeContextCollectionCache<TCacheKey, TKey>(
-      IDbContext context, TCacheKey cacheKey)
-      where TCacheKey : class
-    {
-      return new SimpleContextCache<TCacheKey, TKey, IEnumerable<TModel>>(cacheKey, HandleContextCollectionCacheEnd,
-        context);
-    }
-
-    protected virtual void HandleContextCollectionCacheEnd<TCacheKey, TKey>(IDbContext cx, TCacheKey cacheKey,
-      IEnumerable<KeyValuePair<TKey, IEnumerable<TModel>>> items)
-    {}
-
-    #region IDataRepository<M,IK> Members
 
     public abstract TIdentityKey GetIdentity(TModel model);
 
     public TModel Create(IDbContext context, TModel model)
     {
-      if (context.Behaviors.HasFlag(DbContextBehaviors.DisableCaching))
-      {
-        return PerformCreate(context, model);
-      }
       var res = PerformCreate(context, model);
-      var id = GetIdentity(model);
-      var cache = GetContextCache(context, CCacheKey, id);
-      cache.Put(id, res);
+      CachePut(context, res, true);
       return res;
     }
 
     public TModel ReadByIdentity(IDbContext context, TIdentityKey key)
     {
-      if (context.Behaviors.HasFlag(DbContextBehaviors.DisableCaching))
-      {
-        return PerformRead(context, key);
-      }
-      var cache = GetContextCache(context, CCacheKey, key);
-      var res = cache.Get(key);
-      if (_comparer.Equals(default(TModel), res))
+      TModel res;
+      if (!TryCacheRead(context, key, out res))
       {
         res = PerformRead(context, key);
-        if (!_comparer.Equals(default(TModel), res))
+        if (!_comparer.Equals(res, default(TModel)))
         {
-          cache.Put(key, res);
+          CachePut(context, res, false);
         }
       }
       return res;
     }
 
+    private void CachePut(IDbContext ctx, TModel item, bool created)
+    {
+      if (!ctx.Behaviors.HasFlag(DbContextBehaviors.DisableCaching))
+      {
+        var id = GetIdentity(item);
+        PerformCachePut(ctx, id, item, created);
+      }
+    }
+
+    protected virtual void PerformCachePut(IDbContext ctx, TIdentityKey id, TModel item, bool created)
+    {
+      var key = FormatClusteredMemoryKey(IdToString(id));
+      ctx.PutWithExpiration(key, item, created, _cacheTtl, this);
+    }
+
+    protected bool TryCacheRead(IDbContext ctx, TIdentityKey key, out TModel item)
+    {
+      if (!ctx.Behaviors.HasFlag(DbContextBehaviors.DisableCaching))
+      {
+        return PerformTryCacheRead(ctx, key, out item);
+      }
+      item = default(TModel);
+      return false;
+    }
+
+    protected virtual bool PerformTryCacheRead(IDbContext ctx, TIdentityKey key, out TModel res)
+    {
+      var cacheKey = FormatClusteredMemoryKey(IdToString(key));
+      return ctx.TryGet(_mem, cacheKey, out res);
+    }
+
     public TModel Update(IDbContext context, TModel model)
     {
-      if (context.Behaviors.HasFlag(DbContextBehaviors.DisableCaching))
-      {
-        return PerformUpdate(context, model);
-      }
       var res = PerformUpdate(context, model);
-      var id = GetIdentity(model);
-      var cache = GetContextCache(context, CCacheKey, id);
-      cache.Put(id, res);
+      CachePut(context, res, false);
       return res;
     }
 
-    public bool Delete(IDbContext context, TIdentityKey id)
+    public bool Delete(IDbContext context, TIdentityKey key)
     {
-      if (context.Behaviors.HasFlag(DbContextBehaviors.DisableCaching))
+      var res = PerformDelete(context, key);
+      if (res)
       {
-        return PerformDelete(context, id);
+        CacheDelete(context, key);
       }
-      var res = PerformDelete(context, id);
-      var cache = GetContextCache(context, CCacheKey, id);
-      cache.Remove(id);
       return res;
+    }
+
+    private void CacheDelete(IDbContext ctx, TIdentityKey key)
+    {
+      if (!ctx.Behaviors.HasFlag(DbContextBehaviors.DisableCaching))
+      {
+        PerformCacheDelete(ctx, key);
+      }
+    }
+
+    protected virtual void PerformCacheDelete(IDbContext ctx, TIdentityKey key)
+    {
+      var cacheKey = FormatClusteredMemoryKey(IdToString(key));
+      ctx.Delete(cacheKey, this);
     }
 
     public IDataModelQueryResult<TModel> All(IDbContext context, QueryBehavior behavior)
     {
       return PerformAll(context, behavior);
     }
-
-    #endregion
+    
+    public virtual void ClusterNotify(string observation, string identity, IClusteredMemory mem) { }
+    public virtual void PromoteCacheItem<T>(string key, TimeSpan ttl, T item, bool created) { }
+    public virtual void PromoteCacheItem<T>(string key, T item, bool created) { }
+    public virtual void PromoteCacheDeletion(string key) { }
   }
 }

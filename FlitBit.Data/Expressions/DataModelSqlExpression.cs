@@ -9,6 +9,7 @@ using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Linq.Expressions;
+using System.Threading;
 using FlitBit.Core;
 using FlitBit.Data.DataModel;
 using FlitBit.Data.Meta;
@@ -16,12 +17,20 @@ using FlitBit.Emit;
 
 namespace FlitBit.Data.Expressions
 {
+  internal static class DataModelSqlExpression
+  {
+    static int __idSeed;
+    internal static int NextID { get { return Interlocked.Increment(ref __idSeed); } }
+  }
+
   /// <summary>
   ///   An SQL expression builder/helper for target type; translates limited lambda expressions to SQL.
   /// </summary>
   /// <typeparam name="TDataModel">target type TDataModel</typeparam>
   public class DataModelSqlExpression<TDataModel>
   {
+    readonly int _id = DataModelSqlExpression.NextID;
+
     readonly string _selfRef;
     int _joinOrd;
 
@@ -33,6 +42,7 @@ namespace FlitBit.Data.Expressions
     readonly List<SqlJoinExpression> _impliedJoins = new List<SqlJoinExpression>();
 
     SqlExpression _whereExpression;
+    readonly Action<OrderByBuilder<TDataModel>, TDataModel> _orderByClause;
 
     /// <summary>
     ///   Creates a new instance.
@@ -40,13 +50,19 @@ namespace FlitBit.Data.Expressions
     /// <param name="mapping">the target type's mapping</param>
     /// <param name="binder">the target type's binder</param>
     /// <param name="selfRef">a string reference to self used in the expression</param>
-    public DataModelSqlExpression(IMapping<TDataModel> mapping, IDataModelBinder<TDataModel> binder, string selfRef)
+    public DataModelSqlExpression(IMapping<TDataModel> mapping, IDataModelBinder<TDataModel> binder, string selfRef, Action<OrderByBuilder<TDataModel>, TDataModel> orderByClause)
     {
       this.Mapping = mapping;
       this.Binder = binder;
       this._selfRef = selfRef;
+      this._orderByClause = orderByClause;
       this.SelfReferenceColumn = mapping.GetPreferredReferenceColumn();
     }
+
+    /// <summary>
+    /// The query expression's unique id.
+    /// </summary>
+    public int ID { get { return _id; } }
 
     /// <summary>
     ///   The expression's object-relational mapping.
@@ -74,6 +90,11 @@ namespace FlitBit.Data.Expressions
     ///   Gets join expressions generated from explicit lambda joins.
     /// </summary>
     public IList<SqlJoinExpression> ExplicitJoins { get { return this._explicitJoins.AsReadOnly(); } }
+
+    /// <summary>
+    /// Gets the where expression.
+    /// </summary>
+    public SqlExpression WhereExpression { get { return this._whereExpression; } }
 
     internal void AddSelfParameter(ParameterExpression parm)
     {
@@ -290,6 +311,22 @@ namespace FlitBit.Data.Expressions
       {
         return ProcessComparison(binary);
       }
+      if (binary.NodeType == ExpressionType.GreaterThan)
+      {
+        return ProcessComparison(binary);
+      }
+      if (binary.NodeType == ExpressionType.GreaterThanOrEqual)
+      {
+        return ProcessComparison(binary);
+      }
+      if (binary.NodeType == ExpressionType.LessThan)
+      {
+        return ProcessComparison(binary);
+      }
+      if (binary.NodeType == ExpressionType.LessThanOrEqual)
+      {
+        return ProcessComparison(binary);
+      }
       throw new NotSupportedException(String.Concat("Expression not supported in sql expressions: ",
         binary.NodeType));
     }
@@ -415,11 +452,21 @@ namespace FlitBit.Data.Expressions
         }
         return (SqlValueExpression)res;
       }
+      if (expr.NodeType == ExpressionType.Convert)
+      {
+        var conv = (UnaryExpression)expr;
+        if (conv.IsLifted
+            && conv.IsLiftedToNull)
+        {
+          // lifted to a nullable, use the underlying...
+          return FormatValueReference(conv.Operand);
+        }
+      }
       throw new NotSupportedException(String.Concat("Expression not supported as a value expression: ",
         expr.NodeType));
     }
 
-    SqlValueExpression HandleValueReferencePath(Expression expr)
+    internal SqlValueExpression HandleValueReferencePath(Expression expr)
     {
       var stack = new Stack<MemberExpression>();
       var item = expr;
@@ -592,6 +639,18 @@ namespace FlitBit.Data.Expressions
         this._whereExpression.Write(writer);
         writer.Outdent();
       }
+    }
+
+    public OrderBy OrderByStatement(OrderBy defa)
+    {
+      if (_orderByClause != null)
+      {
+        var builder = new OrderByBuilder<TDataModel>(this);
+        TDataModel model = default(TDataModel);
+        _orderByClause(builder, model);
+        return builder.ToOrderByStatement();
+      }
+      return defa;
     }
   }
 }

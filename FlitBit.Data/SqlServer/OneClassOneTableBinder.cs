@@ -107,19 +107,19 @@ namespace FlitBit.Data.SqlServer
       string key, DataModelSqlExpression<TDataModel> sql, IDataModelWriter<TDataModel> writer)
     {
       var all = LegacyWriter.WriteSelect(sql);
-      var paging = LegacyWriter.WriteSelectWithPaging(sql, null);
 
+      all.SingleCacheTimeToLive = this.Mapping.CacheTimeToLive;
+      all.FormatSingleCacheKey = CacheKeyFormatter.EmitFormatSingleCacheKey(Mapping, sql);
+
+      var paging = LegacyWriter.WriteSelectWithPaging(sql);
       var cmd = OneClassOneTableEmitter.MakeQueryCommand<TDataModel, TModelImpl>(Mapping, key, sql);
       return Activator.CreateInstance(cmd, all, paging, LegacyWriter.ColumnOffsets);
     }
 
-    protected override IDataModelQueryManyCommand<TDataModel, SqlConnection> ConstructGetAllCommand()
+    protected override IDataModelQueryManyCommand<TDataModel, SqlConnection> ConstructGetAllCommand(IDataModelRepository<TDataModel, TIdentityKey> repository)
     {
-      return
-        new SqlDataModelQueryManyCommand<TDataModel, TModelImpl>(
-          LegacyWriter.Select,
-          LegacyWriter.SelectInPrimaryKeyOrderWithPaging,
-          Offsets);
+      var builder = new DataModelQueryBuilder<TDataModel, TIdentityKey, SqlConnection>((IDataModelRepository<TDataModel, TIdentityKey, SqlConnection>)repository, LegacyWriter);
+      return builder.MakeCommand();
     }
 
     protected override IDataModelQuerySingleCommand<TDataModel, SqlConnection, TDataModel> ConstructGetCreateCommand()

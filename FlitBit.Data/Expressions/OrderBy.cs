@@ -4,6 +4,7 @@
 
 #endregion
 
+using System;
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Text;
@@ -12,20 +13,55 @@ using FlitBit.Data.Meta;
 
 namespace FlitBit.Data.Expressions
 {
+  public class OrderByColumn
+  {
+    public OrderByColumn(SqlValueExpression expr, SortOrderKind kind)
+    {
+      this.Expression = expr;
+      this.Kind = kind;
+    }
+
+    public SortOrderKind Kind { get; set; }
+
+    public SqlValueExpression Expression { get; set; }
+
+    public void WriteConditions(IMapping mapping, SqlWriter writer, bool inverse)
+    {
+      writer.Append(mapping.QuoteObjectName(Expression.Text));
+      if (inverse)
+      {
+        writer.Append(Kind == SortOrderKind.Asc ? " DESC" : " ASC");
+      }
+      else
+      {
+        writer.Append(Kind == SortOrderKind.Asc ? " ASC" : " DESC");
+      }
+    }
+
+    public override string ToString()
+    {
+      var writer = new StringBuilder(40);
+      writer.Append(Expression.Text);
+      writer.Append(Kind == SortOrderKind.Asc ? " ASC" : " DESC");
+      return writer.ToString();
+    }
+  }
+
   public class OrderBy
   {
+    
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-    readonly List<MappedSortColumn> _columns = new List<MappedSortColumn>();
+    readonly List<OrderByColumn> _columns = new List<OrderByColumn>();
 
-    public IList<MappedSortColumn> Columns { get { return _columns; } }
+    public IList<OrderByColumn> Columns { get { return _columns; } }
 
-    public OrderBy Add(ColumnMapping column, SortOrderKind kind)
+    public OrderBy Add(SqlValueExpression column, SortOrderKind kind)
     {
-      _columns.Add(new MappedSortColumn(column, kind, _columns.Count));
+      _columns.Add(new OrderByColumn(column, kind));
       return this;
     }
 
-    public virtual void WriteOrderBy(IMapping mapping, SqlWriter writer, string refName, bool inverse)
+    public virtual void WriteOrderBy(IMapping mapping, SqlWriter writer, bool inverse)
     {
       writer.Append("ORDER BY ");
       var i = 0;
@@ -39,7 +75,7 @@ namespace FlitBit.Data.Expressions
         {
           i += 1;
         }
-        column.WriteConditions(mapping, writer, refName, inverse);
+        column.WriteConditions(mapping, writer, inverse);
       }
     }
 

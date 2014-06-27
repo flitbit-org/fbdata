@@ -47,7 +47,7 @@ namespace FlitBit.Data.SqlServer
 
     protected override void PerformInitialization() { throw new NotImplementedException(); }
 
-    protected override IDataModelQueryManyCommand<TModel, SqlConnection> ConstructGetAllCommand()
+    protected override IDataModelQueryManyCommand<TModel, SqlConnection> ConstructGetAllCommand(IDataModelRepository<TModel, TIdentityKey> repository)
     {
       throw new NotImplementedException();
     }

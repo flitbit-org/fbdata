@@ -4,6 +4,7 @@
 
 #endregion
 
+using System;
 using System.Data;
 using System.Data.SqlClient;
 using FlitBit.Data.DataModel;
@@ -21,6 +22,7 @@ namespace FlitBit.Data.SqlServer
     IDataModelQuerySingleCommand<TDataModel, SqlConnection, TParam>
     where TImpl : TDataModel, IDataModel, new()
   {
+    readonly DynamicSql _sql;
     readonly string _commandText;
     readonly int[] _offsets;
 
@@ -31,6 +33,7 @@ namespace FlitBit.Data.SqlServer
     /// <param name="offsets">column offsets within the results returned by the command</param>
     protected SqlDataModelQuerySingleCommand(DynamicSql sql, int[] offsets)
     {
+      _sql = sql;
       _commandText = sql.Text;
       _offsets = offsets;
     }
@@ -46,6 +49,7 @@ namespace FlitBit.Data.SqlServer
     public TDataModel ExecuteSingle(IDbContext cx, SqlConnection cn, TParam param)
     {
       var res = default(TImpl);
+      string cacheKey = null;
       using (var cmd = cn.CreateCommand(_commandText, CommandType.Text))
       {
         BindCommand((SqlCommand)cmd, param, _offsets);

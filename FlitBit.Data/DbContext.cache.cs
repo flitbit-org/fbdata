@@ -6,8 +6,12 @@
 
 using System;
 using System.Collections.Concurrent;
-using System.Diagnostics.Contracts;
+using System.Reflection;
 using System.Threading;
+using System.Threading.Tasks;
+using System.Transactions;
+using FlitBit.Data.Cluster;
+using FlitBit.Data.SPI;
 
 namespace FlitBit.Data
 {
@@ -17,12 +21,92 @@ namespace FlitBit.Data
     int _cacheHits;
     int _cachePuts;
     int _cacheRemoves;
+    int _sequence = 0;
 
-    readonly Lazy<ConcurrentDictionary<object, ContextCache>> _localCaches =
-      new Lazy<ConcurrentDictionary<object, ContextCache>>(LazyThreadSafetyMode.PublicationOnly);
+    readonly ConcurrentDictionary<string, CachedItem> _cache = new ConcurrentDictionary<string, CachedItem>();
+    readonly ConcurrentDictionary<string, CachedDeletion> _cacheDeletions = new ConcurrentDictionary<string, CachedDeletion>();
 
-    #region IDbContext Members
+    class CachedDeletion
+    {
+      internal CachedDeletion(int sequence, ICachePromotionHandler handler)
+      {
+        Sequence = sequence;
+        Handler = handler;
+      }
+      internal int Sequence { get; private set; }
 
+      internal ICachePromotionHandler Handler { get; private set; }
+
+      internal void PromoteItem(string key) { Handler.PromoteCacheDeletion(key); }
+    }
+
+    abstract class CachedItem
+    {
+      internal int Sequence { get; set; }
+
+      internal bool Created { get; set; }
+
+      internal ICachePromotionHandler Handler { get; set; }
+
+      internal CachedItem SetCreated(bool created)
+      {
+        Created = created;
+        return this;
+      }
+
+      internal abstract bool TryCast<T>(out T item);
+
+      internal abstract void PromoteItem(string key);
+    }
+
+    class CachedItem<TItem> : CachedItem
+    {
+      readonly object _item;
+      readonly TimeSpan _ttl;
+      readonly bool _hasTtl;
+
+      internal CachedItem(TItem value, bool created, ICachePromotionHandler handler, int sequence)
+      {
+        _item = value;
+        Sequence = sequence;
+        Created = created;
+        Handler = handler;
+      }
+
+      internal CachedItem(TItem value, TimeSpan ttl, bool created, ICachePromotionHandler handler, int sequence)
+      {
+        _item = value;
+        Sequence = sequence;
+        Created = created;
+        Handler = handler;
+        _hasTtl = true;
+        _ttl = ttl;
+      }
+
+      internal override bool TryCast<T>(out T item)
+      {
+        if (typeof(T).IsAssignableFrom(typeof(TItem)))
+        {
+          item = (T)_item;
+          return true;
+        }
+        item = default(T);
+        return false;
+      }
+
+      internal override void PromoteItem(string key)
+      {
+        if (_hasTtl)
+        {
+          Handler.PromoteCacheItem(key, _ttl, (TItem)_item, Created);
+        }
+        else
+        {
+          Handler.PromoteCacheItem(key, (TItem)_item, Created);
+        }
+      }
+    }
+    
     public int CachePuts { get { return Thread.VolatileRead(ref _cachePuts); } }
 
     public int CacheAttempts { get { return Thread.VolatileRead(ref _cacheAttempts); } }
@@ -31,42 +115,142 @@ namespace FlitBit.Data
 
     public int CacheRemoves { get { return Thread.VolatileRead(ref _cacheRemoves); } }
 
-    public int IncrementCacheAttempts() { return Interlocked.Increment(ref _cacheAttempts); }
-
-    public C EnsureCache<K, C>(K key, Func<IDbContext, K, C> factory)
-      where C : ContextCache
+    /// <summary>
+    /// Tries to get an item from the context cache.
+    /// </summary>
+    /// <param name="mem"></param>
+    /// <param name="key"></param>
+    /// <param name="item"></param>
+    /// <typeparam name="T"></typeparam>
+    /// <returns></returns>
+    public bool TryGet<T>(IClusteredMemory mem, string key, out T item)
     {
-      Contract.Requires<InvalidOperationException>(!Behaviors.HasFlag(DbContextBehaviors.DisableCaching));
-
-      if (_parent != null
-          && _behaviors.HasFlag(DbContextBehaviors.DisableInheritedCache))
+      Interlocked.Increment(ref _cacheAttempts);
+      CachedDeletion deleted;
+      int delseq = 0;
+      if (_cacheDeletions.TryGetValue(key, out deleted))
       {
-        return _parent.EnsureCache(key, factory);
+        delseq = deleted.Sequence;
       }
-      var caches = _localCaches.Value;
-      var cache = default(C);
-      while (true)
+
+      CachedItem cached;
+      if (this._cache.TryGetValue(key, out cached)
+        && delseq < cached.Sequence
+        && cached.TryCast(out item))
       {
-        ContextCache res;
-        if (caches.TryGetValue(key, out res))
+        Interlocked.Increment(ref _cacheHits);
+        return true;
+      }
+      if (mem != null)
+      {
+        byte[] buffer;
+        if (delseq == 0
+            && mem.TryGet(key, out buffer))
         {
-          return (C)res;
+          try
+          {
+            item = BinaryFormat.RestoreBufferView<T>(buffer);
+            if (item != null)
+            {
+              Interlocked.Increment(ref _cacheHits);
+              return true;
+            }
+          }
+          catch (FormatException)
+          {
+          }
         }
-        if (cache == null)
-        {
-          cache = factory(this, key);
-        }
-        if (caches.TryAdd(key, cache))
-        {
-          return cache;
-        }
+      }
+      item = default(T);
+      return false;
+    }
+
+    /// <summary>
+    /// Puts an item in the context cache.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="key"></param>
+    /// <param name="item"></param>
+    /// <param name="created"></param>
+    /// <param name="promotion"></param>
+    public void Put<T>(string key, T item, bool created, ICachePromotionHandler promotion)
+    {
+      if (item != null)
+      {
+        var updated = new CachedItem<T>(item, created, promotion, Interlocked.Increment(ref _sequence));
+        _cache.AddOrUpdate(key, k => updated, (k, existing) => updated.SetCreated(created || existing.Created));
+        Interlocked.Increment(ref _cachePuts);
       }
     }
 
-    public int IncrementCacheHits() { return Interlocked.Increment(ref _cacheHits); }
-    public int IncrementCachePuts() { return Interlocked.Increment(ref _cachePuts); }
-    public int IncrementCacheRemoves() { return Interlocked.Increment(ref _cacheRemoves); }
+    /// <summary>
+    /// Puts an item in the context cache.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="key"></param>
+    /// <param name="item"></param>
+    /// <param name="created"></param>
+    /// <param name="ttl"></param>
+    /// <param name="promotion"></param>
+    public void PutWithExpiration<T>(string key, T item, bool created, TimeSpan ttl, ICachePromotionHandler promotion)
+    {
+      if (item != null)
+      {
+        var updated = new CachedItem<T>(item, ttl, created, promotion, Interlocked.Increment(ref _sequence));
+        _cache.AddOrUpdate(key, k => updated, (k, existing) => updated.SetCreated(existing.Created));
+        Interlocked.Increment(ref _cachePuts);
+      }
+    }
 
-    #endregion
+    /// <summary>
+    /// Deletes an item from the context cache.
+    /// </summary>
+    /// <typeparam name="T"></typeparam>
+    /// <param name="key"></param>
+    /// <param name="promotion"></param>
+    /// <returns></returns>
+    public void Delete(string key, ICachePromotionHandler promotion)
+    {
+      int deleteSequence = Interlocked.Increment(ref _sequence);
+      var deleted = new CachedDeletion(deleteSequence, promotion);
+      _cacheDeletions.AddOrUpdate(key, k => deleted, (k, existing) => deleted);
+      Interlocked.Increment(ref _cacheRemoves);
+    }
+
+    private void PerformCachePromotion(bool hasTrans, TransactionStatus status)
+    {
+      if (!hasTrans || status == TransactionStatus.Committed)
+      {
+        Parallel.ForEach(_cache, kvp =>
+        {
+          DbContextFlowProvider.Push(this);
+          try
+          {
+            CachedDeletion deletion;
+            if (_cacheDeletions.TryRemove(kvp.Key, out deletion))
+            {
+              if (deletion.Sequence < kvp.Value.Sequence)
+              {
+                kvp.Value.PromoteItem(kvp.Key);
+              }
+              else
+              {
+                deletion.PromoteItem(kvp.Key);
+
+              }
+            }
+            else
+            {
+              kvp.Value.PromoteItem(kvp.Key);
+            }
+          }
+          finally
+          {
+            DbContextFlowProvider.Pop();
+          }
+        });
+        Parallel.ForEach(_cacheDeletions, kvp => kvp.Value.PromoteItem(kvp.Key));
+      }
+    }
   }
 }

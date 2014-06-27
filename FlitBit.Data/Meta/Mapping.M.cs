@@ -85,6 +85,9 @@ namespace FlitBit.Data.Meta
     [DebuggerBrowsable(DebuggerBrowsableState.Never)]
     string _targetObject;
 
+    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+    readonly string _modelMemoryKeyPrefix;
+    
     internal Mapping()
     {
       _hierarchyMapping = new HierarchyMapping<TModel>();
@@ -92,9 +95,14 @@ namespace FlitBit.Data.Meta
       _identityKey = FactoryProvider.Factory.CreateInstance<IdentityKey<TModel>>();
       _identity = new IdentityMapping<TModel>(this);
       _naturalKey = new NaturalKeyMapping<TModel>(this);
+      _modelMemoryKeyPrefix = typeof(TModel).GetReadableFullName();
+      var cacheSettings = ClusterCacheAttribute.GetClusterCacheAttribute(typeof(TModel));
+      CacheBehavior = cacheSettings.Behaviors;
+      CacheTimeToLive = cacheSettings.CacheTimeToLive;
     }
 
     public HierarchyMapping<TModel> Hierarchy { get { return _hierarchyMapping; } }
+
     public IdentityKey<TModel> IdentityKey { get { return _identityKey; } }
 
     /// <summary>
@@ -666,9 +674,7 @@ namespace FlitBit.Data.Meta
         a(this);
       }
     }
-
-    #region IMapping<TModel> Members
-
+    
     /// <summary>
     ///   Indicates the data model's runtime type.
     /// </summary>
@@ -895,10 +901,17 @@ namespace FlitBit.Data.Meta
       });
     }
 
-    #endregion
-
     public int Revision { get { return Thread.VolatileRead(ref _revision); } }
 
     public Type IdentityKeyType { get { return (HasIdentity) ? IdentityKey.KeyType : null; } }
+    public ClusterCacheBehaviors CacheBehavior { get; internal set; }
+
+    public TimeSpan CacheTimeToLive { get; internal set; }
+    
+    public string FormatClusteredMemoryKey<TKey>(TKey key)
+    {
+      return String.Concat(_modelMemoryKeyPrefix, ":", Convert.ToString(key));
+    }
+
   }
 }

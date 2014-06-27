@@ -39,9 +39,9 @@ namespace FlitBit.Data
     ///   Deletes the model associated with the identity key provided.
     /// </summary>
     /// <param name="context">a db context</param>
-    /// <param name="id">identity key of the model to delete</param>
+    /// <param name="key">identity key of the model to delete</param>
     /// <returns><em>true</em> if successful; otherwise <em>false</em></returns>
-    bool Delete(IDbContext context, TIdentityKey id);
+    bool Delete(IDbContext context, TIdentityKey key);
 
     /// <summary>
     ///   Gets a model's identity key.
@@ -105,7 +105,7 @@ namespace FlitBit.Data
         throw new NotImplementedException();
       }
 
-      public bool Delete(IDbContext context, TIdentityKey id)
+      public bool Delete(IDbContext context, TIdentityKey key)
       {
         Contract.Requires<ArgumentNullException>(context != null);
         throw new NotImplementedException();

@@ -7,6 +7,7 @@
 using System;
 using System.Collections.Generic;
 using System.Threading;
+using System.Transactions;
 using FlitBit.Core;
 using FlitBit.Core.Parallel;
 
@@ -19,6 +20,29 @@ namespace FlitBit.Data
       static readonly Lazy<DbContextFlowProvider> Provider =
         new Lazy<DbContextFlowProvider>(CreateAndRegisterContextFlowProvider,
           LazyThreadSafetyMode.ExecutionAndPublication);
+
+      class DbContextCapture
+      {
+        IDbContext _context;
+        Transaction _transaction;
+
+        internal DbContextCapture(IDbContext ctx)
+        {
+          _context = ctx;
+          _transaction = ctx.Transaction;
+        }
+
+        public DbContext MakeDependent()
+        {
+          if (_transaction != null)
+          {
+            var txScope =
+              new TransactionScope(_transaction.DependentClone(DependentCloneOption.BlockCommitUntilComplete));
+            return new DbContext(_context, Transaction.Current, txScope, DbContextBehaviors.Default);
+          }
+          return new DbContext(_context, Transaction.Current, DbContextBehaviors.Default);
+        }
+      }
 
       static DbContextFlowProvider CreateAndRegisterContextFlowProvider()
       {
@@ -39,14 +63,14 @@ namespace FlitBit.Data
         var top = Peek();
         if (top != null)
         {
-          return top.ShareContext();
+          return new DbContextCapture(top);
         }
         return null;
       }
 
-      public void Attach(ContextFlow context, object captureKey)
+      public object Attach(ContextFlow context, object capture)
       {
-        var scope = (captureKey as IDbContext);
+        var scope = (capture as DbContextCapture);
         if (scope != null)
         {
           if (__scopes == null)
@@ -57,17 +81,25 @@ namespace FlitBit.Data
           {
             ReportAndClearOrphanedScopes(__scopes);
           }
-          __scopes.Push(scope);
+          var res = scope.MakeDependent();
+          __scopes.Push(res);
+          return res;
         }
+        return null;
       }
 
       void ReportAndClearOrphanedScopes(Stack<IDbContext> scopes) { scopes.Clear(); }
 
-      public void Detach(ContextFlow context, object captureKey)
+      public void Detach(ContextFlow context, object attachement, Exception err)
       {
-        var scope = (captureKey as IDbContext);
+        var scope = (attachement as DbContext);
         if (scope != null)
         {
+          if (err == null
+              && scope.Transaction != null)
+          {
+            scope.Complete();
+          }
           scope.Dispose();
         }
       }
@@ -131,9 +163,9 @@ namespace FlitBit.Data
     {
       if (behaviors.HasFlag(DbContextBehaviors.NoContextFlow))
       {
-        return new DbContext(null, behaviors);
+        return new DbContext(null, Transaction.Current, behaviors);
       }
-      return new DbContext(Current, behaviors);
+      return new DbContext(Current, Transaction.Current, behaviors);
     }
 
     /// <summary>
@@ -142,7 +174,7 @@ namespace FlitBit.Data
     /// <returns>a db context</returns>
     public static IDbContext NewContext()
     {
-      return new DbContext(Current, DbContextBehaviors.Default);
+      return new DbContext(Current, Transaction.Current, DbContextBehaviors.Default);
     }
 
     /// <summary>
@@ -154,7 +186,7 @@ namespace FlitBit.Data
       var ambient = DbContextFlowProvider.Peek();
       return (ambient != null)
                ? ambient.ShareContext()
-               : new DbContext(null, DbContextBehaviors.Default);
+               : new DbContext(null, Transaction.Current, DbContextBehaviors.Default);
     }
   }
 }

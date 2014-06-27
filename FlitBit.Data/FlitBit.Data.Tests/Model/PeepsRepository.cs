@@ -9,8 +9,6 @@ namespace FlitBit.Data.Tests.Model
 {
 	public class PeepsRepository : TableBackedRepository<Peep, int>
 	{
-		protected static string CCacheKey_Name = String.Concat(CCacheKey, ".Name");
-
 		internal static string __InsertCommandFmt = @"
 DECLARE @generated_timestamp DATETIME
 SET @generated_timestamp = GETUTCDATE()
@@ -111,8 +109,8 @@ WHERE [{0}].[Peeps].[ID] = @ID";
 					var binder = Helper.MakeParameterBinder(cmd);
 					binder.DefineAndBindParameter("Name", n);
 				}
-				, CCacheKey_Name,
-				name
+				, name,
+        this.FormatClusteredMemoryKey(String.Concat("Name=", name))
 				);
 		}
 

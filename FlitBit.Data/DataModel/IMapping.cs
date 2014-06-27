@@ -189,8 +189,27 @@ namespace FlitBit.Data.DataModel
     /// </summary>
     /// <param name="mapping"></param>
     void NotifySubtype(IMapping mapping);
+
+    /// <summary>
+    /// Formats an identity key for clustered memory lookup.
+    /// </summary>
+    /// <param name="key"></param>
+    /// <typeparam name="TKey"></typeparam>
+    /// <returns></returns>
+    string FormatClusteredMemoryKey<TKey>(TKey key);
+
+    /// <summary>
+    /// Time to live timespan for cached items of the mapped type.
+    /// </summary>
+    TimeSpan CacheTimeToLive { get; }
+
+    ClusterCacheBehaviors CacheBehavior { get; }
   }
 
+  /// <summary>
+  /// Strongly typed mapping.
+  /// </summary>
+  /// <typeparam name="TModel"></typeparam>
   public interface IMapping<TModel> : IMapping
   {
     /// <summary>
@@ -321,5 +340,7 @@ namespace FlitBit.Data.DataModel
     /// <param name="p"></param>
     /// <param name="mapColumn"></param>
     void MapColumnFromMeta(PropertyInfo p, MapColumnAttribute mapColumn);
+
+    
   }
 }

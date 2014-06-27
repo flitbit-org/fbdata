@@ -12,6 +12,17 @@ namespace FlitBit.Data.DataModel
 {
   public static class IDataModelRepositoryExtensions
   {
+    public static IDataModelQueryResult<TDataModel> ExecuteMany<TDataModel, TIdentityKey, TDbConnection>(
+      this IDataModelRepository<TDataModel, TIdentityKey, TDbConnection> repo,
+      IDataModelQueryManyCommand<TDataModel, TDbConnection> cmd)
+      where TDbConnection : DbConnection
+    {
+      Contract.Requires<ArgumentNullException>(repo != null);
+      Contract.Requires<ArgumentNullException>(cmd != null);
+      Contract.Ensures(Contract.Result<IDataModelQueryResult<TDataModel>>() != null);
+      return repo.ExecuteMany(cmd, DbContext.Current, QueryBehavior.Default);
+    }
+
     public static IDataModelQueryResult<TDataModel> ExecuteMany<TDataModel, TIdentityKey, TDbConnection,
                                                                 TParam>(
       this IDataModelRepository<TDataModel, TIdentityKey, TDbConnection> repo,

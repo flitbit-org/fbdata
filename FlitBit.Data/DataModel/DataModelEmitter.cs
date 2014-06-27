@@ -14,6 +14,7 @@ using System.Data.Common;
 using System.Diagnostics;
 using System.Diagnostics.CodeAnalysis;
 using System.Diagnostics.Contracts;
+using System.IO;
 using System.Linq;
 using System.Linq.Expressions;
 using System.Reflection;
@@ -21,6 +22,7 @@ using System.Reflection.Emit;
 using System.Threading;
 using FlitBit.Core;
 using FlitBit.Core.Collections;
+using FlitBit.Data.Cluster;
 using FlitBit.Data.Meta;
 using FlitBit.Data.SPI;
 using FlitBit.Emit;
@@ -362,10 +364,173 @@ namespace FlitBit.Data.DataModel
         ImplementIDataModelSetReferentID(builder, props, dirtyFlags, propChanged);
         ImplementIDataModelResetDirtyFlags(builder, props, dirtyFlags);
         ImplementIDataModelIsDirty(builder, cctor, props, dirtyFlags);
+        ImplementIDataModelCaptureBufferView(builder, props, dirtyFlags);
+        ImplementIDataModelRestoreBufferView(builder, props, dirtyFlags);
         ImplementICloneableClone(builder, props, dirtyFlags);
         ImplementIValidatableObject(builder, props, dirtyFlags);
         // mapping...
         ImplementIDataModelLoadFromDbRecord(builder, props, dirtyFlags);
+      }
+
+      static void ImplementIDataModelCaptureBufferView(EmittedClass builder, List<MemberRec> props, EmittedField dirtyFlags)
+      {
+        var method = builder.DefineMethod("CaptureBufferView");
+        method.ClearAttributes();
+        method.IncludeAttributes(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.NewSlot |
+                                 MethodAttributes.Virtual | MethodAttributes.Final);
+        var buffer = method.DefineParameter("buffer", typeof(BinaryWriter));
+        method.ContributeInstructions((m, il) =>
+        {
+          foreach (var prop in props.OrderBy(p => p.Ordinal))
+          {
+            if (prop.IsColumn)
+            {
+              var mappedColumn = prop.Column;
+
+              il.LoadArg(buffer);
+              il.LoadArg_0();
+              il.LoadField(prop.EmittedField);
+              if (mappedColumn.IsReference)
+              {
+                il.Call(prop.FieldType.GetProperty("HasIdentityKey").GetGetMethod());
+                il.LoadArg_0();
+                il.LoadField(prop.EmittedField);
+                il.Call(prop.FieldType.GetProperty("IdentityKey").GetGetMethod());
+                var ft = prop.ReferenceTargetMemberType;
+                if (ft.IsEnum)
+                {
+                  ft = Enum.GetUnderlyingType(ft);
+                }
+                il.Call(
+                  typeof(BinaryFormat).GetMethod("Write", BindingFlags.Public | BindingFlags.Static, null,
+                    new[]
+                    {
+                      typeof(BinaryWriter),
+                      typeof(bool),
+                      ft
+                    },
+                    null
+                    ));
+              }
+              else
+              {
+                var ft = prop.FieldType;
+                if (ft.IsEnum)
+                {
+                  ft = Enum.GetUnderlyingType(ft);
+                }
+                il.Call(
+                  typeof(BinaryFormat).GetMethod("Write", BindingFlags.Public | BindingFlags.Static, null,
+                    new[]
+                    {
+                      typeof(BinaryWriter),
+                      ft
+                    },
+                    null
+                    ));
+              }
+            }
+          }
+        });
+      }
+
+      static void ImplementIDataModelRestoreBufferView(EmittedClass builder, List<MemberRec> props, EmittedField dirtyFlags)
+      {
+        var method = builder.DefineMethod("RestoreBufferView");
+        method.ClearAttributes();
+        method.IncludeAttributes(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.NewSlot |
+                                 MethodAttributes.Virtual | MethodAttributes.Final);
+        var buffer = method.DefineParameter("buffer", typeof(BinaryReader));
+        method.ContributeInstructions((m, il) =>
+        {
+          foreach (var prop in props.OrderBy(p => p.Ordinal))
+          {
+            if (prop.IsColumn)
+            {
+              var mappedColumn = prop.Column;
+
+              if (mappedColumn.IsReference)
+              {
+                var ft = prop.ReferenceTargetMemberType;
+                if (ft.IsEnum)
+                {
+                  ft = Enum.GetUnderlyingType(ft);
+                }
+                Type readType = null;
+                LocalBuilder lcl;
+                if (ft.IsValueType)
+                {
+                  readType = typeof(Nullable<>).MakeGenericType(ft);
+                  lcl = il.DeclareLocal(readType);
+                  il.LoadLocalAddress(lcl);
+                  il.InitObject(readType);
+                }
+                else
+                {
+                  readType = ft;
+                  lcl = il.DeclareLocal(ft);
+                }
+
+                il.LoadArg(buffer);
+                il.LoadLocalAddress(lcl);
+                il.Call(
+                  typeof(BinaryFormat).GetMethod("Read", BindingFlags.Public | BindingFlags.Static, null,
+                    new[]
+                    {
+                      typeof(BinaryReader),
+                      readType.MakeByRefType()
+                    },
+                    null
+                    ));
+                il.LoadArg_0();
+                if (ft.IsValueType)
+                {
+                  il.LoadLocalAddress(lcl);
+                  il.Call(readType.GetMethod("GetValueOrDefault", Type.EmptyTypes));
+                }
+                else
+                {
+                  il.LoadLocal(lcl);
+                }
+                il.NewObj(prop.FieldType.GetConstructor(new[]
+                {
+                  prop.ReferenceTargetMemberType
+                }));
+                il.StoreField(prop.EmittedField);
+              }
+              else
+              {
+                il.LoadArg(buffer);
+                il.LoadArg_0();
+                il.LoadFieldAddress(prop.EmittedField);
+                var ft = prop.FieldType;
+                if (ft.IsEnum)
+                {
+                  ft = Enum.GetUnderlyingType(ft);
+                }
+                il.Call(
+                  typeof(BinaryFormat).GetMethod("Read", BindingFlags.Public | BindingFlags.Static, null,
+                    new[]
+                    {
+                      typeof(BinaryReader),
+                      ft.MakeByRefType()
+                    },
+                    null
+                    ));
+              }
+            }
+            else if (prop.IsCollection)
+            {
+              il.LoadArg_0();
+              il.LoadNull();
+              prop.EmittedField.StoreValue(il);
+            }
+          }
+          il.LoadArg_0();
+          il.LoadValue(props.Count);
+          il.New<BitVector>(typeof(int));
+          il.StoreField(dirtyFlags);
+        });
       }
 
       static void ImplementIValidatableObject(EmittedClass builder, List<MemberRec> props, EmittedField dirtyFlags)

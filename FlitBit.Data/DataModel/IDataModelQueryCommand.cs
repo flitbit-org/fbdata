@@ -11,6 +11,16 @@ namespace FlitBit.Data.DataModel
   /// </summary>
   /// <typeparam name="TModel"></typeparam>
   /// <typeparam name="TDbConnection"></typeparam>
+  public interface IDataModelQueryCommand<out TModel, TDbConnection>
+    : IDataModelQuerySingleCommand<TModel, TDbConnection>,
+      IDataModelQueryManyCommand<TModel, TDbConnection>
+  { }
+
+  /// <summary>
+  ///   Interface for data model query commands.
+  /// </summary>
+  /// <typeparam name="TModel"></typeparam>
+  /// <typeparam name="TDbConnection"></typeparam>
   /// <typeparam name="TParam"></typeparam>
   public interface IDataModelQueryCommand<out TModel, TDbConnection, in TParam>
     : IDataModelQuerySingleCommand<TModel, TDbConnection, TParam>,

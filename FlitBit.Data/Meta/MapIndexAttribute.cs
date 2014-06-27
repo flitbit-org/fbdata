@@ -33,8 +33,8 @@ namespace FlitBit.Data.Meta
 
     public MapIndexAttribute(IndexBehaviors behaviors, string columns, string include)
     {
-      Contract.Requires(columns != null, "columns cannot be null");
-      Contract.Requires(columns.Length != 0, "columns cannot be empty");
+      Contract.Requires<ArgumentNullException>(columns != null, "columns cannot be null");
+      Contract.Requires<ArgumentException>(columns.Length != 0, "columns cannot be empty");
 
       this.Behaviors = behaviors;
       this.Columns = columns;
@@ -58,27 +58,27 @@ namespace FlitBit.Data.Meta
 
     internal IEnumerable<IndexColumnSpec> GetColumnSpecs(Type typ)
     {
-      Contract.Requires(typ != null);
+      Contract.Requires<ArgumentNullException>(typ != null);
 
       var result = new List<IndexColumnSpec>();
       var cols = Columns.Split(',');
       foreach (var def in cols)
       {
-        var name_order = def.Trim()
+        var nameOrder = def.Trim()
                             .Split(' ');
-        if (name_order.Length == 1)
+        if (nameOrder.Length == 1)
         {
           result.Add(new IndexColumnSpec
           {
-            Column = name_order[0]
+            Column = nameOrder[0]
           });
         }
         else
         {
           result.Add(new IndexColumnSpec
           {
-            Column = name_order[0],
-            Order = (IndexOrder)Enum.Parse(typeof(IndexOrder), name_order[1], true)
+            Column = nameOrder[0],
+            Order = (IndexOrder)Enum.Parse(typeof(IndexOrder), nameOrder[1], true)
           });
         }
       }

@@ -77,19 +77,20 @@ namespace FlitBit.Data.SqlServer
 
     protected abstract void PerformInitialization();
 
-    public override IDataModelQueryManyCommand<TDataModel, SqlConnection> GetAllCommand()
+    public override IDataModelQueryManyCommand<TDataModel, SqlConnection> GetAllCommand(IDataModelRepository<TDataModel, TIdentityKey> repository) 
     {
       var mapping = Mapping;
       if (_selectAll == null
           || _selectAll.Item1 < mapping.Revision)
       {
         _selectAll = Tuple.Create(mapping.Revision,
-          ConstructGetAllCommand());
+          ConstructGetAllCommand(repository));
       }
       return _selectAll.Item2;
     }
 
-    protected abstract IDataModelQueryManyCommand<TDataModel, SqlConnection> ConstructGetAllCommand();
+    protected abstract IDataModelQueryManyCommand<TDataModel, SqlConnection> ConstructGetAllCommand(
+      IDataModelRepository<TDataModel, TIdentityKey> repository);
 
     public override IDataModelQuerySingleCommand<TDataModel, SqlConnection, TDataModel> GetCreateCommand()
     {

@@ -4,7 +4,9 @@
 
 #endregion
 
+using System;
 using System.Data;
+using System.Dynamic;
 
 namespace FlitBit.Data.DataModel
 {
@@ -31,7 +33,10 @@ namespace FlitBit.Data.DataModel
     /// </summary>
     /// <param name="sql"></param>
     /// <param name="cmdType"></param>
-    public DynamicSql(string sql, CommandType cmdType) { }
+    public DynamicSql(string sql, CommandType cmdType)
+      : this(sql, cmdType, CommandBehavior.Default)
+    {
+    }
 
     /// <summary>
     ///   Creates the specified SQL statement.
@@ -96,5 +101,12 @@ namespace FlitBit.Data.DataModel
     ///   The statement's command behavior.
     /// </summary>
     public CommandBehavior CommandBehavior { get; private set; }
+    
+    /// <summary>
+    /// A delegate capable of formatting cache keys.
+    /// </summary>
+    public Delegate FormatSingleCacheKey { get; set; }
+
+    public TimeSpan SingleCacheTimeToLive { get; set; }
   }
 }

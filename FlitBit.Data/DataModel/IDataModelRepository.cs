@@ -4,6 +4,7 @@
 
 #endregion
 
+using System;
 using System.Data.Common;
 using FlitBit.Data.Expressions;
 
@@ -44,6 +45,16 @@ namespace FlitBit.Data.DataModel
     ///   Gets a query builder bound to the repository.
     /// </summary>
     IDataModelQueryBuilder<TDataModel, TIdentityKey, TDbConnection> MakeNamedQueryBuilder(string name);
+
+    /// <summary>
+    ///   Executes the external command, binding the specified parameters, and returning a single data model instance.
+    /// </summary>
+    /// <param name="cmd"></param>
+    /// <param name="cx"></param>
+    /// <returns></returns>
+    TDataModel ExecuteSingle(
+      IDataModelQuerySingleCommand<TDataModel, TDbConnection> cmd,
+      IDbContext cx);
 
     /// <summary>
     ///   Executes the external command, binding the specified parameters, and returning a single data model instance.
@@ -263,6 +274,17 @@ namespace FlitBit.Data.DataModel
           TParam9> cmd,
       IDbContext cx, TParam param, TParam1 param1, TParam2 param2, TParam3 param3, TParam4 param4, TParam5 param5,
       TParam6 param6, TParam7 param7, TParam8 param8, TParam9 param9);
+
+    /// <summary>
+    ///   Executes the external command, binding the specified parameters, and returning data model results.
+    /// </summary>
+    /// <param name="cmd"></param>
+    /// <param name="cx"></param>
+    /// <param name="behavior"></param>
+    /// <returns></returns>
+    IDataModelQueryResult<TDataModel> ExecuteMany(
+      IDataModelQueryManyCommand<TDataModel, TDbConnection> cmd,
+      IDbContext cx, QueryBehavior behavior);
 
     /// <summary>
     ///   Executes the external command, binding the specified parameters, and returning data model results.

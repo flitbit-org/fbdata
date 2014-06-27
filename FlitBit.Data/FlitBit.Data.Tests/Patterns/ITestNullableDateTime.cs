@@ -197,6 +197,17 @@ namespace FlitBit.Data.Tests.Patterns
                 }
             }
         }
+
+
+        public void CaptureBufferView(System.IO.BinaryWriter writer)
+        {
+          throw new NotImplementedException();
+        }
+
+        public void RestoreBufferView(System.IO.BinaryReader reader)
+        {
+          throw new NotImplementedException();
+        }
     }
 
 }

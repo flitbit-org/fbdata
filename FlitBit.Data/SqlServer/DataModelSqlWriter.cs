@@ -87,13 +87,13 @@ namespace FlitBit.Data.SqlServer
         var writer = new SqlWriter(_bufferLength, Environment.NewLine, _indent)
           .Append(Select.Text)
           .NewLine();
-        PrimaryKeyOrder.WriteOrderBy(Mapping, writer, _selfRef, false);
+        PrimaryKeyOrder.WriteOrderBy(Mapping, writer, false);
         return new DynamicSql(writer.ToString(), CommandType.Text,
           CommandBehavior.SingleResult | CommandBehavior.SequentialAccess);
       }
     }
 
-    public DynamicSql SelectInPrimaryKeyOrderWithPaging { get { return WriteSelectWithPaging(null, null); } }
+    public DynamicSql SelectInPrimaryKeyOrderWithPaging { get { return WriteSelectWithPaging(null); } }
 
     public OrderBy PrimaryKeyOrder
     {
@@ -104,7 +104,11 @@ namespace FlitBit.Data.SqlServer
           var res = new OrderBy();
           foreach (var id in Mapping.Identity.Columns)
           {
-            res.Add(id.Column, id.Kind);
+            var idex = new SqlValueExpression(SqlExpressionKind.MemberAccess, 
+              String.Concat(this.SelfRef,  ".", id.Column.TargetName),
+              id.Column.RuntimeType
+            );
+            res.Add(idex, SortOrderKind.Asc);
           }
           return res;
         });
@@ -131,14 +135,22 @@ namespace FlitBit.Data.SqlServer
         }
         writer.NewLine();
         _idCol.Emitter.DeclareScriptVariable(writer, _idCol, helper, idStr);
+        if (!_hasSyntheticId)
+        {
+          writer.Append(" = ")
+            .Append(helper.FormatParameterName(_idCol.DbTypeDetails.BindingName));
+        }
         writer.NewLine();
         writer.NewLine("INSERT INTO ").Append(_dbObjectReference).Append(" (").Indent();
         writer.NewLine("{0}");
         writer.Outdent().NewLine(")").NewLine("VALUES (").Indent();
         writer.NewLine("{1}");
-        writer.Outdent().NewLine(")")
-              .NewLine("SET ").Append(idStr).Append(" = SCOPE_IDENTITY()")
-              .NewLine(Select.Text)
+        writer.Outdent().NewLine(")");
+        if (_hasSyntheticId)
+        {
+          writer.NewLine("SET ").Append(idStr).Append(" = SCOPE_IDENTITY()");
+        }
+        writer.NewLine(Select.Text)
               .NewLine("WHERE ")
               .Append(_selfRef)
               .Append(".")
@@ -287,11 +299,11 @@ namespace FlitBit.Data.SqlServer
         CommandBehavior.SingleResult | CommandBehavior.SequentialAccess);
     }
 
-    public DynamicSql WriteSelectWithPaging(DataModelSqlExpression<TDataModel> sql, OrderBy orderBy)
+    public DynamicSql WriteSelectWithPaging(DataModelSqlExpression<TDataModel> sql)
     {
       var mapping = Mapping;
       // Default to PK order...
-      var order = orderBy ?? PrimaryKeyOrder;
+      OrderBy order = sql.OrderByStatement(this.PrimaryKeyOrder);
 
       var res = new DynamicSql(null, CommandType.Text, CommandBehavior.SingleResult | CommandBehavior.SequentialAccess);
       res.BindLimitParameter = "@pageSize";
@@ -307,8 +319,8 @@ namespace FlitBit.Data.SqlServer
       writer.Append(",").NewLine("ROW_NUMBER() OVER(");
       var orderByStatement = new SqlWriter();
       var inverseOrderByStatement = new SqlWriter();
-      order.WriteOrderBy(mapping, orderByStatement, _selfRef, false);
-      order.WriteOrderBy(mapping, inverseOrderByStatement, _selfRef, true);
+      order.WriteOrderBy(mapping, orderByStatement, false);
+      order.WriteOrderBy(mapping, inverseOrderByStatement, true);
       writer.Append(orderByStatement.ToString()).Append(") AS seq,")
             .NewLine("ROW_NUMBER() OVER(")
             .Append(inverseOrderByStatement.ToString())
