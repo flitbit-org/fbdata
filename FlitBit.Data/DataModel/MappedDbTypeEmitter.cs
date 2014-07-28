@@ -616,15 +616,17 @@ namespace FlitBit.Data.DataModel
 
       var local = il.DeclareLocal(column.RuntimeType);
 
-      loadModel(il);
-      loadProp(il);
-      il.StoreLocal(local);
-      EmitDbParameterSetValue(il, column, parm, local, flag);
+      EmitDbParameterSetValue(il, column, parm, local, loadModel, loadProp, flag);
     }
 
     protected internal virtual void EmitDbParameterSetValue(ILGenerator il, ColumnMapping column, LocalBuilder parm,
-      LocalBuilder local, LocalBuilder flag)
+      LocalBuilder local, Action<ILGenerator> loadModel,
+      Action<ILGenerator> loadProp, LocalBuilder flag)
     {
+      loadModel(il);
+      loadProp(il);
+      il.StoreLocal(local);
+
       if (column.IsReference
           && column.RuntimeType.IsValueType)
       {

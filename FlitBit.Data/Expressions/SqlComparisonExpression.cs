@@ -36,7 +36,9 @@ namespace FlitBit.Data.Expressions
             }
             return;
           }
-          if (this.Right.Kind == SqlExpressionKind.Null)
+          if (this.Right.Kind == SqlExpressionKind.Null || 
+            (this.Right.Kind == SqlExpressionKind.Constant && 
+            ((SqlConstantExpression) this.Right).Value == null))
           {
             writer.Append("(");
             this.Left.Write(writer);
@@ -73,7 +75,9 @@ namespace FlitBit.Data.Expressions
             }
             return;
           }
-          if (this.Right.Kind == SqlExpressionKind.Null)
+          if (this.Right.Kind == SqlExpressionKind.Null ||
+            (this.Right.Kind == SqlExpressionKind.Constant &&
+            ((SqlConstantExpression)this.Right).Value == null))
           {
             writer.Append("(");
             this.Left.Write(writer);

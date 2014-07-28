@@ -312,33 +312,24 @@ namespace FlitBit.Data.SqlServer
       var writer = new SqlWriter(_bufferLength, Environment.NewLine, _indent);
       var colList = QuotedColumnNames.Select(c => String.Concat(_selfRef, ".", c)).ToArray();
 
-      writer.Append("DECLARE @endRow INT = @startRow + (@pageSize - 1);")
-            .NewLine("WITH dataset AS(").Indent()
-            .NewLine("SELECT ");
+      writer.Append("SELECT TOP (@pageSize)");
+      AppendColumns(writer, colList);
+      writer.Append(",").NewLine(_selfRef).Append(".[$$RowCount]").Outdent()
+            .NewLine("FROM (").Indent().NewLine("SELECT ");
       AppendColumns(writer, colList);
       writer.Append(",").NewLine("ROW_NUMBER() OVER(");
       var orderByStatement = new SqlWriter();
-      var inverseOrderByStatement = new SqlWriter();
       order.WriteOrderBy(mapping, orderByStatement, false);
-      order.WriteOrderBy(mapping, inverseOrderByStatement, true);
-      writer.Append(orderByStatement.ToString()).Append(") AS seq,")
-            .NewLine("ROW_NUMBER() OVER(")
-            .Append(inverseOrderByStatement.ToString())
-            .Append(") AS rev_seq")
-            .Outdent()
-            .NewLine()
-            .Append("FROM ").Append(_dbObjectReference).Append(" AS ").Append(_selfRef);
+      writer.Append(orderByStatement.ToString()).Append(") AS [$$RowNumber],")
+        .NewLine("COUNT(*) OVER(PARTITION BY 1) AS [$$RowCount]")
+        .Outdent()
+        .NewLine("FROM ").Append(_dbObjectReference).Append(" AS ").Append(_selfRef);
       if (sql != null)
       {
         sql.Write(writer);
       }
-      writer.Outdent().NewLine(")")
-            .NewLine(@"SELECT TOP (@pageSize) ");
-      AppendColumns(writer, colList);
-      writer.Append(",").NewLine("rev_seq + seq -1 as [RowCount]")
-            .Outdent().NewLine("FROM dataset AS [self]")
-            .NewLine("WHERE seq >= @startRow")
-            .NewLine("ORDER BY seq");
+      writer.Outdent().NewLine(") AS ").Append(_selfRef)
+        .NewLine("WHERE ").Append(_selfRef).Append(".[$$RowNumber] >= @startRow");
 
       res.Text = writer.Text;
       return res;

@@ -85,7 +85,7 @@ namespace FlitBit.Data.SqlServer
             model.LoadFromDataReader(reader, offsets);
             if (limited && totalRows == 0)
             {
-              totalRows = reader.GetInt64(offsets.Length);
+              totalRows = reader.GetInt32(offsets.Length);
             }
             res.Add(model);
           }

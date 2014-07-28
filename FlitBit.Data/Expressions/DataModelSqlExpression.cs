@@ -42,7 +42,13 @@ namespace FlitBit.Data.Expressions
     readonly List<SqlJoinExpression> _impliedJoins = new List<SqlJoinExpression>();
 
     SqlExpression _whereExpression;
-    readonly Action<OrderByBuilder<TDataModel>, TDataModel> _orderByClause;
+    Func<DataModelSqlExpression<TDataModel>, OrderByBuilder> _orderByFactory;
+    Delegate _orderByAction;
+
+    public DataModelSqlExpression(IMapping<TDataModel> mapping, IDataModelBinder<TDataModel> binder, string selfRef)
+      : this(mapping, binder, selfRef, null, null)
+    {
+    }
 
     /// <summary>
     ///   Creates a new instance.
@@ -50,12 +56,13 @@ namespace FlitBit.Data.Expressions
     /// <param name="mapping">the target type's mapping</param>
     /// <param name="binder">the target type's binder</param>
     /// <param name="selfRef">a string reference to self used in the expression</param>
-    public DataModelSqlExpression(IMapping<TDataModel> mapping, IDataModelBinder<TDataModel> binder, string selfRef, Action<OrderByBuilder<TDataModel>, TDataModel> orderByClause)
+    public DataModelSqlExpression(IMapping<TDataModel> mapping, IDataModelBinder<TDataModel> binder, string selfRef, Func<DataModelSqlExpression<TDataModel>, OrderByBuilder> orderByFactory, Delegate orderByAction)
     {
+
       this.Mapping = mapping;
       this.Binder = binder;
       this._selfRef = selfRef;
-      this._orderByClause = orderByClause;
+      SetOrderBy(orderByFactory, orderByAction);
       this.SelfReferenceColumn = mapping.GetPreferredReferenceColumn();
     }
 
@@ -143,6 +150,21 @@ namespace FlitBit.Data.Expressions
       expr.Join = new SqlJoinExpression(parm.Type, ord, joinMapping.DbObjectReference, asAlias, onExpression);
       this._explicitJoins.Add(expr.Join);
       expr.Join.ReferenceExpression = expr;
+    }
+
+    internal void SetOrderBy(Func<DataModelSqlExpression<TDataModel>, OrderByBuilder> orderByFactory, Delegate orderByAction)
+    {
+      if (_orderByFactory != null)
+      {
+        throw new InvalidOperationException("OrderBy clause already exists and cannot be reset.");
+      }
+      if (orderByFactory != null
+          && orderByAction == null)
+      {
+        throw new ArgumentNullException("orderByAction", "OrderBy requires both a factory and an action.");
+      }
+      _orderByFactory = orderByFactory;
+      _orderByAction = orderByAction;
     }
 
     internal void DuplicateJoinParameter(int ord, ParameterExpression parm)
@@ -643,11 +665,10 @@ namespace FlitBit.Data.Expressions
 
     public OrderBy OrderByStatement(OrderBy defa)
     {
-      if (_orderByClause != null)
+      if (_orderByFactory != null)
       {
-        var builder = new OrderByBuilder<TDataModel>(this);
-        TDataModel model = default(TDataModel);
-        _orderByClause(builder, model);
+        var builder = _orderByFactory(this);
+        builder.InvokeOrderByDelegate(_orderByAction);
         return builder.ToOrderByStatement();
       }
       return defa;

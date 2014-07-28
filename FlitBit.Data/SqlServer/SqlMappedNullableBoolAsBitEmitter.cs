@@ -13,6 +13,6 @@ namespace FlitBit.Data.SqlServer
     internal SqlMappedNullableBoolAsBitEmitter()
       : base(DbType.Boolean, SqlDbType.Bit) { DbDataReaderGetValueMethodName = "GetBoolean"; }
 
-    protected override string TransformConstantValueToString(object value) { return (bool)value ? "1" : "0"; }
+    protected override string TransformConstantValueToString(object value) { return ((bool?)value).GetValueOrDefault() ? "1" : "0"; }
   }
 }

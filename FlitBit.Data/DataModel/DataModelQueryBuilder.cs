@@ -69,7 +69,13 @@ namespace FlitBit.Data.DataModel
       var parms = new List<ParameterExpression>(lambda.Parameters);
 
       var repo = Repository;
-      var sql = new DataModelSqlExpression<TDataModel>(repo.Binder.Mapping, repo.Binder, Writer.SelfRef, orderByClause);
+      DataModelSqlExpression<TDataModel> sql = (orderByClause != null)
+                                                 ? new DataModelSqlExpression<TDataModel>(repo.Binder.Mapping, repo.Binder,
+                                                     Writer.SelfRef,
+                                                     exp => new OrderByBuilder<TDataModel>(exp),
+                                                     orderByClause)
+                                                 : new DataModelSqlExpression<TDataModel>(repo.Binder.Mapping,
+                                                     repo.Binder, Writer.SelfRef);
       sql.AddSelfParameter(parms[0]);
       for (var i = 1; i < parms.Count; i++)
       {
@@ -82,10 +88,13 @@ namespace FlitBit.Data.DataModel
     public IDataModelQueryCommand<TDataModel, TDbConnection> OrderBy(
       Action<OrderByBuilder<TDataModel>, TDataModel> orderByClause)
     {
+      Contract.Requires<ArgumentNullException>(orderByClause != null);
       var self = Expression.Parameter(typeof(TDataModel), "self");
 
       var repo = Repository;
-      var sql = new DataModelSqlExpression<TDataModel>(repo.Binder.Mapping, repo.Binder, Writer.SelfRef, orderByClause);
+      var sql = new DataModelSqlExpression<TDataModel>(repo.Binder.Mapping, repo.Binder, Writer.SelfRef,
+        exp => new OrderByBuilder<TDataModel>(exp),
+        orderByClause);
       sql.AddSelfParameter(self);
       
       return (IDataModelQueryCommand<TDataModel, TDbConnection>)Repository.ConstructQueryCommand(Key, sql);
@@ -96,7 +105,7 @@ namespace FlitBit.Data.DataModel
       var self = Expression.Parameter(typeof(TDataModel), "self");
 
       var repo = Repository;
-      var sql = new DataModelSqlExpression<TDataModel>(repo.Binder.Mapping, repo.Binder, Writer.SelfRef, null);
+      var sql = new DataModelSqlExpression<TDataModel>(repo.Binder.Mapping, repo.Binder, Writer.SelfRef);
       sql.AddSelfParameter(self);
 
       return (IDataModelQueryCommand<TDataModel, TDbConnection>)Repository.ConstructQueryCommand(Key, sql);
@@ -144,7 +153,7 @@ namespace FlitBit.Data.DataModel
     public IDataModelJoinQueryBuilder<TDataModel, TIdentityKey, TDbConnection, TJoin> Join<TJoin>()
     {
       var repo = Repository;
-      var sql = new DataModelSqlExpression<TDataModel>(repo.Binder.Mapping, repo.Binder, Writer.SelfRef, null);
+      var sql = new DataModelSqlExpression<TDataModel>(repo.Binder.Mapping, repo.Binder, Writer.SelfRef);
       sql.AddSelfParameter(Expression.Parameter(typeof(TDataModel), Writer.SelfName));
       sql.AddJoinParameter(Expression.Parameter(typeof(TJoin), "join"), true);
 
@@ -158,7 +167,7 @@ namespace FlitBit.Data.DataModel
       var parms = new List<ParameterExpression>(lambda.Parameters);
 
       var repo = Repository;
-      var sql = new DataModelSqlExpression<TDataModel>(repo.Binder.Mapping, repo.Binder, Writer.SelfRef, null);
+      var sql = new DataModelSqlExpression<TDataModel>(repo.Binder.Mapping, repo.Binder, Writer.SelfRef);
       sql.AddSelfParameter(parms[0]);
       sql.AddJoinParameter(parms[1], false);
       sql.IngestJoinExpression(parms[1], lambda.Body);
@@ -173,7 +182,7 @@ namespace FlitBit.Data.DataModel
       var parms = new List<ParameterExpression>(lambda.Parameters);
 
       var repo = Repository;
-      var sql = new DataModelSqlExpression<TDataModel>(repo.Binder.Mapping, repo.Binder, Writer.SelfRef, null);
+      var sql = new DataModelSqlExpression<TDataModel>(repo.Binder.Mapping, repo.Binder, Writer.SelfRef);
       sql.AddSelfParameter(parms[0]);
       sql.AddJoinParameter(parms[1], false);
       sql.AddValueParameter(parms[2]);

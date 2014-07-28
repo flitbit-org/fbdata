@@ -7,6 +7,7 @@
 using System;
 using System.Data.Common;
 using System.Linq.Expressions;
+using FlitBit.Data.Expressions;
 using FlitBit.ObjectIdentity;
 
 namespace FlitBit.Data.DataModel
@@ -41,6 +42,42 @@ namespace FlitBit.Data.DataModel
     /// <returns></returns>
     IDataModelQueryCommand<TDataModel, TDbConnection, TParam> Where<TParam>(
       Expression<Func<TDataModel, TJoin, TParam, bool>> predicate);
+
+    /// <summary>
+    ///   Specifies constraints on the data model. The expression must evaluate like a predicate in order to be translated to
+    ///   SQL.
+    /// </summary>
+    /// <param name="predicate"></param>
+    /// <param name="orderByClause"></param>
+    /// <typeparam name="TParam"></typeparam>
+    /// <returns></returns>
+    IDataModelQueryCommand<TDataModel, TDbConnection, TParam> Where<TParam>(
+      Expression<Func<TDataModel, TJoin, TParam, bool>> predicate,
+      Action<OrderByBuilder<TDataModel, TJoin>, TDataModel, TJoin> orderByClause);
+
+    /// <summary>
+    ///   Specifies constraints on the data model. The expression must evaluate like a predicate in order to be translated to
+    ///   SQL.
+    /// </summary>
+    /// <typeparam name="TParam"></typeparam>
+    /// <typeparam name="TParam1"></typeparam>
+    /// <param name="predicate"></param>
+    /// <returns></returns>
+    IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1> Where<TParam, TParam1>(
+      Expression<Func<TDataModel, TJoin, TParam, TParam1, bool>> predicate);
+
+    /// <summary>
+    ///   Specifies constraints on the data model. The expression must evaluate like a predicate in order to be translated to
+    ///   SQL.
+    /// </summary>
+    /// <param name="predicate"></param>
+    /// <param name="orderByClause"></param>
+    /// <typeparam name="TParam"></typeparam>
+    /// <typeparam name="TParam1"></typeparam>
+    /// <returns></returns>
+    IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1> Where<TParam, TParam1>(
+      Expression<Func<TDataModel, TJoin, TParam, TParam1, bool>> predicate,
+      Action<OrderByBuilder<TDataModel, TJoin>, TDataModel, TJoin> orderByClause);
 
     /// <summary>
     ///   The query's identity key.

@@ -21,8 +21,19 @@ namespace FlitBit.Data.DataModel.DbTypeEmitters
       : base(dbType, specializedDbType, typeof(TBaseType)) { }
 
     protected internal override void EmitDbParameterSetValue(ILGenerator il, ColumnMapping column, LocalBuilder parm,
-      LocalBuilder local, LocalBuilder flag)
+      LocalBuilder local, Action<ILGenerator> loadModel,
+      Action<ILGenerator> loadProp, LocalBuilder flag)
     {
+      // var field = (TBaseType?)param;
+      //il.LoadLocalAddress(local);
+      //loadModel(il);
+      //loadProp(il);
+      //il.Call(local.LocalType.GetConstructor(new[] { typeof(TBaseType) }));
+
+      loadModel(il);
+      loadProp(il);
+      il.StoreLocal(local);
+
       // if (field.HasValue) {
 
       var gotoSetNull = il.DefineLabel();

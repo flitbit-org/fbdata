@@ -60,6 +60,56 @@ namespace FlitBit.Data.DataModel
 
       return (IDataModelQueryCommand<TDataModel, TDbConnection, TParam>)Repository.ConstructQueryCommand(Key, _sql);
     }
+
+    public IDataModelQueryCommand<TDataModel, TDbConnection, TParam> Where<TParam>(
+      Expression<Func<TDataModel, TJoin, TParam, bool>> predicate,
+      Action<OrderByBuilder<TDataModel, TJoin>, TDataModel, TJoin> orderByClause)
+    {
+      var lambda = (LambdaExpression)predicate;
+      var parms = new List<ParameterExpression>(lambda.Parameters);
+      _sql.DuplicateSelfParameter(parms[0]);
+      _sql.DuplicateJoinParameter(0, parms[1]);
+      _sql.AddValueParameter(parms[2]);
+      _sql.IngestExpression(lambda.Body);
+      _sql.SetOrderBy(
+        exp => new OrderByBuilder<TDataModel, TJoin>(exp),
+        orderByClause);
+      
+      return (IDataModelQueryCommand<TDataModel, TDbConnection, TParam>)Repository.ConstructQueryCommand(Key, _sql);
+    }
+
+    public IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1> Where<TParam, TParam1>(
+      Expression<Func<TDataModel, TJoin, TParam, TParam1, bool>> predicate)
+    {
+      var lambda = (LambdaExpression)predicate;
+      var parms = new List<ParameterExpression>(lambda.Parameters);
+      _sql.DuplicateSelfParameter(parms[0]);
+      _sql.DuplicateJoinParameter(0, parms[1]);
+      _sql.AddValueParameter(parms[2]);
+      _sql.AddValueParameter(parms[3]);
+      _sql.IngestExpression(lambda.Body);
+
+      return (IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1>)Repository.ConstructQueryCommand(Key, _sql);
+    }
+
+    public IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1> Where<TParam, TParam1>(
+      Expression<Func<TDataModel, TJoin, TParam, TParam1, bool>> predicate,
+      Action<OrderByBuilder<TDataModel, TJoin>, TDataModel, TJoin> orderByClause)
+    {
+      var lambda = (LambdaExpression)predicate;
+      var parms = new List<ParameterExpression>(lambda.Parameters);
+      _sql.DuplicateSelfParameter(parms[0]);
+      _sql.DuplicateJoinParameter(0, parms[1]);
+      _sql.AddValueParameter(parms[2]);
+      _sql.AddValueParameter(parms[3]);
+      _sql.IngestExpression(lambda.Body);
+      _sql.SetOrderBy(
+        exp => new OrderByBuilder<TDataModel, TJoin>(exp),
+        orderByClause
+        );
+
+      return (IDataModelQueryCommand<TDataModel, TDbConnection, TParam, TParam1>)Repository.ConstructQueryCommand(Key, _sql);
+    }
   }
 
   internal class DataModelJoinQueryBuilder<TDataModel, TIdentityKey, TDbConnection, TJoin, TParam>

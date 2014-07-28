@@ -48,8 +48,13 @@ namespace FlitBit.Data.SqlServer
     }
 
     protected internal override void EmitDbParameterSetValue(ILGenerator il, ColumnMapping column, LocalBuilder parm,
-      LocalBuilder local, LocalBuilder flag)
+      LocalBuilder local, Action<ILGenerator> loadModel,
+      Action<ILGenerator> loadProp, LocalBuilder flag)
     {
+      loadModel(il);
+      loadProp(il);
+      il.StoreLocal(local);
+
       var fin = il.DefineLabel();
       var gotoSetNonNullValue = il.DefineLabel();
 

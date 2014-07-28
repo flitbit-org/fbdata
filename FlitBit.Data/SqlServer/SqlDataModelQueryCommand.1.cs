@@ -50,7 +50,7 @@ namespace FlitBit.Data.SqlServer
       var limited = behavior.IsLimited;
       var page = behavior.Page - 1;
       var res = new List<TDataModel>();
-      var totalRows = 0L;
+      var totalRows = 0;
       if (cn.State != ConnectionState.Open)
       {
         cn.Open();
@@ -86,7 +86,7 @@ namespace FlitBit.Data.SqlServer
             model.LoadFromDataReader(reader, offsets);
             if (limited && totalRows == 0)
             {
-              totalRows = reader.GetInt64(offsets.Length);
+              totalRows = reader.GetInt32(offsets.Length);
             }
             res.Add(model);
           }
