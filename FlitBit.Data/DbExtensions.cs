@@ -24,7 +24,7 @@ namespace FlitBit.Data
     /// </summary>
     /// <param name="name">A connection string name declared in the application's config file.</param>
     /// <returns>An open connection to the database specified in the connection string.</returns>
-    /// <exception cref="System.ContractException">thrown if the connection name is not specified.</exception>
+    /// <exception cref="System.ArgumentNullException">thrown if the connection name is not specified.</exception>
     /// <exception cref="System.Configuration.ConfigurationErrorsException">
     ///   thrown if the connection name is not found in the
     ///   application's config file.
@@ -50,7 +50,8 @@ namespace FlitBit.Data
     /// </summary>
     /// <param name="name">A connection string name declared in the application's config file.</param>
     /// <returns>The DbConnection initialized with the specified connection string.</returns>
-    /// <exception cref="System.ContractException">thrown if the connection name is not specified.</exception>
+    /// <exception cref="System.ArgumentNullException">thrown if the connection name is not specified.</exception>
+    /// <exception cref="System.ArgumentException">thrown if the connection name an empty string.</exception>
     /// <exception cref="System.Configuration.ConfigurationErrorsException">
     ///   thrown if the connection name is not found in the
     ///   application's config file.
@@ -58,10 +59,11 @@ namespace FlitBit.Data
     public static DbConnection CreateConnection(string name)
     {
       Contract.Requires<ArgumentNullException>(name != null);
-      Contract.Requires(name.Length > 0);
+      Contract.Requires<ArgumentException>(name.Length > 0);
 
       var r = AccessProvider(name);
       var cn = r.Provider.CreateConnection();
+      Contract.Assume(cn != null, "Guaranteed by AccessProvider");
       cn.ConnectionString = r.ConnectionString;
       return cn;
     }
@@ -96,11 +98,12 @@ namespace FlitBit.Data
       var connectionString = provider
         .ConnectionString;
       var cn = provider.Provider.CreateConnection();
+      Contract.Assume(cn != null, "Guaranteed by AccessProvider");
       cn.ConnectionString = connectionString;
       return (TConnection)cn;
     }
 
-    static ProviderRecord AccessProvider(string name)
+    internal static ProviderRecord AccessProvider(string name)
     {
       Contract.Requires<ArgumentNullException>(name != null);
       Contract.Requires<ArgumentException>(name.Length > 0);
@@ -120,20 +123,17 @@ namespace FlitBit.Data
       }
       var r = new ProviderRecord
       {
-        ConnectionName = name,
         ConnectionString = css.ConnectionString,
         ProviderName = css.ProviderName,
         Provider = DbProviderFactories.GetFactory(css.ProviderName)
       };
       return r;
     }
-
-    struct ProviderRecord
-    {
-      public string ConnectionName;
+  }
+  internal struct ProviderRecord
+  {
       public string ConnectionString;
       public DbProviderFactory Provider;
       public string ProviderName;
-    }
   }
 }

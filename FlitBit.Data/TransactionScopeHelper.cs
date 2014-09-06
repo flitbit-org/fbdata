@@ -5,12 +5,9 @@
 #endregion
 
 using System;
-using System.Collections.Generic;
-using System.Diagnostics.CodeAnalysis;
+using System.Diagnostics.Contracts;
 using System.Runtime.Remoting.Messaging;
-using System.Threading;
 using System.Transactions;
-using FlitBit.Core.Parallel;
 
 namespace FlitBit.Data
 {
@@ -19,222 +16,14 @@ namespace FlitBit.Data
   /// </summary>
   public static class TransactionScopeHelper
   {
-    public static readonly bool AutoForceTransactionPromotion = false;
-    public static readonly IsolationLevel DefaultIsolationLevel = IsolationLevel.ReadCommitted;
-    public static readonly TimeSpan DefaultTransactionTimeout = TimeSpan.FromSeconds(-1);
-    internal static readonly string __TransactionPropagationTokenName = "TransactionPropagationToken";
-
-    internal class TransactionScopeContextFlowProvider : IContextFlowProvider
-    {
-      static readonly Lazy<TransactionScopeContextFlowProvider> Provider =
-        new Lazy<TransactionScopeContextFlowProvider>(CreateAndRegisterContextFlowProvider,
-          LazyThreadSafetyMode.ExecutionAndPublication);
-
-      static TransactionScopeContextFlowProvider CreateAndRegisterContextFlowProvider()
-      {
-        var res = new TransactionScopeContextFlowProvider();
-        ContextFlow.RegisterProvider(res);
-        return res;
-      }
-      
-      public TransactionScopeContextFlowProvider() { this.ContextKey = Guid.NewGuid(); }
-
-      public Guid ContextKey { get; private set; }
-
-      public object Capture()
-      {
-        var top = Transaction.Current;
-        if (top != null)
-        {
-          return top.DependentClone(DependentCloneOption.BlockCommitUntilComplete);
-        }
-        return null;
-      }
-
-      public object Attach(ContextFlow context, object captureKey)
-      {
-        var scope = (captureKey as DependentTransaction);
-        if (scope != null)
-        {
-          return new TransactionScope(scope);
-        }
-        return null;
-      }
-      
-      public void Detach(ContextFlow context, object scope, Exception err)
-      {
-        var tx = (scope as TransactionScope);
-        if (tx != null)
-        {
-          if (err == null)
-          {
-            tx.Complete();
-          }
-          tx.Dispose();
-        }
-      }
-    }
-
-
-    /// <summary>
-    ///   Ensures that an ambient transaction is present.
-    /// </summary>
-    /// <exception cref="InvalidOperationException">thrown if there is not currently an ambient transaction.</exception>
-    public static void AssertTransaction()
-    {
-      if (Transaction.Current == null)
-      {
-        throw new InvalidOperationException("This operation is only valid within a transaction.");
-      }
-    }
-
-    /// <summary>
-    ///   Creates a new transaction using defaults.
-    /// </summary>
-    /// <returns></returns>
-    public static TransactionScope CreateScope_RequireNew()
-    {
-      return CreateScope_RequireNew(DefaultIsolationLevel, DefaultTransactionTimeout);
-    }
-
-    /// <summary>
-    ///   Creates a new transaction with the specified transaction isolation level.
-    /// </summary>
-    /// <param name="isolation"></param>
-    /// <returns></returns>
-    public static TransactionScope CreateScope_RequireNew(IsolationLevel isolation)
-    {
-      return CreateScope_RequireNew(isolation, DefaultTransactionTimeout);
-    }
-
-    /// <summary>
-    ///   Creates a new transaction with the specified transaction isolation level and timeout.
-    /// </summary>
-    /// <param name="isolation"></param>
-    /// <param name="timeout"></param>
-    /// <returns></returns>
-    [SuppressMessage("Microsoft.Reliability", "CA2000",
-      Justification = "By design; the purpose of the method is to construct a TransactionScope")]
-    public static TransactionScope CreateScope_RequireNew(IsolationLevel isolation, TimeSpan timeout)
-    {
-      var options = new TransactionOptions();
-      options.IsolationLevel = isolation;
-      if (timeout.Ticks > 0)
-      {
-        options.Timeout = timeout;
-      }
-      var result = new TransactionScope(TransactionScopeOption.RequiresNew, options,
-        EnterpriseServicesInteropOption.Automatic);
-      if (AutoForceTransactionPromotion)
-      {
-        ForcePromotionOfCurrentTransaction();
-      }
-      return result;
-    }
-
-    /// <summary>
-    ///   Shares the current transaction scope, creating one if there isn't an ambient transaction already
-    ///   in place.
-    /// </summary>
-    /// <returns></returns>
-    public static TransactionScope CreateScope_ShareCurrentOrCreate()
-    {
-      return CreateScope_ShareCurrentOrCreate(DefaultIsolationLevel, DefaultTransactionTimeout);
-    }
-
-    /// <summary>
-    ///   Shares the current transaction scope, creating one with the specified transaction isolation level
-    ///   if there isn't an ambient transaction already in place.
-    /// </summary>
-    /// <param name="isolation"></param>
-    /// <returns></returns>
-    public static TransactionScope CreateScope_ShareCurrentOrCreate(IsolationLevel isolation)
-    {
-      return CreateScope_ShareCurrentOrCreate(isolation, DefaultTransactionTimeout);
-    }
-
-    /// <summary>
-    ///   Shares the current transaction scope, creating one with the specified timeout
-    ///   if there isn't an ambient transaction already in place.
-    /// </summary>
-    /// <param name="timeout"></param>
-    /// <returns></returns>
-    public static TransactionScope CreateScope_ShareCurrentOrCreate(TimeSpan timeout)
-    {
-      return CreateScope_ShareCurrentOrCreate(DefaultIsolationLevel, timeout);
-    }
-
-    /// <summary>
-    ///   Shares the current transaction scope, creating one with the specified transaction
-    ///   isolation level and timeout if there isn't an ambient transaction already in place.
-    /// </summary>
-    /// <param name="isolation"></param>
-    /// <param name="timeout"></param>
-    /// <returns></returns>
-    [SuppressMessage("Microsoft.Reliability", "CA2000",
-      Justification = "By design; the purpose of the method is to construct a TransactionScope")]
-    public static TransactionScope CreateScope_ShareCurrentOrCreate(IsolationLevel isolation, TimeSpan timeout)
-    {
-      var existing = Transaction.Current;
-      var options = new TransactionOptions();
-      options.IsolationLevel = isolation;
-      if (timeout.Ticks > 0)
-      {
-        options.Timeout = timeout;
-      }
-      var result = new TransactionScope(TransactionScopeOption.Required, options,
-        EnterpriseServicesInteropOption.Automatic);
-      // Only promote if it is a new ambient transaction...
-      if (existing == null && AutoForceTransactionPromotion)
-      {
-        ForcePromotionOfCurrentTransaction();
-      }
-      return result;
-    }
-
-    /// <summary>
-    ///   Creates a transaction scope to suppress the ambient transaction.
-    /// </summary>
-    /// <returns></returns>
-    public static TransactionScope CreateScope_Suppress()
-    {
-      return new TransactionScope(TransactionScopeOption.Suppress);
-    }
-
-    public static TransactionScope CreateScope_SuppressCurrentTransaction()
-    {
-      return CreateScope_SuppressCurrentTransaction(DefaultIsolationLevel, DefaultTransactionTimeout);
-    }
-
-    public static TransactionScope CreateScope_SuppressCurrentTransaction(IsolationLevel isolation)
-    {
-      return CreateScope_SuppressCurrentTransaction(isolation, DefaultTransactionTimeout);
-    }
-
-    public static TransactionScope CreateScope_SuppressCurrentTransaction(TimeSpan timeout)
-    {
-      return CreateScope_SuppressCurrentTransaction(DefaultIsolationLevel, timeout);
-    }
-
-    [SuppressMessage("Microsoft.Reliability", "CA2000",
-      Justification = "By design; the purpose of the method is to construct a TransactionScope")]
-    public static TransactionScope CreateScope_SuppressCurrentTransaction(IsolationLevel isolation, TimeSpan timeout)
-    {
-      var options = new TransactionOptions();
-      options.IsolationLevel = isolation;
-      if (timeout.Ticks > 0)
-      {
-        options.Timeout = timeout;
-      }
-      return new TransactionScope(TransactionScopeOption.Suppress, options, EnterpriseServicesInteropOption.Automatic);
-    }
+    internal static readonly string TransactionPropagationTokenName = "TransactionPropagationToken";
 
     /// <summary>
     ///   Forceably promotes the ambient transaction to a distributed transaction.
     /// </summary>
     public static void ForcePromotionOfCurrentTransaction()
     {
-      AssertTransaction();
+      Contract.Requires<InvalidOperationException>(Transaction.Current != null);
       TransactionInterop.GetTransmitterPropagationToken(Transaction.Current);
     }
 
@@ -246,7 +35,7 @@ namespace FlitBit.Data
         var trans = Transaction.Current;
         if (trans != null)
         {
-          var ctx = (TransactionCallContext)lcc.GetData(__TransactionPropagationTokenName);
+          var ctx = (TransactionCallContext)lcc.GetData(TransactionPropagationTokenName);
           if (ctx != null
               && ctx.RemoteVoteOfNoConfidence)
           {
@@ -263,7 +52,7 @@ namespace FlitBit.Data
       if (lcc != null
           && lcc.HasInfo)
       {
-        var ctx = (TransactionCallContext)lcc.GetData(__TransactionPropagationTokenName);
+        var ctx = (TransactionCallContext)lcc.GetData(TransactionPropagationTokenName);
         if (ctx != null)
         {
           scope =
@@ -282,7 +71,7 @@ namespace FlitBit.Data
           && lcc != null)
       {
         var tcc = new TransactionCallContext(TransactionInterop.GetTransmitterPropagationToken(trans), voteNoConfidence);
-        lcc.SetData(__TransactionPropagationTokenName, tcc);
+        lcc.SetData(TransactionPropagationTokenName, tcc);
         result = true;
       }
       return result;

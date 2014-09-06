@@ -1,30 +1,24 @@
 ﻿using System;
 using System.Collections.Concurrent;
 using System.Collections.Generic;
+using System.Configuration;
 using System.Data;
+using System.Data.Common;
 using System.Data.SqlClient;
 using System.Diagnostics;
 using FlitBit.Core;
 using FlitBit.Data.Tests.Model;
-using FlitBit.Data.Tests.Models;
-using NUnit.Framework;
+using FlitBit.Wireup;
+using Microsoft.VisualStudio.TestTools.UnitTesting;
 
 namespace FlitBit.Data.Tests
 {
-    static class StringExtensions
-    {
-        internal static string Truncate(this string input, int max)
-        {
-            return (input != null && input.Length > max) ? input.Substring(0, max) : input;
-        }
-    }
-
-    [TestFixture]
+    [TestClass]
     public class DataRepositoryTests
     {
-        static readonly string CreateSchemaCommandFmt = "CREATE SCHEMA [{0}]";
-        static readonly string DropSchemaCommandFmt = "DROP SCHEMA [{0}]";
-        static readonly string CreatePeepCommandFmt = @"
+        private static readonly string CreateSchemaCommandFmt = "CREATE SCHEMA [{0}]";
+        private static readonly string DropSchemaCommandFmt = "DROP SCHEMA [{0}]";
+        private static readonly string CreatePeepCommandFmt = @"
 CREATE TABLE [{0}].[Peeps]
 (
 	[ID] INT IDENTITY(0,1) NOT NULL	
@@ -37,86 +31,66 @@ CREATE TABLE [{0}].[Peeps]
 		CONSTRAINT DF_Peep_DateUpdated DEFAULT (GETUTCDATE()),
 		CONSTRAINT CK_Peep_DateUpdated CHECK ([DateUpdated] >= [DateCreated])
 )";
-        static readonly string DropTableCommandFmt = @"
+        private static readonly string DropTableCommandFmt = @"
 TRUNCATE TABLE [{0}].[Peeps];
 DROP TABLE [{0}].[Peeps]";
 
-        readonly ConcurrentDictionary<string, Tuple<string, string>> _original =
+        private static readonly ConcurrentDictionary<string, Tuple<string, string>> _original =
             new ConcurrentDictionary<string, Tuple<string, string>>();
 
-        string _schemaName = String.Concat("test_schema_", DateTime.Now.ToString("yyyy_MM_ddTHH_mm_ss_FFFFFFF"));
+        private string _schemaName = String.Concat("test_schema_", DateTime.Now.ToString("yyyy_MM_ddTHH_mm_ss_FFFFFFF"));
 
-        [TearDown]
+        [TestCleanup]
         public void Cleanup()
         {
-            using (var cx = DbContext.NewContext())
+            using (IDbContext cx = DbContext.NewContext())
             {
-                var cndata = cx.NewConnection("adoWrapper").EnsureConnectionIsOpen();
+                DbConnection cndata = cx.NewConnection("adoWrapper").EnsureConnectionIsOpen();
                 cndata.ImmediateExecuteNonQuery(String.Format(DropTableCommandFmt, _schemaName));
                 cndata.ImmediateExecuteNonQuery(String.Format(DropSchemaCommandFmt, _schemaName));
             }
         }
 
-        [SetUp]
-        public void Initialize()
-        {
-            var ran = new Random(Environment.TickCount);
-            var gen = new DataGenerator();
-
-            while (this._original.Count < 1000)
-            {
-                var name = gen.GetWords(ran.Next(1, 3)).Truncate(50);
-                var desc = gen.GetWords(ran.Next(6, 40)).Truncate(300);
-                this._original.TryAdd(name, Tuple.Create(name, desc));
-            }
-
-            _schemaName = String.Concat("test_schema_", DateTime.Now.ToString("yyyy_MM_ddTHH_mm_ss_FFFFFFF"));
-            using (var cx = DbContext.NewContext())
-            {
-                var cndata = cx.NewConnection("adoWrapper").EnsureConnectionIsOpen();
-                cndata.ImmediateExecuteNonQuery(String.Format(CreateSchemaCommandFmt, _schemaName));
-                cndata.ImmediateExecuteNonQuery(String.Format(CreatePeepCommandFmt, _schemaName));
-            }
-        }
-
-        [Test]
+        [TestMethod]
         public void DbObjects_CreateReadUpdateAndDelete()
         {
             var rand = new Random(Environment.TickCount);
-            string insertCommand = String.Format(PeepsRepository.__InsertCommandFmt, _schemaName),
-                   updateCommand = String.Format(PeepsRepository.__UpdateCommandFmt, _schemaName),
-                   readCommand = String.Concat(
-                       String.Format(PeepsRepository.__BaseSelectCommandFmt, _schemaName),
-                       String.Format(PeepsRepository.__ByIDCommandFmt, _schemaName)
-                       ),
-                   readByNameCommand = String.Concat(
-                       String.Format(PeepsRepository.__BaseSelectCommandFmt, _schemaName),
-                       String.Format(PeepsRepository.__ByNameCommandFmt, _schemaName)
-                       ),
-                   deleteCommand = String.Format(PeepsRepository.__DeleteCommandFmt, _schemaName);
+            var gen = new DataGenerator();
+            string cs = ConfigurationManager.ConnectionStrings["test-data"].ConnectionString;
+            string InsertCommand = String.Format(PeepsRepository.__InsertCommandFmt, _schemaName),
+                UpdateCommand = String.Format(PeepsRepository.__UpdateCommandFmt, _schemaName),
+                ReadCommand = String.Concat(
+                    String.Format(PeepsRepository.__BaseSelectCommandFmt, _schemaName),
+                    String.Format(PeepsRepository.__ByIDCommandFmt, _schemaName)
+                    ),
+                ReadByNameCommand = String.Concat(
+                    String.Format(PeepsRepository.__BaseSelectCommandFmt, _schemaName),
+                    String.Format(PeepsRepository.__ByNameCommandFmt, _schemaName)
+                    ),
+                DeleteCommand = String.Format(PeepsRepository.__DeleteCommandFmt, _schemaName);
 
-            var items = new List<Tuple<string, string>>(this._original.Values);
+            var items = new List<Tuple<string, string>>(_original.Values);
 
             var all = new List<Peep>();
-            var queries = 0;
-            var hits = 0;
+            int queries = 0;
+            int hits = 0;
 
-            var timer = Stopwatch.StartNew();
-            using (var cn = ConnectionProviders.GetDbConnection<SqlConnection>("adoWrapper"))
+            Stopwatch timer = Stopwatch.StartNew();
+            using (var cn = new SqlConnection(cs))
             {
                 cn.Open();
 
-                for (var i = 0; i < 1000; i++)
+                for (int i = 0; i < 1000; i++)
                 {
-                    var j = rand.Next(0, items.Count - 1);
-                    var item = items[j];
+                    int j = rand.Next(0, items.Count - 1);
+                    Tuple<string, string> item = items[j];
 
-                    var oldPeep = default(Peep);
-                    using (var cmd = new SqlCommand(readByNameCommand, cn))
+                    Peep oldPeep = default(Peep);
+                    using (var cmd = new SqlCommand(ReadByNameCommand, cn))
                     {
                         queries++;
                         cmd.Parameters.Add(new SqlParameter("@Name", SqlDbType.NVarChar, 50)).Value = item.Item1;
-                        using (var reader = cmd.ExecuteReader())
+                        using (SqlDataReader reader = cmd.ExecuteReader())
                         {
                             if (reader.Read())
                             {
@@ -135,8 +109,14 @@ DROP TABLE [{0}].[Peeps]";
                         Assert.AreEqual(item.Item1, oldPeep.Name);
 
                         oldPeep.Description = items[rand.Next(0, items.Count - 1)].Item2;
-                        
-                        using (var cmd = new SqlCommand(updateCommand, cn))
+
+                        // ensure we don't overflow the field...
+                        if (oldPeep.Description.Length > 300)
+                        {
+                            oldPeep.Description = oldPeep.Description.Substring(0, 300);
+                        }
+
+                        using (var cmd = new SqlCommand(UpdateCommand, cn))
                         {
                             queries++;
 
@@ -144,7 +124,7 @@ DROP TABLE [{0}].[Peeps]";
                             cmd.Parameters.Add(new SqlParameter("@Name", SqlDbType.NVarChar, 50)).Value = oldPeep.Name;
                             cmd.Parameters.Add(new SqlParameter("@Description", SqlDbType.NVarChar, 300)).Value =
                                 oldPeep.Description;
-                            using (var reader = cmd.ExecuteReader())
+                            using (SqlDataReader reader = cmd.ExecuteReader())
                             {
                                 if (reader.Read())
                                 {
@@ -163,16 +143,22 @@ DROP TABLE [{0}].[Peeps]";
                         var it = new Peep();
                         it.Name = item.Item1;
                         it.Description = item.Item2;
-                        
-                        var newPeep = default(Peep);
-                        using (var cmd = new SqlCommand(insertCommand, cn))
+
+                        // ensure we don't overflow the field...
+                        if (it.Description.Length > 300)
+                        {
+                            it.Description = it.Description.Substring(0, 300);
+                        }
+
+                        Peep newPeep = default(Peep);
+                        using (var cmd = new SqlCommand(InsertCommand, cn))
                         {
                             queries++;
 
                             cmd.Parameters.Add(new SqlParameter("@Name", SqlDbType.NVarChar, 50)).Value = it.Name;
                             cmd.Parameters.Add(new SqlParameter("@Description", SqlDbType.NVarChar, 300)).Value =
                                 it.Description;
-                            using (var reader = cmd.ExecuteReader())
+                            using (SqlDataReader reader = cmd.ExecuteReader())
                             {
                                 if (reader.Read())
                                 {
@@ -197,24 +183,24 @@ DROP TABLE [{0}].[Peeps]";
                 Console.WriteLine(String.Concat("Statsistics", Environment.NewLine,
                     Environment.NewLine, "\t", all.Count, " random peeps in ",
                     TimeSpan.FromMilliseconds(timer.ElapsedMilliseconds).ToString(),
-                    Environment.NewLine, "\t", timer.ElapsedMilliseconds / all.Count, " milliseconds each.",
+                    Environment.NewLine, "\t", timer.ElapsedMilliseconds/all.Count, " milliseconds each.",
                     Environment.NewLine, "\tQueries: ", queries,
                     Environment.NewLine, "\tHits: ", hits
                     ));
             }
 
-            var itemsUpdated = 0;
-            using (var cn = ConnectionProviders.GetDbConnection<SqlConnection>("adoWrapper"))
+            int itemsUpdated = 0;
+            using (var cn = new SqlConnection(cs))
             {
                 cn.Open();
 
-                foreach (var peep in all)
+                foreach (Peep peep in all)
                 {
                     if (peep.DateUpdated > peep.DateCreated)
                     {
                         itemsUpdated++;
                     }
-                    using (var cmd = new SqlCommand(deleteCommand, cn))
+                    using (var cmd = new SqlCommand(DeleteCommand, cn))
                     {
                         cmd.Parameters.Add(new SqlParameter("@ID", SqlDbType.Int)).Value = peep.ID;
                         Assert.AreEqual(1, cmd.ExecuteNonQuery());
@@ -224,29 +210,59 @@ DROP TABLE [{0}].[Peeps]";
             Console.WriteLine(String.Concat("\tItems updated: ", itemsUpdated));
         }
 
-        [Test]
+        [TestInitialize]
+        public void Initialize()
+        {
+            var ran = new Random(Environment.TickCount);
+            var gen = new DataGenerator();
+
+            while (_original.Count < 1000)
+            {
+                string name = gen.GetWords(ran.Next(1, 3));
+                string desc = gen.GetWords(ran.Next(6, 40));
+                _original.TryAdd(name, Tuple.Create(name, desc));
+            }
+
+            _schemaName = String.Concat("test_schema_", DateTime.Now.ToString("yyyy_MM_ddTHH_mm_ss_FFFFFFF"));
+            using (IDbContext cx = DbContext.NewContext())
+            {
+                DbConnection cndata = cx.NewConnection("test-data").EnsureConnectionIsOpen();
+                cndata.ImmediateExecuteNonQuery(String.Format(CreateSchemaCommandFmt, _schemaName));
+                cndata.ImmediateExecuteNonQuery(String.Format(CreatePeepCommandFmt, _schemaName));
+            }
+        }
+
+        [TestMethod]
         public void TableBackedDataRepository_CreateReadUpdateAndDeleteSync()
         {
             var rand = new Random(Environment.TickCount);
-            var repo = new PeepsRepository("adoWrapper", _schemaName);
-            var items = new List<Tuple<string, string>>(this._original.Values);
+            var gen = new DataGenerator();
+            var repo = new PeepsRepository("test-data", _schemaName);
+            var items = new List<Tuple<string, string>>(_original.Values);
 
             var all = new List<Peep>();
 
-            var timer = Stopwatch.StartNew();
-            using (var ctx = DbContext.NewContext())
+            Stopwatch timer = Stopwatch.StartNew();
+            using (IDbContext ctx = DbContext.NewContext())
             {
-                for (var i = 0; i < 1000; i++)
+                for (int i = 0; i < 1000; i++)
                 {
-                    var j = rand.Next(0, items.Count - 1);
-                    var item = items[j];
+                    int j = rand.Next(0, items.Count - 1);
+                    Tuple<string, string> item = items[j];
 
-                    var oldPeep = repo.ReadByName(ctx, item.Item1);
+                    Peep oldPeep = repo.ReadByName(ctx, item.Item1);
                     if (oldPeep != null)
                     {
                         Assert.AreEqual(item.Item1, oldPeep.Name);
 
                         oldPeep.Description = items[rand.Next(0, items.Count - 1)].Item2;
+
+                        // ensure we don't overflow the field...
+                        if (oldPeep.Description.Length > 300)
+                        {
+                            oldPeep.Description = oldPeep.Description.Substring(0, 300);
+                        }
+
                         repo.Update(ctx, oldPeep);
                     }
                     else
@@ -254,8 +270,14 @@ DROP TABLE [{0}].[Peeps]";
                         var it = new Peep();
                         it.Name = item.Item1;
                         it.Description = item.Item2;
-                        
-                        var newPeep = repo.Create(ctx, it);
+
+                        // ensure we don't overflow the field...
+                        if (it.Description.Length > 300)
+                        {
+                            it.Description = it.Description.Substring(0, 300);
+                        }
+
+                        Peep newPeep = repo.Create(ctx, it);
                         Assert.AreEqual(it.Name, newPeep.Name);
                         Assert.AreEqual(it.Description, newPeep.Description);
                         Assert.AreNotEqual(it.DateCreated, newPeep.DateCreated);
@@ -267,7 +289,7 @@ DROP TABLE [{0}].[Peeps]";
                 Console.WriteLine(String.Concat("Statsistics", Environment.NewLine,
                     Environment.NewLine, "\t", all.Count, " random peeps in ",
                     TimeSpan.FromMilliseconds(timer.ElapsedMilliseconds).ToString(),
-                    Environment.NewLine, "\t", timer.ElapsedMilliseconds / all.Count, " milliseconds each.",
+                    Environment.NewLine, "\t", timer.ElapsedMilliseconds/all.Count, " milliseconds each.",
                     Environment.NewLine, "\tQueries: ", ctx.QueryCount,
                     Environment.NewLine, "\tCache Attempts: ", ctx.CacheAttempts,
                     Environment.NewLine, "\tCache Hits: ", ctx.CacheHits,
@@ -276,10 +298,10 @@ DROP TABLE [{0}].[Peeps]";
                     ));
             }
 
-            var itemsUpdated = 0;
-            using (var ctx = DbContext.NewContext())
+            int itemsUpdated = 0;
+            using (IDbContext ctx = DbContext.NewContext())
             {
-                foreach (var peep in repo.All(ctx).Results)
+                foreach (Peep peep in repo.All(ctx).Results)
                 {
                     if (peep.DateUpdated > peep.DateCreated)
                     {
@@ -291,31 +313,37 @@ DROP TABLE [{0}].[Peeps]";
             Console.WriteLine(String.Concat("\tItems updated: ", itemsUpdated));
         }
 
-        [Test]
+        [TestMethod]
         public void TableBackedDataRepository_CreateReadUpdateAndDeleteSync_DisableCaching()
         {
             var rand = new Random(Environment.TickCount);
             var gen = new DataGenerator();
-            var repo = new PeepsRepository("adoWrapper", _schemaName);
-            var items = new List<Tuple<string, string>>(this._original.Values);
+            var repo = new PeepsRepository("test-data", _schemaName);
+            var items = new List<Tuple<string, string>>(_original.Values);
 
             var all = new List<Peep>();
 
-            var timer = Stopwatch.StartNew();
-            using (var ctx = DbContext.NewContext(DbContextBehaviors.DisableCaching))
+            Stopwatch timer = Stopwatch.StartNew();
+            using (IDbContext ctx = DbContext.NewContext(DbContextBehaviors.DisableCaching))
             {
-                for (var i = 0; i < 1000; i++)
+                for (int i = 0; i < 1000; i++)
                 {
-                    var j = rand.Next(0, items.Count - 1);
-                    var item = items[j];
+                    int j = rand.Next(0, items.Count - 1);
+                    Tuple<string, string> item = items[j];
 
-                    var oldPeep = repo.ReadByName(ctx, item.Item1);
+                    Peep oldPeep = repo.ReadByName(ctx, item.Item1);
                     if (oldPeep != null)
                     {
                         Assert.AreEqual(item.Item1, oldPeep.Name);
 
                         oldPeep.Description = items[rand.Next(0, items.Count - 1)].Item2;
-                        
+
+                        // ensure we don't overflow the field...
+                        if (oldPeep.Description.Length > 300)
+                        {
+                            oldPeep.Description = oldPeep.Description.Substring(0, 300);
+                        }
+
                         repo.Update(ctx, oldPeep);
                     }
                     else
@@ -323,8 +351,14 @@ DROP TABLE [{0}].[Peeps]";
                         var it = new Peep();
                         it.Name = item.Item1;
                         it.Description = item.Item2;
-                        
-                        var newPeep = repo.Create(ctx, it);
+
+                        // ensure we don't overflow the field...
+                        if (it.Description.Length > 300)
+                        {
+                            it.Description = it.Description.Substring(0, 300);
+                        }
+
+                        Peep newPeep = repo.Create(ctx, it);
                         Assert.AreEqual(it.Name, newPeep.Name);
                         Assert.AreEqual(it.Description, newPeep.Description);
                         Assert.AreNotEqual(it.DateCreated, newPeep.DateCreated);
@@ -336,7 +370,7 @@ DROP TABLE [{0}].[Peeps]";
                 Console.WriteLine(String.Concat("Statsistics", Environment.NewLine,
                     Environment.NewLine, "\t", all.Count, " random peeps in ",
                     TimeSpan.FromMilliseconds(timer.ElapsedMilliseconds).ToString(),
-                    Environment.NewLine, "\t", timer.ElapsedMilliseconds / all.Count, " milliseconds each.",
+                    Environment.NewLine, "\t", timer.ElapsedMilliseconds/all.Count, " milliseconds each.",
                     Environment.NewLine, "\tQueries: ", ctx.QueryCount,
                     Environment.NewLine, "\tCache Attempts: ", ctx.CacheAttempts,
                     Environment.NewLine, "\tCache Hits: ", ctx.CacheHits,
@@ -345,10 +379,10 @@ DROP TABLE [{0}].[Peeps]";
                     ));
             }
 
-            var itemsUpdated = 0;
-            using (var ctx = DbContext.NewContext())
+            int itemsUpdated = 0;
+            using (IDbContext ctx = DbContext.NewContext())
             {
-                foreach (var peep in repo.All(ctx).Results)
+                foreach (Peep peep in repo.All(ctx).Results)
                 {
                     if (peep.DateUpdated > peep.DateCreated)
                     {

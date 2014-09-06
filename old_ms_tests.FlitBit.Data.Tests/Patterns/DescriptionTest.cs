@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Data.SqlClient;
+using System.Transactions;
 using FlitBit.Core;
 using FlitBit.Data.DataModel;
 using FlitBit.Data.Meta.DDL;
@@ -61,7 +62,7 @@ namespace FlitBit.Data.Tests.Patterns
       Queue<int> cleanupIds = new Queue<int>();
 
       // Use a transaction so we don't leave test data in the db...
-      using (var tx = TransactionScopeHelper.CreateScope_ShareCurrentOrCreate())
+      using (var tx = new TransactionScope(TransactionScopeOption.RequiresNew))
       using (var cx = DbContext.NewContext())
       {
         IDescription existing;

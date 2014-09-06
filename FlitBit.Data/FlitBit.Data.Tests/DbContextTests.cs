@@ -1,116 +1,338 @@
-﻿using System;
+﻿using FlitBit.Data.Cluster;
+using Moq;
+using NUnit.Framework;
+using System;
 using System.Data;
 using System.Data.Common;
-using System.Linq;
-using Microsoft.VisualStudio.TestTools.UnitTesting;
+using System.Data.SqlClient;
+using System.Transactions;
 
 namespace FlitBit.Data.Tests
 {
-    /// <summary>
-    ///     Summary description for DbContextTests
-    /// </summary>
-    [TestClass]
+    [TestFixture]
     public class DbContextTests
     {
-        public TestContext TestContext { get; set; }
-
-        [TestMethod]
-        public void EmtpyDbContext()
+        [Test]
+        public void DbContext_SharedOrNewConnection_RetrievesConnection()
         {
-            using (IDbContext ctx = DbContext.SharedOrNewContext())
+            using (var context = DbContext.NewContext())
             {
-                Assert.IsNotNull(ctx, "DbContext should not be null");
+                var cn = context.SharedOrNewConnection<SqlConnection>("adoWrapper");
+                cn.EnsureConnectionIsOpen();
             }
         }
 
-        [TestMethod]
-        public void QueryDefaultConnectionWithinContext_ExploreSchema()
+        [Test]
+        public void DbContext_SharedOrNewConnection_MultipleCallsRetrieveSameConnection()
         {
-            using (IDbContext ctx = DbContext.SharedOrNewContext())
+            // Only works when the DbProviderHelper indicates the connection may be shared
+            // This one is SQL Server with multiple active results sets (MARS).
+            using (var context = DbContext.NewContext())
             {
-                Assert.IsNotNull(ctx, "DbContext should not be null");
+                var cn = context.SharedOrNewConnection<SqlConnection>("adoWrapper");
+                Assert.IsNotNull(cn);
 
-                // This code requires MARS to be turned on for the default connection!
-                DbConnection cn = ctx.NewConnection("test");
                 cn.EnsureConnectionIsOpen();
-                var schema = from r in cn.ImmediateExecuteEnumerable(@"SELECT CATALOG_NAME
-	, SCHEMA_NAME
-	, SCHEMA_OWNER
-	, DEFAULT_CHARACTER_SET_CATALOG
-	, DEFAULT_CHARACTER_SET_SCHEMA
-	, DEFAULT_CHARACTER_SET_NAME
-FROM INFORMATION_SCHEMA.SCHEMATA
-ORDER BY CATALOG_NAME, SCHEMA_NAME")
-                    select new
+
+                var cn2 = context.SharedOrNewConnection<SqlConnection>("adoWrapper");
+                Assert.AreSame(cn, cn2);
+            }
+        }
+
+        [Test]
+        public void DbContext_SharedOrNewConnection_MultipleCallsRetrieveSameConnection_EvenWhenUpcast()
+        {
+            // Only works when the DbProviderHelper indicates the connection may be shared
+            // This one is SQL Server with multiple active results sets (MARS).
+            using (var context = DbContext.NewContext())
+            {
+                var cn = context.SharedOrNewConnection("adoWrapper");
+                Assert.IsNotNull(cn);
+
+                cn.EnsureConnectionIsOpen();
+
+                var cn2 = context.SharedOrNewConnection<SqlConnection>("adoWrapper");
+                Assert.AreSame(cn, cn2);
+            }
+        }
+
+        [Test]
+        public void DbContext_SharedOrNewConnection_MultipleCallsRetrieveSameConnection_EvenWhenDowncast()
+        {
+            // Only works when the DbProviderHelper indicates the connection may be shared
+            // This one is SQL Server with multiple active results sets (MARS).
+            using (var context = DbContext.NewContext())
+            {
+                var cn = context.SharedOrNewConnection<SqlConnection>("adoWrapper");
+                Assert.IsNotNull(cn);
+
+                cn.EnsureConnectionIsOpen();
+
+                var cn2 = context.SharedOrNewConnection("adoWrapper");
+                Assert.AreSame(cn, cn2);
+            }
+        }
+
+        [Test]
+        public void DbContext_ContextEnsuresConnectionCloses()
+        {
+            DbConnection cn;
+            using (var context = DbContext.NewContext())
+            {
+                cn = context.NewConnection<SqlConnection>("adoWrapper");
+                Assert.IsNotNull(cn);
+                cn.EnsureConnectionIsOpen();
+            }
+            Assert.AreEqual(ConnectionState.Closed, cn.State);
+        }
+
+        [Test]
+        public void DbContext_ContextEnsuresSharedConnectionCloses()
+        {
+            DbConnection cn;
+            using (var context = DbContext.NewContext())
+            {
+                cn = context.SharedOrNewConnection<SqlConnection>("adoWrapper");
+                Assert.IsNotNull(cn);
+                cn.EnsureConnectionIsOpen();
+            }
+            Assert.AreEqual(ConnectionState.Closed, cn.State);
+        }
+
+        [Test]
+        public void DbContext_OnContextOrTransactionCompleted_FiresWhenContextEnds()
+        {
+            bool observedContextEnd = false;
+            using (var context = DbContext.NewContext())
+            {
+                context.OnContextOrTransactionCompleted += (sender, args) =>
+                {
+                    Assert.IsFalse(args.HasTransactionStatus);
+                    Assert.AreEqual(TransactionStatus.Committed, args.TransactionStatus);
+                    observedContextEnd = true;
+                };
+
+                var cn = context.SharedOrNewConnection("adoWrapper");
+                Assert.IsNotNull(cn);
+                cn.EnsureConnectionIsOpen();
+            }
+            Assert.IsTrue(observedContextEnd);
+        }
+
+        [Test]
+        [ExpectedException(typeof(InvalidOperationException), ExpectedMessage = "Precondition failed: !IsCompleted")]
+        public void DbContext_OnContextOrTransactionCompleted_ThrowsIfSubscribedAfterContextEnd()
+        {
+            IDbContext context;
+            using (context = DbContext.NewContext())
+            {
+                var cn = context.SharedOrNewConnection("adoWrapper");
+                Assert.IsNotNull(cn);
+                cn.EnsureConnectionIsOpen();
+            }
+            context.OnContextOrTransactionCompleted += (sender, args) => { };
+
+            Assert.Fail("Should have blown up.");
+        }
+
+        [Test]
+        public void DbContext_OnContextOrTransactionCompleted_DelayedUntilAmbientTransactionCompletes()
+        {
+            bool observedContextEnd = false;
+            using (new TransactionScope(TransactionScopeOption.RequiresNew))
+            {
+                using (var context = DbContext.NewContext())
+                {
+                    context.OnContextOrTransactionCompleted += (sender, args) =>
                     {
-                        Catalog_Name = r.GetValueOrDefault<string>(0),
-                        Schema_Name = r.GetValueOrDefault<string>(1),
-                        Schema_Owner = r.GetValueOrDefault<string>(2),
-                        Default_Character_Set_Catalog = r.GetValueOrDefault<string>(3),
-                        Default_Character_Set_Schema = r.GetValueOrDefault<string>(4),
-                        Default_Character_Set_Name = r.GetValueOrDefault<string>(5)
+                        Assert.IsTrue(args.HasTransactionStatus);
+                        Assert.AreEqual(TransactionStatus.Aborted, args.TransactionStatus, "Should observed the transaction aborted.");
+                        observedContextEnd = true;
                     };
-                foreach (var i in schema)
-                {
-                    DbCommand cmd = cn.CreateCommand(
-                        @"SELECT TABLE_CATALOG, TABLE_SCHEMA, TABLE_NAME, TABLE_TYPE FROM INFORMATION_SCHEMA.TABLES WHERE TABLE_CATALOG = @catalog	AND TABLE_SCHEMA = @schema")
-                        .BindParameters(binder =>
-                        {
-                            binder.DefineAndBindParameter("@catalog", i.Catalog_Name);
-                            binder.DefineAndBindParameter("@schema", i.Schema_Name);
-                        });
-                    var table = from r in cmd.ExecuteEnumerable()
-                        select new
-                        {
-                            Table_Catalog = r.GetValueOrDefault<string>(0),
-                            Table_Schema = r.GetValueOrDefault<string>(1),
-                            Table_Name = r.GetValueOrDefault<string>(2),
-                            Table_Type = r.GetValueOrDefault<string>(3)
-                        };
-                    foreach (var t in table)
-                    {
-                        Console.Out.WriteLine("{0} [{1}].[{2}].[{3}]", t.Table_Type, t.Table_Catalog, t.Table_Schema,
-                            t.Table_Name);
-                    }
+
+                    var cn = context.SharedOrNewConnection("adoWrapper");
+                    Assert.IsNotNull(cn);
+                    cn.EnsureConnectionIsOpen();
+
+                    Assert.IsFalse(observedContextEnd);
                 }
+                Assert.IsFalse(observedContextEnd);
+                // no transaction completion!
+            }
+            Assert.IsTrue(observedContextEnd);
+        }
+
+        [Test]
+        public void DbContext_Put_CanPutWithoutPromotionHandler()
+        {
+            var item = new
+            {
+                Key = "MyItem",
+                Item = new object(),
+                Created = true
+            };
+            
+            using (var context = DbContext.NewContext())
+            {
+                context.Put(item.Key, item.Item, item.Created, null);
             }
         }
 
-        [TestMethod]
-        public void QuerySystemIndexWithinContext()
+        [Test]
+        public void DbContext_Put_CanPutWithPromotionHandler_PromotionHandlerIsInvokedOnContextEnd()
         {
-            string userProfileDir = Environment.GetEnvironmentVariable("USERPROFILE");
-            using (IDbContext ctx = DbContext.SharedOrNewContext())
+            var item = new
             {
-                Assert.IsNotNull(ctx, "DbContext should not be null");
+                Key = "MyItem",
+                Item = new object(),
+                Created = true
+            };
 
-                DbConnection cn = ctx.NewConnection("windows-search");
-                cn.EnsureConnectionIsOpen();
+            var observedCachePromotion = false;
+            var promotionHandler = new Mock<ICachePromotionHandler>();
+            SetupPromotionHandlerFor<object>(promotionHandler, (key, it, created) =>
+            {
+                Assert.AreEqual(item.Key, key);
+                Assert.AreEqual(item.Item, it);
+                Assert.AreEqual(item.Created, created);
+                observedCachePromotion = true;
+            });
 
-                Console.WriteLine("These .cs files under your profile that use our code:\r\n");
-                int count = 0;
-                foreach (IDataRecord record in cn.ImmediateExecuteEnumerable(String.Concat(@"
-SELECT System.ItemPathDisplay 
-	FROM SYSTEMINDEX 
-	WHERE FREETEXT('using FlitBit') 
-		AND System.ItemType = '.cs'
-		AND SCOPE = 'file:", userProfileDir, "'"
-                    )))
-                {
-                    count++;
-                    Console.WriteLine(record[0]);
-                }
-
-                Console.WriteLine(String.Concat(Environment.NewLine, "...that's ", count, " files."));
-                if (count > 400)
-                {
-                    Console.WriteLine("... we're glad you find these libraries useful.");
-                }
-                else
-                {
-                    Console.WriteLine("... we hope you find these libraries useful.");
-                }
+            using (var context = DbContext.NewContext())
+            {
+                context.Put(item.Key, item.Item, item.Created, promotionHandler.Object);
             }
+            Assert.IsTrue(observedCachePromotion);
+        }
+
+        [Test]
+        public void DbContext_Put_CanPutWithPromotionHandler_PromotionHandlerIsDelayedUntilTransactionCommits()
+        {
+            var item = new
+            {
+                Key = "MyItem",
+                Item = new object(),
+                Created = true
+            };
+
+            var observedCachePromotion = false;
+            var promotionHandler = new Mock<ICachePromotionHandler>();
+            SetupPromotionHandlerFor<object>(promotionHandler, (key, it, created) =>
+            {
+                Assert.AreEqual(item.Key, key);
+                Assert.AreEqual(item.Item, it);
+                Assert.AreEqual(item.Created, created);
+                observedCachePromotion = true;
+            });
+
+            using (var tx = new TransactionScope(TransactionScopeOption.RequiresNew))
+            {
+                using (var context = DbContext.NewContext())
+                {
+                    context.Put(item.Key, item.Item, item.Created, promotionHandler.Object);
+                    Assert.IsFalse(observedCachePromotion);
+                }
+                Assert.IsFalse(observedCachePromotion);
+                tx.Complete();
+            }
+            Assert.IsTrue(observedCachePromotion);
+        }
+
+        [Test]
+        public void DbContext_Put_CanPutWithPromotionHandler_PromotionHandlerDelayedAndDoesntFireWhenTransactionAborts()
+        {
+            var item = new
+            {
+                Key = "MyItem",
+                Item = new object(),
+                Created = true
+            };
+
+            var promotionHandler = new Mock<ICachePromotionHandler>();
+            SetupPromotionHandlerFor<object>(promotionHandler, (key, it, created) => 
+                Assert.Fail("Promotion should not happen when transaction aborts."));
+
+            using (new TransactionScope(TransactionScopeOption.RequiresNew))
+            {
+                using (var context = DbContext.NewContext())
+                {
+                    context.Put(item.Key, item.Item, item.Created, promotionHandler.Object);
+                }
+                // no transaction completion!
+            }
+        }
+
+        [Test]
+        public void DbContext_TryGet_TriesSecondLevelCacheIfNotFoundInContext()
+        {
+            var item = new
+            {
+                Key = "MyItem",
+                Item = new object(),
+                Created = true
+            };
+
+            var secondLevelCacheInvoked = false;
+            byte[] outValue;
+            var secondLevelCache = new Mock<IClusteredMemory>();
+            secondLevelCache.Setup(x => x.TryGet(It.IsAny<string>(), out outValue))
+                            .OutCallback((string key, out byte[] v) =>
+                            {
+                                v = null;
+                                secondLevelCacheInvoked = true;
+                            })
+                            .Returns(false);
+
+
+            using (var context = DbContext.NewContext())
+            {
+                context.Put(item.Key, item.Item, item.Created, null);
+
+                object retrieved;
+
+                Assert.IsTrue(context.TryGet(secondLevelCache.Object, item.Key, out retrieved));
+                Assert.AreSame(item.Item, retrieved);
+                Assert.IsFalse(secondLevelCacheInvoked);
+
+                Assert.IsFalse(context.TryGet(secondLevelCache.Object, "unknown", out retrieved));
+                Assert.IsTrue(secondLevelCacheInvoked);
+            }
+        }
+
+        [Test]
+        public void DbContext_Put_CachesItem_CanBeRetrievedFromCache()
+        {
+            var item = new
+            {
+                Key = "MyItem",
+                Item = new object(),
+                Created = true
+            };
+            
+            using (var context = DbContext.NewContext())
+            {
+                context.Put(item.Key, item.Item, item.Created, null);
+                
+                object retrieved;
+
+                Assert.IsTrue(context.TryGet(null, item.Key, out retrieved));
+                Assert.AreSame(item.Item, retrieved);
+            }
+        }
+        
+        void SetupPromotionHandlerFor<T>(Mock<ICachePromotionHandler> promotionHandler,
+            Action<string, T, bool> callback)
+        {
+            promotionHandler.Setup(x => x.PromoteCacheItem(It.IsAny<string>(), It.IsAny<T>(), It.IsAny<bool>()))
+                .Callback(callback);
+        }
+
+// ReSharper disable once UnusedMember.Local
+        void SetupPromotionHandlerFor<T>(Mock<ICachePromotionHandler> promotionHandler,
+            Action<string, TimeSpan, T, bool> callback)
+        {
+            promotionHandler.Setup(x => x.PromoteCacheItem(It.IsAny<string>(), It.IsAny<TimeSpan>(), It.IsAny<T>(), It.IsAny<bool>()))
+                .Callback(callback);
         }
     }
 }

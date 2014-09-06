@@ -131,7 +131,7 @@
     </Reference>
     <Reference Include="Newtonsoft.Json, Version=6.0.0.0, Culture=neutral, PublicKeyToken=30ad4fe6b2a6aeed, processorArchitecture=MSIL">
       <SpecificVersion>False</SpecificVersion>
-      <HintPath>..\packages\Newtonsoft.Json.6.0.3\lib\net45\Newtonsoft.Json.dll</HintPath>
+      <HintPath>..\packages\Newtonsoft.Json.6.0.4\lib\net45\Newtonsoft.Json.dll</HintPath>
     </Reference>
     <Reference Include="System" />
     <Reference Include="System.ComponentModel.DataAnnotations" />
@@ -160,6 +160,7 @@
     <Compile Include="Cluster\IClusterObserver.cs" />
     <Compile Include="Collections\LeftLeaningRedBlackTree.cs" />
     <Compile Include="Collections\LocalMemoryCache.cs" />
+    <Compile Include="ConfigurationFileConnectionProvider.cs" />
     <Compile Include="DataModel\CacheKeyFormatter.cs" />
     <Compile Include="DataModel\ClusterObserver.cs" />
     <Compile Include="DataModel\DataModelJoinQueryBuilder.cs" />
@@ -196,6 +197,7 @@
     <Compile Include="DataModel\LookupListDataModelRepository.cs" />
     <Compile Include="DataModel\MappedDbTypeEmitter.cs" />
     <Compile Include="DbContextOrTransactionCompletedEventArgs.cs" />
+    <Compile Include="DefaultConnection.cs" />
     <Compile Include="Expressions\DataModelSqlExpression.cs" />
     <Compile Include="Expressions\OrderByBuilder_Join.cs" />
     <Compile Include="Expressions\OrderByBuilder.cs" />
@@ -215,6 +217,10 @@
     <Compile Include="Expressions\SqlValueExpression.cs" />
     <Compile Include="ExternalWireup\Dependency.FlitBit.Wireup.cs" />
     <Compile Include="Cluster\IClusteredMemory.cs" />
+    <Compile Include="IConnection.cs" />
+    <Compile Include="IConnectionProvider.cs" />
+    <Compile Include="ConnectionProviders.cs" />
+    <Compile Include="IConnectionProviders.cs" />
     <Compile Include="Inflector.cs" />
     <Compile Include="Meta\ClusterCacheAttribute.cs" />
     <Compile Include="Properties\AssemblyInfo.version.cs" />
