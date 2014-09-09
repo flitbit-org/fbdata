@@ -70,7 +70,7 @@ CREATE TABLE [{0}].[TestWidgets]
 
                 stopwatch.Start();
 
-                foreach(var item in items)
+                foreach (var item in items)
                 {
                     var it = item;
                     Assert.AreEqual(1, cn.ImmediateExecuteNonQuery(
@@ -97,10 +97,11 @@ SELECT @ID = SCOPE_IDENTITY()", this._schemaName),
                             it.Item1,
                             it.Item2,
                             it.Item3)
-                            )));
+                                                  )));
                 }
             }
-            Console.WriteLine("Total time for {0} inserts: {1}", itemCount, TimeSpan.FromMilliseconds(stopwatch.ElapsedMilliseconds));
+            Console.WriteLine("Total time for {0} inserts: {1}", itemCount,
+                TimeSpan.FromMilliseconds(stopwatch.ElapsedMilliseconds));
         }
 
         [Test]
@@ -115,7 +116,7 @@ SELECT @ID = SCOPE_IDENTITY()", this._schemaName),
             using (var cn = ConnectionProviders.GetDbConnection("adoWrapper"))
             {
                 cn.Open();
-                
+
                 var items = new List<Tuple<string, string, bool>>();
                 for (var i = 0; i < itemCount; ++i)
                 {
@@ -128,7 +129,7 @@ SELECT @ID = SCOPE_IDENTITY()", this._schemaName),
                 Console.WriteLine("Time to generate data: {0}", TimeSpan.FromMilliseconds(stopwatch.ElapsedMilliseconds));
 
                 stopwatch.Start();
-            
+
                 var res = cn.ImmediateExecuteNonQueryBatch(
                     items,
                     (cmd, binder) =>

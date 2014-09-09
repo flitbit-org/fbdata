@@ -6,14 +6,14 @@
 
 namespace FlitBit.Data.Meta
 {
-  public class IndexMapping
-  {
-    public IndexBehaviors Behaviors { get; set; }
-
-    public IndexMapping SetBehavior(IndexBehaviors behaviors)
+    public class IndexMapping
     {
-      this.Behaviors = behaviors;
-      return this;
+        public IndexBehaviors Behaviors { get; set; }
+
+        public IndexMapping SetBehavior(IndexBehaviors behaviors)
+        {
+            this.Behaviors = behaviors;
+            return this;
+        }
     }
-  }
 }

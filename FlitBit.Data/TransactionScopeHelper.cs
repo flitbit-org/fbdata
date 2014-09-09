@@ -11,103 +11,104 @@ using System.Transactions;
 
 namespace FlitBit.Data
 {
-  /// <summary>
-  ///   Static helper class for working with transactions (distributed).
-  /// </summary>
-  public static class TransactionScopeHelper
-  {
-    internal static readonly string TransactionPropagationTokenName = "TransactionPropagationToken";
-
     /// <summary>
-    ///   Forceably promotes the ambient transaction to a distributed transaction.
+    ///     Static helper class for working with transactions (distributed).
     /// </summary>
-    public static void ForcePromotionOfCurrentTransaction()
+    public static class TransactionScopeHelper
     {
-      Contract.Requires<InvalidOperationException>(Transaction.Current != null);
-      TransactionInterop.GetTransmitterPropagationToken(Transaction.Current);
-    }
+        internal static readonly string TransactionPropagationTokenName = "TransactionPropagationToken";
 
-    internal static void CheckTransactionConfidenceFromCallContext(LogicalCallContext lcc)
-    {
-      if (lcc != null
-          && lcc.HasInfo)
-      {
-        var trans = Transaction.Current;
-        if (trans != null)
+        /// <summary>
+        ///     Forceably promotes the ambient transaction to a distributed transaction.
+        /// </summary>
+        public static void ForcePromotionOfCurrentTransaction()
         {
-          var ctx = (TransactionCallContext)lcc.GetData(TransactionPropagationTokenName);
-          if (ctx != null
-              && ctx.RemoteVoteOfNoConfidence)
-          {
-            // echo the vote
-            trans.Rollback();
-          }
+            Contract.Requires<InvalidOperationException>(Transaction.Current != null);
+            TransactionInterop.GetTransmitterPropagationToken(Transaction.Current);
         }
-      }
-    }
 
-    internal static TransactionScope ResurrectTransactionFromCallContext(LogicalCallContext lcc)
-    {
-      TransactionScope scope = null;
-      if (lcc != null
-          && lcc.HasInfo)
-      {
-        var ctx = (TransactionCallContext)lcc.GetData(TransactionPropagationTokenName);
-        if (ctx != null)
+        internal static void CheckTransactionConfidenceFromCallContext(LogicalCallContext lcc)
         {
-          scope =
-            new TransactionScope(
-              TransactionInterop.GetTransactionFromTransmitterPropagationToken(ctx.GetPropagationToken()));
+            if (lcc != null
+                && lcc.HasInfo)
+            {
+                var trans = Transaction.Current;
+                if (trans != null)
+                {
+                    var ctx = (TransactionCallContext)lcc.GetData(TransactionPropagationTokenName);
+                    if (ctx != null
+                        && ctx.RemoteVoteOfNoConfidence)
+                    {
+                        // echo the vote
+                        trans.Rollback();
+                    }
+                }
+            }
         }
-      }
-      return scope;
+
+        internal static TransactionScope ResurrectTransactionFromCallContext(LogicalCallContext lcc)
+        {
+            TransactionScope scope = null;
+            if (lcc != null
+                && lcc.HasInfo)
+            {
+                var ctx = (TransactionCallContext)lcc.GetData(TransactionPropagationTokenName);
+                if (ctx != null)
+                {
+                    scope =
+                        new TransactionScope(
+                            TransactionInterop.GetTransactionFromTransmitterPropagationToken(ctx.GetPropagationToken()));
+                }
+            }
+            return scope;
+        }
+
+        internal static bool TransmitTransactionWithCallContext(LogicalCallContext lcc, bool voteNoConfidence)
+        {
+            var result = false;
+            var trans = Transaction.Current;
+            if (trans != null
+                && lcc != null)
+            {
+                var tcc = new TransactionCallContext(TransactionInterop.GetTransmitterPropagationToken(trans),
+                    voteNoConfidence);
+                lcc.SetData(TransactionPropagationTokenName, tcc);
+                result = true;
+            }
+            return result;
+        }
     }
-
-    internal static bool TransmitTransactionWithCallContext(LogicalCallContext lcc, bool voteNoConfidence)
-    {
-      var result = false;
-      var trans = Transaction.Current;
-      if (trans != null
-          && lcc != null)
-      {
-        var tcc = new TransactionCallContext(TransactionInterop.GetTransmitterPropagationToken(trans), voteNoConfidence);
-        lcc.SetData(TransactionPropagationTokenName, tcc);
-        result = true;
-      }
-      return result;
-    }
-  }
-
-  /// <summary>
-  ///   Call context wrapper for distributing the ambient transaction.
-  /// </summary>
-  [Serializable]
-  public class TransactionCallContext : ILogicalThreadAffinative
-  {
-    readonly byte[] _token;
-
-    internal TransactionCallContext(byte[] token, bool voteNoConfidence)
-    {
-      this._token = token;
-      this.RemoteVoteOfNoConfidence = voteNoConfidence;
-    }
-
-    TransactionCallContext() { }
 
     /// <summary>
-    ///   Indicates the remote end does not have confidence in its end of the
-    ///   transactioned operations. The local side should not complete the
-    ///   transaction.
+    ///     Call context wrapper for distributing the ambient transaction.
     /// </summary>
-    public bool RemoteVoteOfNoConfidence { get; private set; }
-
-    /// <summary>
-    ///   Gets the transaction propagation token.
-    /// </summary>
-    /// <returns></returns>
-    public byte[] GetPropagationToken()
+    [Serializable]
+    public class TransactionCallContext : ILogicalThreadAffinative
     {
-      return _token;
+        readonly byte[] _token;
+
+        internal TransactionCallContext(byte[] token, bool voteNoConfidence)
+        {
+            this._token = token;
+            this.RemoteVoteOfNoConfidence = voteNoConfidence;
+        }
+
+        TransactionCallContext() { }
+
+        /// <summary>
+        ///     Indicates the remote end does not have confidence in its end of the
+        ///     transactioned operations. The local side should not complete the
+        ///     transaction.
+        /// </summary>
+        public bool RemoteVoteOfNoConfidence { get; private set; }
+
+        /// <summary>
+        ///     Gets the transaction propagation token.
+        /// </summary>
+        /// <returns></returns>
+        public byte[] GetPropagationToken()
+        {
+            return _token;
+        }
     }
-  }
 }

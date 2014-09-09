@@ -8,11 +8,17 @@ using System.Data;
 
 namespace FlitBit.Data.SqlServer
 {
-  internal class SqlMappedNullableBoolAsBitEmitter : SqlDbTypeNullableEmitter<bool>
-  {
-    internal SqlMappedNullableBoolAsBitEmitter()
-      : base(DbType.Boolean, SqlDbType.Bit) { DbDataReaderGetValueMethodName = "GetBoolean"; }
+    internal class SqlMappedNullableBoolAsBitEmitter : SqlDbTypeNullableEmitter<bool>
+    {
+        internal SqlMappedNullableBoolAsBitEmitter()
+            : base(DbType.Boolean, SqlDbType.Bit)
+        {
+            DbDataReaderGetValueMethodName = "GetBoolean";
+        }
 
-    protected override string TransformConstantValueToString(object value) { return ((bool?)value).GetValueOrDefault() ? "1" : "0"; }
-  }
+        protected override string TransformConstantValueToString(object value)
+        {
+            return ((bool?)value).GetValueOrDefault() ? "1" : "0";
+        }
+    }
 }

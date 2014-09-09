@@ -11,24 +11,24 @@ using System.Diagnostics.Contracts;
 
 namespace FlitBit.Data
 {
-  public static class DbProviderFactoryExtensions
-  {
-    public static DbConnection CreateConnection(this DbProviderFactory factory
-      , string connection)
+    public static class DbProviderFactoryExtensions
     {
-      Contract.Requires<ArgumentNullException>(factory != null);
-      Contract.Requires<ArgumentNullException>(connection != null);
+        public static DbConnection CreateConnection(this DbProviderFactory factory
+            , string connection)
+        {
+            Contract.Requires<ArgumentNullException>(factory != null);
+            Contract.Requires<ArgumentNullException>(connection != null);
 
-      // Ensure we can identify the connection string...			
-      var cs = ConfigurationManager.ConnectionStrings[connection].ConnectionString;
-      if (cs == null)
-      {
-        throw new ArgumentException(String.Format("Connection string not defined: {0}", connection));
-      }
+            // Ensure we can identify the connection string...			
+            var cs = ConfigurationManager.ConnectionStrings[connection].ConnectionString;
+            if (cs == null)
+            {
+                throw new ArgumentException(String.Format("Connection string not defined: {0}", connection));
+            }
 
-      var cn = factory.CreateConnection();
-      cn.ConnectionString = cs;
-      return cn;
+            var cn = factory.CreateConnection();
+            cn.ConnectionString = cs;
+            return cn;
+        }
     }
-  }
 }

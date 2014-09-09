@@ -15,151 +15,153 @@ using FlitBit.Data.SPI;
 
 namespace FlitBit.Data.SqlServer
 {
-  /// <summary>
-  ///   Abstract data model binder using a SqlConnection.
-  /// </summary>
-  /// <typeparam name="TDataModel"></typeparam>
-  /// <typeparam name="TIdentityKey"></typeparam>
-  /// <typeparam name="TModelImpl"></typeparam>
-  public abstract class BaseSqlDataModelBinder<TDataModel, TIdentityKey, TModelImpl> :
-    DataModelBinder<TDataModel, TIdentityKey, SqlConnection>
-    where TModelImpl : class, TDataModel, IDataModel, new()
-  {
-    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-    Tuple<int, IDataModelQuerySingleCommand<TDataModel, SqlConnection, TDataModel>> _create;
-
-    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-    Tuple<int, IDataModelNonQueryCommand<TDataModel, SqlConnection, TIdentityKey>> _delete;
-
-    bool _initialized;
-
-    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-    Tuple<int, IDataModelQuerySingleCommand<TDataModel, SqlConnection, TIdentityKey>> _read;
-
-    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-    Tuple<int, IDataModelRepository<TDataModel, TIdentityKey>>
-      _repository;
-
-    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-    Tuple<int, IDataModelQueryManyCommand<TDataModel, SqlConnection>> _selectAll;
-
-    [DebuggerBrowsable(DebuggerBrowsableState.Never)]
-    Tuple<int, IDataModelQuerySingleCommand<TDataModel, SqlConnection, TDataModel>> _update;
-
     /// <summary>
-    ///   Creates a new instance.
+    ///     Abstract data model binder using a SqlConnection.
     /// </summary>
-    /// <param name="mapping"></param>
-    /// <param name="strategy"></param>
-    protected BaseSqlDataModelBinder(IMapping<TDataModel> mapping, MappingStrategy strategy)
-      : base(mapping, strategy)
+    /// <typeparam name="TDataModel"></typeparam>
+    /// <typeparam name="TIdentityKey"></typeparam>
+    /// <typeparam name="TModelImpl"></typeparam>
+    public abstract class BaseSqlDataModelBinder<TDataModel, TIdentityKey, TModelImpl> :
+        DataModelBinder<TDataModel, TIdentityKey, SqlConnection>
+        where TModelImpl : class, TDataModel, IDataModel, new()
     {
-      Contract.Requires<ArgumentNullException>(mapping != null);
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        Tuple<int, IDataModelQuerySingleCommand<TDataModel, SqlConnection, TDataModel>> _create;
 
-      LegacyWriter = new DataModelSqlWriter<TDataModel>(mapping.QuoteObjectName("self"), "  ");
-      Offsets = Enumerable.Range(0, LegacyWriter.QuotedColumnNames.Length).ToArray();
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        Tuple<int, IDataModelNonQueryCommand<TDataModel, SqlConnection, TIdentityKey>> _delete;
+
+        bool _initialized;
+
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        Tuple<int, IDataModelQuerySingleCommand<TDataModel, SqlConnection, TIdentityKey>> _read;
+
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        Tuple<int, IDataModelRepository<TDataModel, TIdentityKey>>
+            _repository;
+
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        Tuple<int, IDataModelQueryManyCommand<TDataModel, SqlConnection>> _selectAll;
+
+        [DebuggerBrowsable(DebuggerBrowsableState.Never)]
+        Tuple<int, IDataModelQuerySingleCommand<TDataModel, SqlConnection, TDataModel>> _update;
+
+        /// <summary>
+        ///     Creates a new instance.
+        /// </summary>
+        /// <param name="mapping"></param>
+        /// <param name="strategy"></param>
+        protected BaseSqlDataModelBinder(IMapping<TDataModel> mapping, MappingStrategy strategy)
+            : base(mapping, strategy)
+        {
+            Contract.Requires<ArgumentNullException>(mapping != null);
+
+            LegacyWriter = new DataModelSqlWriter<TDataModel>(mapping.QuoteObjectName("self"), "  ");
+            Offsets = Enumerable.Range(0, LegacyWriter.QuotedColumnNames.Length).ToArray();
+        }
+
+        protected int[] Offsets { get; private set; }
+
+        public override IDataModelWriter<TDataModel> Writer { get { return LegacyWriter; } }
+
+        protected DataModelSqlWriter<TDataModel> LegacyWriter { get; private set; }
+
+        public override void Initialize()
+        {
+            if (!_initialized)
+            {
+                PerformInitialization();
+                _initialized = true;
+            }
+        }
+
+        protected abstract void PerformInitialization();
+
+        public override IDataModelQueryManyCommand<TDataModel, SqlConnection> GetAllCommand(
+            IDataModelRepository<TDataModel, TIdentityKey> repository)
+        {
+            var mapping = Mapping;
+            if (_selectAll == null
+                || _selectAll.Item1 < mapping.Revision)
+            {
+                _selectAll = Tuple.Create(mapping.Revision,
+                    ConstructGetAllCommand(repository));
+            }
+            return _selectAll.Item2;
+        }
+
+        protected abstract IDataModelQueryManyCommand<TDataModel, SqlConnection> ConstructGetAllCommand(
+            IDataModelRepository<TDataModel, TIdentityKey> repository);
+
+        public override IDataModelQuerySingleCommand<TDataModel, SqlConnection, TDataModel> GetCreateCommand()
+        {
+            var mapping = Mapping;
+            if (_create == null
+                || _create.Item1 < mapping.Revision)
+            {
+                _create = Tuple.Create(mapping.Revision,
+                    ConstructGetCreateCommand());
+            }
+            return _create.Item2;
+        }
+
+        protected abstract IDataModelQuerySingleCommand<TDataModel, SqlConnection, TDataModel> ConstructGetCreateCommand
+            ();
+
+        public override IDataModelNonQueryCommand<TDataModel, SqlConnection, TIdentityKey> GetDeleteCommand()
+        {
+            var mapping = Mapping;
+            if (_delete == null
+                || _delete.Item1 < mapping.Revision)
+            {
+                _delete = Tuple.Create(mapping.Revision,
+                    ConstructGetDeleteCommand());
+            }
+            return _delete.Item2;
+        }
+
+        protected abstract IDataModelNonQueryCommand<TDataModel, SqlConnection, TIdentityKey> ConstructGetDeleteCommand();
+
+        public override IDataModelQuerySingleCommand<TDataModel, SqlConnection, TIdentityKey> GetReadCommand()
+        {
+            var mapping = Mapping;
+            if (_read == null
+                || _read.Item1 < mapping.Revision)
+            {
+                _read = Tuple.Create(mapping.Revision,
+                    ConstructReadCommand());
+            }
+            return _read.Item2;
+        }
+
+        protected abstract IDataModelQuerySingleCommand<TDataModel, SqlConnection, TIdentityKey> ConstructReadCommand();
+
+        public override IDataModelQuerySingleCommand<TDataModel, SqlConnection, TDataModel> GetUpdateCommand()
+        {
+            var mapping = Mapping;
+            if (_update == null
+                || _update.Item1 < mapping.Revision)
+            {
+                _update = Tuple.Create(mapping.Revision,
+                    ConstructUpdateCommand());
+            }
+            return _update.Item2;
+        }
+
+        protected abstract IDataModelQuerySingleCommand<TDataModel, SqlConnection, TDataModel> ConstructUpdateCommand();
+
+        public override IDataModelRepository<TDataModel, TIdentityKey> MakeRepository()
+        {
+            var mapping = Mapping;
+            if (_repository == null
+                || _repository.Item1 < mapping.Revision)
+            {
+                _repository = Tuple.Create(mapping.Revision,
+                    ConstructRepository());
+            }
+            return _repository.Item2;
+        }
+
+        protected abstract IDataModelRepository<TDataModel, TIdentityKey> ConstructRepository();
     }
-
-    protected int[] Offsets { get; private set; }
-
-    public override IDataModelWriter<TDataModel> Writer { get { return LegacyWriter; } }
-
-    protected DataModelSqlWriter<TDataModel> LegacyWriter { get; private set; }
-
-    public override void Initialize()
-    {
-      if (!_initialized)
-      {
-        PerformInitialization();
-        _initialized = true;
-      }
-    }
-
-    protected abstract void PerformInitialization();
-
-    public override IDataModelQueryManyCommand<TDataModel, SqlConnection> GetAllCommand(IDataModelRepository<TDataModel, TIdentityKey> repository) 
-    {
-      var mapping = Mapping;
-      if (_selectAll == null
-          || _selectAll.Item1 < mapping.Revision)
-      {
-        _selectAll = Tuple.Create(mapping.Revision,
-          ConstructGetAllCommand(repository));
-      }
-      return _selectAll.Item2;
-    }
-
-    protected abstract IDataModelQueryManyCommand<TDataModel, SqlConnection> ConstructGetAllCommand(
-      IDataModelRepository<TDataModel, TIdentityKey> repository);
-
-    public override IDataModelQuerySingleCommand<TDataModel, SqlConnection, TDataModel> GetCreateCommand()
-    {
-      var mapping = Mapping;
-      if (_create == null
-          || _create.Item1 < mapping.Revision)
-      {
-        _create = Tuple.Create(mapping.Revision,
-          ConstructGetCreateCommand());
-      }
-      return _create.Item2;
-    }
-
-    protected abstract IDataModelQuerySingleCommand<TDataModel, SqlConnection, TDataModel> ConstructGetCreateCommand();
-
-    public override IDataModelNonQueryCommand<TDataModel, SqlConnection, TIdentityKey> GetDeleteCommand()
-    {
-      var mapping = Mapping;
-      if (_delete == null
-          || _delete.Item1 < mapping.Revision)
-      {
-        _delete = Tuple.Create(mapping.Revision,
-          ConstructGetDeleteCommand());
-      }
-      return _delete.Item2;
-    }
-
-    protected abstract IDataModelNonQueryCommand<TDataModel, SqlConnection, TIdentityKey> ConstructGetDeleteCommand();
-
-    public override IDataModelQuerySingleCommand<TDataModel, SqlConnection, TIdentityKey> GetReadCommand()
-    {
-      var mapping = Mapping;
-      if (_read == null
-          || _read.Item1 < mapping.Revision)
-      {
-        _read = Tuple.Create(mapping.Revision,
-          ConstructReadCommand());
-      }
-      return _read.Item2;
-    }
-
-    protected abstract IDataModelQuerySingleCommand<TDataModel, SqlConnection, TIdentityKey> ConstructReadCommand();
-
-    public override IDataModelQuerySingleCommand<TDataModel, SqlConnection, TDataModel> GetUpdateCommand()
-    {
-      var mapping = Mapping;
-      if (_update == null
-          || _update.Item1 < mapping.Revision)
-      {
-        _update = Tuple.Create(mapping.Revision,
-          ConstructUpdateCommand());
-      }
-      return _update.Item2;
-    }
-
-    protected abstract IDataModelQuerySingleCommand<TDataModel, SqlConnection, TDataModel> ConstructUpdateCommand();
-
-    public override IDataModelRepository<TDataModel, TIdentityKey> MakeRepository()
-    {
-      var mapping = Mapping;
-      if (_repository == null
-          || _repository.Item1 < mapping.Revision)
-      {
-        _repository = Tuple.Create(mapping.Revision,
-          ConstructRepository());
-      }
-      return _repository.Item2;
-    }
-
-    protected abstract IDataModelRepository<TDataModel, TIdentityKey> ConstructRepository();
-  }
 }

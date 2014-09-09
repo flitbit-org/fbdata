@@ -8,9 +8,9 @@ using System.Data;
 
 namespace FlitBit.Data.DataModel.DbTypeEmitters
 {
-  internal class MappedSingleEmitter : MappedDbTypeEmitter<float, DbType>
-  {
-    internal MappedSingleEmitter()
-      : base(DbType.Single, DbType.Single) { DbDataReaderGetValueMethodName = "GetFloat"; }
-  }
+    internal class MappedSingleEmitter : MappedDbTypeEmitter<float, DbType>
+    {
+        internal MappedSingleEmitter()
+            : base(DbType.Single, DbType.Single) { DbDataReaderGetValueMethodName = "GetFloat"; }
+    }
 }

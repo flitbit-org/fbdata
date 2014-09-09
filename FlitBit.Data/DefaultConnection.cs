@@ -2,19 +2,18 @@ using System;
 using System.Data.Common;
 using System.Diagnostics.Contracts;
 using FlitBit.Core;
-using FlitBit.Emit;
 
 namespace FlitBit.Data
 {
     /// <summary>
-    /// Default implementation of IConnection.
+    ///     Default implementation of IConnection.
     /// </summary>
     public class DefaultConnection : IConnection, IEquatable<DefaultConnection>, IEquatable<IConnection>
     {
         static readonly int __HashCodeSeed = typeof(DefaultConnection).AssemblyQualifiedName.GetHashCode();
 
         /// <summary>
-        /// Creates a new instance.
+        ///     Creates a new instance.
         /// </summary>
         /// <param name="name">The connection's name</param>
         /// <param name="cn">The connection</param>
@@ -26,7 +25,7 @@ namespace FlitBit.Data
         }
 
         /// <summary>
-        /// Creates a new instance.
+        ///     Creates a new instance.
         /// </summary>
         /// <param name="name">The connection's name</param>
         /// <param name="cn">The connection</param>
@@ -42,17 +41,17 @@ namespace FlitBit.Data
         }
 
         /// <summary>
-        /// The connection's name.
+        ///     The connection's name.
         /// </summary>
         public string Name { get; private set; }
 
         /// <summary>
-        /// The db connection.
+        ///     The db connection.
         /// </summary>
         public DbConnection UntypedDbConnection { get; private set; }
 
         /// <summary>
-        /// Determins if this connection is equal to another.
+        ///     Determins if this connection is equal to another.
         /// </summary>
         /// <param name="other">the other connection</param>
         /// <returns></returns>
@@ -64,7 +63,7 @@ namespace FlitBit.Data
         }
 
         /// <summary>
-        /// Determins if this connection is equal to another.
+        ///     Determins if this connection is equal to another.
         /// </summary>
         /// <param name="other">the other connection</param>
         /// <returns></returns>
@@ -75,7 +74,7 @@ namespace FlitBit.Data
         }
 
         /// <summary>
-        /// Determins if this connection is equal to another object.
+        ///     Determins if this connection is equal to another object.
         /// </summary>
         /// <param name="obj">the other object</param>
         /// <returns></returns>
@@ -86,10 +85,10 @@ namespace FlitBit.Data
         }
 
         /// <summary>
-        /// Calculates the connection's hash code. 
+        ///     Calculates the connection's hash code.
         /// </summary>
         /// <returns>
-        /// the connection's hash code
+        ///     the connection's hash code
         /// </returns>
         /// <filterpriority>2</filterpriority>
         public override int GetHashCode()
@@ -104,33 +103,34 @@ namespace FlitBit.Data
         }
 
         /// <summary>
-        /// Returns a string that represents the current object.
+        ///     Returns a string that represents the current object.
         /// </summary>
         /// <returns>
-        /// A string that represents the current object.
+        ///     A string that represents the current object.
         /// </returns>
         /// <filterpriority>2</filterpriority>
         public override string ToString()
         {
-            return String.Concat("{ Name: ", this.Name, 
+            return String.Concat("{ Name: ", this.Name,
                 ", Type: ", this.UntypedDbConnection.GetType().GetReadableSimpleName(), " }");
         }
-
 
         public bool CanShareConnection { get; private set; }
     }
 
     /// <summary>
-    /// Default implementation of strongly typed connection.
+    ///     Default implementation of strongly typed connection.
     /// </summary>
     /// <typeparam name="TDbConnection"></typeparam>
-    public class DefaultConnection<TDbConnection> : IConnection<TDbConnection>, IEquatable<DefaultConnection<TDbConnection>>, IEquatable<IConnection>
-        where TDbConnection: DbConnection
+    public class DefaultConnection<TDbConnection> : IConnection<TDbConnection>,
+        IEquatable<DefaultConnection<TDbConnection>>, IEquatable<IConnection>
+        where TDbConnection : DbConnection
     {
-        static readonly int __HashCodeSeed = typeof(DefaultConnection<TDbConnection>).AssemblyQualifiedName.GetHashCode();
+        static readonly int __HashCodeSeed =
+            typeof(DefaultConnection<TDbConnection>).AssemblyQualifiedName.GetHashCode();
 
         /// <summary>
-        /// Creates a new instance.
+        ///     Creates a new instance.
         /// </summary>
         /// <param name="name">The connection's name</param>
         /// <param name="cn">The connection</param>
@@ -142,7 +142,7 @@ namespace FlitBit.Data
         }
 
         /// <summary>
-        /// Creates a new instance.
+        ///     Creates a new instance.
         /// </summary>
         /// <param name="name">The connection's name</param>
         /// <param name="cn">The connection</param>
@@ -158,24 +158,24 @@ namespace FlitBit.Data
         }
 
         /// <summary>
-        /// The connection's name.
+        ///     The connection's name.
         /// </summary>
         public string Name { get; private set; }
 
         /// <summary>
-        /// Indicates whether the connection can be shared.
+        ///     Indicates whether the connection can be shared.
         /// </summary>
         public bool CanShareConnection { get; private set; }
 
         /// <summary>
-        /// The db connection.
+        ///     The db connection.
         /// </summary>
         public DbConnection UntypedDbConnection { get { return DbConnection; } }
 
         public TDbConnection DbConnection { get; private set; }
 
         /// <summary>
-        /// Determins if this connection is equal to another.
+        ///     Determins if this connection is equal to another.
         /// </summary>
         /// <param name="other">the other connection</param>
         /// <returns></returns>
@@ -187,7 +187,7 @@ namespace FlitBit.Data
         }
 
         /// <summary>
-        /// Determins if this connection is equal to another.
+        ///     Determins if this connection is equal to another.
         /// </summary>
         /// <param name="other">the other connection</param>
         /// <returns></returns>
@@ -198,7 +198,7 @@ namespace FlitBit.Data
         }
 
         /// <summary>
-        /// Determins if this connection is equal to another object.
+        ///     Determins if this connection is equal to another object.
         /// </summary>
         /// <param name="obj">the other object</param>
         /// <returns></returns>
@@ -209,10 +209,10 @@ namespace FlitBit.Data
         }
 
         /// <summary>
-        /// Calculates the connection's hash code. 
+        ///     Calculates the connection's hash code.
         /// </summary>
         /// <returns>
-        /// the connection's hash code
+        ///     the connection's hash code
         /// </returns>
         /// <filterpriority>2</filterpriority>
         public override int GetHashCode()
@@ -227,10 +227,10 @@ namespace FlitBit.Data
         }
 
         /// <summary>
-        /// Returns a string that represents the current object.
+        ///     Returns a string that represents the current object.
         /// </summary>
         /// <returns>
-        /// A string that represents the current object.
+        ///     A string that represents the current object.
         /// </returns>
         /// <filterpriority>2</filterpriority>
         public override string ToString()
@@ -239,5 +239,4 @@ namespace FlitBit.Data
                 ", Type: ", typeof(TDbConnection).GetReadableSimpleName(), " }");
         }
     }
-
 }

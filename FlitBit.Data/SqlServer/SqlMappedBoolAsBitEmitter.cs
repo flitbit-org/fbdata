@@ -11,21 +11,20 @@ using FlitBit.Emit;
 
 namespace FlitBit.Data.SqlServer
 {
-  internal class SqlMappedBoolAsBitEmitter : SqlDbTypeEmitter<bool>
-  {
-    internal SqlMappedBoolAsBitEmitter()
-      : base(DbType.Boolean, SqlDbType.Bit)
-    {}
-
-    public override void LoadValueFromDbReader(MethodBuilder method, IValueRef reader, IValueRef columnIndex,
-      DbTypeDetails details)
+    internal class SqlMappedBoolAsBitEmitter : SqlDbTypeEmitter<bool>
     {
-      var il = method.GetILGenerator();
-      reader.LoadValue(il);
-      columnIndex.LoadValue(il);
-      il.CallVirtual<DbDataReader>("GetBoolean", typeof(int));
-    }
+        internal SqlMappedBoolAsBitEmitter()
+            : base(DbType.Boolean, SqlDbType.Bit) { }
 
-    protected override string TransformConstantValueToString(object value) { return (bool)value ? "1" : "0"; }
-  }
+        public override void LoadValueFromDbReader(MethodBuilder method, IValueRef reader, IValueRef columnIndex,
+            DbTypeDetails details)
+        {
+            var il = method.GetILGenerator();
+            reader.LoadValue(il);
+            columnIndex.LoadValue(il);
+            il.CallVirtual<DbDataReader>("GetBoolean", typeof(int));
+        }
+
+        protected override string TransformConstantValueToString(object value) { return (bool)value ? "1" : "0"; }
+    }
 }

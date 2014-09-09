@@ -11,28 +11,25 @@ using FlitBit.Data.Meta;
 
 namespace FlitBit.Data.SqlServer
 {
-  internal class SqlMappedInt64Emitter : SqlDbTypeEmitter<int>
-  {
-    internal SqlMappedInt64Emitter()
-      : base(DbType.Int64, SqlDbType.BigInt)
+    internal class SqlMappedInt64Emitter : SqlDbTypeEmitter<int>
     {
-      DbDataReaderGetValueMethodName = "GetInt64";
-    }
+        internal SqlMappedInt64Emitter()
+            : base(DbType.Int64, SqlDbType.BigInt) { DbDataReaderGetValueMethodName = "GetInt64"; }
 
-    public override void EmitColumnInitializationDDL<TModel>(StringBuilder buffer, IMapping<TModel> mapping,
-      ColumnMapping<TModel> col)
-    {
-      if (col.IsSynthetic)
-      {
-        buffer.Append(" IDENTITY(1, 1)");
-      }
-    }
+        public override void EmitColumnInitializationDDL<TModel>(StringBuilder buffer, IMapping<TModel> mapping,
+            ColumnMapping<TModel> col)
+        {
+            if (col.IsSynthetic)
+            {
+                buffer.Append(" IDENTITY(1, 1)");
+            }
+        }
 
-    //protected override void EmitTranslateRuntimeType(ILGenerator il, LocalBuilder local)
-    //{
-    //  il.LoadLocal(local);
-    //  il.NewObj(typeof(SqlInt64).GetConstructor(new[] { typeof(long) }));
-    //  il.Box(typeof(SqlInt64));
-    //}
-  }
+        //protected override void EmitTranslateRuntimeType(ILGenerator il, LocalBuilder local)
+        //{
+        //  il.LoadLocal(local);
+        //  il.NewObj(typeof(SqlInt64).GetConstructor(new[] { typeof(long) }));
+        //  il.Box(typeof(SqlInt64));
+        //}
+    }
 }

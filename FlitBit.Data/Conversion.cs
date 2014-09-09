@@ -10,29 +10,29 @@ using FlitBit.Core;
 
 namespace FlitBit.Data
 {
-  public static class Conversion
-  {
-    public static Guid ToGuid(object source)
+    public static class Conversion
     {
-      Contract.Requires<ArgumentNullException>(source != null);
-
-      if (typeof(Guid).IsInstanceOfType(source))
-      {
-        return (Guid)source;
-      }
-      if (typeof(String).IsInstanceOfType(source))
-      {
-        Guid result;
-        if (Guid.TryParse((string)source, out result))
+        public static Guid ToGuid(object source)
         {
-          return result;
+            Contract.Requires<ArgumentNullException>(source != null);
+
+            if (typeof(Guid).IsInstanceOfType(source))
+            {
+                return (Guid)source;
+            }
+            if (typeof(String).IsInstanceOfType(source))
+            {
+                Guid result;
+                if (Guid.TryParse((string)source, out result))
+                {
+                    return result;
+                }
+            }
+            throw new ArgumentException(
+                String.Concat("Cannot convert type to Guid: ",
+                    source.GetType()
+                          .GetReadableFullName())
+                );
         }
-      }
-      throw new ArgumentException(
-        String.Concat("Cannot convert type to Guid: ",
-          source.GetType()
-                .GetReadableFullName())
-        );
     }
-  }
 }

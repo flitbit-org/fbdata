@@ -8,9 +8,9 @@ using System.Data;
 
 namespace FlitBit.Data.DataModel.DbTypeEmitters
 {
-  internal class MappedInt64Emitter : MappedDbTypeEmitter<long, DbType>
-  {
-    internal MappedInt64Emitter()
-      : base(DbType.Int64, DbType.Int64) { DbDataReaderGetValueMethodName = "GetInt64"; }
-  }
+    internal class MappedInt64Emitter : MappedDbTypeEmitter<long, DbType>
+    {
+        internal MappedInt64Emitter()
+            : base(DbType.Int64, DbType.Int64) { DbDataReaderGetValueMethodName = "GetInt64"; }
+    }
 }

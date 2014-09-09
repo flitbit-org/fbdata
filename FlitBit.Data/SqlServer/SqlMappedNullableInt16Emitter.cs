@@ -8,9 +8,9 @@ using System.Data;
 
 namespace FlitBit.Data.SqlServer
 {
-  internal class SqlMappedNullableInt16Emitter : SqlDbTypeNullableEmitter<short>
-  {
-    internal SqlMappedNullableInt16Emitter()
-      : base(DbType.Int16, SqlDbType.SmallInt) { DbDataReaderGetValueMethodName = "GetInt16"; }
-  }
+    internal class SqlMappedNullableInt16Emitter : SqlDbTypeNullableEmitter<short>
+    {
+        internal SqlMappedNullableInt16Emitter()
+            : base(DbType.Int16, SqlDbType.SmallInt) { DbDataReaderGetValueMethodName = "GetInt16"; }
+    }
 }

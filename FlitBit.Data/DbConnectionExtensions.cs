@@ -289,7 +289,6 @@ namespace FlitBit.Data
             var helper = EnsuredDbProviderHelper(connection);
             return helper.ExecuteEnumerable(connection, command, binder, transform);
         }
-        
 
         /// <summary>
         ///     Executes the given command on the connection.
@@ -387,7 +386,7 @@ namespace FlitBit.Data
         /// <param name="binder">an optional callback that will bind the command's parameters</param>
         /// <param name="postCommand">an optional callback invoked after the command completes.</param>
         /// <returns>the number of rows affected.</returns>
-        public static int ImmediateExecuteNonQuery(this DbConnection connection, 
+        public static int ImmediateExecuteNonQuery(this DbConnection connection,
             Action<DbCommand> preCommand,
             Action<IDataParameterBinder> binder,
             Action<DbCommand, IDataParameterBinder, int> postCommand)
@@ -401,7 +400,7 @@ namespace FlitBit.Data
         }
 
         /// <summary>
-        /// Executes the specified command and returns the number of rows affected.
+        ///     Executes the specified command and returns the number of rows affected.
         /// </summary>
         /// <param name="connection">the connection upon which the command will be executed</param>
         /// <param name="command">the command</param>
@@ -418,14 +417,14 @@ namespace FlitBit.Data
         }
 
         /// <summary>
-        /// Executes the specified command and returns the number of rows affected.
+        ///     Executes the specified command and returns the number of rows affected.
         /// </summary>
         /// <param name="connection">the connection upon which the command will be executed</param>
         /// <param name="command">the command</param>
         /// <param name="binder">a callback method that binds the command's parameters</param>
         /// <param name="postCommand">an optional callback invoked after the command completes.</param>
         /// <returns>the number of rows affected</returns>
-        public static int ImmediateExecuteNonQuery(this DbConnection connection, string command, 
+        public static int ImmediateExecuteNonQuery(this DbConnection connection, string command,
             Action<IDataParameterBinder> binder,
             Action<DbCommand, IDataParameterBinder, int> postCommand)
         {
@@ -439,7 +438,7 @@ namespace FlitBit.Data
         }
 
         /// <summary>
-        /// Executes the specified command and returns the number of rows affected.
+        ///     Executes the specified command and returns the number of rows affected.
         /// </summary>
         /// <param name="connection">the connection upon which the command will be executed</param>
         /// <param name="command">the command</param>
@@ -456,7 +455,6 @@ namespace FlitBit.Data
             return ImmediateExecuteNonQuery(connection,
                 cmd => { cmd.CommandText = command; }, binder, null);
         }
-
 
         public static int ImmediateExecuteNonQuery(this DbConnection connection, string command, CommandType cmdType)
         {
@@ -491,7 +489,7 @@ namespace FlitBit.Data
         }
 
         /// <summary>
-        /// Executes the specified command for each of the specified data items.
+        ///     Executes the specified command for each of the specified data items.
         /// </summary>
         /// <param name="connection">the connection upon which the command will be executed</param>
         /// <param name="data">the data items used in the batch</param>
@@ -499,7 +497,7 @@ namespace FlitBit.Data
         /// <param name="binder">callback method that binds the command's parameters for each item of data</param>
         /// <param name="observer">an optional callback method for observing the result for each item of data</param>
         /// <returns>an enumerable over the items' results</returns>
-        public static IEnumerable<int> ImmediateExecuteNonQueryBatch<TData>(this DbConnection connection, 
+        public static IEnumerable<int> ImmediateExecuteNonQueryBatch<TData>(this DbConnection connection,
             IEnumerable<TData> data,
             Action<DbCommand, IDataParameterBinder> setup,
             Action<DbCommand, IDataParameterBinder, TData> binder,
@@ -514,14 +512,13 @@ namespace FlitBit.Data
 
             var helper = EnsuredDbProviderHelper(connection);
             return helper.ImmediateExecuteNonQueryBatch(
-                connection, 
-                data, 
-                setup, 
-                binder, 
+                connection,
+                data,
+                setup,
+                binder,
                 observer
                 );
         }
-
 
         /// <summary>
         ///     Determines if a schema exists.

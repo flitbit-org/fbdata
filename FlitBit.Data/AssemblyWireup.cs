@@ -7,23 +7,25 @@
 using System.Data.SqlClient;
 using FlitBit.Data.SqlServer;
 using FlitBit.Wireup;
+using FlitBit.Wireup.Meta;
+using AssemblyWireup = FlitBit.Data.AssemblyWireup;
 
-[assembly: FlitBit.Wireup.Meta.Wireup(typeof(FlitBit.Data.AssemblyWireup))]
+[assembly: Wireup(typeof(AssemblyWireup))]
 
 namespace FlitBit.Data
 {
-  /// <summary>
-  ///   Wires up this assembly.
-  /// </summary>
-  public sealed class AssemblyWireup : IWireupCommand
-  {
     /// <summary>
-    ///   Wires up this assembly.
+    ///     Wires up this assembly.
     /// </summary>
-    /// <param name="coordinator"></param>
-    public void Execute(IWireupCoordinator coordinator)
+    public sealed class AssemblyWireup : IWireupCommand
     {
-      DbProviderHelpers.RegisterHelper<SqlClientFactory, SqlConnection, SqlCommand, SqlDbProviderHelper>();
+        /// <summary>
+        ///     Wires up this assembly.
+        /// </summary>
+        /// <param name="coordinator"></param>
+        public void Execute(IWireupCoordinator coordinator)
+        {
+            DbProviderHelpers.RegisterHelper<SqlClientFactory, SqlConnection, SqlCommand, SqlDbProviderHelper>();
+        }
     }
-  }
 }

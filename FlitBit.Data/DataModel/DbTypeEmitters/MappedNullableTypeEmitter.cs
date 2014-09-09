@@ -13,73 +13,73 @@ using FlitBit.Emit;
 
 namespace FlitBit.Data.DataModel.DbTypeEmitters
 {
-  internal abstract class MappedNullableTypeEmitter<TBaseType, TDbType> : MappedDbTypeEmitter<TBaseType?, TDbType>
-    where TBaseType : struct
-    where TDbType : struct
-  {
-    internal MappedNullableTypeEmitter(DbType dbType, TDbType specializedDbType)
-      : base(dbType, specializedDbType, typeof(TBaseType)) { }
-
-    protected internal override void EmitDbParameterSetValue(ILGenerator il, ColumnMapping column, LocalBuilder parm,
-      LocalBuilder local, Action<ILGenerator> loadModel,
-      Action<ILGenerator> loadProp, LocalBuilder flag)
+    internal abstract class MappedNullableTypeEmitter<TBaseType, TDbType> : MappedDbTypeEmitter<TBaseType?, TDbType>
+        where TBaseType : struct
+        where TDbType : struct
     {
-      // var field = (TBaseType?)param;
-      //il.LoadLocalAddress(local);
-      //loadModel(il);
-      //loadProp(il);
-      //il.Call(local.LocalType.GetConstructor(new[] { typeof(TBaseType) }));
+        internal MappedNullableTypeEmitter(DbType dbType, TDbType specializedDbType)
+            : base(dbType, specializedDbType, typeof(TBaseType)) { }
 
-      loadModel(il);
-      loadProp(il);
-      il.StoreLocal(local);
+        protected internal override void EmitDbParameterSetValue(ILGenerator il, ColumnMapping column, LocalBuilder parm,
+            LocalBuilder local, Action<ILGenerator> loadModel,
+            Action<ILGenerator> loadProp, LocalBuilder flag)
+        {
+            // var field = (TBaseType?)param;
+            //il.LoadLocalAddress(local);
+            //loadModel(il);
+            //loadProp(il);
+            //il.Call(local.LocalType.GetConstructor(new[] { typeof(TBaseType) }));
 
-      // if (field.HasValue) {
+            loadModel(il);
+            loadProp(il);
+            il.StoreLocal(local);
 
-      var gotoSetNull = il.DefineLabel();
-      var fin = il.DefineLabel();
+            // if (field.HasValue) {
 
-      il.LoadLocalAddress(local);
-      il.Call<TBaseType?>("get_HasValue");
-      il.Load_I4_0();
-      il.CompareEqual();
-      il.StoreLocal(flag);
-      il.LoadLocal(flag);
-      il.BranchIfTrue(gotoSetNull);
+            var gotoSetNull = il.DefineLabel();
+            var fin = il.DefineLabel();
 
-      //   param.Value = field.Value;
+            il.LoadLocalAddress(local);
+            il.Call<TBaseType?>("get_HasValue");
+            il.Load_I4_0();
+            il.CompareEqual();
+            il.StoreLocal(flag);
+            il.LoadLocal(flag);
+            il.BranchIfTrue(gotoSetNull);
 
-      il.LoadLocal(parm);
-      EmitTranslateRuntimeType(il, local);
-      EmitInvokeDbParameterSetValue(il);
-      il.Branch(fin);
+            //   param.Value = field.Value;
 
-      // } else {
-      //   param.Value = DbNull.Value;
+            il.LoadLocal(parm);
+            EmitTranslateRuntimeType(il, local);
+            EmitInvokeDbParameterSetValue(il);
+            il.Branch(fin);
 
-      il.MarkLabel(gotoSetNull);
-      il.LoadLocal(parm);
-      il.LoadField(typeof(DBNull).GetField("Value", BindingFlags.Static | BindingFlags.Public));
-      EmitInvokeDbParameterSetValue(il);
+            // } else {
+            //   param.Value = DbNull.Value;
 
-      // }
+            il.MarkLabel(gotoSetNull);
+            il.LoadLocal(parm);
+            il.LoadField(typeof(DBNull).GetField("Value", BindingFlags.Static | BindingFlags.Public));
+            EmitInvokeDbParameterSetValue(il);
 
-      il.MarkLabel(fin);
+            // }
+
+            il.MarkLabel(fin);
+        }
+
+        protected override void EmitTranslateRuntimeType(ILGenerator il, LocalBuilder local)
+        {
+            il.LoadLocalAddress(local);
+            il.Call<TBaseType?>("get_Value");
+            il.Box(typeof(TBaseType));
+        }
+
+        protected override void EmitTranslateDbType(ILGenerator il)
+        {
+            il.NewObj(typeof(TBaseType?).GetConstructor(new[]
+            {
+                typeof(TBaseType)
+            }));
+        }
     }
-
-    protected override void EmitTranslateRuntimeType(ILGenerator il, LocalBuilder local)
-    {
-      il.LoadLocalAddress(local);
-      il.Call<TBaseType?>("get_Value");
-      il.Box(typeof(TBaseType));
-    }
-
-    protected override void EmitTranslateDbType(ILGenerator il)
-    {
-      il.NewObj(typeof(TBaseType?).GetConstructor(new[]
-      {
-        typeof(TBaseType)
-      }));
-    }
-  }
 }

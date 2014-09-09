@@ -10,22 +10,22 @@ using System.Linq;
 
 namespace FlitBit.Data.Meta
 {
-  /// <summary>
-  ///   Defines an ownership relationship between an IRepositoryOwner and
-  ///   entities.
-  /// </summary>
-  [AttributeUsage(AttributeTargets.Interface | AttributeTargets.Class)]
-  public sealed class MapOwnershipAttribute : Attribute
-  {
-    public MapOwnershipAttribute() { }
-
-    public MapOwnershipAttribute(EntityOwnershipBehaviors behaviors, params Type[] types)
+    /// <summary>
+    ///     Defines an ownership relationship between an IRepositoryOwner and
+    ///     entities.
+    /// </summary>
+    [AttributeUsage(AttributeTargets.Interface | AttributeTargets.Class)]
+    public sealed class MapOwnershipAttribute : Attribute
     {
-      this.Behaviors = behaviors;
-      this.Types = (types != null) ? types.ToArray() : new Type[0];
-    }
+        public MapOwnershipAttribute() { }
 
-    public EntityOwnershipBehaviors Behaviors { get; private set; }
-    public IEnumerable<Type> Types { get; private set; }
-  }
+        public MapOwnershipAttribute(EntityOwnershipBehaviors behaviors, params Type[] types)
+        {
+            this.Behaviors = behaviors;
+            this.Types = (types != null) ? types.ToArray() : new Type[0];
+        }
+
+        public EntityOwnershipBehaviors Behaviors { get; private set; }
+        public IEnumerable<Type> Types { get; private set; }
+    }
 }

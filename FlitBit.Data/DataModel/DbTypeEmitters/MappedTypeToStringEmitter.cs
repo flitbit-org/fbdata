@@ -12,15 +12,15 @@ using FlitBit.Emit;
 
 namespace FlitBit.Data.DataModel.DbTypeEmitters
 {
-  internal class MappedTypeToStringEmitter : MappedAnyToStringEmitter<Type>
-  {
-    public MappedTypeToStringEmitter(DbType dbType)
-      : base(dbType) { }
-
-    protected override void EmitTranslateType(MethodBuilder method)
+    internal class MappedTypeToStringEmitter : MappedAnyToStringEmitter<Type>
     {
-      var il = method.GetILGenerator();
-      il.Call<Type>("GetType", BindingFlags.Static | BindingFlags.Public, typeof(string));
+        public MappedTypeToStringEmitter(DbType dbType)
+            : base(dbType) { }
+
+        protected override void EmitTranslateType(MethodBuilder method)
+        {
+            var il = method.GetILGenerator();
+            il.Call<Type>("GetType", BindingFlags.Static | BindingFlags.Public, typeof(string));
+        }
     }
-  }
 }

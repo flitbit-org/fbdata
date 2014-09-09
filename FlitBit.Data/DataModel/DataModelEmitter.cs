@@ -31,821 +31,846 @@ using Extensions = FlitBit.Core.Extensions;
 
 namespace FlitBit.Data.DataModel
 {
-  /// <summary>
-  ///   Utility class for fulfilling the data-model (elsewhere known as Entity) stereotype by emitting implementations.
-  /// </summary>
-  internal static class DataModelEmitter
-  {
-    internal static readonly string CDirtyFlagsBackingFieldName = "<DirtyFlags>";
-
-    static readonly Lazy<EmittedModule> LazyModule =
-      new Lazy<EmittedModule>(() => RuntimeAssemblies.DynamicAssembly.DefineModule("DataModels", null),
-        LazyThreadSafetyMode.ExecutionAndPublication
-        );
-
-    static EmittedModule Module { get { return LazyModule.Value; } }
-
-    [SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter", Justification = "By design."
-      )]
-    internal static Type ConcreteType<T>(IMapping<T> mapping)
+    /// <summary>
+    ///     Utility class for fulfilling the data-model (elsewhere known as Entity) stereotype by emitting implementations.
+    /// </summary>
+    internal static class DataModelEmitter
     {
-      Contract.Requires<ArgumentNullException>(mapping != null);
-      Contract.Ensures(Contract.Result<Type>() != null);
+        internal static readonly string CDirtyFlagsBackingFieldName = "<DirtyFlags>";
 
-      var targetType = typeof(T);
-      var typeName = RuntimeAssemblies.PrepareTypeName(targetType, "DataModel");
+        static readonly Lazy<EmittedModule> LazyModule =
+            new Lazy<EmittedModule>(() => RuntimeAssemblies.DynamicAssembly.DefineModule("DataModels", null),
+                LazyThreadSafetyMode.ExecutionAndPublication
+                );
 
-      var module = Module;
-      lock (module)
-      {
-        var type = module.Builder.GetType(typeName, false, false) ??
-                   EmitImplementation<T>.BuildImplementation(module, typeName, mapping);
-        return type;
-      }
-    }
+        static EmittedModule Module { get { return LazyModule.Value; } }
 
-    static class EmitImplementation<TDataModel>
-    {
-      internal static Type BuildImplementation(EmittedModule module, string typeName, IMapping<TDataModel> mapping)
-      {
-        Contract.Requires<ArgumentNullException>(module != null);
-        Contract.Requires<ArgumentNullException>(typeName != null);
-        Contract.Requires<ArgumentException>(typeName.Length > 0);
-        Contract.Requires<InvalidOperationException>(mapping.HasBinder);
-        Contract.Ensures(Contract.Result<Type>() != null);
-
-        var builder = module.DefineClass(typeName, EmittedClass.DefaultTypeAttributes, typeof(object), null);
-        builder.Attributes = TypeAttributes.Sealed | TypeAttributes.Public | TypeAttributes.BeforeFieldInit;
-
-        builder.SetCustomAttribute<SerializableAttribute>();
-
-        var chashCodeSeed = builder.DefineField<int>("CHashCodeSeed");
-        chashCodeSeed.IncludeAttributes(FieldAttributes.Static | FieldAttributes.Private | FieldAttributes.InitOnly);
-        var cctor = builder.DefineCCtor();
-
-        if (mapping.Collections.Any())
+        [SuppressMessage("Microsoft.Design", "CA1004:GenericMethodsShouldProvideTypeParameter",
+            Justification = "By design."
+            )]
+        internal static Type ConcreteType<T>(IMapping<T> mapping)
         {
-          builder.DefineField<object>("_sync").ClearAttributes();
+            Contract.Requires<ArgumentNullException>(mapping != null);
+            Contract.Ensures(Contract.Result<Type>() != null);
+
+            var targetType = typeof(T);
+            var typeName = RuntimeAssemblies.PrepareTypeName(targetType, "DataModel");
+
+            var module = Module;
+            lock (module)
+            {
+                var type = module.Builder.GetType(typeName, false, false) ??
+                           EmitImplementation<T>.BuildImplementation(module, typeName, mapping);
+                return type;
+            }
         }
-        var dirtyFlags = builder.DefineField<BitVector>(CDirtyFlagsBackingFieldName);
-        dirtyFlags.ClearAttributes();
 
-        var ctor = builder.DefineDefaultCtor();
-
-        var propChanged = ImplementINotifyPropertyChanged(builder);
-        var props = new List<MemberRec>();
-        foreach (var intf in from type in typeof(TDataModel).GetTypeHierarchyInDeclarationOrder()
-                             where type.IsInterface
-                                   && type != typeof(IEquatable<TDataModel>)
-                                   && type != typeof(IDataModel)
-                                   && type != typeof(ICloneable)
-                                   && type != typeof(INotifyPropertyChanged)
-                             select type)
+        static class EmitImplementation<TDataModel>
         {
-          builder.AddInterfaceImplementation(intf);
-          ImplementMembersForInterface(mapping, intf, builder, props, dirtyFlags, propChanged);
-        }
-        ImplementSpecializedEquals(builder);
-        ImplementSpecializedGetHashCode(builder, chashCodeSeed);
-        ImplementIDataModel(builder, cctor, props, dirtyFlags, propChanged);
-        EmitConstructor(builder, ctor, props, dirtyFlags);
-        cctor.ContributeInstructions((m, il) =>
-        {
-          il.LoadType(builder.Builder);
-          il.CallVirtual(typeof(Type).GetProperty("AssemblyQualifiedName")
-                                     .GetGetMethod());
-          il.CallVirtual<object>("GetHashCode");
-          il.StoreField(chashCodeSeed);
-          foreach (var prop in props.Where(p => p.IsCollection))
-          {
-            il.LoadNull();
-            il.Emit(OpCodes.Ldftn, prop.CollectionMakeResolve.Builder);
-            var funcType = typeof(Func<>).MakeGenericType(prop.CollectionMakeResolve.Builder.ReturnType);
-            il.NewObj(funcType.GetConstructors()[0]);
-            il.LoadValue(LazyThreadSafetyMode.ExecutionAndPublication);
-            var lazyType = prop.CollectionStaticLazyCommand.Builder.FieldType;
-            il.NewObj(lazyType.GetConstructor(new[]
+            internal static Type BuildImplementation(EmittedModule module, string typeName, IMapping<TDataModel> mapping)
             {
-              funcType,
-              typeof(LazyThreadSafetyMode)
-            }));
-            prop.CollectionStaticLazyCommand.StoreValue(il);
-          }
-        });
+                Contract.Requires<ArgumentNullException>(module != null);
+                Contract.Requires<ArgumentNullException>(typeName != null);
+                Contract.Requires<ArgumentException>(typeName.Length > 0);
+                Contract.Requires<InvalidOperationException>(mapping.HasBinder);
+                Contract.Ensures(Contract.Result<Type>() != null);
 
-        builder.Compile();
-        return builder.Ref.Target;
-      }
+                var builder = module.DefineClass(typeName, EmittedClass.DefaultTypeAttributes, typeof(object), null);
+                builder.Attributes = TypeAttributes.Sealed | TypeAttributes.Public | TypeAttributes.BeforeFieldInit;
 
-      static void EmitConstructor(EmittedClass builder, EmittedMethodBase ctor, ICollection<MemberRec> props,
-        IFieldRef dirtyFlags)
-      {
-        ctor.ContributeInstructions((m, il) =>
-        {
-          il.LoadArg_0();
-          il.LoadValue(props.Count);
-          il.New<BitVector>(typeof(int));
-          il.StoreField(dirtyFlags);
+                builder.SetCustomAttribute<SerializableAttribute>();
 
-          var sync = builder.Fields.FirstOrDefault(f => f.Name == "_sync");
-          if (sync != null)
-          {
-            il.LoadArg_0();
-            il.New<Object>();
-            il.StoreField(sync);
-          }
+                var chashCodeSeed = builder.DefineField<int>("CHashCodeSeed");
+                chashCodeSeed.IncludeAttributes(FieldAttributes.Static | FieldAttributes.Private
+                                                | FieldAttributes.InitOnly);
+                var cctor = builder.DefineCCtor();
 
-          foreach (var prop in props)
-          {
-            if (prop.IsColumn
-                && prop.Column.IsReference)
-            {
-              il.LoadArg_0();
-              il.NewObj(prop.FieldType.GetConstructor(Type.EmptyTypes));
-              il.StoreField(prop.EmittedField);
-            }
-          }
-        });
-      }
-
-      static void ImplementIDataModelLoadFromDbRecord(EmittedClass builder, ICollection<MemberRec> props,
-        IFieldRef dirtyFlags)
-      {
-        var method = builder.DefineMethod("LoadFromDataReader");
-        method.ClearAttributes();
-        method.IncludeAttributes(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.NewSlot |
-                                 MethodAttributes.Virtual | MethodAttributes.Final);
-        var reader = method.DefineParameter("reader", typeof(DbDataReader));
-        var offsets = method.DefineParameter("offsets", typeof(int[]));
-        method.ContributeInstructions((m, il) =>
-        {
-          var col = m.DefineLocal("col", typeof(int));
-
-          foreach (var prop in props.OrderBy(p => p.Ordinal))
-          {
-            if (prop.IsColumn)
-            {
-              var mappedColumn = prop.Column;
-
-              var isnull = il.DefineLabel();
-              var store = il.DefineLabel();
-              il.LoadArg(offsets);
-              il.LoadValue(prop.Ordinal);
-              il.Emit(OpCodes.Ldelem_I4);
-              col.StoreValue(il);
-              il.LoadArg_0();
-              if (mappedColumn.IsNullable)
-              {
-                il.LoadArg(reader);
-                col.LoadValue(il);
-                il.CallVirtual<DbDataReader>("IsDBNull", typeof(int));
-                il.BranchIfTrue(isnull);
-              }
-              if (prop.Column.IsReference)
-              {
-                mappedColumn.Emitter.LoadValueFromDbReader(method.Builder, reader, col, mappedColumn.DbTypeDetails);
-                il.NewObj(prop.FieldType.GetConstructor(new[]
+                if (mapping.Collections.Any())
                 {
-                  prop.ReferenceTargetMemberType
-                }));
-                il.Branch(store);
-                if (mappedColumn.IsNullable)
-                {
-                  il.MarkLabel(isnull);
-                  il.NewObj(prop.FieldType.GetConstructor(Type.EmptyTypes));
+                    builder.DefineField<object>("_sync").ClearAttributes();
                 }
-              }
-              else
-              {
-                mappedColumn.Emitter.LoadValueFromDbReader(method.Builder, reader, col, mappedColumn.DbTypeDetails);
-                il.Branch(store);
-                if (mappedColumn.IsNullable)
+                var dirtyFlags = builder.DefineField<BitVector>(CDirtyFlagsBackingFieldName);
+                dirtyFlags.ClearAttributes();
+
+                var ctor = builder.DefineDefaultCtor();
+
+                var propChanged = ImplementINotifyPropertyChanged(builder);
+                var props = new List<MemberRec>();
+                foreach (var intf in from type in typeof(TDataModel).GetTypeHierarchyInDeclarationOrder()
+                                     where type.IsInterface
+                                           && type != typeof(IEquatable<TDataModel>)
+                                           && type != typeof(IDataModel)
+                                           && type != typeof(ICloneable)
+                                           && type != typeof(INotifyPropertyChanged)
+                                     select type)
                 {
-                  il.MarkLabel(isnull);
-                  if (prop.FieldType.IsValueType)
-                  {
-                    var defa = il.DeclareLocal(prop.FieldType);
-                    il.LoadLocalAddress(defa);
-                    il.InitObject(prop.FieldType);
-                    il.LoadLocal(defa);
-                  }
-                  else
-                  {
-                    il.LoadDefaultValue(prop.FieldType);
-                  }
+                    builder.AddInterfaceImplementation(intf);
+                    ImplementMembersForInterface(mapping, intf, builder, props, dirtyFlags, propChanged);
                 }
-              }
-              il.MarkLabel(store);
-              il.StoreField(prop.EmittedField);
-            }
-            else if (prop.IsCollection)
-            {
-              il.LoadArg_0();
-              il.LoadNull();
-              prop.EmittedField.StoreValue(il);
-            }
-          }
-          il.LoadArg_0();
-          il.LoadValue(props.Count);
-          il.New<BitVector>(typeof(int));
-          il.StoreField(dirtyFlags);
-        });
-      }
-
-      static void ImplementICloneableClone(EmittedClass builder, IEnumerable<MemberRec> props, EmittedField dirtyFlags)
-      {
-        var method = builder.DefineMethod("Clone");
-        method.ClearAttributes();
-        method.IncludeAttributes(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.NewSlot |
-                                 MethodAttributes.Virtual | MethodAttributes.Final);
-        method.ReturnType = TypeRef.FromType<object>();
-        method.ContributeInstructions((m, il) =>
-        {
-          var model = il.DeclareLocal(builder.Builder);
-          il.DeclareLocal(typeof(object));
-          var flag = il.DeclareLocal(typeof(bool));
-
-          il.LoadArg_0();
-          il.Call<Object>("MemberwiseClone", BindingFlags.Instance | BindingFlags.NonPublic);
-          il.CastClass(builder.Builder);
-          il.StoreLocal_0();
-          il.LoadLocal_0();
-          il.LoadArg_0();
-          il.LoadFieldAddress(dirtyFlags);
-          il.Call<BitVector>("Copy");
-          il.StoreField(dirtyFlags);
-
-          il.LoadLocal(model);
-          il.LoadNull();
-          il.StoreField(builder.Fields.Single(f => f.Name == "<PropertyChanged>")
-                               .Builder);
-
-          foreach (var prop in props)
-          {
-            if (prop.IsCollection)
-            {
-              //	if (this.<collection-field> != null)
-              //	{
-              //		model.<collection-field> = this.<collection-field>.Clone(new NotifyCollectionChangedEventHandler(model.<collection-field>_CollectionChanged));
-              //	}
-              //
-              var afterColl = il.DefineLabel();
-              il.LoadArg_0();
-              il.LoadField(prop.EmittedField);
-              il.LoadNull();
-              il.CompareEqual();
-              il.StoreLocal(flag);
-              il.LoadLocal(flag);
-              il.BranchIfTrue(afterColl);
-              il.LoadLocal(model);
-              il.LoadArg_0();
-              prop.EmittedField.LoadValue(il);
-              il.LoadLocal(model);
-              il.Emit(OpCodes.Ldftn, prop.CollectionChanged.Builder);
-              var ctor = typeof(NotifyCollectionChangedEventHandler).GetConstructors()[0];
-              il.NewObj(ctor);
-              il.CallVirtual(prop.FieldType.GetMethod("Clone", new[]
-              {
-                typeof(NotifyCollectionChangedEventHandler)
-              }));
-              il.StoreField(prop.EmittedField);
-              il.MarkLabel(afterColl);
-            }
-            else if (prop.FieldType.IsArray)
-            {
-              // copy the first rank
-              var after = il.DefineLabel();
-              var len = il.DeclareLocal(typeof(int));
-              il.LoadArg_0();
-              il.LoadField(prop.EmittedField);
-              il.LoadNull();
-              il.CompareEqual();
-              il.StoreLocal(flag);
-              il.LoadLocal(flag);
-              il.BranchIfTrue(after);
-
-              il.LoadArg_0();
-              il.LoadField(prop.EmittedField);
-              il.Emit(OpCodes.Ldlen);
-              il.ConvertToInt32();
-              il.StoreLocal(len);
-              il.LoadLocal(model);
-              il.LoadLocal(len);
-              il.Emit(OpCodes.Newarr, prop.FieldType.GetElementType());
-              il.StoreField(prop.EmittedField);
-              il.LoadArg_0();
-              il.LoadField(prop.EmittedField);
-              il.LoadLocal(model);
-              il.LoadField(prop.EmittedField);
-              il.LoadLocal(len);
-              il.Call<Array>("Copy", BindingFlags.Static | BindingFlags.Public, typeof(Array), typeof(Array),
-                typeof(int));
-
-              il.MarkLabel(after);
-            }
-          }
-
-          il.LoadLocal_0();
-          il.StoreLocal_1();
-          var exit = il.DefineLabel();
-          il.Branch_ShortForm(exit);
-          il.MarkLabel(exit);
-          il.LoadLocal_1();
-        });
-      }
-
-      static void ImplementIDataModel(EmittedClass builder, EmittedConstructor cctor, List<MemberRec> props,
-        EmittedField dirtyFlags, EmittedMethod propChanged)
-      {
-        builder.AddInterfaceImplementation(typeof(IDataModel));
-
-        ImplementIDataModelGetDirtyFlags(builder, dirtyFlags);
-        ImplementIDataModelGetReferentID(builder, props);
-        ImplementIDataModelSetReferentID(builder, props, dirtyFlags, propChanged);
-        ImplementIDataModelResetDirtyFlags(builder, props, dirtyFlags);
-        ImplementIDataModelIsDirty(builder, cctor, props, dirtyFlags);
-        ImplementIDataModelCaptureBufferView(builder, props, dirtyFlags);
-        ImplementIDataModelRestoreBufferView(builder, props, dirtyFlags);
-        ImplementICloneableClone(builder, props, dirtyFlags);
-        ImplementIValidatableObject(builder, props, dirtyFlags);
-        // mapping...
-        ImplementIDataModelLoadFromDbRecord(builder, props, dirtyFlags);
-      }
-
-      static void ImplementIDataModelCaptureBufferView(EmittedClass builder, List<MemberRec> props, EmittedField dirtyFlags)
-      {
-        var method = builder.DefineMethod("CaptureBufferView");
-        method.ClearAttributes();
-        method.IncludeAttributes(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.NewSlot |
-                                 MethodAttributes.Virtual | MethodAttributes.Final);
-        var buffer = method.DefineParameter("buffer", typeof(BinaryWriter));
-        method.ContributeInstructions((m, il) =>
-        {
-          foreach (var prop in props.OrderBy(p => p.Ordinal))
-          {
-            if (prop.IsColumn)
-            {
-              var mappedColumn = prop.Column;
-
-              il.LoadArg(buffer);
-              il.LoadArg_0();
-              il.LoadField(prop.EmittedField);
-              if (mappedColumn.IsReference)
-              {
-                il.Call(prop.FieldType.GetProperty("HasIdentityKey").GetGetMethod());
-                il.LoadArg_0();
-                il.LoadField(prop.EmittedField);
-                il.Call(prop.FieldType.GetProperty("IdentityKey").GetGetMethod());
-                var ft = prop.ReferenceTargetMemberType;
-                if (ft.IsEnum)
+                ImplementSpecializedEquals(builder);
+                ImplementSpecializedGetHashCode(builder, chashCodeSeed);
+                ImplementIDataModel(builder, cctor, props, dirtyFlags, propChanged);
+                EmitConstructor(builder, ctor, props, dirtyFlags);
+                cctor.ContributeInstructions((m, il) =>
                 {
-                  ft = Enum.GetUnderlyingType(ft);
-                }
-                il.Call(
-                  typeof(BinaryFormat).GetMethod("Write", BindingFlags.Public | BindingFlags.Static, null,
-                    new[]
+                    il.LoadType(builder.Builder);
+                    il.CallVirtual(typeof(Type).GetProperty("AssemblyQualifiedName")
+                                               .GetGetMethod());
+                    il.CallVirtual<object>("GetHashCode");
+                    il.StoreField(chashCodeSeed);
+                    foreach (var prop in props.Where(p => p.IsCollection))
                     {
-                      typeof(BinaryWriter),
-                      typeof(bool),
-                      ft
-                    },
-                    null
-                    ));
-              }
-              else
-              {
-                var ft = prop.FieldType;
-                if (ft.IsEnum)
+                        il.LoadNull();
+                        il.Emit(OpCodes.Ldftn, prop.CollectionMakeResolve.Builder);
+                        var funcType = typeof(Func<>).MakeGenericType(prop.CollectionMakeResolve.Builder.ReturnType);
+                        il.NewObj(funcType.GetConstructors()[0]);
+                        il.LoadValue(LazyThreadSafetyMode.ExecutionAndPublication);
+                        var lazyType = prop.CollectionStaticLazyCommand.Builder.FieldType;
+                        il.NewObj(lazyType.GetConstructor(new[]
+                        {
+                            funcType,
+                            typeof(LazyThreadSafetyMode)
+                        }));
+                        prop.CollectionStaticLazyCommand.StoreValue(il);
+                    }
+                });
+
+                builder.Compile();
+                return builder.Ref.Target;
+            }
+
+            static void EmitConstructor(EmittedClass builder, EmittedMethodBase ctor, ICollection<MemberRec> props,
+                IFieldRef dirtyFlags)
+            {
+                ctor.ContributeInstructions((m, il) =>
                 {
-                  ft = Enum.GetUnderlyingType(ft);
-                }
-                il.Call(
-                  typeof(BinaryFormat).GetMethod("Write", BindingFlags.Public | BindingFlags.Static, null,
-                    new[]
+                    il.LoadArg_0();
+                    il.LoadValue(props.Count);
+                    il.New<BitVector>(typeof(int));
+                    il.StoreField(dirtyFlags);
+
+                    var sync = builder.Fields.FirstOrDefault(f => f.Name == "_sync");
+                    if (sync != null)
                     {
-                      typeof(BinaryWriter),
-                      ft
-                    },
-                    null
-                    ));
-              }
-            }
-          }
-        });
-      }
+                        il.LoadArg_0();
+                        il.New<Object>();
+                        il.StoreField(sync);
+                    }
 
-      static void ImplementIDataModelRestoreBufferView(EmittedClass builder, List<MemberRec> props, EmittedField dirtyFlags)
-      {
-        var method = builder.DefineMethod("RestoreBufferView");
-        method.ClearAttributes();
-        method.IncludeAttributes(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.NewSlot |
-                                 MethodAttributes.Virtual | MethodAttributes.Final);
-        var buffer = method.DefineParameter("buffer", typeof(BinaryReader));
-        method.ContributeInstructions((m, il) =>
-        {
-          foreach (var prop in props.OrderBy(p => p.Ordinal))
-          {
-            if (prop.IsColumn)
-            {
-              var mappedColumn = prop.Column;
-
-              if (mappedColumn.IsReference)
-              {
-                var ft = prop.ReferenceTargetMemberType;
-                if (ft.IsEnum)
-                {
-                  ft = Enum.GetUnderlyingType(ft);
-                }
-                Type readType = null;
-                LocalBuilder lcl;
-                if (ft.IsValueType)
-                {
-                  readType = typeof(Nullable<>).MakeGenericType(ft);
-                  lcl = il.DeclareLocal(readType);
-                  il.LoadLocalAddress(lcl);
-                  il.InitObject(readType);
-                }
-                else
-                {
-                  readType = ft;
-                  lcl = il.DeclareLocal(ft);
-                }
-
-                il.LoadArg(buffer);
-                il.LoadLocalAddress(lcl);
-                il.Call(
-                  typeof(BinaryFormat).GetMethod("Read", BindingFlags.Public | BindingFlags.Static, null,
-                    new[]
+                    foreach (var prop in props)
                     {
-                      typeof(BinaryReader),
-                      readType.MakeByRefType()
-                    },
-                    null
-                    ));
-                il.LoadArg_0();
-                if (ft.IsValueType)
+                        if (prop.IsColumn
+                            && prop.Column.IsReference)
+                        {
+                            il.LoadArg_0();
+                            il.NewObj(prop.FieldType.GetConstructor(Type.EmptyTypes));
+                            il.StoreField(prop.EmittedField);
+                        }
+                    }
+                });
+            }
+
+            static void ImplementIDataModelLoadFromDbRecord(EmittedClass builder, ICollection<MemberRec> props,
+                IFieldRef dirtyFlags)
+            {
+                var method = builder.DefineMethod("LoadFromDataReader");
+                method.ClearAttributes();
+                method.IncludeAttributes(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.NewSlot
+                                         |
+                                         MethodAttributes.Virtual | MethodAttributes.Final);
+                var reader = method.DefineParameter("reader", typeof(DbDataReader));
+                var offsets = method.DefineParameter("offsets", typeof(int[]));
+                method.ContributeInstructions((m, il) =>
                 {
-                  il.LoadLocalAddress(lcl);
-                  il.Call(readType.GetMethod("GetValueOrDefault", Type.EmptyTypes));
-                }
-                else
-                {
-                  il.LoadLocal(lcl);
-                }
-                il.NewObj(prop.FieldType.GetConstructor(new[]
-                {
-                  prop.ReferenceTargetMemberType
-                }));
-                il.StoreField(prop.EmittedField);
-              }
-              else
-              {
-                il.LoadArg(buffer);
-                il.LoadArg_0();
-                il.LoadFieldAddress(prop.EmittedField);
-                var ft = prop.FieldType;
-                if (ft.IsEnum)
-                {
-                  ft = Enum.GetUnderlyingType(ft);
-                }
-                il.Call(
-                  typeof(BinaryFormat).GetMethod("Read", BindingFlags.Public | BindingFlags.Static, null,
-                    new[]
+                    var col = m.DefineLocal("col", typeof(int));
+
+                    foreach (var prop in props.OrderBy(p => p.Ordinal))
                     {
-                      typeof(BinaryReader),
-                      ft.MakeByRefType()
-                    },
-                    null
-                    ));
-              }
+                        if (prop.IsColumn)
+                        {
+                            var mappedColumn = prop.Column;
+
+                            var isnull = il.DefineLabel();
+                            var store = il.DefineLabel();
+                            il.LoadArg(offsets);
+                            il.LoadValue(prop.Ordinal);
+                            il.Emit(OpCodes.Ldelem_I4);
+                            col.StoreValue(il);
+                            il.LoadArg_0();
+                            if (mappedColumn.IsNullable)
+                            {
+                                il.LoadArg(reader);
+                                col.LoadValue(il);
+                                il.CallVirtual<DbDataReader>("IsDBNull", typeof(int));
+                                il.BranchIfTrue(isnull);
+                            }
+                            if (prop.Column.IsReference)
+                            {
+                                mappedColumn.Emitter.LoadValueFromDbReader(method.Builder, reader, col,
+                                    mappedColumn.DbTypeDetails);
+                                il.NewObj(prop.FieldType.GetConstructor(new[]
+                                {
+                                    prop.ReferenceTargetMemberType
+                                }));
+                                il.Branch(store);
+                                if (mappedColumn.IsNullable)
+                                {
+                                    il.MarkLabel(isnull);
+                                    il.NewObj(prop.FieldType.GetConstructor(Type.EmptyTypes));
+                                }
+                            }
+                            else
+                            {
+                                mappedColumn.Emitter.LoadValueFromDbReader(method.Builder, reader, col,
+                                    mappedColumn.DbTypeDetails);
+                                il.Branch(store);
+                                if (mappedColumn.IsNullable)
+                                {
+                                    il.MarkLabel(isnull);
+                                    if (prop.FieldType.IsValueType)
+                                    {
+                                        var defa = il.DeclareLocal(prop.FieldType);
+                                        il.LoadLocalAddress(defa);
+                                        il.InitObject(prop.FieldType);
+                                        il.LoadLocal(defa);
+                                    }
+                                    else
+                                    {
+                                        il.LoadDefaultValue(prop.FieldType);
+                                    }
+                                }
+                            }
+                            il.MarkLabel(store);
+                            il.StoreField(prop.EmittedField);
+                        }
+                        else if (prop.IsCollection)
+                        {
+                            il.LoadArg_0();
+                            il.LoadNull();
+                            prop.EmittedField.StoreValue(il);
+                        }
+                    }
+                    il.LoadArg_0();
+                    il.LoadValue(props.Count);
+                    il.New<BitVector>(typeof(int));
+                    il.StoreField(dirtyFlags);
+                });
             }
-            else if (prop.IsCollection)
+
+            static void ImplementICloneableClone(EmittedClass builder, IEnumerable<MemberRec> props,
+                EmittedField dirtyFlags)
             {
-              il.LoadArg_0();
-              il.LoadNull();
-              prop.EmittedField.StoreValue(il);
+                var method = builder.DefineMethod("Clone");
+                method.ClearAttributes();
+                method.IncludeAttributes(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.NewSlot
+                                         |
+                                         MethodAttributes.Virtual | MethodAttributes.Final);
+                method.ReturnType = TypeRef.FromType<object>();
+                method.ContributeInstructions((m, il) =>
+                {
+                    var model = il.DeclareLocal(builder.Builder);
+                    il.DeclareLocal(typeof(object));
+                    var flag = il.DeclareLocal(typeof(bool));
+
+                    il.LoadArg_0();
+                    il.Call<Object>("MemberwiseClone", BindingFlags.Instance | BindingFlags.NonPublic);
+                    il.CastClass(builder.Builder);
+                    il.StoreLocal_0();
+                    il.LoadLocal_0();
+                    il.LoadArg_0();
+                    il.LoadFieldAddress(dirtyFlags);
+                    il.Call<BitVector>("Copy");
+                    il.StoreField(dirtyFlags);
+
+                    il.LoadLocal(model);
+                    il.LoadNull();
+                    il.StoreField(builder.Fields.Single(f => f.Name == "<PropertyChanged>")
+                                         .Builder);
+
+                    foreach (var prop in props)
+                    {
+                        if (prop.IsCollection)
+                        {
+                            //	if (this.<collection-field> != null)
+                            //	{
+                            //		model.<collection-field> = this.<collection-field>.Clone(new NotifyCollectionChangedEventHandler(model.<collection-field>_CollectionChanged));
+                            //	}
+                            //
+                            var afterColl = il.DefineLabel();
+                            il.LoadArg_0();
+                            il.LoadField(prop.EmittedField);
+                            il.LoadNull();
+                            il.CompareEqual();
+                            il.StoreLocal(flag);
+                            il.LoadLocal(flag);
+                            il.BranchIfTrue(afterColl);
+                            il.LoadLocal(model);
+                            il.LoadArg_0();
+                            prop.EmittedField.LoadValue(il);
+                            il.LoadLocal(model);
+                            il.Emit(OpCodes.Ldftn, prop.CollectionChanged.Builder);
+                            var ctor = typeof(NotifyCollectionChangedEventHandler).GetConstructors()[0];
+                            il.NewObj(ctor);
+                            il.CallVirtual(prop.FieldType.GetMethod("Clone", new[]
+                            {
+                                typeof(NotifyCollectionChangedEventHandler)
+                            }));
+                            il.StoreField(prop.EmittedField);
+                            il.MarkLabel(afterColl);
+                        }
+                        else if (prop.FieldType.IsArray)
+                        {
+                            // copy the first rank
+                            var after = il.DefineLabel();
+                            var len = il.DeclareLocal(typeof(int));
+                            il.LoadArg_0();
+                            il.LoadField(prop.EmittedField);
+                            il.LoadNull();
+                            il.CompareEqual();
+                            il.StoreLocal(flag);
+                            il.LoadLocal(flag);
+                            il.BranchIfTrue(after);
+
+                            il.LoadArg_0();
+                            il.LoadField(prop.EmittedField);
+                            il.Emit(OpCodes.Ldlen);
+                            il.ConvertToInt32();
+                            il.StoreLocal(len);
+                            il.LoadLocal(model);
+                            il.LoadLocal(len);
+                            il.Emit(OpCodes.Newarr, prop.FieldType.GetElementType());
+                            il.StoreField(prop.EmittedField);
+                            il.LoadArg_0();
+                            il.LoadField(prop.EmittedField);
+                            il.LoadLocal(model);
+                            il.LoadField(prop.EmittedField);
+                            il.LoadLocal(len);
+                            il.Call<Array>("Copy", BindingFlags.Static | BindingFlags.Public, typeof(Array),
+                                typeof(Array),
+                                typeof(int));
+
+                            il.MarkLabel(after);
+                        }
+                    }
+
+                    il.LoadLocal_0();
+                    il.StoreLocal_1();
+                    var exit = il.DefineLabel();
+                    il.Branch_ShortForm(exit);
+                    il.MarkLabel(exit);
+                    il.LoadLocal_1();
+                });
             }
-          }
-          il.LoadArg_0();
-          il.LoadValue(props.Count);
-          il.New<BitVector>(typeof(int));
-          il.StoreField(dirtyFlags);
-        });
-      }
 
-      static void ImplementIValidatableObject(EmittedClass builder, List<MemberRec> props, EmittedField dirtyFlags)
-      {
-        var method = builder.DefineMethod("Validate");
-        method.ClearAttributes();
-        method.IncludeAttributes(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.NewSlot |
-                                 MethodAttributes.Virtual | MethodAttributes.Final);
-        method.ReturnType = TypeRef.FromType<IEnumerable<ValidationResult>>();
-        var validationContext = method.DefineParameter("validationContext", typeof(ValidationContext));
-        method.ContributeInstructions((m, il) => { il.LoadNull(); });
-      }
-
-      static void ImplementIDataModelGetDirtyFlags(EmittedClass builder, EmittedField dirtyFlags)
-      {
-        var method = builder.DefineMethod("GetDirtyFlags");
-        method.ClearAttributes();
-        method.IncludeAttributes(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.NewSlot |
-                                 MethodAttributes.Virtual | MethodAttributes.Final);
-        method.ReturnType = TypeRef.FromType<BitVector>();
-        method.ContributeInstructions((m, il) =>
-        {
-          il.DeclareLocal(typeof(BitVector));
-
-          il.LoadArg_0();
-          il.LoadFieldAddress(dirtyFlags);
-          il.Call<BitVector>("Clone");
-          il.UnboxAny(typeof(BitVector));
-          il.StoreLocal_0();
-          var exit = il.DefineLabel();
-          il.Branch_ShortForm(exit);
-          il.MarkLabel(exit);
-          il.LoadLocal_0();
-        });
-      }
-
-      static void ImplementIDataModelGetReferentID(EmittedClass builder, IEnumerable<MemberRec> props)
-      {
-        var method = builder.DefineMethod("GetReferentID");
-        method.ClearAttributes();
-        method.IncludeAttributes(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.NewSlot |
-                                 MethodAttributes.Virtual | MethodAttributes.Final);
-        var gtpb = method.Builder.DefineGenericParameters("TIdentityKey");
-        var tid = gtpb[0];
-        method.Builder.SetReturnType(tid);
-        method.Builder.SetParameters(typeof(string));
-        method.Builder.DefineParameter(1, ParameterAttributes.In, "member");
-
-        method.ContributeInstructions((m, il) =>
-        {
-          var res = il.DeclareLocal(tid);
-          var flag = il.DeclareLocal<bool>();
-          var done = il.DefineLabel();
-          foreach (var prop in props.Where(p => p.IsColumn && p.Column.IsReference))
-          {
-            var after = il.DefineLabel();
-            il.LoadValue(prop.SourceAsProperty.Name);
-            il.LoadArg_1();
-            il.Call<string>("Equals", BindingFlags.Public | BindingFlags.Static, typeof(string), typeof(string));
-            il.Load_I4_0();
-            il.CompareEqual();
-            il.BranchIfTrue(after);
-            il.LoadArg_0();
-            il.LoadField(prop.EmittedField);
-            il.CallVirtual(prop.FieldType.GetProperty("IdentityKey")
-                               .GetGetMethod());
-            if (prop.ReferenceTargetMemberType.IsValueType)
+            static void ImplementIDataModel(EmittedClass builder, EmittedConstructor cctor, List<MemberRec> props,
+                EmittedField dirtyFlags, EmittedMethod propChanged)
             {
-              il.Box(prop.ReferenceTargetMemberType);
+                builder.AddInterfaceImplementation(typeof(IDataModel));
+
+                ImplementIDataModelGetDirtyFlags(builder, dirtyFlags);
+                ImplementIDataModelGetReferentID(builder, props);
+                ImplementIDataModelSetReferentID(builder, props, dirtyFlags, propChanged);
+                ImplementIDataModelResetDirtyFlags(builder, props, dirtyFlags);
+                ImplementIDataModelIsDirty(builder, cctor, props, dirtyFlags);
+                ImplementIDataModelCaptureBufferView(builder, props, dirtyFlags);
+                ImplementIDataModelRestoreBufferView(builder, props, dirtyFlags);
+                ImplementICloneableClone(builder, props, dirtyFlags);
+                ImplementIValidatableObject(builder, props, dirtyFlags);
+                // mapping...
+                ImplementIDataModelLoadFromDbRecord(builder, props, dirtyFlags);
             }
-            il.UnboxAny(tid);
-            il.StoreLocal(res);
-            il.Branch(done);
-            il.MarkLabel(after);
-          }
-          var cont = il.DefineLabel();
-          il.LoadArg_1();
-          il.LoadNull();
-          il.CompareEqual();
-          il.Load_I4_0();
-          il.CompareEqual();
-          il.StoreLocal(flag);
-          il.LoadLocal(flag);
-          il.BranchIfTrue(cont);
-          il.LoadValue("member");
-          il.New<ArgumentNullException>(typeof(string));
-          il.Throw();
-          il.MarkLabel(cont);
-          il.LoadValue("member");
-          il.LoadValue(String.Concat(typeof(TDataModel).Name, " does not reference: "));
-          il.LoadArg_1();
-          il.LoadValue(".");
-          il.Call<string>("Concat", BindingFlags.Static | BindingFlags.Public, typeof(string), typeof(string),
-            typeof(string));
-          il.New<ArgumentOutOfRangeException>(typeof(string), typeof(string));
-          il.Throw();
-          il.MarkLabel(done);
-          il.LoadLocal(res);
-        });
-      }
 
-      static void ImplementIDataModelIsDirty(EmittedClass builder, EmittedMethodBase cctor,
-        IEnumerable<MemberRec> props,
-        IValueRef dirtyFlags)
-      {
-        var fieldMap = builder.DefineField<string[]>("__fieldMap");
-        fieldMap.ClearAttributes();
-        fieldMap.IncludeAttributes(FieldAttributes.Static | FieldAttributes.InitOnly | FieldAttributes.Private);
-        cctor.ContributeInstructions((m, il) =>
-        {
-          var arr = il.DeclareLocal(typeof(String[]));
-          var cols = props.OrderBy(p => p.Ordinal).ToArray();
-
-          il.NewArr(typeof(string), cols.Length);
-          il.StoreLocal(arr);
-          for (var i = 0; i < cols.Length; i++)
-          {
-            il.LoadLocal(arr);
-            il.LoadValue(i);
-            if (cols[i].IsCollection)
+            static void ImplementIDataModelCaptureBufferView(EmittedClass builder, List<MemberRec> props,
+                EmittedField dirtyFlags)
             {
-              il.LoadValue(cols[i].Collection.Name);
+                var method = builder.DefineMethod("CaptureBufferView");
+                method.ClearAttributes();
+                method.IncludeAttributes(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.NewSlot
+                                         |
+                                         MethodAttributes.Virtual | MethodAttributes.Final);
+                var buffer = method.DefineParameter("buffer", typeof(BinaryWriter));
+                method.ContributeInstructions((m, il) =>
+                {
+                    foreach (var prop in props.OrderBy(p => p.Ordinal))
+                    {
+                        if (prop.IsColumn)
+                        {
+                            var mappedColumn = prop.Column;
+
+                            il.LoadArg(buffer);
+                            il.LoadArg_0();
+                            il.LoadField(prop.EmittedField);
+                            if (mappedColumn.IsReference)
+                            {
+                                il.Call(prop.FieldType.GetProperty("HasIdentityKey").GetGetMethod());
+                                il.LoadArg_0();
+                                il.LoadField(prop.EmittedField);
+                                il.Call(prop.FieldType.GetProperty("IdentityKey").GetGetMethod());
+                                var ft = prop.ReferenceTargetMemberType;
+                                if (ft.IsEnum)
+                                {
+                                    ft = Enum.GetUnderlyingType(ft);
+                                }
+                                il.Call(
+                                    typeof(BinaryFormat).GetMethod("Write", BindingFlags.Public | BindingFlags.Static,
+                                        null,
+                                        new[]
+                                        {
+                                            typeof(BinaryWriter),
+                                            typeof(bool),
+                                            ft
+                                        },
+                                        null
+                                        ));
+                            }
+                            else
+                            {
+                                var ft = prop.FieldType;
+                                if (ft.IsEnum)
+                                {
+                                    ft = Enum.GetUnderlyingType(ft);
+                                }
+                                il.Call(
+                                    typeof(BinaryFormat).GetMethod("Write", BindingFlags.Public | BindingFlags.Static,
+                                        null,
+                                        new[]
+                                        {
+                                            typeof(BinaryWriter),
+                                            ft
+                                        },
+                                        null
+                                        ));
+                            }
+                        }
+                    }
+                });
             }
-            else
+
+            static void ImplementIDataModelRestoreBufferView(EmittedClass builder, List<MemberRec> props,
+                EmittedField dirtyFlags)
             {
-              il.LoadValue(cols[i].Source.Name);
+                var method = builder.DefineMethod("RestoreBufferView");
+                method.ClearAttributes();
+                method.IncludeAttributes(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.NewSlot
+                                         |
+                                         MethodAttributes.Virtual | MethodAttributes.Final);
+                var buffer = method.DefineParameter("buffer", typeof(BinaryReader));
+                method.ContributeInstructions((m, il) =>
+                {
+                    foreach (var prop in props.OrderBy(p => p.Ordinal))
+                    {
+                        if (prop.IsColumn)
+                        {
+                            var mappedColumn = prop.Column;
+
+                            if (mappedColumn.IsReference)
+                            {
+                                var ft = prop.ReferenceTargetMemberType;
+                                if (ft.IsEnum)
+                                {
+                                    ft = Enum.GetUnderlyingType(ft);
+                                }
+                                Type readType = null;
+                                LocalBuilder lcl;
+                                if (ft.IsValueType)
+                                {
+                                    readType = typeof(Nullable<>).MakeGenericType(ft);
+                                    lcl = il.DeclareLocal(readType);
+                                    il.LoadLocalAddress(lcl);
+                                    il.InitObject(readType);
+                                }
+                                else
+                                {
+                                    readType = ft;
+                                    lcl = il.DeclareLocal(ft);
+                                }
+
+                                il.LoadArg(buffer);
+                                il.LoadLocalAddress(lcl);
+                                il.Call(
+                                    typeof(BinaryFormat).GetMethod("Read", BindingFlags.Public | BindingFlags.Static,
+                                        null,
+                                        new[]
+                                        {
+                                            typeof(BinaryReader),
+                                            readType.MakeByRefType()
+                                        },
+                                        null
+                                        ));
+                                il.LoadArg_0();
+                                if (ft.IsValueType)
+                                {
+                                    il.LoadLocalAddress(lcl);
+                                    il.Call(readType.GetMethod("GetValueOrDefault", Type.EmptyTypes));
+                                }
+                                else
+                                {
+                                    il.LoadLocal(lcl);
+                                }
+                                il.NewObj(prop.FieldType.GetConstructor(new[]
+                                {
+                                    prop.ReferenceTargetMemberType
+                                }));
+                                il.StoreField(prop.EmittedField);
+                            }
+                            else
+                            {
+                                il.LoadArg(buffer);
+                                il.LoadArg_0();
+                                il.LoadFieldAddress(prop.EmittedField);
+                                var ft = prop.FieldType;
+                                if (ft.IsEnum)
+                                {
+                                    ft = Enum.GetUnderlyingType(ft);
+                                }
+                                il.Call(
+                                    typeof(BinaryFormat).GetMethod("Read", BindingFlags.Public | BindingFlags.Static,
+                                        null,
+                                        new[]
+                                        {
+                                            typeof(BinaryReader),
+                                            ft.MakeByRefType()
+                                        },
+                                        null
+                                        ));
+                            }
+                        }
+                        else if (prop.IsCollection)
+                        {
+                            il.LoadArg_0();
+                            il.LoadNull();
+                            prop.EmittedField.StoreValue(il);
+                        }
+                    }
+                    il.LoadArg_0();
+                    il.LoadValue(props.Count);
+                    il.New<BitVector>(typeof(int));
+                    il.StoreField(dirtyFlags);
+                });
             }
-            il.Emit(OpCodes.Stelem, typeof(string));
-          }
-          il.LoadLocal(arr);
-          il.StoreField(fieldMap);
-        });
 
-        var method = builder.DefineMethod("IsDirty");
-        method.ClearAttributes();
-        method.IncludeAttributes(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.NewSlot |
-                                 MethodAttributes.Virtual | MethodAttributes.Final);
-        method.ReturnType = TypeRef.FromType<bool>();
-        method.DefineParameter("member", typeof(String));
-        method.ContributeInstructions((m, il) =>
-        {
-          il.DeclareLocal(typeof(Int32));
-          il.DeclareLocal(typeof(bool));
-          il.DeclareLocal(typeof(bool));
-          var proceed = il.DefineLabel();
-          var yep = il.DefineLabel();
-
-          il.LoadArg_1();
-          il.LoadNull();
-          il.CompareEqual();
-          il.LoadValue(false);
-          il.CompareEqual();
-          il.StoreLocal_2();
-          il.LoadLocal_2();
-          il.BranchIfTrue_ShortForm(proceed);
-          il.LoadValue("member");
-          il.New<ArgumentNullException>(typeof(string));
-          il.Throw();
-          il.MarkLabel(proceed);
-          il.LoadField(fieldMap);
-          il.LoadArg_1();
-          var indexOf = typeof(Array).MatchGenericMethod("IndexOf", BindingFlags.Public | BindingFlags.Static,
-            1, typeof(int), typeof(string[]), typeof(string));
-          il.Call(indexOf.MakeGenericMethod(typeof(string)));
-          il.StoreLocal_0();
-          il.LoadLocal_0();
-          il.LoadValue(0);
-          il.CompareLessThan();
-          il.LoadValue(0);
-          il.CompareEqual();
-          il.StoreLocal_2();
-          il.LoadLocal_2();
-          il.BranchIfTrue(yep);
-
-          il.LoadValue("member");
-          il.LoadValue(String.Concat(typeof(TDataModel).GetReadableSimpleName(), " does not define property: `"));
-          il.LoadArg_1();
-          il.LoadValue("`.");
-          il.Call<string>("Concat", BindingFlags.Static | BindingFlags.Public, typeof(string), typeof(string),
-            typeof(string));
-          il.NewObj(
-            typeof(ArgumentOutOfRangeException).GetConstructor(new[]
+            static void ImplementIValidatableObject(EmittedClass builder, List<MemberRec> props, EmittedField dirtyFlags)
             {
-              typeof(string),
-              typeof(string)
-            }));
-          il.Throw();
-          il.MarkLabel(yep);
-          il.LoadArg_0();
-          dirtyFlags.LoadAddress(il);
-          il.LoadLocal_0();
-          il.Call<BitVector>("get_Item", typeof(int));
-          il.StoreLocal_1();
-          il.DefineAndMarkLabel();
-          il.LoadLocal_1();
-        });
-      }
+                var method = builder.DefineMethod("Validate");
+                method.ClearAttributes();
+                method.IncludeAttributes(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.NewSlot
+                                         |
+                                         MethodAttributes.Virtual | MethodAttributes.Final);
+                method.ReturnType = TypeRef.FromType<IEnumerable<ValidationResult>>();
+                var validationContext = method.DefineParameter("validationContext", typeof(ValidationContext));
+                method.ContributeInstructions((m, il) => { il.LoadNull(); });
+            }
 
-      static void ImplementIDataModelResetDirtyFlags(EmittedClass builder, List<MemberRec> props,
-        EmittedField dirtyFlags)
-      {
-        var method = builder.DefineMethod("ResetDirtyFlags");
-        method.ClearAttributes();
-        method.IncludeAttributes(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.NewSlot |
-                                 MethodAttributes.Virtual | MethodAttributes.Final);
-        method.ContributeInstructions((m, il) =>
-        {
-          il.LoadArg_0();
-          il.LoadValue(props.Count);
-          il.New<BitVector>(typeof(int));
-          il.StoreField(dirtyFlags);
-        });
-      }
-
-      static void ImplementIDataModelSetReferentID(EmittedClass builder, IEnumerable<MemberRec> props,
-        EmittedField dirtyFlags, EmittedMethod propChanged)
-      {
-        var method = builder.DefineMethod("SetReferentID");
-        method.ClearAttributes();
-        method.IncludeAttributes(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.NewSlot |
-                                 MethodAttributes.Virtual | MethodAttributes.Final);
-        var gtpb = method.Builder.DefineGenericParameters("TIdentityKey");
-        var tid = gtpb[0];
-        method.Builder.SetParameters(typeof(string), tid);
-        method.DefineParameter("member", typeof(string));
-        method.DefineParameter("id", tid);
-
-        method.ContributeInstructions((m, il) =>
-        {
-          var flag = il.DeclareLocal<bool>();
-          var done = il.DefineLabel();
-          foreach (var prop in props.Where(p => p.IsColumn && p.Column.IsReference))
-          {
-            var after = il.DefineLabel();
-            var brexit = il.DefineLabel();
-            il.LoadValue(prop.SourceAsProperty.Name);
-            il.LoadArg_1();
-            il.Call<string>("Equals", BindingFlags.Public | BindingFlags.Static, typeof(string), typeof(string));
-            il.Load_I4_0();
-            il.CompareEqual();
-            il.BranchIfTrue(after);
-            il.LoadArg_0();
-            il.LoadField(prop.EmittedField);
-            il.LoadArg_2();
-            il.Box(tid);
-            il.CallVirtual(prop.FieldType.GetMethod("IdentityEquals", new[]
+            static void ImplementIDataModelGetDirtyFlags(EmittedClass builder, EmittedField dirtyFlags)
             {
-              typeof(object)
-            }));
-            il.StoreLocal_0();
-            il.LoadLocal_0();
-            il.BranchIfTrue(brexit);
-            il.LoadArg_0();
-            il.LoadArg_2();
-            il.Box(tid);
-            il.UnboxAny(prop.ReferenceTargetMemberType);
-            il.NewObj(prop.FieldType.GetConstructor(new[]
+                var method = builder.DefineMethod("GetDirtyFlags");
+                method.ClearAttributes();
+                method.IncludeAttributes(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.NewSlot
+                                         |
+                                         MethodAttributes.Virtual | MethodAttributes.Final);
+                method.ReturnType = TypeRef.FromType<BitVector>();
+                method.ContributeInstructions((m, il) =>
+                {
+                    il.DeclareLocal(typeof(BitVector));
+
+                    il.LoadArg_0();
+                    il.LoadFieldAddress(dirtyFlags);
+                    il.Call<BitVector>("Clone");
+                    il.UnboxAny(typeof(BitVector));
+                    il.StoreLocal_0();
+                    var exit = il.DefineLabel();
+                    il.Branch_ShortForm(exit);
+                    il.MarkLabel(exit);
+                    il.LoadLocal_0();
+                });
+            }
+
+            static void ImplementIDataModelGetReferentID(EmittedClass builder, IEnumerable<MemberRec> props)
             {
-              prop.ReferenceTargetMemberType
-            }));
-            il.StoreField(prop.EmittedField);
-            il.LoadArg_0();
-            il.LoadFieldAddress(dirtyFlags);
-            il.LoadValue(prop.Ordinal);
-            il.LoadValue(true);
-            il.Call<BitVector>("set_Item");
+                var method = builder.DefineMethod("GetReferentID");
+                method.ClearAttributes();
+                method.IncludeAttributes(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.NewSlot
+                                         |
+                                         MethodAttributes.Virtual | MethodAttributes.Final);
+                var gtpb = method.Builder.DefineGenericParameters("TIdentityKey");
+                var tid = gtpb[0];
+                method.Builder.SetReturnType(tid);
+                method.Builder.SetParameters(typeof(string));
+                method.Builder.DefineParameter(1, ParameterAttributes.In, "member");
 
-            il.LoadArg_0();
-            il.LoadValue(prop.SourceAsProperty.Name);
-            il.Call(propChanged);
-            il.MarkLabel(brexit);
-            il.Branch(done);
-            il.MarkLabel(after);
-          }
-          var cont = il.DefineLabel();
-          il.LoadArg_1();
-          il.LoadNull();
-          il.CompareEqual();
-          il.Load_I4_0();
-          il.CompareEqual();
-          il.StoreLocal(flag);
-          il.LoadLocal(flag);
-          il.BranchIfTrue(cont);
-          il.LoadValue("member");
-          il.New<ArgumentNullException>(typeof(string));
-          il.Throw();
-          il.MarkLabel(cont);
-          il.LoadValue("member");
-          il.LoadValue(String.Concat(typeof(TDataModel).Name, " does not reference: "));
-          il.LoadArg_1();
-          il.LoadValue(".");
-          il.Call<string>("Concat", BindingFlags.Static | BindingFlags.Public, typeof(string), typeof(string),
-            typeof(string));
-          il.New<ArgumentOutOfRangeException>(typeof(string), typeof(string));
-          il.Throw();
-          il.MarkLabel(done);
-        });
-      }
+                method.ContributeInstructions((m, il) =>
+                {
+                    var res = il.DeclareLocal(tid);
+                    var flag = il.DeclareLocal<bool>();
+                    var done = il.DefineLabel();
+                    foreach (var prop in props.Where(p => p.IsColumn && p.Column.IsReference))
+                    {
+                        var after = il.DefineLabel();
+                        il.LoadValue(prop.SourceAsProperty.Name);
+                        il.LoadArg_1();
+                        il.Call<string>("Equals", BindingFlags.Public | BindingFlags.Static, typeof(string),
+                            typeof(string));
+                        il.Load_I4_0();
+                        il.CompareEqual();
+                        il.BranchIfTrue(after);
+                        il.LoadArg_0();
+                        il.LoadField(prop.EmittedField);
+                        il.CallVirtual(prop.FieldType.GetProperty("IdentityKey")
+                                           .GetGetMethod());
+                        if (prop.ReferenceTargetMemberType.IsValueType)
+                        {
+                            il.Box(prop.ReferenceTargetMemberType);
+                        }
+                        il.UnboxAny(tid);
+                        il.StoreLocal(res);
+                        il.Branch(done);
+                        il.MarkLabel(after);
+                    }
+                    var cont = il.DefineLabel();
+                    il.LoadArg_1();
+                    il.LoadNull();
+                    il.CompareEqual();
+                    il.Load_I4_0();
+                    il.CompareEqual();
+                    il.StoreLocal(flag);
+                    il.LoadLocal(flag);
+                    il.BranchIfTrue(cont);
+                    il.LoadValue("member");
+                    il.New<ArgumentNullException>(typeof(string));
+                    il.Throw();
+                    il.MarkLabel(cont);
+                    il.LoadValue("member");
+                    il.LoadValue(String.Concat(typeof(TDataModel).Name, " does not reference: "));
+                    il.LoadArg_1();
+                    il.LoadValue(".");
+                    il.Call<string>("Concat", BindingFlags.Static | BindingFlags.Public, typeof(string), typeof(string),
+                        typeof(string));
+                    il.New<ArgumentOutOfRangeException>(typeof(string), typeof(string));
+                    il.Throw();
+                    il.MarkLabel(done);
+                    il.LoadLocal(res);
+                });
+            }
 
-      static EmittedMethod ImplementINotifyPropertyChanged(EmittedClass builder)
-      {
-        var evtType = typeof(PropertyChangedEventHandler);
-        builder.AddInterfaceImplementation(typeof(INotifyPropertyChanged));
+            static void ImplementIDataModelIsDirty(EmittedClass builder, EmittedMethodBase cctor,
+                IEnumerable<MemberRec> props,
+                IValueRef dirtyFlags)
+            {
+                var fieldMap = builder.DefineField<string[]>("__fieldMap");
+                fieldMap.ClearAttributes();
+                fieldMap.IncludeAttributes(FieldAttributes.Static | FieldAttributes.InitOnly | FieldAttributes.Private);
+                cctor.ContributeInstructions((m, il) =>
+                {
+                    var arr = il.DeclareLocal(typeof(String[]));
+                    var cols = props.OrderBy(p => p.Ordinal).ToArray();
 
-        var propertyChanged = builder.Builder.DefineEvent("PropertyChanged", EventAttributes.None, evtType);
+                    il.NewArr(typeof(string), cols.Length);
+                    il.StoreLocal(arr);
+                    for (var i = 0; i < cols.Length; i++)
+                    {
+                        il.LoadLocal(arr);
+                        il.LoadValue(i);
+                        if (cols[i].IsCollection)
+                        {
+                            il.LoadValue(cols[i].Collection.Name);
+                        }
+                        else
+                        {
+                            il.LoadValue(cols[i].Source.Name);
+                        }
+                        il.Emit(OpCodes.Stelem, typeof(string));
+                    }
+                    il.LoadLocal(arr);
+                    il.StoreField(fieldMap);
+                });
 
-        var propertyChangedBackingField = builder.DefineField<PropertyChangedEventHandler>("<PropertyChanged>");
-        propertyChangedBackingField.ClearAttributes();
-        propertyChangedBackingField.IncludeAttributes(FieldAttributes.Private);
-        var ctor = typeof(NonSerializedAttribute).GetConstructor(Type.EmptyTypes);
-        Debug.Assert(ctor != null, "ctor != null");
-        propertyChangedBackingField.Builder.SetCustomAttribute(new CustomAttributeBuilder(ctor, new object[0]));
+                var method = builder.DefineMethod("IsDirty");
+                method.ClearAttributes();
+                method.IncludeAttributes(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.NewSlot
+                                         |
+                                         MethodAttributes.Virtual | MethodAttributes.Final);
+                method.ReturnType = TypeRef.FromType<bool>();
+                method.DefineParameter("member", typeof(String));
+                method.ContributeInstructions((m, il) =>
+                {
+                    il.DeclareLocal(typeof(Int32));
+                    il.DeclareLocal(typeof(bool));
+                    il.DeclareLocal(typeof(bool));
+                    var proceed = il.DefineLabel();
+                    var yep = il.DefineLabel();
 
-        // Emit a standard add <event handler> method (similar to what the C# compiler does)...
-        /* 				 
+                    il.LoadArg_1();
+                    il.LoadNull();
+                    il.CompareEqual();
+                    il.LoadValue(false);
+                    il.CompareEqual();
+                    il.StoreLocal_2();
+                    il.LoadLocal_2();
+                    il.BranchIfTrue_ShortForm(proceed);
+                    il.LoadValue("member");
+                    il.New<ArgumentNullException>(typeof(string));
+                    il.Throw();
+                    il.MarkLabel(proceed);
+                    il.LoadField(fieldMap);
+                    il.LoadArg_1();
+                    var indexOf = typeof(Array).MatchGenericMethod("IndexOf", BindingFlags.Public | BindingFlags.Static,
+                        1, typeof(int), typeof(string[]), typeof(string));
+                    il.Call(indexOf.MakeGenericMethod(typeof(string)));
+                    il.StoreLocal_0();
+                    il.LoadLocal_0();
+                    il.LoadValue(0);
+                    il.CompareLessThan();
+                    il.LoadValue(0);
+                    il.CompareEqual();
+                    il.StoreLocal_2();
+                    il.LoadLocal_2();
+                    il.BranchIfTrue(yep);
+
+                    il.LoadValue("member");
+                    il.LoadValue(String.Concat(typeof(TDataModel).GetReadableSimpleName(),
+                        " does not define property: `"));
+                    il.LoadArg_1();
+                    il.LoadValue("`.");
+                    il.Call<string>("Concat", BindingFlags.Static | BindingFlags.Public, typeof(string), typeof(string),
+                        typeof(string));
+                    il.NewObj(
+                        typeof(ArgumentOutOfRangeException).GetConstructor(new[]
+                        {
+                            typeof(string),
+                            typeof(string)
+                        }));
+                    il.Throw();
+                    il.MarkLabel(yep);
+                    il.LoadArg_0();
+                    dirtyFlags.LoadAddress(il);
+                    il.LoadLocal_0();
+                    il.Call<BitVector>("get_Item", typeof(int));
+                    il.StoreLocal_1();
+                    il.DefineAndMarkLabel();
+                    il.LoadLocal_1();
+                });
+            }
+
+            static void ImplementIDataModelResetDirtyFlags(EmittedClass builder, List<MemberRec> props,
+                EmittedField dirtyFlags)
+            {
+                var method = builder.DefineMethod("ResetDirtyFlags");
+                method.ClearAttributes();
+                method.IncludeAttributes(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.NewSlot
+                                         |
+                                         MethodAttributes.Virtual | MethodAttributes.Final);
+                method.ContributeInstructions((m, il) =>
+                {
+                    il.LoadArg_0();
+                    il.LoadValue(props.Count);
+                    il.New<BitVector>(typeof(int));
+                    il.StoreField(dirtyFlags);
+                });
+            }
+
+            static void ImplementIDataModelSetReferentID(EmittedClass builder, IEnumerable<MemberRec> props,
+                EmittedField dirtyFlags, EmittedMethod propChanged)
+            {
+                var method = builder.DefineMethod("SetReferentID");
+                method.ClearAttributes();
+                method.IncludeAttributes(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.NewSlot
+                                         |
+                                         MethodAttributes.Virtual | MethodAttributes.Final);
+                var gtpb = method.Builder.DefineGenericParameters("TIdentityKey");
+                var tid = gtpb[0];
+                method.Builder.SetParameters(typeof(string), tid);
+                method.DefineParameter("member", typeof(string));
+                method.DefineParameter("id", tid);
+
+                method.ContributeInstructions((m, il) =>
+                {
+                    var flag = il.DeclareLocal<bool>();
+                    var done = il.DefineLabel();
+                    foreach (var prop in props.Where(p => p.IsColumn && p.Column.IsReference))
+                    {
+                        var after = il.DefineLabel();
+                        var brexit = il.DefineLabel();
+                        il.LoadValue(prop.SourceAsProperty.Name);
+                        il.LoadArg_1();
+                        il.Call<string>("Equals", BindingFlags.Public | BindingFlags.Static, typeof(string),
+                            typeof(string));
+                        il.Load_I4_0();
+                        il.CompareEqual();
+                        il.BranchIfTrue(after);
+                        il.LoadArg_0();
+                        il.LoadField(prop.EmittedField);
+                        il.LoadArg_2();
+                        il.Box(tid);
+                        il.CallVirtual(prop.FieldType.GetMethod("IdentityEquals", new[]
+                        {
+                            typeof(object)
+                        }));
+                        il.StoreLocal_0();
+                        il.LoadLocal_0();
+                        il.BranchIfTrue(brexit);
+                        il.LoadArg_0();
+                        il.LoadArg_2();
+                        il.Box(tid);
+                        il.UnboxAny(prop.ReferenceTargetMemberType);
+                        il.NewObj(prop.FieldType.GetConstructor(new[]
+                        {
+                            prop.ReferenceTargetMemberType
+                        }));
+                        il.StoreField(prop.EmittedField);
+                        il.LoadArg_0();
+                        il.LoadFieldAddress(dirtyFlags);
+                        il.LoadValue(prop.Ordinal);
+                        il.LoadValue(true);
+                        il.Call<BitVector>("set_Item");
+
+                        il.LoadArg_0();
+                        il.LoadValue(prop.SourceAsProperty.Name);
+                        il.Call(propChanged);
+                        il.MarkLabel(brexit);
+                        il.Branch(done);
+                        il.MarkLabel(after);
+                    }
+                    var cont = il.DefineLabel();
+                    il.LoadArg_1();
+                    il.LoadNull();
+                    il.CompareEqual();
+                    il.Load_I4_0();
+                    il.CompareEqual();
+                    il.StoreLocal(flag);
+                    il.LoadLocal(flag);
+                    il.BranchIfTrue(cont);
+                    il.LoadValue("member");
+                    il.New<ArgumentNullException>(typeof(string));
+                    il.Throw();
+                    il.MarkLabel(cont);
+                    il.LoadValue("member");
+                    il.LoadValue(String.Concat(typeof(TDataModel).Name, " does not reference: "));
+                    il.LoadArg_1();
+                    il.LoadValue(".");
+                    il.Call<string>("Concat", BindingFlags.Static | BindingFlags.Public, typeof(string), typeof(string),
+                        typeof(string));
+                    il.New<ArgumentOutOfRangeException>(typeof(string), typeof(string));
+                    il.Throw();
+                    il.MarkLabel(done);
+                });
+            }
+
+            static EmittedMethod ImplementINotifyPropertyChanged(EmittedClass builder)
+            {
+                var evtType = typeof(PropertyChangedEventHandler);
+                builder.AddInterfaceImplementation(typeof(INotifyPropertyChanged));
+
+                var propertyChanged = builder.Builder.DefineEvent("PropertyChanged", EventAttributes.None, evtType);
+
+                var propertyChangedBackingField = builder.DefineField<PropertyChangedEventHandler>("<PropertyChanged>");
+                propertyChangedBackingField.ClearAttributes();
+                propertyChangedBackingField.IncludeAttributes(FieldAttributes.Private);
+                var ctor = typeof(NonSerializedAttribute).GetConstructor(Type.EmptyTypes);
+                Debug.Assert(ctor != null, "ctor != null");
+                propertyChangedBackingField.Builder.SetCustomAttribute(new CustomAttributeBuilder(ctor, new object[0]));
+
+                // Emit a standard add <event handler> method (similar to what the C# compiler does)...
+                /* 				 
 				public void add_PropertyChanged(PropertyChangedEventHandler value)
 				{
 						PropertyChangedEventHandler orig;
@@ -860,1280 +885,1319 @@ namespace FlitBit.Data.DataModel
 				}
 				*/
 
-        var add = builder.DefineMethod("add_PropertyChanged");
-        add.ClearAttributes();
-        add.IncludeAttributes(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName |
-                              MethodAttributes.NewSlot |
-                              MethodAttributes.Virtual | MethodAttributes.Final);
-        add.DefineParameter("value", evtType);
-        add.ContributeInstructions((m, il) =>
-        {
-          var retry = il.DefineLabel();
-          il.DeclareLocal(evtType);
-          il.DeclareLocal(evtType);
-          il.DeclareLocal(evtType);
-          il.DeclareLocal(typeof(bool));
-          il.LoadArg_0();
-          il.LoadField(propertyChangedBackingField);
-          il.StoreLocal_0();
-          il.MarkLabel(retry);
-          il.LoadLocal_0();
-          il.StoreLocal_1();
-          il.LoadLocal_1();
-          il.LoadArg_1();
-          il.Call<Delegate>("Combine", BindingFlags.Static | BindingFlags.Public, typeof(Delegate),
-            typeof(Delegate));
-          il.CastClass<PropertyChangedEventHandler>();
-          il.StoreLocal_2();
-          il.LoadArg_0();
-          il.LoadFieldAddress(propertyChangedBackingField);
-          il.LoadLocal_2();
-          il.LoadLocal_1();
-          var compex = (from c in typeof(Interlocked).GetMethods(BindingFlags.Static | BindingFlags.Public)
-                        where c.IsGenericMethodDefinition && c.Name == "CompareExchange"
-                        select c).Single();
-          il.Call(compex.MakeGenericMethod(evtType));
-          il.StoreLocal_0();
-          il.LoadLocal_0();
-          il.LoadLocal_1();
-          il.CompareEqual();
-          il.StoreLocal_3();
-          il.LoadLocal_3();
-          il.BranchIfTrue_ShortForm(retry);
-        });
-        var remove = builder.DefineMethod("remove_PropertyChanged");
-        remove.ClearAttributes();
-        remove.IncludeAttributes(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.SpecialName |
-                                 MethodAttributes.NewSlot |
-                                 MethodAttributes.Virtual | MethodAttributes.Final);
-        remove.DefineParameter("value", evtType);
-        remove.ContributeInstructions((m, il) =>
-        {
-          var retry = il.DefineLabel();
-          il.DeclareLocal(evtType);
-          il.DeclareLocal(evtType);
-          il.DeclareLocal(evtType);
-          il.DeclareLocal(typeof(bool));
-          il.LoadArg_0();
-          il.LoadField(propertyChangedBackingField);
-          il.StoreLocal_0();
-          il.MarkLabel(retry);
-          il.LoadLocal_0();
-          il.StoreLocal_1();
-          il.LoadLocal_1();
-          il.LoadArg_1();
-          il.Call<Delegate>("Remove", BindingFlags.Static | BindingFlags.Public, typeof(Delegate),
-            typeof(Delegate));
-          il.CastClass<PropertyChangedEventHandler>();
-          il.StoreLocal_2();
-          il.LoadArg_0();
-          il.LoadFieldAddress(propertyChangedBackingField);
-          il.LoadLocal_2();
-          il.LoadLocal_1();
-          var compex = (from c in typeof(Interlocked).GetMethods(BindingFlags.Static | BindingFlags.Public)
-                        where c.IsGenericMethodDefinition && c.Name == "CompareExchange"
-                        select c).Single();
-          il.Call(compex.MakeGenericMethod(evtType));
-          il.StoreLocal_0();
-          il.LoadLocal_0();
-          il.LoadLocal_1();
-          il.CompareEqual();
-          il.StoreLocal_3();
-          il.LoadLocal_3();
-          il.BranchIfTrue_ShortForm(retry);
-        });
-        propertyChanged.SetAddOnMethod(add.Builder);
-        propertyChanged.SetRemoveOnMethod(remove.Builder);
-
-        var onPropertyChanged = builder.DefineMethod("HandlePropertyChanged");
-        onPropertyChanged.ClearAttributes();
-        onPropertyChanged.IncludeAttributes(MethodAttributes.HideBySig);
-        onPropertyChanged.DefineParameter("propName", typeof(String));
-        onPropertyChanged.ContributeInstructions((m, il) =>
-        {
-          var exit = il.DefineLabel();
-          il.DeclareLocal(typeof(bool));
-
-          il.LoadArg_0();
-          il.LoadField(propertyChangedBackingField);
-          il.LoadNull();
-          il.CompareEqual();
-          il.StoreLocal_0();
-          il.LoadLocal_0();
-          il.BranchIfTrue_ShortForm(exit);
-
-          il.LoadArg_0();
-          il.LoadField(propertyChangedBackingField);
-          il.LoadArg_0();
-          il.LoadArg_1();
-          il.New<PropertyChangedEventArgs>(typeof(string));
-          il.CallVirtual<PropertyChangedEventHandler>("Invoke", typeof(object),
-            typeof(PropertyChangedEventArgs));
-
-          il.MarkLabel(exit);
-        });
-
-        return onPropertyChanged;
-      }
-
-      static void ImplementMembersForInterface(IMapping<TDataModel> mapping, Type intf, EmittedClass builder,
-        List<MemberRec> props,
-        EmittedField dirtyFlags, EmittedMethod propChanged)
-      {
-        var members = new List<MemberInfo>(intf.GetMembers());
-        var properties = members.Where(m => m.MemberType == MemberTypes.Property).Cast<PropertyInfo>().ToArray();
-        foreach (var p in properties)
-        {
-          ImplementPropertyFor(mapping, intf, builder, props, p, dirtyFlags, propChanged);
-          members.Remove(p.GetGetMethod());
-          members.Remove(p.GetSetMethod());
-        }
-        var methods = members.Where(m => m.MemberType == MemberTypes.Method).Cast<MethodInfo>().ToArray();
-        foreach (var m in methods)
-        {
-          ImplementMethodFor(mapping, intf, builder, props, m, dirtyFlags, propChanged);
-        }
-      }
-
-      static void ImplementMethodFor(IMapping<TDataModel> mapping, Type intf, EmittedClass builder,
-        IList<MemberRec> props, MethodInfo method,
-        EmittedField dirtyFlags, EmittedMethod propChanged)
-      {
-        MemberRec rec;
-
-        var coll = (CollectionMapping<TDataModel>)mapping.Collections.SingleOrDefault(c => c.LocalMember == method);
-        if (coll != null)
-        {
-          props.Add(rec = MemberRec.CreateOnCollection(mapping, intf, builder, coll, method));
-          EmitPropertyForCollection(builder, rec, props, dirtyFlags, propChanged);
-          return;
-        }
-
-        var getter = builder.DefineOverrideMethod(method);
-        if (method.ReturnType != typeof(void))
-        {
-          getter.ContributeInstructions((m, il) =>
-          {
-            var res = il.DeclareLocal(method.ReturnType);
-            il.LoadLocal(res);
-          });
-        }
-      }
-
-      static void ImplementPropertyFor(IMapping<TDataModel> mapping, Type intf, EmittedClass builder,
-        IList<MemberRec> props, PropertyInfo property,
-        EmittedField dirtyFlags, EmittedMethod propChanged)
-      {
-        var col = (ColumnMapping<TDataModel>)mapping.Columns.SingleOrDefault(c => c.Member == property);
-        MemberRec rec;
-        if (col != null)
-        {
-          props.Add(rec = MemberRec.CreateOnColumn(intf, builder, col, property));
-          if (col.IsReference)
-          {
-            EmitPropertyForReferenceColumn(rec, dirtyFlags, propChanged);
-          }
-          else
-          {
-            EmitPropertyForColumn(rec, dirtyFlags, propChanged);
-          }
-        }
-
-        var coll = (CollectionMapping<TDataModel>)mapping.Collections.SingleOrDefault(c => c.LocalMember == property);
-        if (coll != null)
-        {
-          props.Add(rec = MemberRec.CreateOnCollection(mapping, intf, builder, coll, property));
-          EmitPropertyForCollection(builder, rec, props, dirtyFlags, propChanged);
-        }
-      }
-
-      static void EmitPropertyForCollection(EmittedClass builder, MemberRec rec, IList<MemberRec> props,
-        EmittedField dirtyFlags, EmittedMethod propChanged)
-      {
-        var observer =
-          builder.DefineMethod(String.Concat(rec.EmittedField.Name, "_CollectionChanged"));
-        observer.ClearAttributes();
-        observer.IncludeAttributes(MethodAttributes.Private | MethodAttributes.HideBySig);
-        observer.DefineParameter("sender", typeof(object));
-        observer.DefineParameter("e", typeof(NotifyCollectionChangedEventArgs));
-        observer.ContributeInstructions(
-          (m, il) =>
-          {
-            il.LoadArg_0();
-            il.LoadFieldAddress(dirtyFlags);
-            il.LoadValue(rec.Ordinal);
-            il.LoadValue(true);
-            il.Call<BitVector>("set_Item");
-
-            il.LoadArg_0();
-            il.LoadValue(rec.Collection.Name);
-            il.Call(propChanged);
-          });
-
-        rec.CollectionChanged = observer;
-
-        EmitMakeResolveCollectionCommand(builder, rec, props);
-
-        var getter = default(EmittedMethod);
-        var resultType = default(Type);
-        if (rec.EmittedProperty != null)
-        {
-          getter = rec.EmittedProperty.AddGetter();
-          resultType = rec.SourceAsProperty.PropertyType;
-        }
-        else
-        {
-          getter = builder.DefineOverrideMethod(rec.SourceAsMethod);
-          resultType = rec.SourceAsMethod.ReturnType;
-        }
-        getter.ContributeInstructions(
-          (m, il) =>
-          {
-            //
-            // if (this.<collection-field> == null)
-            // {
-            //    lock (this._sync)
-            //    {
-            //        if (this.<collection-field> == null)
-            //        {
-            //            this.<collection-field> = new DataModelCollectionReference<IMappedType, int>(<collection-name>, <lazy-collection-command-field>.Value, new NotifyCollectionChangedEventHandler(this.<collection-field>_CollectionChanged), this.ID);
-            //        }
-            //    }
-            // }
-            // return this.<collection-field>.GetCollection();
-            //
-            var flag = il.DeclareLocal<bool>();
-            var res = il.DeclareLocal(resultType);
-            var flag2 = il.DeclareLocal<bool>();
-            var sync = il.DeclareLocal<object>();
-            var outerElse = il.DefineLabel();
-            var innerElse = il.DefineLabel();
-            var endFinally = il.DefineLabel();
-
-            il.LoadArg_0();
-            rec.EmittedField.LoadValue(il);
-            il.LoadNull();
-            il.CompareEqual();
-            il.Load_I4_0();
-            il.CompareEqual();
-            il.StoreLocal(flag2);
-            il.LoadLocal(flag2);
-            il.BranchIfTrue(outerElse);
-
-            il.Load_I4_0();
-            il.StoreLocal(flag);
-            il.BeginExceptionBlock();
-            il.LoadArg_0();
-            il.LoadField(builder.Fields.First(f => f.Name == "_sync"));
-            il.Duplicate();
-            il.StoreLocal(sync);
-            il.LoadLocalAddressShort(flag);
-            il.Call(typeof(Monitor).GetMethod("Enter", BindingFlags.Static | BindingFlags.Public, null,
-              new[]
-              {
-                typeof(Object),
-                typeof(bool).MakeByRefType()
-              }, null)
-              );
-
-            il.LoadArg_0();
-            rec.EmittedField.LoadValue(il);
-            il.LoadNull();
-            il.CompareEqual();
-            il.Load_I4_0();
-            il.CompareEqual();
-            il.StoreLocal(flag2);
-            il.LoadLocal(flag2);
-            il.BranchIfTrue(innerElse);
-
-            il.LoadArg_0();
-            il.LoadValue(rec.Collection.Name);
-            var lazyCmd = rec.CollectionStaticLazyCommand;
-            lazyCmd.LoadValue(il);
-            il.Call(lazyCmd.Builder.FieldType.GetProperty("Value").GetGetMethod());
-            il.LoadArg_0();
-            il.Emit(OpCodes.Ldftn, rec.CollectionChanged.Builder);
-            var ctor = typeof(NotifyCollectionChangedEventHandler).GetConstructors()[0];
-            il.NewObj(ctor);
-
-            // load the param.
-            foreach (var joinMem in rec.Collection.LocalProperties)
-            {
-              il.LoadArg_0();
-              if (joinMem.MemberType == MemberTypes.Property)
-              {
-                var localColumn = props.First(c => c.SourceAsProperty == joinMem);
-                if (localColumn.Column.IsReference)
+                var add = builder.DefineMethod("add_PropertyChanged");
+                add.ClearAttributes();
+                add.IncludeAttributes(MethodAttributes.Public | MethodAttributes.HideBySig
+                                      | MethodAttributes.SpecialName |
+                                      MethodAttributes.NewSlot |
+                                      MethodAttributes.Virtual | MethodAttributes.Final);
+                add.DefineParameter("value", evtType);
+                add.ContributeInstructions((m, il) =>
                 {
-                  localColumn.EmittedField.LoadValue(il);
-                  il.CallVirtual(localColumn.FieldType.GetProperty("IdentityKey").GetGetMethod());
+                    var retry = il.DefineLabel();
+                    il.DeclareLocal(evtType);
+                    il.DeclareLocal(evtType);
+                    il.DeclareLocal(evtType);
+                    il.DeclareLocal(typeof(bool));
+                    il.LoadArg_0();
+                    il.LoadField(propertyChangedBackingField);
+                    il.StoreLocal_0();
+                    il.MarkLabel(retry);
+                    il.LoadLocal_0();
+                    il.StoreLocal_1();
+                    il.LoadLocal_1();
+                    il.LoadArg_1();
+                    il.Call<Delegate>("Combine", BindingFlags.Static | BindingFlags.Public, typeof(Delegate),
+                        typeof(Delegate));
+                    il.CastClass<PropertyChangedEventHandler>();
+                    il.StoreLocal_2();
+                    il.LoadArg_0();
+                    il.LoadFieldAddress(propertyChangedBackingField);
+                    il.LoadLocal_2();
+                    il.LoadLocal_1();
+                    var compex = (from c in typeof(Interlocked).GetMethods(BindingFlags.Static | BindingFlags.Public)
+                                  where c.IsGenericMethodDefinition && c.Name == "CompareExchange"
+                                  select c).Single();
+                    il.Call(compex.MakeGenericMethod(evtType));
+                    il.StoreLocal_0();
+                    il.LoadLocal_0();
+                    il.LoadLocal_1();
+                    il.CompareEqual();
+                    il.StoreLocal_3();
+                    il.LoadLocal_3();
+                    il.BranchIfTrue_ShortForm(retry);
+                });
+                var remove = builder.DefineMethod("remove_PropertyChanged");
+                remove.ClearAttributes();
+                remove.IncludeAttributes(MethodAttributes.Public | MethodAttributes.HideBySig
+                                         | MethodAttributes.SpecialName |
+                                         MethodAttributes.NewSlot |
+                                         MethodAttributes.Virtual | MethodAttributes.Final);
+                remove.DefineParameter("value", evtType);
+                remove.ContributeInstructions((m, il) =>
+                {
+                    var retry = il.DefineLabel();
+                    il.DeclareLocal(evtType);
+                    il.DeclareLocal(evtType);
+                    il.DeclareLocal(evtType);
+                    il.DeclareLocal(typeof(bool));
+                    il.LoadArg_0();
+                    il.LoadField(propertyChangedBackingField);
+                    il.StoreLocal_0();
+                    il.MarkLabel(retry);
+                    il.LoadLocal_0();
+                    il.StoreLocal_1();
+                    il.LoadLocal_1();
+                    il.LoadArg_1();
+                    il.Call<Delegate>("Remove", BindingFlags.Static | BindingFlags.Public, typeof(Delegate),
+                        typeof(Delegate));
+                    il.CastClass<PropertyChangedEventHandler>();
+                    il.StoreLocal_2();
+                    il.LoadArg_0();
+                    il.LoadFieldAddress(propertyChangedBackingField);
+                    il.LoadLocal_2();
+                    il.LoadLocal_1();
+                    var compex = (from c in typeof(Interlocked).GetMethods(BindingFlags.Static | BindingFlags.Public)
+                                  where c.IsGenericMethodDefinition && c.Name == "CompareExchange"
+                                  select c).Single();
+                    il.Call(compex.MakeGenericMethod(evtType));
+                    il.StoreLocal_0();
+                    il.LoadLocal_0();
+                    il.LoadLocal_1();
+                    il.CompareEqual();
+                    il.StoreLocal_3();
+                    il.LoadLocal_3();
+                    il.BranchIfTrue_ShortForm(retry);
+                });
+                propertyChanged.SetAddOnMethod(add.Builder);
+                propertyChanged.SetRemoveOnMethod(remove.Builder);
+
+                var onPropertyChanged = builder.DefineMethod("HandlePropertyChanged");
+                onPropertyChanged.ClearAttributes();
+                onPropertyChanged.IncludeAttributes(MethodAttributes.HideBySig);
+                onPropertyChanged.DefineParameter("propName", typeof(String));
+                onPropertyChanged.ContributeInstructions((m, il) =>
+                {
+                    var exit = il.DefineLabel();
+                    il.DeclareLocal(typeof(bool));
+
+                    il.LoadArg_0();
+                    il.LoadField(propertyChangedBackingField);
+                    il.LoadNull();
+                    il.CompareEqual();
+                    il.StoreLocal_0();
+                    il.LoadLocal_0();
+                    il.BranchIfTrue_ShortForm(exit);
+
+                    il.LoadArg_0();
+                    il.LoadField(propertyChangedBackingField);
+                    il.LoadArg_0();
+                    il.LoadArg_1();
+                    il.New<PropertyChangedEventArgs>(typeof(string));
+                    il.CallVirtual<PropertyChangedEventHandler>("Invoke", typeof(object),
+                        typeof(PropertyChangedEventArgs));
+
+                    il.MarkLabel(exit);
+                });
+
+                return onPropertyChanged;
+            }
+
+            static void ImplementMembersForInterface(IMapping<TDataModel> mapping, Type intf, EmittedClass builder,
+                List<MemberRec> props,
+                EmittedField dirtyFlags, EmittedMethod propChanged)
+            {
+                var members = new List<MemberInfo>(intf.GetMembers());
+                var properties = members.Where(m => m.MemberType == MemberTypes.Property).Cast<PropertyInfo>().ToArray();
+                foreach (var p in properties)
+                {
+                    ImplementPropertyFor(mapping, intf, builder, props, p, dirtyFlags, propChanged);
+                    members.Remove(p.GetGetMethod());
+                    members.Remove(p.GetSetMethod());
+                }
+                var methods = members.Where(m => m.MemberType == MemberTypes.Method).Cast<MethodInfo>().ToArray();
+                foreach (var m in methods)
+                {
+                    ImplementMethodFor(mapping, intf, builder, props, m, dirtyFlags, propChanged);
+                }
+            }
+
+            static void ImplementMethodFor(IMapping<TDataModel> mapping, Type intf, EmittedClass builder,
+                IList<MemberRec> props, MethodInfo method,
+                EmittedField dirtyFlags, EmittedMethod propChanged)
+            {
+                MemberRec rec;
+
+                var coll =
+                    (CollectionMapping<TDataModel>)mapping.Collections.SingleOrDefault(c => c.LocalMember == method);
+                if (coll != null)
+                {
+                    props.Add(rec = MemberRec.CreateOnCollection(mapping, intf, builder, coll, method));
+                    EmitPropertyForCollection(builder, rec, props, dirtyFlags, propChanged);
+                    return;
+                }
+
+                var getter = builder.DefineOverrideMethod(method);
+                if (method.ReturnType != typeof(void))
+                {
+                    getter.ContributeInstructions((m, il) =>
+                    {
+                        var res = il.DeclareLocal(method.ReturnType);
+                        il.LoadLocal(res);
+                    });
+                }
+            }
+
+            static void ImplementPropertyFor(IMapping<TDataModel> mapping, Type intf, EmittedClass builder,
+                IList<MemberRec> props, PropertyInfo property,
+                EmittedField dirtyFlags, EmittedMethod propChanged)
+            {
+                var col = (ColumnMapping<TDataModel>)mapping.Columns.SingleOrDefault(c => c.Member == property);
+                MemberRec rec;
+                if (col != null)
+                {
+                    props.Add(rec = MemberRec.CreateOnColumn(intf, builder, col, property));
+                    if (col.IsReference)
+                    {
+                        EmitPropertyForReferenceColumn(rec, dirtyFlags, propChanged);
+                    }
+                    else
+                    {
+                        EmitPropertyForColumn(rec, dirtyFlags, propChanged);
+                    }
+                }
+
+                var coll =
+                    (CollectionMapping<TDataModel>)mapping.Collections.SingleOrDefault(c => c.LocalMember == property);
+                if (coll != null)
+                {
+                    props.Add(rec = MemberRec.CreateOnCollection(mapping, intf, builder, coll, property));
+                    EmitPropertyForCollection(builder, rec, props, dirtyFlags, propChanged);
+                }
+            }
+
+            static void EmitPropertyForCollection(EmittedClass builder, MemberRec rec, IList<MemberRec> props,
+                EmittedField dirtyFlags, EmittedMethod propChanged)
+            {
+                var observer =
+                    builder.DefineMethod(String.Concat(rec.EmittedField.Name, "_CollectionChanged"));
+                observer.ClearAttributes();
+                observer.IncludeAttributes(MethodAttributes.Private | MethodAttributes.HideBySig);
+                observer.DefineParameter("sender", typeof(object));
+                observer.DefineParameter("e", typeof(NotifyCollectionChangedEventArgs));
+                observer.ContributeInstructions(
+                    (m, il) =>
+                    {
+                        il.LoadArg_0();
+                        il.LoadFieldAddress(dirtyFlags);
+                        il.LoadValue(rec.Ordinal);
+                        il.LoadValue(true);
+                        il.Call<BitVector>("set_Item");
+
+                        il.LoadArg_0();
+                        il.LoadValue(rec.Collection.Name);
+                        il.Call(propChanged);
+                    });
+
+                rec.CollectionChanged = observer;
+
+                EmitMakeResolveCollectionCommand(builder, rec, props);
+
+                var getter = default(EmittedMethod);
+                var resultType = default(Type);
+                if (rec.EmittedProperty != null)
+                {
+                    getter = rec.EmittedProperty.AddGetter();
+                    resultType = rec.SourceAsProperty.PropertyType;
                 }
                 else
                 {
-                  localColumn.EmittedField.LoadValue(il);
+                    getter = builder.DefineOverrideMethod(rec.SourceAsMethod);
+                    resultType = rec.SourceAsMethod.ReturnType;
                 }
-              }
-              if (joinMem.MemberType == MemberTypes.Field)
-              {
-                il.LoadField(((FieldInfo)joinMem));
-              }
+                getter.ContributeInstructions(
+                    (m, il) =>
+                    {
+                        //
+                        // if (this.<collection-field> == null)
+                        // {
+                        //    lock (this._sync)
+                        //    {
+                        //        if (this.<collection-field> == null)
+                        //        {
+                        //            this.<collection-field> = new DataModelCollectionReference<IMappedType, int>(<collection-name>, <lazy-collection-command-field>.Value, new NotifyCollectionChangedEventHandler(this.<collection-field>_CollectionChanged), this.ID);
+                        //        }
+                        //    }
+                        // }
+                        // return this.<collection-field>.GetCollection();
+                        //
+                        var flag = il.DeclareLocal<bool>();
+                        var res = il.DeclareLocal(resultType);
+                        var flag2 = il.DeclareLocal<bool>();
+                        var sync = il.DeclareLocal<object>();
+                        var outerElse = il.DefineLabel();
+                        var innerElse = il.DefineLabel();
+                        var endFinally = il.DefineLabel();
+
+                        il.LoadArg_0();
+                        rec.EmittedField.LoadValue(il);
+                        il.LoadNull();
+                        il.CompareEqual();
+                        il.Load_I4_0();
+                        il.CompareEqual();
+                        il.StoreLocal(flag2);
+                        il.LoadLocal(flag2);
+                        il.BranchIfTrue(outerElse);
+
+                        il.Load_I4_0();
+                        il.StoreLocal(flag);
+                        il.BeginExceptionBlock();
+                        il.LoadArg_0();
+                        il.LoadField(builder.Fields.First(f => f.Name == "_sync"));
+                        il.Duplicate();
+                        il.StoreLocal(sync);
+                        il.LoadLocalAddressShort(flag);
+                        il.Call(typeof(Monitor).GetMethod("Enter", BindingFlags.Static | BindingFlags.Public, null,
+                            new[]
+                            {
+                                typeof(Object),
+                                typeof(bool).MakeByRefType()
+                            }, null)
+                            );
+
+                        il.LoadArg_0();
+                        rec.EmittedField.LoadValue(il);
+                        il.LoadNull();
+                        il.CompareEqual();
+                        il.Load_I4_0();
+                        il.CompareEqual();
+                        il.StoreLocal(flag2);
+                        il.LoadLocal(flag2);
+                        il.BranchIfTrue(innerElse);
+
+                        il.LoadArg_0();
+                        il.LoadValue(rec.Collection.Name);
+                        var lazyCmd = rec.CollectionStaticLazyCommand;
+                        lazyCmd.LoadValue(il);
+                        il.Call(lazyCmd.Builder.FieldType.GetProperty("Value").GetGetMethod());
+                        il.LoadArg_0();
+                        il.Emit(OpCodes.Ldftn, rec.CollectionChanged.Builder);
+                        var ctor = typeof(NotifyCollectionChangedEventHandler).GetConstructors()[0];
+                        il.NewObj(ctor);
+
+                        // load the param.
+                        foreach (var joinMem in rec.Collection.LocalProperties)
+                        {
+                            il.LoadArg_0();
+                            if (joinMem.MemberType == MemberTypes.Property)
+                            {
+                                var localColumn = props.First(c => c.SourceAsProperty == joinMem);
+                                if (localColumn.Column.IsReference)
+                                {
+                                    localColumn.EmittedField.LoadValue(il);
+                                    il.CallVirtual(localColumn.FieldType.GetProperty("IdentityKey").GetGetMethod());
+                                }
+                                else
+                                {
+                                    localColumn.EmittedField.LoadValue(il);
+                                }
+                            }
+                            if (joinMem.MemberType == MemberTypes.Field)
+                            {
+                                il.LoadField(((FieldInfo)joinMem));
+                            }
+                        }
+
+                        il.NewObj(rec.FieldType.GetConstructors()[0]);
+                            // assumes only one, matching the parameter types!
+                        il.StoreField(rec.EmittedField);
+
+                        il.MarkLabel(innerElse);
+                        il.Nop();
+
+                        il.BeginFinallyBlock();
+                        il.LoadLocal(flag);
+                        il.Load_I4_0();
+                        il.CompareEqual();
+                        il.StoreLocal(flag2);
+                        il.LoadLocal(flag2);
+                        il.BranchIfTrue(endFinally);
+                        il.LoadLocal(sync);
+                        il.Call(typeof(Monitor).GetMethod("Exit"));
+                        il.MarkLabel(endFinally);
+                        il.EndFinally();
+                        il.Nop();
+                        il.EndExceptionBlock();
+                        il.Nop();
+
+                        il.MarkLabel(outerElse);
+                        il.LoadArg_0();
+                        rec.EmittedField.LoadValue(il);
+                        il.CallVirtual(rec.EmittedField.FieldType.Target.GetMethod("GetCollection"));
+                        il.StoreLocal(res);
+                        il.LoadLocal(res);
+                    });
             }
 
-            il.NewObj(rec.FieldType.GetConstructors()[0]); // assumes only one, matching the parameter types!
-            il.StoreField(rec.EmittedField);
-
-            il.MarkLabel(innerElse);
-            il.Nop();
-
-            il.BeginFinallyBlock();
-            il.LoadLocal(flag);
-            il.Load_I4_0();
-            il.CompareEqual();
-            il.StoreLocal(flag2);
-            il.LoadLocal(flag2);
-            il.BranchIfTrue(endFinally);
-            il.LoadLocal(sync);
-            il.Call(typeof(Monitor).GetMethod("Exit"));
-            il.MarkLabel(endFinally);
-            il.EndFinally();
-            il.Nop();
-            il.EndExceptionBlock();
-            il.Nop();
-
-            il.MarkLabel(outerElse);
-            il.LoadArg_0();
-            rec.EmittedField.LoadValue(il);
-            il.CallVirtual(rec.EmittedField.FieldType.Target.GetMethod("GetCollection"));
-            il.StoreLocal(res);
-            il.LoadLocal(res);
-          });
-      }
-
-      static void EmitMakeResolveCollectionCommand(EmittedClass builder, MemberRec rec, IList<MemberRec> props)
-      {
-        // This code assumes the DataModelCollectionReference<,,,...> and the IDataModelQueryCommand<,,...>
-        // have the same generic arguments other than the reference type's identity key.
-        var paramTypes = rec.FieldType.GetGenericArguments();
-        var referencedType = paramTypes[0];
-        var referencedIdentityKeyType = paramTypes[1];
-        var referencedDbConnectionType = paramTypes[2];
-        const int parameterOffset = 3;
-        var commandType = default(Type);
-        var repositoryType = typeof(IDataModelRepository<,,>).MakeGenericType(referencedType, referencedIdentityKeyType,
-          referencedDbConnectionType);
-        var queryBuilderType = typeof(IDataModelQueryBuilder<,,>).MakeGenericType(referencedType,
-          referencedIdentityKeyType, referencedDbConnectionType);
-        switch (paramTypes.Length)
-        {
-          case 4:
-            commandType = typeof(IDataModelQueryCommand<,,>).MakeGenericType(referencedType, referencedDbConnectionType,
-              paramTypes[parameterOffset]);
-            break;
-          default:
-            throw new NotImplementedException(
-              "DataModelEmitter missing implementation for DataModelCollectionReference<...> with " + paramTypes.Length
-              + " type arguments.");
-        }
-
-        var lazyCmd = builder.DefineField(String.Concat(rec.EmittedField.Name, "_Command"),
-          typeof(Lazy<>).MakeGenericType(commandType));
-        lazyCmd.ClearAttributes();
-        lazyCmd.IncludeAttributes(FieldAttributes.Private | FieldAttributes.Static);
-
-        rec.CollectionStaticLazyCommand = lazyCmd;
-
-        var make =
-          builder.DefineMethod(String.Concat("MakeResolve", rec.Source.Name, "Command"));
-        make.ClearAttributes();
-        make.IncludeAttributes(MethodAttributes.Private | MethodAttributes.Static);
-        make.ReturnType = TypeRef.FromType(commandType);
-        if (rec.Collection.JoinType != null)
-        {
-          Type joinQueryBuilderType;
-          switch (paramTypes.Length)
-          {
-            case 4:
-              joinQueryBuilderType = typeof(IDataModelJoinQueryBuilder<,,,,>).MakeGenericType(referencedType,
-                referencedIdentityKeyType, referencedDbConnectionType, rec.Collection.JoinType,
-                paramTypes[parameterOffset]);
-              break;
-            default:
-              throw new NotImplementedException(
-                "DataModelEmitter missing implementation for DataModelCollectionReference<...> with "
-                + paramTypes.Length + " type arguments.");
-          }
-          ImplementMakeResolveCollectionForManyToMany(rec, make, repositoryType, queryBuilderType, joinQueryBuilderType,
-            paramTypes, parameterOffset, commandType, referencedType,
-            referencedIdentityKeyType);
-        }
-        else
-        {
-          ImplementMakeResolveCollection(rec, make, repositoryType, queryBuilderType, paramTypes, parameterOffset,
-            commandType, referencedType,
-            referencedIdentityKeyType);
-        }
-
-        rec.CollectionMakeResolve = make;
-      }
-
-      static void ImplementMakeResolveCollection(MemberRec rec, EmittedMethod make, Type repositoryType,
-        Type queryBuilderType, Type[] paramTypes, int parameterOffset, Type commandType, Type referencedType,
-        Type referencedIdentityKeyType)
-      {
-        make.ContributeInstructions((m, il) =>
-        {
-          // Build the Expression tree representing the join, and rely on the referent's repository to build a suitable command...
-          //
-          //   var repository = (IDataModelRepository<TReferent, TReferentIdentitKey, TDbConnection>) DataModel<TReferent>.GetRepository<TReferentIdentitKey>();
-          //   return repository.QueryBuilder.Where<TParam>((model, param) => model.<LocalJoinProperty[0]> == param);
-          //
-
-          var repo = il.DeclareLocal(repositoryType);
-          var res = il.DeclareLocal(commandType);
-          var dataModelT = typeof(DataModel<>).MakeGenericType(referencedType);
-          il.Call(dataModelT.GetMethod("GetRepository").MakeGenericMethod(referencedIdentityKeyType));
-          il.CastClass(repositoryType);
-          il.StoreLocal(repo);
-
-          var selfExpr = il.DeclareLocal<ParameterExpression>();
-
-          il.LoadLocal(repo);
-          il.CallVirtual(repositoryType.GetProperty("QueryBuilder").GetGetMethod());
-
-          il.LoadToken(referencedType);
-          il.Call<Type>("GetTypeFromHandle", BindingFlags.Static | BindingFlags.Public, typeof(RuntimeTypeHandle));
-          il.LoadValue("self");
-          il.Call<Expression>("Parameter", BindingFlags.Static | BindingFlags.Public, typeof(Type), typeof(string));
-          il.StoreLocal(selfExpr);
-
-          var exprParams = new List<Tuple<string, Type, LocalBuilder>>();
-          for (var i = parameterOffset; i < paramTypes.Length; i++)
-          {
-            var p = rec.Collection.LocalProperties[i - parameterOffset];
-            var name = p.Name.Pascalize();
-            var type = paramTypes[i];
-            var expr = il.DeclareLocal<ParameterExpression>();
-            exprParams.Add(Tuple.Create(name, type, expr));
-            il.LoadToken(type);
-            il.Call<Type>("GetTypeFromHandle", BindingFlags.Static | BindingFlags.Public, typeof(RuntimeTypeHandle));
-            il.LoadValue(name);
-            il.Call<Expression>("Parameter", BindingFlags.Static | BindingFlags.Public, typeof(Type), typeof(string));
-            il.StoreLocal(expr);
-          }
-
-          for (var i = 0; i < exprParams.Count; i++)
-          {
-            var p = (PropertyInfo)rec.Collection.ReferencedProperties[i];
-            var c = rec.Collection.ReferencedMapping.Columns.First(ea => ea.Member == p);
-            il.LoadLocal(selfExpr);
-            il.Emit(OpCodes.Ldtoken, p.GetGetMethod());
-            il.Call<MethodBase>("GetMethodFromHandle", BindingFlags.Static | BindingFlags.Public,
-              typeof(RuntimeMethodHandle));
-            il.CastClass<MethodInfo>();
-            il.Call<Expression>("Property", BindingFlags.Static | BindingFlags.Public, typeof(Expression),
-              typeof(MethodInfo));
-            if (c.IsReference)
+            static void EmitMakeResolveCollectionCommand(EmittedClass builder, MemberRec rec, IList<MemberRec> props)
             {
-              var id = c.ReferenceTargetMember;
-              il.Emit(OpCodes.Ldtoken, ((PropertyInfo)id).GetGetMethod());
-              il.Call<MethodBase>("GetMethodFromHandle", BindingFlags.Static | BindingFlags.Public,
-                typeof(RuntimeMethodHandle));
-              il.CastClass<MethodInfo>();
-              il.Call<Expression>("Property", BindingFlags.Static | BindingFlags.Public, typeof(Expression),
-                typeof(MethodInfo));
-            }
-            il.LoadLocal(exprParams[i].Item3);
-            il.Call<Expression>("Equal", BindingFlags.Static | BindingFlags.Public, typeof(Expression),
-              typeof(Expression));
-          }
-          var arr = il.DeclareLocal<ParameterExpression[]>();
-          il.NewArr(typeof(ParameterExpression), exprParams.Count + 1);
-          il.StoreLocal(arr);
-          il.LoadLocal(arr);
-          il.Load_I4_0();
-          il.LoadLocal(selfExpr);
-          il.StoreElementRef();
-          for (var i = 0; i < exprParams.Count; i++)
-          {
-            il.LoadLocal(arr);
-            il.Load_I4(i + 1);
-            il.LoadLocal(exprParams[i].Item3);
-            il.StoreElementRef();
-          }
-
-          il.LoadLocal(arr);
-          var funType = default(Type);
-          var exprType = default(Type);
-          var whereMethod = default(MethodInfo);
-          switch (exprParams.Count)
-          {
-            case 1:
-              funType = typeof(Func<,,>).MakeGenericType(referencedType, exprParams[0].Item2, typeof(bool));
-              exprType = typeof(Expression<>).MakeGenericType(funType);
-              whereMethod = queryBuilderType.MatchGenericMethod("Where", 1, commandType, exprType)
-                                            .MakeGenericMethod(exprParams[0].Item2);
-              break;
-          }
-          il.Call(typeof(Expression).MatchGenericMethod("Lambda", BindingFlags.Static | BindingFlags.Public, 1, exprType,
-            typeof(Expression), typeof(ParameterExpression[]))
-                                    .MakeGenericMethod(funType));
-          il.CallVirtual(whereMethod);
-          il.StoreLocal(res);
-
-          var dumb = il.DefineLabel();
-          il.Branch_ShortForm(dumb);
-          il.MarkLabel(dumb);
-
-          il.LoadLocal(res);
-        });
-      }
-
-      static void ImplementMakeResolveCollectionForManyToMany(MemberRec rec, EmittedMethod make, Type repositoryType,
-        Type queryBuilderType, Type joinQueryBuilderType, Type[] paramTypes, int parameterOffset, Type commandType,
-        Type referencedType, Type referencedIdentityKeyType)
-      {
-        make.ContributeInstructions((m, il) =>
-        {
-          // Build the Expression tree representing the join, and rely on the referent's repository to build a suitable command...
-          //
-          //  IDataModelRepository<TReferent, TReferentIdentityKey, TDbConnection> repository = (IDataModelRepository<TReferent, TReferentIdentityKey, TDbConnection>)FlitBit.Data.DataModel.DataModel<TReferent>.GetRepository<TReferentIdentityKey>();
-          //  return repository
-          //         .QueryBuilder
-          //         .Join<TJoin, TParam>((self, join, param) => (join.<ReferencedColumn[0]> == self) && (join.<LocalJoinProperty[0]> == param))
-          //         .Construct();
-          //
-
-          var repo = il.DeclareLocal(repositoryType);
-          var res = il.DeclareLocal(commandType);
-          var dataModelT = typeof(DataModel<>).MakeGenericType(referencedType);
-          il.Call(dataModelT.GetMethod("GetRepository").MakeGenericMethod(referencedIdentityKeyType));
-          il.CastClass(repositoryType);
-          il.StoreLocal(repo);
-
-          var selfExpr = il.DeclareLocal<ParameterExpression>();
-          var joinExpr = il.DeclareLocal<ParameterExpression>();
-
-          il.LoadLocal(repo);
-          il.CallVirtual(repositoryType.GetProperty("QueryBuilder").GetGetMethod());
-
-          il.LoadToken(referencedType);
-          il.Call<Type>("GetTypeFromHandle", BindingFlags.Static | BindingFlags.Public, typeof(RuntimeTypeHandle));
-          il.LoadValue("self");
-          il.Call<Expression>("Parameter", BindingFlags.Static | BindingFlags.Public, typeof(Type), typeof(string));
-          il.StoreLocal(selfExpr);
-
-          il.LoadToken(rec.Collection.JoinType);
-          il.Call<Type>("GetTypeFromHandle", BindingFlags.Static | BindingFlags.Public, typeof(RuntimeTypeHandle));
-          il.LoadValue("join");
-          il.Call<Expression>("Parameter", BindingFlags.Static | BindingFlags.Public, typeof(Type), typeof(string));
-          il.StoreLocal(joinExpr);
-
-          var exprParams = new List<Tuple<string, Type, LocalBuilder>>();
-          for (var i = parameterOffset; i < paramTypes.Length; i++)
-          {
-            var p = rec.Collection.LocalProperties[i - parameterOffset];
-            var name = p.Name.Pascalize();
-            var type = paramTypes[i];
-            var expr = il.DeclareLocal<ParameterExpression>();
-            exprParams.Add(Tuple.Create(name, type, expr));
-            il.LoadToken(type);
-            il.Call<Type>("GetTypeFromHandle", BindingFlags.Static | BindingFlags.Public, typeof(RuntimeTypeHandle));
-            il.LoadValue(name);
-            il.Call<Expression>("Parameter", BindingFlags.Static | BindingFlags.Public, typeof(Type), typeof(string));
-            il.StoreLocal(expr);
-          }
-
-          for (var i = 0; i < exprParams.Count; i++)
-          {
-            var p = (PropertyInfo)rec.Collection.ReferencedProperties[i];
-            var lp = (PropertyInfo)rec.Collection.LocalProperties[i];
-            var j = (PropertyInfo)rec.Collection.JoinProperties[i];
-
-            il.LoadLocal(joinExpr);
-            il.Emit(OpCodes.Ldtoken, j.GetGetMethod());
-            il.Call<MethodBase>("GetMethodFromHandle", BindingFlags.Static | BindingFlags.Public,
-              typeof(RuntimeMethodHandle));
-            il.CastClass<MethodInfo>();
-            il.Call<Expression>("Property", BindingFlags.Static | BindingFlags.Public, typeof(Expression),
-              typeof(MethodInfo));
-            il.LoadLocal(selfExpr);
-            il.Call<Expression>("Equal", BindingFlags.Static | BindingFlags.Public, typeof(Expression),
-              typeof(Expression));
-            il.LoadLocal(joinExpr);
-            il.Emit(OpCodes.Ldtoken, p.GetGetMethod());
-            il.Call<MethodBase>("GetMethodFromHandle", BindingFlags.Static | BindingFlags.Public,
-              typeof(RuntimeMethodHandle));
-            il.CastClass<MethodInfo>();
-            il.Call<Expression>("Property", BindingFlags.Static | BindingFlags.Public, typeof(Expression),
-              typeof(MethodInfo));
-            il.Emit(OpCodes.Ldtoken, lp.GetGetMethod());
-            il.Call<MethodBase>("GetMethodFromHandle", BindingFlags.Static | BindingFlags.Public,
-              typeof(RuntimeMethodHandle));
-            il.CastClass<MethodInfo>();
-            il.Call<Expression>("Property", BindingFlags.Static | BindingFlags.Public, typeof(Expression),
-              typeof(MethodInfo));
-            il.LoadLocal(exprParams[i].Item3);
-            il.Call<Expression>("Equal", BindingFlags.Static | BindingFlags.Public, typeof(Expression),
-              typeof(Expression));
-            il.Call<Expression>("AndAlso", BindingFlags.Static | BindingFlags.Public, typeof(Expression),
-              typeof(Expression));
-          }
-          var arr = il.DeclareLocal<ParameterExpression[]>();
-          il.NewArr(typeof(ParameterExpression), exprParams.Count + 2);
-          il.StoreLocal(arr);
-          il.LoadLocal(arr);
-          il.Load_I4_0();
-          il.LoadLocal(selfExpr);
-          il.StoreElementRef();
-          il.LoadLocal(arr);
-          il.Load_I4_1();
-          il.LoadLocal(joinExpr);
-          il.StoreElementRef();
-          for (var i = 0; i < exprParams.Count; i++)
-          {
-            il.LoadLocal(arr);
-            il.Load_I4(i + 2);
-            il.LoadLocal(exprParams[i].Item3);
-            il.StoreElementRef();
-          }
-
-          il.LoadLocal(arr);
-          var funType = default(Type);
-          var exprType = default(Type);
-          var joinMethod = default(MethodInfo);
-          switch (exprParams.Count)
-          {
-            case 1:
-              funType = typeof(Func<,,,>).MakeGenericType(referencedType, rec.Collection.JoinType, exprParams[0].Item2,
-                typeof(bool));
-              exprType = typeof(Expression<>).MakeGenericType(funType);
-              joinMethod = queryBuilderType.MatchGenericMethod("Join", 2, joinQueryBuilderType, exprType)
-                                           .MakeGenericMethod(rec.Collection.JoinType, exprParams[0].Item2);
-              break;
-          }
-          il.Call(typeof(Expression).MatchGenericMethod("Lambda", BindingFlags.Static | BindingFlags.Public, 1, exprType,
-            typeof(Expression), typeof(ParameterExpression[]))
-                                    .MakeGenericMethod(funType));
-          il.CallVirtual(joinMethod);
-          il.CallVirtual(joinQueryBuilderType.GetMethod("Construct"));
-          il.StoreLocal(res);
-
-          var dumb = il.DefineLabel();
-          il.Branch_ShortForm(dumb);
-          il.MarkLabel(dumb);
-
-          il.LoadLocal(res);
-        });
-      }
-
-      static void EmitPropertyForReferenceColumn(MemberRec rec, EmittedField dirtyFlags, EmittedMethod propChanged)
-      {
-        rec.EmittedProperty.AddGetter()
-           .ContributeInstructions((m, il) =>
-           {
-             il.LoadArg_0();
-             il.LoadField(rec.EmittedField);
-             var res = il.DeclareLocal(rec.SourceAsProperty.PropertyType);
-             il.CallVirtual(rec.FieldType.GetProperty("Model")
-                               .GetGetMethod());
-             il.StoreLocal(res);
-             var exit = il.DefineLabel();
-             il.Branch_ShortForm(exit);
-             il.MarkLabel(exit);
-             il.LoadLocal(res);
-           });
-        if (rec.SourceAsProperty.CanWrite)
-        {
-          rec.EmittedProperty.AddSetter()
-             .ContributeInstructions((m, il) =>
-             {
-               var cont = il.DefineLabel();
-               var exit = il.DefineLabel();
-
-               il.DeclareLocal(typeof(bool));
-
-               il.LoadArg_0();
-               il.LoadField(rec.EmittedField);
-               il.LoadArg_1();
-               il.CallVirtual(rec.FieldType.GetMethod("Equals", new[]
-               {
-                 rec.SourceAsProperty.PropertyType
-               }));
-
-               il.StoreLocal_0();
-               il.LoadLocal_0();
-               il.BranchIfFalse_ShortForm(cont);
-               il.Branch(exit);
-               il.MarkLabel(cont);
-
-               // TODO: emit column validation in setter
-
-               il.LoadArg_0();
-               il.LoadArg_1();
-               il.NewObj(rec.FieldType.GetConstructor(new[]
-               {
-                 rec.SourceAsProperty.PropertyType
-               }));
-               il.StoreField(rec.EmittedField);
-
-               il.LoadArg_0();
-               il.LoadFieldAddress(dirtyFlags);
-               il.LoadValue(rec.Ordinal);
-               il.LoadValue(true);
-               il.Call<BitVector>("set_Item");
-
-               il.LoadArg_0();
-               il.LoadValue(rec.SourceAsProperty.Name);
-               il.Call(propChanged);
-
-               il.MarkLabel(exit);
-             });
-        }
-      }
-
-      static void EmitPropertyForColumn(MemberRec rec, EmittedField dirtyFlags, EmittedMethod propChanged)
-      {
-        rec.EmittedProperty.AddGetter()
-           .ContributeInstructions((m, il) =>
-           {
-             il.LoadArg_0();
-             il.LoadField(rec.EmittedField);
-           });
-        if (rec.SourceAsProperty.CanWrite)
-        {
-          rec.EmittedProperty.AddSetter()
-             .ContributeInstructions((m, il) =>
-             {
-               var cont = il.DefineLabel();
-               var exit = il.DefineLabel();
-
-               il.DeclareLocal(typeof(bool));
-
-               if (rec.FieldType.IsArray)
-               {
-                 var elmType = rec.FieldType.GetElementType();
-                 LoadFieldFromThisAndValue(il, rec.EmittedField);
-                 il.Call(typeof(Extensions).GetMethod("EqualsOrItemsEqual", BindingFlags.Static | BindingFlags.Public)
-                                           .MakeGenericMethod(elmType));
-               }
-               else if (rec.FieldType.IsClass)
-               {
-                 var opEquality = rec.FieldType.GetMethod("op_Equality", BindingFlags.Public | BindingFlags.Static);
-                 if (opEquality != null)
-                 {
-                   LoadFieldFromThisAndValue(il, rec.EmittedField);
-                   il.Call(opEquality);
-                 }
-                 else
-                 {
-                   il.Call(typeof(EqualityComparer<>).MakeGenericType(rec.FieldType)
-                                                     .GetMethod("get_Default", BindingFlags.Static | BindingFlags.Public));
-                   LoadFieldFromThisAndValue(il, rec.EmittedField);
-                   il.CallVirtual(typeof(IEqualityComparer<>).MakeGenericType(rec.FieldType)
-                                                             .GetMethod("Equals",
-                                                               BindingFlags.Public | BindingFlags.Instance,
-                                                               null,
-                                                               new[]
-                                                               {
-                                                                 rec.FieldType,
-                                                                 rec.FieldType
-                                                               },
-                                                               null
-                     ));
-                 }
-               }
-               else
-               {
-                 LoadFieldFromThisAndValue(il, rec.EmittedField);
-                 il.CompareEquality(rec.FieldType);
-               }
-               il.StoreLocal_0();
-               il.LoadLocal_0();
-               il.BranchIfFalse_ShortForm(cont);
-               il.Branch(exit);
-               il.MarkLabel(cont);
-
-               // TODO: emit column validation in setter
-
-               il.LoadArg_0();
-               il.LoadArg_1();
-               il.StoreField(rec.EmittedField);
-
-               il.LoadArg_0();
-               il.LoadFieldAddress(dirtyFlags);
-               il.LoadValue(rec.Ordinal);
-               il.LoadValue(true);
-               il.Call<BitVector>("set_Item");
-
-               il.LoadArg_0();
-               il.LoadValue(rec.SourceAsProperty.Name);
-               il.Call(propChanged);
-
-               il.MarkLabel(exit);
-             });
-        }
-      }
-
-      static EmittedMethod ImplementSpecializedEquals(EmittedClass builder)
-      {
-        var equatable = typeof(IEquatable<>).MakeGenericType(builder.Builder);
-        builder.AddInterfaceImplementation(equatable);
-
-        var specializedEquals = builder.DefineMethod("Equals");
-        specializedEquals.ClearAttributes();
-        specializedEquals.IncludeAttributes(MethodAttributes.Public | MethodAttributes.HideBySig
-                                            | MethodAttributes.NewSlot |
-                                            MethodAttributes.Virtual | MethodAttributes.Final);
-        specializedEquals.ReturnType = TypeRef.FromType<bool>();
-        var other = specializedEquals.DefineParameter("other", builder.Ref);
-
-        specializedEquals.ContributeInstructions((m, il) =>
-        {
-          il.DeclareLocal(typeof(bool));
-          var exitFalse = il.DefineLabel();
-
-          var fields =
-            new List<EmittedField>(
-              builder.Fields.Where(f => f.IsStatic == false
-                                        && f.FieldType.Target != typeof(PropertyChangedEventHandler)
-                                        && f.Name != "_sync"
-                ));
-          for (var i = 0; i < fields.Count; i++)
-          {
-            var field = fields[i];
-            var fieldType = field.FieldType.Target;
-            if (fieldType.IsArray)
-            {
-              var elmType = fieldType.GetElementType();
-              LoadFieldsFromThisAndParam(il, field, other);
-              il.Call(typeof(Extensions).GetMethod("EqualsOrItemsEqual", BindingFlags.Static | BindingFlags.Public)
-                                        .MakeGenericMethod(elmType));
-            }
-            else if (fieldType.IsClass)
-            {
-              if (fieldType.IsGenericType
-                  && fieldType.GetGenericTypeDefinition() == typeof(ObservableCollection<>))
-              {
-                // compare observable collections for member equality...
-                var genericArg = fieldType.GetGenericArguments()[0];
-                var etype = typeof(IEnumerable<>).MakeGenericType(genericArg);
-                var sequenceEquals = typeof(Enumerable).MatchGenericMethod("SequenceEqual",
-                  BindingFlags.Static | BindingFlags.Public, 1, typeof(bool), etype, etype);
-                LoadFieldsFromThisAndParam(il, field, other);
-                il.Call(sequenceEquals.MakeGenericMethod(genericArg));
-              }
-              else
-              {
-                var opEquality = fieldType.GetMethod("op_Equality", BindingFlags.Public | BindingFlags.Static);
-                if (opEquality != null)
+                // This code assumes the DataModelCollectionReference<,,,...> and the IDataModelQueryCommand<,,...>
+                // have the same generic arguments other than the reference type's identity key.
+                var paramTypes = rec.FieldType.GetGenericArguments();
+                var referencedType = paramTypes[0];
+                var referencedIdentityKeyType = paramTypes[1];
+                var referencedDbConnectionType = paramTypes[2];
+                const int parameterOffset = 3;
+                var commandType = default(Type);
+                var repositoryType = typeof(IDataModelRepository<,,>).MakeGenericType(referencedType,
+                    referencedIdentityKeyType,
+                    referencedDbConnectionType);
+                var queryBuilderType = typeof(IDataModelQueryBuilder<,,>).MakeGenericType(referencedType,
+                    referencedIdentityKeyType, referencedDbConnectionType);
+                switch (paramTypes.Length)
                 {
-                  LoadFieldsFromThisAndParam(il, field, other);
-                  il.Call(opEquality);
+                    case 4:
+                        commandType = typeof(IDataModelQueryCommand<,,>).MakeGenericType(referencedType,
+                            referencedDbConnectionType,
+                            paramTypes[parameterOffset]);
+                        break;
+                    default:
+                        throw new NotImplementedException(
+                            "DataModelEmitter missing implementation for DataModelCollectionReference<...> with "
+                            + paramTypes.Length
+                            + " type arguments.");
+                }
+
+                var lazyCmd = builder.DefineField(String.Concat(rec.EmittedField.Name, "_Command"),
+                    typeof(Lazy<>).MakeGenericType(commandType));
+                lazyCmd.ClearAttributes();
+                lazyCmd.IncludeAttributes(FieldAttributes.Private | FieldAttributes.Static);
+
+                rec.CollectionStaticLazyCommand = lazyCmd;
+
+                var make =
+                    builder.DefineMethod(String.Concat("MakeResolve", rec.Source.Name, "Command"));
+                make.ClearAttributes();
+                make.IncludeAttributes(MethodAttributes.Private | MethodAttributes.Static);
+                make.ReturnType = TypeRef.FromType(commandType);
+                if (rec.Collection.JoinType != null)
+                {
+                    Type joinQueryBuilderType;
+                    switch (paramTypes.Length)
+                    {
+                        case 4:
+                            joinQueryBuilderType =
+                                typeof(IDataModelJoinQueryBuilder<,,,,>).MakeGenericType(referencedType,
+                                    referencedIdentityKeyType, referencedDbConnectionType, rec.Collection.JoinType,
+                                    paramTypes[parameterOffset]);
+                            break;
+                        default:
+                            throw new NotImplementedException(
+                                "DataModelEmitter missing implementation for DataModelCollectionReference<...> with "
+                                + paramTypes.Length + " type arguments.");
+                    }
+                    ImplementMakeResolveCollectionForManyToMany(rec, make, repositoryType, queryBuilderType,
+                        joinQueryBuilderType,
+                        paramTypes, parameterOffset, commandType, referencedType,
+                        referencedIdentityKeyType);
                 }
                 else
                 {
-                  il.Call(typeof(EqualityComparer<>).MakeGenericType(fieldType)
-                                                    .GetMethod("get_Default", BindingFlags.Static | BindingFlags.Public));
-                  LoadFieldsFromThisAndParam(il, field, other);
-                  il.CallVirtual(typeof(IEqualityComparer<>).MakeGenericType(fieldType)
-                                                            .GetMethod("Equals",
-                                                              BindingFlags.Public | BindingFlags.Instance,
-                                                              null,
-                                                              new[]
-                                                              {
-                                                                fieldType,
-                                                                fieldType
-                                                              },
-                                                              null
-                    ));
+                    ImplementMakeResolveCollection(rec, make, repositoryType, queryBuilderType, paramTypes,
+                        parameterOffset,
+                        commandType, referencedType,
+                        referencedIdentityKeyType);
                 }
-              }
+
+                rec.CollectionMakeResolve = make;
             }
-            else
+
+            static void ImplementMakeResolveCollection(MemberRec rec, EmittedMethod make, Type repositoryType,
+                Type queryBuilderType, Type[] paramTypes, int parameterOffset, Type commandType, Type referencedType,
+                Type referencedIdentityKeyType)
             {
-              LoadFieldsFromThisAndParam(il, field, other);
-              il.CompareEquality(fieldType);
+                make.ContributeInstructions((m, il) =>
+                {
+                    // Build the Expression tree representing the join, and rely on the referent's repository to build a suitable command...
+                    //
+                    //   var repository = (IDataModelRepository<TReferent, TReferentIdentitKey, TDbConnection>) DataModel<TReferent>.GetRepository<TReferentIdentitKey>();
+                    //   return repository.QueryBuilder.Where<TParam>((model, param) => model.<LocalJoinProperty[0]> == param);
+                    //
+
+                    var repo = il.DeclareLocal(repositoryType);
+                    var res = il.DeclareLocal(commandType);
+                    var dataModelT = typeof(DataModel<>).MakeGenericType(referencedType);
+                    il.Call(dataModelT.GetMethod("GetRepository").MakeGenericMethod(referencedIdentityKeyType));
+                    il.CastClass(repositoryType);
+                    il.StoreLocal(repo);
+
+                    var selfExpr = il.DeclareLocal<ParameterExpression>();
+
+                    il.LoadLocal(repo);
+                    il.CallVirtual(repositoryType.GetProperty("QueryBuilder").GetGetMethod());
+
+                    il.LoadToken(referencedType);
+                    il.Call<Type>("GetTypeFromHandle", BindingFlags.Static | BindingFlags.Public,
+                        typeof(RuntimeTypeHandle));
+                    il.LoadValue("self");
+                    il.Call<Expression>("Parameter", BindingFlags.Static | BindingFlags.Public, typeof(Type),
+                        typeof(string));
+                    il.StoreLocal(selfExpr);
+
+                    var exprParams = new List<Tuple<string, Type, LocalBuilder>>();
+                    for (var i = parameterOffset; i < paramTypes.Length; i++)
+                    {
+                        var p = rec.Collection.LocalProperties[i - parameterOffset];
+                        var name = p.Name.Pascalize();
+                        var type = paramTypes[i];
+                        var expr = il.DeclareLocal<ParameterExpression>();
+                        exprParams.Add(Tuple.Create(name, type, expr));
+                        il.LoadToken(type);
+                        il.Call<Type>("GetTypeFromHandle", BindingFlags.Static | BindingFlags.Public,
+                            typeof(RuntimeTypeHandle));
+                        il.LoadValue(name);
+                        il.Call<Expression>("Parameter", BindingFlags.Static | BindingFlags.Public, typeof(Type),
+                            typeof(string));
+                        il.StoreLocal(expr);
+                    }
+
+                    for (var i = 0; i < exprParams.Count; i++)
+                    {
+                        var p = (PropertyInfo)rec.Collection.ReferencedProperties[i];
+                        var c = rec.Collection.ReferencedMapping.Columns.First(ea => ea.Member == p);
+                        il.LoadLocal(selfExpr);
+                        il.Emit(OpCodes.Ldtoken, p.GetGetMethod());
+                        il.Call<MethodBase>("GetMethodFromHandle", BindingFlags.Static | BindingFlags.Public,
+                            typeof(RuntimeMethodHandle));
+                        il.CastClass<MethodInfo>();
+                        il.Call<Expression>("Property", BindingFlags.Static | BindingFlags.Public, typeof(Expression),
+                            typeof(MethodInfo));
+                        if (c.IsReference)
+                        {
+                            var id = c.ReferenceTargetMember;
+                            il.Emit(OpCodes.Ldtoken, ((PropertyInfo)id).GetGetMethod());
+                            il.Call<MethodBase>("GetMethodFromHandle", BindingFlags.Static | BindingFlags.Public,
+                                typeof(RuntimeMethodHandle));
+                            il.CastClass<MethodInfo>();
+                            il.Call<Expression>("Property", BindingFlags.Static | BindingFlags.Public,
+                                typeof(Expression),
+                                typeof(MethodInfo));
+                        }
+                        il.LoadLocal(exprParams[i].Item3);
+                        il.Call<Expression>("Equal", BindingFlags.Static | BindingFlags.Public, typeof(Expression),
+                            typeof(Expression));
+                    }
+                    var arr = il.DeclareLocal<ParameterExpression[]>();
+                    il.NewArr(typeof(ParameterExpression), exprParams.Count + 1);
+                    il.StoreLocal(arr);
+                    il.LoadLocal(arr);
+                    il.Load_I4_0();
+                    il.LoadLocal(selfExpr);
+                    il.StoreElementRef();
+                    for (var i = 0; i < exprParams.Count; i++)
+                    {
+                        il.LoadLocal(arr);
+                        il.Load_I4(i + 1);
+                        il.LoadLocal(exprParams[i].Item3);
+                        il.StoreElementRef();
+                    }
+
+                    il.LoadLocal(arr);
+                    var funType = default(Type);
+                    var exprType = default(Type);
+                    var whereMethod = default(MethodInfo);
+                    switch (exprParams.Count)
+                    {
+                        case 1:
+                            funType = typeof(Func<,,>).MakeGenericType(referencedType, exprParams[0].Item2, typeof(bool));
+                            exprType = typeof(Expression<>).MakeGenericType(funType);
+                            whereMethod = queryBuilderType.MatchGenericMethod("Where", 1, commandType, exprType)
+                                                          .MakeGenericMethod(exprParams[0].Item2);
+                            break;
+                    }
+                    il.Call(typeof(Expression).MatchGenericMethod("Lambda", BindingFlags.Static | BindingFlags.Public, 1,
+                        exprType,
+                        typeof(Expression), typeof(ParameterExpression[]))
+                                              .MakeGenericMethod(funType));
+                    il.CallVirtual(whereMethod);
+                    il.StoreLocal(res);
+
+                    var dumb = il.DefineLabel();
+                    il.Branch_ShortForm(dumb);
+                    il.MarkLabel(dumb);
+
+                    il.LoadLocal(res);
+                });
             }
-            if (i < fields.Count - 1)
+
+            static void ImplementMakeResolveCollectionForManyToMany(MemberRec rec, EmittedMethod make,
+                Type repositoryType,
+                Type queryBuilderType, Type joinQueryBuilderType, Type[] paramTypes, int parameterOffset,
+                Type commandType,
+                Type referencedType, Type referencedIdentityKeyType)
             {
-              il.BranchIfFalse(exitFalse);
+                make.ContributeInstructions((m, il) =>
+                {
+                    // Build the Expression tree representing the join, and rely on the referent's repository to build a suitable command...
+                    //
+                    //  IDataModelRepository<TReferent, TReferentIdentityKey, TDbConnection> repository = (IDataModelRepository<TReferent, TReferentIdentityKey, TDbConnection>)FlitBit.Data.DataModel.DataModel<TReferent>.GetRepository<TReferentIdentityKey>();
+                    //  return repository
+                    //         .QueryBuilder
+                    //         .Join<TJoin, TParam>((self, join, param) => (join.<ReferencedColumn[0]> == self) && (join.<LocalJoinProperty[0]> == param))
+                    //         .Construct();
+                    //
+
+                    var repo = il.DeclareLocal(repositoryType);
+                    var res = il.DeclareLocal(commandType);
+                    var dataModelT = typeof(DataModel<>).MakeGenericType(referencedType);
+                    il.Call(dataModelT.GetMethod("GetRepository").MakeGenericMethod(referencedIdentityKeyType));
+                    il.CastClass(repositoryType);
+                    il.StoreLocal(repo);
+
+                    var selfExpr = il.DeclareLocal<ParameterExpression>();
+                    var joinExpr = il.DeclareLocal<ParameterExpression>();
+
+                    il.LoadLocal(repo);
+                    il.CallVirtual(repositoryType.GetProperty("QueryBuilder").GetGetMethod());
+
+                    il.LoadToken(referencedType);
+                    il.Call<Type>("GetTypeFromHandle", BindingFlags.Static | BindingFlags.Public,
+                        typeof(RuntimeTypeHandle));
+                    il.LoadValue("self");
+                    il.Call<Expression>("Parameter", BindingFlags.Static | BindingFlags.Public, typeof(Type),
+                        typeof(string));
+                    il.StoreLocal(selfExpr);
+
+                    il.LoadToken(rec.Collection.JoinType);
+                    il.Call<Type>("GetTypeFromHandle", BindingFlags.Static | BindingFlags.Public,
+                        typeof(RuntimeTypeHandle));
+                    il.LoadValue("join");
+                    il.Call<Expression>("Parameter", BindingFlags.Static | BindingFlags.Public, typeof(Type),
+                        typeof(string));
+                    il.StoreLocal(joinExpr);
+
+                    var exprParams = new List<Tuple<string, Type, LocalBuilder>>();
+                    for (var i = parameterOffset; i < paramTypes.Length; i++)
+                    {
+                        var p = rec.Collection.LocalProperties[i - parameterOffset];
+                        var name = p.Name.Pascalize();
+                        var type = paramTypes[i];
+                        var expr = il.DeclareLocal<ParameterExpression>();
+                        exprParams.Add(Tuple.Create(name, type, expr));
+                        il.LoadToken(type);
+                        il.Call<Type>("GetTypeFromHandle", BindingFlags.Static | BindingFlags.Public,
+                            typeof(RuntimeTypeHandle));
+                        il.LoadValue(name);
+                        il.Call<Expression>("Parameter", BindingFlags.Static | BindingFlags.Public, typeof(Type),
+                            typeof(string));
+                        il.StoreLocal(expr);
+                    }
+
+                    for (var i = 0; i < exprParams.Count; i++)
+                    {
+                        var p = (PropertyInfo)rec.Collection.ReferencedProperties[i];
+                        var lp = (PropertyInfo)rec.Collection.LocalProperties[i];
+                        var j = (PropertyInfo)rec.Collection.JoinProperties[i];
+
+                        il.LoadLocal(joinExpr);
+                        il.Emit(OpCodes.Ldtoken, j.GetGetMethod());
+                        il.Call<MethodBase>("GetMethodFromHandle", BindingFlags.Static | BindingFlags.Public,
+                            typeof(RuntimeMethodHandle));
+                        il.CastClass<MethodInfo>();
+                        il.Call<Expression>("Property", BindingFlags.Static | BindingFlags.Public, typeof(Expression),
+                            typeof(MethodInfo));
+                        il.LoadLocal(selfExpr);
+                        il.Call<Expression>("Equal", BindingFlags.Static | BindingFlags.Public, typeof(Expression),
+                            typeof(Expression));
+                        il.LoadLocal(joinExpr);
+                        il.Emit(OpCodes.Ldtoken, p.GetGetMethod());
+                        il.Call<MethodBase>("GetMethodFromHandle", BindingFlags.Static | BindingFlags.Public,
+                            typeof(RuntimeMethodHandle));
+                        il.CastClass<MethodInfo>();
+                        il.Call<Expression>("Property", BindingFlags.Static | BindingFlags.Public, typeof(Expression),
+                            typeof(MethodInfo));
+                        il.Emit(OpCodes.Ldtoken, lp.GetGetMethod());
+                        il.Call<MethodBase>("GetMethodFromHandle", BindingFlags.Static | BindingFlags.Public,
+                            typeof(RuntimeMethodHandle));
+                        il.CastClass<MethodInfo>();
+                        il.Call<Expression>("Property", BindingFlags.Static | BindingFlags.Public, typeof(Expression),
+                            typeof(MethodInfo));
+                        il.LoadLocal(exprParams[i].Item3);
+                        il.Call<Expression>("Equal", BindingFlags.Static | BindingFlags.Public, typeof(Expression),
+                            typeof(Expression));
+                        il.Call<Expression>("AndAlso", BindingFlags.Static | BindingFlags.Public, typeof(Expression),
+                            typeof(Expression));
+                    }
+                    var arr = il.DeclareLocal<ParameterExpression[]>();
+                    il.NewArr(typeof(ParameterExpression), exprParams.Count + 2);
+                    il.StoreLocal(arr);
+                    il.LoadLocal(arr);
+                    il.Load_I4_0();
+                    il.LoadLocal(selfExpr);
+                    il.StoreElementRef();
+                    il.LoadLocal(arr);
+                    il.Load_I4_1();
+                    il.LoadLocal(joinExpr);
+                    il.StoreElementRef();
+                    for (var i = 0; i < exprParams.Count; i++)
+                    {
+                        il.LoadLocal(arr);
+                        il.Load_I4(i + 2);
+                        il.LoadLocal(exprParams[i].Item3);
+                        il.StoreElementRef();
+                    }
+
+                    il.LoadLocal(arr);
+                    var funType = default(Type);
+                    var exprType = default(Type);
+                    var joinMethod = default(MethodInfo);
+                    switch (exprParams.Count)
+                    {
+                        case 1:
+                            funType = typeof(Func<,,,>).MakeGenericType(referencedType, rec.Collection.JoinType,
+                                exprParams[0].Item2,
+                                typeof(bool));
+                            exprType = typeof(Expression<>).MakeGenericType(funType);
+                            joinMethod = queryBuilderType.MatchGenericMethod("Join", 2, joinQueryBuilderType, exprType)
+                                                         .MakeGenericMethod(rec.Collection.JoinType, exprParams[0].Item2);
+                            break;
+                    }
+                    il.Call(typeof(Expression).MatchGenericMethod("Lambda", BindingFlags.Static | BindingFlags.Public, 1,
+                        exprType,
+                        typeof(Expression), typeof(ParameterExpression[]))
+                                              .MakeGenericMethod(funType));
+                    il.CallVirtual(joinMethod);
+                    il.CallVirtual(joinQueryBuilderType.GetMethod("Construct"));
+                    il.StoreLocal(res);
+
+                    var dumb = il.DefineLabel();
+                    il.Branch_ShortForm(dumb);
+                    il.MarkLabel(dumb);
+
+                    il.LoadLocal(res);
+                });
             }
-          }
-          var exit = il.DefineLabel();
-          il.Branch(exit);
-          il.MarkLabel(exitFalse);
-          il.Load_I4_0();
-          il.MarkLabel(exit);
-          il.StoreLocal_0();
-          var fin = il.DefineLabel();
-          il.Branch(fin);
-          il.MarkLabel(fin);
-          il.LoadLocal_0();
-        });
 
-        var contributedEquals = new Action<EmittedMethodBase, ILGenerator>((m, il) =>
-        {
-          var exitFalse2 = il.DefineLabel();
-          var exit = il.DefineLabel();
-          il.DeclareLocal(typeof(bool));
-
-          il.LoadArg_1();
-          il.IsInstance(builder.Builder);
-          il.BranchIfFalse(exitFalse2);
-          il.LoadArg_0();
-          il.LoadArg_1();
-          il.CastClass(builder.Builder);
-          il.Call(specializedEquals);
-          il.Branch(exit);
-          il.MarkLabel(exitFalse2);
-          il.LoadValue(false);
-          il.MarkLabel(exit);
-          il.StoreLocal_0();
-          var fin = il.DefineLabel();
-          il.Branch(fin);
-          il.MarkLabel(fin);
-          il.LoadLocal_0();
-        });
-
-        var equatableT = typeof(IEquatable<>).MakeGenericType(typeof(TDataModel));
-        builder.AddInterfaceImplementation(equatableT);
-        var equalsT = builder.DefineMethod("Equals");
-        equalsT.ClearAttributes();
-        equalsT.IncludeAttributes(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.NewSlot |
-                                  MethodAttributes.Virtual | MethodAttributes.Final);
-        equalsT.ReturnType = TypeRef.FromType<bool>();
-        equalsT.DefineParameter("other", typeof(TDataModel));
-        equalsT.ContributeInstructions(contributedEquals);
-
-        builder.DefineOverrideMethod(typeof(Object).GetMethod("Equals", BindingFlags.Instance | BindingFlags.Public,
-          null,
-          new[]
-          {
-            typeof(object)
-          }, null))
-               .ContributeInstructions(contributedEquals);
-
-        return specializedEquals;
-      }
-
-      static void ImplementSpecializedGetHashCode(EmittedClass builder, EmittedField chashCodeSeed)
-      {
-        Contract.Requires<ArgumentNullException>(builder != null);
-
-        var method = builder.DefineMethod("GetHashCode");
-        method.ClearAttributes();
-        method.IncludeAttributes(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Virtual);
-        method.ReturnType = TypeRef.FromType<int>();
-        method.ContributeInstructions((m, il) =>
-        {
-          var prime = il.DeclareLocal(typeof(Int32));
-          var result = il.DeclareLocal(typeof(Int32));
-          il.DeclareLocal(typeof(Int32));
-          il.DeclareLocal(typeof(bool));
-
-          il.LoadValue(Constants.NotSoRandomPrime);
-          il.StoreLocal(prime);
-          il.LoadValue(chashCodeSeed);
-          il.LoadLocal(prime);
-          il.Multiply();
-          il.StoreLocal(result);
-          var exit = il.DefineLabel();
-          var fields =
-            new List<EmittedField>(
-              builder.Fields.Where(f => f.IsStatic == false
-                                        && f.FieldType.Target != typeof(PropertyChangedEventHandler)
-                                        && f.Name != "_sync"
-                ));
-          var lbl = default(Label);
-          foreach (var field in fields)
-          {
-            var fieldType = field.FieldType.Target;
-            var tc = Type.GetTypeCode(fieldType);
-            switch (tc)
+            static void EmitPropertyForReferenceColumn(MemberRec rec, EmittedField dirtyFlags, EmittedMethod propChanged)
             {
-              case TypeCode.Boolean:
-              case TypeCode.Byte:
-              case TypeCode.Char:
-              case TypeCode.Int16:
-              case TypeCode.Int32:
-              case TypeCode.SByte:
-              case TypeCode.Single:
-              case TypeCode.UInt16:
-              case TypeCode.UInt32:
-                il.LoadLocal(result);
-                il.LoadLocal(prime);
+                rec.EmittedProperty.AddGetter()
+                   .ContributeInstructions((m, il) =>
+                   {
+                       il.LoadArg_0();
+                       il.LoadField(rec.EmittedField);
+                       var res = il.DeclareLocal(rec.SourceAsProperty.PropertyType);
+                       il.CallVirtual(rec.FieldType.GetProperty("Model")
+                                         .GetGetMethod());
+                       il.StoreLocal(res);
+                       var exit = il.DefineLabel();
+                       il.Branch_ShortForm(exit);
+                       il.MarkLabel(exit);
+                       il.LoadLocal(res);
+                   });
+                if (rec.SourceAsProperty.CanWrite)
+                {
+                    rec.EmittedProperty.AddSetter()
+                       .ContributeInstructions((m, il) =>
+                       {
+                           var cont = il.DefineLabel();
+                           var exit = il.DefineLabel();
+
+                           il.DeclareLocal(typeof(bool));
+
+                           il.LoadArg_0();
+                           il.LoadField(rec.EmittedField);
+                           il.LoadArg_1();
+                           il.CallVirtual(rec.FieldType.GetMethod("Equals", new[]
+                           {
+                               rec.SourceAsProperty.PropertyType
+                           }));
+
+                           il.StoreLocal_0();
+                           il.LoadLocal_0();
+                           il.BranchIfFalse_ShortForm(cont);
+                           il.Branch(exit);
+                           il.MarkLabel(cont);
+
+                           // TODO: emit column validation in setter
+
+                           il.LoadArg_0();
+                           il.LoadArg_1();
+                           il.NewObj(rec.FieldType.GetConstructor(new[]
+                           {
+                               rec.SourceAsProperty.PropertyType
+                           }));
+                           il.StoreField(rec.EmittedField);
+
+                           il.LoadArg_0();
+                           il.LoadFieldAddress(dirtyFlags);
+                           il.LoadValue(rec.Ordinal);
+                           il.LoadValue(true);
+                           il.Call<BitVector>("set_Item");
+
+                           il.LoadArg_0();
+                           il.LoadValue(rec.SourceAsProperty.Name);
+                           il.Call(propChanged);
+
+                           il.MarkLabel(exit);
+                       });
+                }
+            }
+
+            static void EmitPropertyForColumn(MemberRec rec, EmittedField dirtyFlags, EmittedMethod propChanged)
+            {
+                rec.EmittedProperty.AddGetter()
+                   .ContributeInstructions((m, il) =>
+                   {
+                       il.LoadArg_0();
+                       il.LoadField(rec.EmittedField);
+                   });
+                if (rec.SourceAsProperty.CanWrite)
+                {
+                    rec.EmittedProperty.AddSetter()
+                       .ContributeInstructions((m, il) =>
+                       {
+                           var cont = il.DefineLabel();
+                           var exit = il.DefineLabel();
+
+                           il.DeclareLocal(typeof(bool));
+
+                           if (rec.FieldType.IsArray)
+                           {
+                               var elmType = rec.FieldType.GetElementType();
+                               LoadFieldFromThisAndValue(il, rec.EmittedField);
+                               il.Call(typeof(Extensions).GetMethod("EqualsOrItemsEqual",
+                                   BindingFlags.Static | BindingFlags.Public)
+                                                         .MakeGenericMethod(elmType));
+                           }
+                           else if (rec.FieldType.IsClass)
+                           {
+                               var opEquality = rec.FieldType.GetMethod("op_Equality",
+                                   BindingFlags.Public | BindingFlags.Static);
+                               if (opEquality != null)
+                               {
+                                   LoadFieldFromThisAndValue(il, rec.EmittedField);
+                                   il.Call(opEquality);
+                               }
+                               else
+                               {
+                                   il.Call(typeof(EqualityComparer<>).MakeGenericType(rec.FieldType)
+                                                                     .GetMethod("get_Default",
+                                                                         BindingFlags.Static | BindingFlags.Public));
+                                   LoadFieldFromThisAndValue(il, rec.EmittedField);
+                                   il.CallVirtual(typeof(IEqualityComparer<>).MakeGenericType(rec.FieldType)
+                                                                             .GetMethod("Equals",
+                                                                                 BindingFlags.Public
+                                                                                 | BindingFlags.Instance,
+                                                                                 null,
+                                                                                 new[]
+                                                                                 {
+                                                                                     rec.FieldType,
+                                                                                     rec.FieldType
+                                                                                 },
+                                                                                 null
+                                       ));
+                               }
+                           }
+                           else
+                           {
+                               LoadFieldFromThisAndValue(il, rec.EmittedField);
+                               il.CompareEquality(rec.FieldType);
+                           }
+                           il.StoreLocal_0();
+                           il.LoadLocal_0();
+                           il.BranchIfFalse_ShortForm(cont);
+                           il.Branch(exit);
+                           il.MarkLabel(cont);
+
+                           // TODO: emit column validation in setter
+
+                           il.LoadArg_0();
+                           il.LoadArg_1();
+                           il.StoreField(rec.EmittedField);
+
+                           il.LoadArg_0();
+                           il.LoadFieldAddress(dirtyFlags);
+                           il.LoadValue(rec.Ordinal);
+                           il.LoadValue(true);
+                           il.Call<BitVector>("set_Item");
+
+                           il.LoadArg_0();
+                           il.LoadValue(rec.SourceAsProperty.Name);
+                           il.Call(propChanged);
+
+                           il.MarkLabel(exit);
+                       });
+                }
+            }
+
+            static EmittedMethod ImplementSpecializedEquals(EmittedClass builder)
+            {
+                var equatable = typeof(IEquatable<>).MakeGenericType(builder.Builder);
+                builder.AddInterfaceImplementation(equatable);
+
+                var specializedEquals = builder.DefineMethod("Equals");
+                specializedEquals.ClearAttributes();
+                specializedEquals.IncludeAttributes(MethodAttributes.Public | MethodAttributes.HideBySig
+                                                    | MethodAttributes.NewSlot |
+                                                    MethodAttributes.Virtual | MethodAttributes.Final);
+                specializedEquals.ReturnType = TypeRef.FromType<bool>();
+                var other = specializedEquals.DefineParameter("other", builder.Ref);
+
+                specializedEquals.ContributeInstructions((m, il) =>
+                {
+                    il.DeclareLocal(typeof(bool));
+                    var exitFalse = il.DefineLabel();
+
+                    var fields =
+                        new List<EmittedField>(
+                            builder.Fields.Where(f => f.IsStatic == false
+                                                      && f.FieldType.Target != typeof(PropertyChangedEventHandler)
+                                                      && f.Name != "_sync"
+                                ));
+                    for (var i = 0; i < fields.Count; i++)
+                    {
+                        var field = fields[i];
+                        var fieldType = field.FieldType.Target;
+                        if (fieldType.IsArray)
+                        {
+                            var elmType = fieldType.GetElementType();
+                            LoadFieldsFromThisAndParam(il, field, other);
+                            il.Call(typeof(Extensions).GetMethod("EqualsOrItemsEqual",
+                                BindingFlags.Static | BindingFlags.Public)
+                                                      .MakeGenericMethod(elmType));
+                        }
+                        else if (fieldType.IsClass)
+                        {
+                            if (fieldType.IsGenericType
+                                && fieldType.GetGenericTypeDefinition() == typeof(ObservableCollection<>))
+                            {
+                                // compare observable collections for member equality...
+                                var genericArg = fieldType.GetGenericArguments()[0];
+                                var etype = typeof(IEnumerable<>).MakeGenericType(genericArg);
+                                var sequenceEquals = typeof(Enumerable).MatchGenericMethod("SequenceEqual",
+                                    BindingFlags.Static | BindingFlags.Public, 1, typeof(bool), etype, etype);
+                                LoadFieldsFromThisAndParam(il, field, other);
+                                il.Call(sequenceEquals.MakeGenericMethod(genericArg));
+                            }
+                            else
+                            {
+                                var opEquality = fieldType.GetMethod("op_Equality",
+                                    BindingFlags.Public | BindingFlags.Static);
+                                if (opEquality != null)
+                                {
+                                    LoadFieldsFromThisAndParam(il, field, other);
+                                    il.Call(opEquality);
+                                }
+                                else
+                                {
+                                    il.Call(typeof(EqualityComparer<>).MakeGenericType(fieldType)
+                                                                      .GetMethod("get_Default",
+                                                                          BindingFlags.Static | BindingFlags.Public));
+                                    LoadFieldsFromThisAndParam(il, field, other);
+                                    il.CallVirtual(typeof(IEqualityComparer<>).MakeGenericType(fieldType)
+                                                                              .GetMethod("Equals",
+                                                                                  BindingFlags.Public
+                                                                                  | BindingFlags.Instance,
+                                                                                  null,
+                                                                                  new[]
+                                                                                  {
+                                                                                      fieldType,
+                                                                                      fieldType
+                                                                                  },
+                                                                                  null
+                                        ));
+                                }
+                            }
+                        }
+                        else
+                        {
+                            LoadFieldsFromThisAndParam(il, field, other);
+                            il.CompareEquality(fieldType);
+                        }
+                        if (i < fields.Count - 1)
+                        {
+                            il.BranchIfFalse(exitFalse);
+                        }
+                    }
+                    var exit = il.DefineLabel();
+                    il.Branch(exit);
+                    il.MarkLabel(exitFalse);
+                    il.Load_I4_0();
+                    il.MarkLabel(exit);
+                    il.StoreLocal_0();
+                    var fin = il.DefineLabel();
+                    il.Branch(fin);
+                    il.MarkLabel(fin);
+                    il.LoadLocal_0();
+                });
+
+                var contributedEquals = new Action<EmittedMethodBase, ILGenerator>((m, il) =>
+                {
+                    var exitFalse2 = il.DefineLabel();
+                    var exit = il.DefineLabel();
+                    il.DeclareLocal(typeof(bool));
+
+                    il.LoadArg_1();
+                    il.IsInstance(builder.Builder);
+                    il.BranchIfFalse(exitFalse2);
+                    il.LoadArg_0();
+                    il.LoadArg_1();
+                    il.CastClass(builder.Builder);
+                    il.Call(specializedEquals);
+                    il.Branch(exit);
+                    il.MarkLabel(exitFalse2);
+                    il.LoadValue(false);
+                    il.MarkLabel(exit);
+                    il.StoreLocal_0();
+                    var fin = il.DefineLabel();
+                    il.Branch(fin);
+                    il.MarkLabel(fin);
+                    il.LoadLocal_0();
+                });
+
+                var equatableT = typeof(IEquatable<>).MakeGenericType(typeof(TDataModel));
+                builder.AddInterfaceImplementation(equatableT);
+                var equalsT = builder.DefineMethod("Equals");
+                equalsT.ClearAttributes();
+                equalsT.IncludeAttributes(MethodAttributes.Public | MethodAttributes.HideBySig
+                                          | MethodAttributes.NewSlot |
+                                          MethodAttributes.Virtual | MethodAttributes.Final);
+                equalsT.ReturnType = TypeRef.FromType<bool>();
+                equalsT.DefineParameter("other", typeof(TDataModel));
+                equalsT.ContributeInstructions(contributedEquals);
+
+                builder.DefineOverrideMethod(typeof(Object).GetMethod("Equals",
+                    BindingFlags.Instance | BindingFlags.Public,
+                    null,
+                    new[]
+                    {
+                        typeof(object)
+                    }, null))
+                       .ContributeInstructions(contributedEquals);
+
+                return specializedEquals;
+            }
+
+            static void ImplementSpecializedGetHashCode(EmittedClass builder, EmittedField chashCodeSeed)
+            {
+                Contract.Requires<ArgumentNullException>(builder != null);
+
+                var method = builder.DefineMethod("GetHashCode");
+                method.ClearAttributes();
+                method.IncludeAttributes(MethodAttributes.Public | MethodAttributes.HideBySig | MethodAttributes.Virtual);
+                method.ReturnType = TypeRef.FromType<int>();
+                method.ContributeInstructions((m, il) =>
+                {
+                    var prime = il.DeclareLocal(typeof(Int32));
+                    var result = il.DeclareLocal(typeof(Int32));
+                    il.DeclareLocal(typeof(Int32));
+                    il.DeclareLocal(typeof(bool));
+
+                    il.LoadValue(Constants.NotSoRandomPrime);
+                    il.StoreLocal(prime);
+                    il.LoadValue(chashCodeSeed);
+                    il.LoadLocal(prime);
+                    il.Multiply();
+                    il.StoreLocal(result);
+                    var exit = il.DefineLabel();
+                    var fields =
+                        new List<EmittedField>(
+                            builder.Fields.Where(f => f.IsStatic == false
+                                                      && f.FieldType.Target != typeof(PropertyChangedEventHandler)
+                                                      && f.Name != "_sync"
+                                ));
+                    var lbl = default(Label);
+                    foreach (var field in fields)
+                    {
+                        var fieldType = field.FieldType.Target;
+                        var tc = Type.GetTypeCode(fieldType);
+                        switch (tc)
+                        {
+                            case TypeCode.Boolean:
+                            case TypeCode.Byte:
+                            case TypeCode.Char:
+                            case TypeCode.Int16:
+                            case TypeCode.Int32:
+                            case TypeCode.SByte:
+                            case TypeCode.Single:
+                            case TypeCode.UInt16:
+                            case TypeCode.UInt32:
+                                il.LoadLocal(result);
+                                il.LoadLocal(prime);
+                                il.LoadArg_0();
+                                il.LoadField(field);
+                                il.Multiply();
+                                il.Xor();
+                                il.StoreLocal(result);
+                                break;
+                            case TypeCode.DateTime:
+                                il.LoadLocal(result);
+                                il.LoadLocal(prime);
+                                il.LoadArg_0();
+                                il.LoadFieldAddress(field);
+                                il.Constrained(typeof(DateTime));
+                                il.CallVirtual<object>("GetHashCode");
+                                il.Multiply();
+                                il.Xor();
+                                il.StoreLocal(result);
+                                break;
+                            case TypeCode.Decimal:
+                                il.LoadLocal(result);
+                                il.LoadLocal(prime);
+                                il.LoadArg_0();
+                                il.LoadFieldAddress(field);
+                                il.Call<Decimal>("GetHashCode");
+                                il.Multiply();
+                                il.Xor();
+                                il.StoreLocal(result);
+                                break;
+                            case TypeCode.Double:
+                                il.LoadLocal(result);
+                                il.LoadLocal(prime);
+                                il.LoadArg_0();
+                                il.LoadFieldAddress(field);
+                                il.Call<Double>("GetHashCode");
+                                il.Multiply();
+                                il.Xor();
+                                il.StoreLocal(result);
+                                break;
+                            case TypeCode.Int64:
+                                il.LoadLocal(result);
+                                il.LoadLocal(prime);
+                                il.LoadArg_0();
+                                il.LoadFieldAddress(field);
+                                il.Constrained(typeof(Int64));
+                                il.CallVirtual<object>("GetHashCode");
+                                il.Multiply();
+                                il.Xor();
+                                il.StoreLocal(result);
+                                break;
+                            case TypeCode.Object:
+                                if (typeof(Guid).IsAssignableFrom(fieldType))
+                                {
+                                    il.LoadLocal(result);
+                                    il.LoadLocal(prime);
+                                    il.LoadArg_0();
+                                    il.LoadFieldAddress(field);
+                                    il.Constrained(typeof(Guid));
+                                    il.CallVirtual<object>("GetHashCode");
+                                    il.Multiply();
+                                    il.Xor();
+                                    il.StoreLocal(result);
+                                }
+                                else if (fieldType.IsArray)
+                                {
+                                    var elmType = fieldType.GetElementType();
+                                    il.LoadLocal(result);
+                                    il.LoadLocal(prime);
+                                    il.LoadArg_0();
+                                    il.LoadField(field);
+                                    il.LoadLocal(result);
+                                    il.Call(typeof(Extensions).GetMethod("CalculateCombinedHashcode",
+                                        BindingFlags.Public | BindingFlags.Static)
+                                                              .MakeGenericMethod(elmType));
+                                    il.Multiply();
+                                    il.Xor();
+                                    il.StoreLocal(result);
+                                }
+                                else if (fieldType.IsGenericType
+                                         && fieldType.GetGenericTypeDefinition() == typeof(Nullable<>))
+                                {
+                                    il.LoadLocal(result);
+                                    il.LoadLocal(prime);
+                                    il.LoadArg_0();
+                                    il.LoadFieldAddress(field);
+                                    il.Constrained(fieldType);
+                                    il.CallVirtual<object>("GetHashCode");
+                                    il.Multiply();
+                                    il.Xor();
+                                    il.StoreLocal(result);
+                                }
+                                else if (fieldType.IsValueType)
+                                {
+                                    il.LoadLocal(result);
+                                    il.LoadLocal(prime);
+                                    il.LoadArg_0();
+                                    il.LoadFieldAddress(field);
+                                    il.Constrained(fieldType);
+                                    il.CallVirtual<object>("GetHashCode");
+                                    il.Multiply();
+                                    il.Xor();
+                                    il.StoreLocal(result);
+                                }
+                                else
+                                {
+                                    il.LoadArg_0();
+                                    il.LoadField(field);
+                                    il.LoadNull();
+                                    il.CompareEqual();
+                                    il.StoreLocal_2();
+                                    il.LoadLocal_2();
+                                    lbl = il.DefineLabel();
+                                    il.BranchIfTrue_ShortForm(lbl);
+
+                                    il.LoadLocal(result);
+                                    il.LoadLocal(prime);
+                                    il.LoadArg_0();
+                                    il.LoadField(field);
+                                    il.CallVirtual<object>("GetHashCode");
+                                    il.Multiply();
+                                    il.Xor();
+                                    il.StoreLocal(result);
+                                    il.MarkLabel(lbl);
+                                }
+                                break;
+                            case TypeCode.String:
+                                il.LoadArg_0();
+                                il.LoadField(field);
+                                il.LoadNull();
+                                il.CompareEqual();
+                                il.StoreLocal_2();
+                                il.LoadLocal_2();
+                                lbl = il.DefineLabel();
+                                il.BranchIfTrue_ShortForm(lbl);
+
+                                il.LoadLocal(result);
+                                il.LoadLocal(prime);
+                                il.LoadArg_0();
+                                il.LoadField(field);
+                                il.CallVirtual<object>("GetHashCode");
+                                il.Multiply();
+                                il.Xor();
+                                il.StoreLocal(result);
+                                il.MarkLabel(lbl);
+                                break;
+                            case TypeCode.UInt64:
+                                il.LoadLocal(result);
+                                il.LoadLocal(prime);
+                                il.LoadArg_0();
+                                il.LoadFieldAddress(field);
+                                il.Constrained(typeof(UInt64));
+                                il.CallVirtual<object>("GetHashCode");
+                                il.Multiply();
+                                il.Xor();
+                                il.StoreLocal(result);
+                                break;
+                            default:
+                                throw new InvalidOperationException(
+                                    String.Concat("Unable to produce hashcode for type: ",
+                                        fieldType.GetReadableFullName()));
+                        }
+                    }
+                    il.LoadLocal(result);
+                    il.StoreLocal_2();
+                    il.Branch(exit);
+                    il.MarkLabel(exit);
+                    il.LoadLocal_2();
+                });
+            }
+
+            static void LoadFieldFromThisAndValue(ILGenerator il, EmittedField field)
+            {
+                Contract.Requires<ArgumentNullException>(il != null);
+                Contract.Requires<ArgumentNullException>(field != null);
                 il.LoadArg_0();
                 il.LoadField(field);
-                il.Multiply();
-                il.Xor();
-                il.StoreLocal(result);
-                break;
-              case TypeCode.DateTime:
-                il.LoadLocal(result);
-                il.LoadLocal(prime);
-                il.LoadArg_0();
-                il.LoadFieldAddress(field);
-                il.Constrained(typeof(DateTime));
-                il.CallVirtual<object>("GetHashCode");
-                il.Multiply();
-                il.Xor();
-                il.StoreLocal(result);
-                break;
-              case TypeCode.Decimal:
-                il.LoadLocal(result);
-                il.LoadLocal(prime);
-                il.LoadArg_0();
-                il.LoadFieldAddress(field);
-                il.Call<Decimal>("GetHashCode");
-                il.Multiply();
-                il.Xor();
-                il.StoreLocal(result);
-                break;
-              case TypeCode.Double:
-                il.LoadLocal(result);
-                il.LoadLocal(prime);
-                il.LoadArg_0();
-                il.LoadFieldAddress(field);
-                il.Call<Double>("GetHashCode");
-                il.Multiply();
-                il.Xor();
-                il.StoreLocal(result);
-                break;
-              case TypeCode.Int64:
-                il.LoadLocal(result);
-                il.LoadLocal(prime);
-                il.LoadArg_0();
-                il.LoadFieldAddress(field);
-                il.Constrained(typeof(Int64));
-                il.CallVirtual<object>("GetHashCode");
-                il.Multiply();
-                il.Xor();
-                il.StoreLocal(result);
-                break;
-              case TypeCode.Object:
-                if (typeof(Guid).IsAssignableFrom(fieldType))
-                {
-                  il.LoadLocal(result);
-                  il.LoadLocal(prime);
-                  il.LoadArg_0();
-                  il.LoadFieldAddress(field);
-                  il.Constrained(typeof(Guid));
-                  il.CallVirtual<object>("GetHashCode");
-                  il.Multiply();
-                  il.Xor();
-                  il.StoreLocal(result);
-                }
-                else if (fieldType.IsArray)
-                {
-                  var elmType = fieldType.GetElementType();
-                  il.LoadLocal(result);
-                  il.LoadLocal(prime);
-                  il.LoadArg_0();
-                  il.LoadField(field);
-                  il.LoadLocal(result);
-                  il.Call(typeof(Extensions).GetMethod("CalculateCombinedHashcode",
-                    BindingFlags.Public | BindingFlags.Static)
-                                            .MakeGenericMethod(elmType));
-                  il.Multiply();
-                  il.Xor();
-                  il.StoreLocal(result);
-                }
-                else if (fieldType.IsGenericType
-                         && fieldType.GetGenericTypeDefinition() == typeof(Nullable<>))
-                {
-                  il.LoadLocal(result);
-                  il.LoadLocal(prime);
-                  il.LoadArg_0();
-                  il.LoadFieldAddress(field);
-                  il.Constrained(fieldType);
-                  il.CallVirtual<object>("GetHashCode");
-                  il.Multiply();
-                  il.Xor();
-                  il.StoreLocal(result);
-                }
-                else if (fieldType.IsValueType)
-                {
-                  il.LoadLocal(result);
-                  il.LoadLocal(prime);
-                  il.LoadArg_0();
-                  il.LoadFieldAddress(field);
-                  il.Constrained(fieldType);
-                  il.CallVirtual<object>("GetHashCode");
-                  il.Multiply();
-                  il.Xor();
-                  il.StoreLocal(result);
-                }
-                else
-                {
-                  il.LoadArg_0();
-                  il.LoadField(field);
-                  il.LoadNull();
-                  il.CompareEqual();
-                  il.StoreLocal_2();
-                  il.LoadLocal_2();
-                  lbl = il.DefineLabel();
-                  il.BranchIfTrue_ShortForm(lbl);
-
-                  il.LoadLocal(result);
-                  il.LoadLocal(prime);
-                  il.LoadArg_0();
-                  il.LoadField(field);
-                  il.CallVirtual<object>("GetHashCode");
-                  il.Multiply();
-                  il.Xor();
-                  il.StoreLocal(result);
-                  il.MarkLabel(lbl);
-                }
-                break;
-              case TypeCode.String:
-                il.LoadArg_0();
-                il.LoadField(field);
-                il.LoadNull();
-                il.CompareEqual();
-                il.StoreLocal_2();
-                il.LoadLocal_2();
-                lbl = il.DefineLabel();
-                il.BranchIfTrue_ShortForm(lbl);
-
-                il.LoadLocal(result);
-                il.LoadLocal(prime);
-                il.LoadArg_0();
-                il.LoadField(field);
-                il.CallVirtual<object>("GetHashCode");
-                il.Multiply();
-                il.Xor();
-                il.StoreLocal(result);
-                il.MarkLabel(lbl);
-                break;
-              case TypeCode.UInt64:
-                il.LoadLocal(result);
-                il.LoadLocal(prime);
-                il.LoadArg_0();
-                il.LoadFieldAddress(field);
-                il.Constrained(typeof(UInt64));
-                il.CallVirtual<object>("GetHashCode");
-                il.Multiply();
-                il.Xor();
-                il.StoreLocal(result);
-                break;
-              default:
-                throw new InvalidOperationException(String.Concat("Unable to produce hashcode for type: ",
-                  fieldType.GetReadableFullName()));
+                il.LoadArg_1();
             }
-          }
-          il.LoadLocal(result);
-          il.StoreLocal_2();
-          il.Branch(exit);
-          il.MarkLabel(exit);
-          il.LoadLocal_2();
-        });
-      }
 
-      static void LoadFieldFromThisAndValue(ILGenerator il, EmittedField field)
-      {
-        Contract.Requires<ArgumentNullException>(il != null);
-        Contract.Requires<ArgumentNullException>(field != null);
-        il.LoadArg_0();
-        il.LoadField(field);
-        il.LoadArg_1();
-      }
+            static void LoadFieldsFromThisAndParam(ILGenerator il, EmittedField field, EmittedParameter parm)
+            {
+                Contract.Requires<ArgumentNullException>(il != null);
+                Contract.Requires<ArgumentNullException>(field != null);
+                il.LoadArg_0();
+                il.LoadField(field);
+                il.LoadArg(parm);
+                il.LoadField(field);
+            }
 
-      static void LoadFieldsFromThisAndParam(ILGenerator il, EmittedField field, EmittedParameter parm)
-      {
-        Contract.Requires<ArgumentNullException>(il != null);
-        Contract.Requires<ArgumentNullException>(field != null);
-        il.LoadArg_0();
-        il.LoadField(field);
-        il.LoadArg(parm);
-        il.LoadField(field);
-      }
+            class MemberRec
+            {
+                public ColumnMapping<TDataModel> Column { get; private set; }
+                public CollectionMapping<TDataModel> Collection { get; private set; }
+                public EmittedField EmittedField { get; private set; }
+                public EmittedProperty EmittedProperty { get; private set; }
+                public Type FieldType { get; private set; }
+                public bool IsCollection { get { return Collection != null; } }
+                public bool IsColumn { get { return Column != null; } }
+                public bool IsLifted { get; private set; }
+                public MemberInfo Source { get; private set; }
+                public PropertyInfo SourceAsProperty { get { return Source as PropertyInfo; } }
+                public MethodInfo SourceAsMethod { get { return Source as MethodInfo; } }
+                public Type ReferenceTargetMemberType { get; private set; }
 
-      class MemberRec
-      {
-        public ColumnMapping<TDataModel> Column { get; private set; }
-        public CollectionMapping<TDataModel> Collection { get; private set; }
-        public EmittedField EmittedField { get; private set; }
-        public EmittedProperty EmittedProperty { get; private set; }
-        public Type FieldType { get; private set; }
-        public bool IsCollection { get { return Collection != null; } }
-        public bool IsColumn { get { return Column != null; } }
-        public bool IsLifted { get; private set; }
-        public MemberInfo Source { get; private set; }
-        public PropertyInfo SourceAsProperty { get { return Source as PropertyInfo; } }
-        public MethodInfo SourceAsMethod { get { return Source as MethodInfo; } }
-        public Type ReferenceTargetMemberType { get; private set; }
+                public int Ordinal { get; private set; }
 
-        public int Ordinal { get; private set; }
+                public static MemberRec CreateOnColumn(Type intf, EmittedClass builder, ColumnMapping<TDataModel> col,
+                    PropertyInfo info)
+                {
+                    var fieldName = String.Concat("<", intf.Name, "_", info.Name, ">_field");
+                    var res = new MemberRec
+                    {
+                        Column = col,
+                        Ordinal = col.Ordinal,
+                        Source = info,
+                        FieldType = info.PropertyType
+                    };
 
-        public static MemberRec CreateOnColumn(Type intf, EmittedClass builder, ColumnMapping<TDataModel> col,
-          PropertyInfo info)
-        {
-          var fieldName = String.Concat("<", intf.Name, "_", info.Name, ">_field");
-          var res = new MemberRec
-          {
-            Column = col,
-            Ordinal = col.Ordinal,
-            Source = info,
-            FieldType = info.PropertyType
-          };
+                    if (col.IsReference)
+                    {
+                        res.ReferenceTargetMemberType = col.ReferenceTargetMember.GetTypeOfValue();
+                        res.FieldType = typeof(DataModelReference<,>).MakeGenericType(res.FieldType,
+                            res.ReferenceTargetMemberType);
+                    }
 
-          if (col.IsReference)
-          {
-            res.ReferenceTargetMemberType = col.ReferenceTargetMember.GetTypeOfValue();
-            res.FieldType = typeof(DataModelReference<,>).MakeGenericType(res.FieldType, res.ReferenceTargetMemberType);
-          }
+                    res.IsLifted = info.IsDefined(typeof(MapLiftedColumnAttribute), true);
+                    res.EmittedProperty = builder.DefinePropertyFromPropertyInfo(info);
+                    res.EmittedField = builder.DefineField(fieldName, res.FieldType);
+                    return res;
+                }
 
-          res.IsLifted = info.IsDefined(typeof(MapLiftedColumnAttribute), true);
-          res.EmittedProperty = builder.DefinePropertyFromPropertyInfo(info);
-          res.EmittedField = builder.DefineField(fieldName, res.FieldType);
-          return res;
+                public static MemberRec CreateOnCollection(IMapping<TDataModel> mapping, Type intf, EmittedClass builder,
+                    CollectionMapping<TDataModel> coll, PropertyInfo info)
+                {
+                    var fieldName = String.Concat("<", intf.Name, "_", coll.Name, ">");
+                    var res = new MemberRec
+                    {
+                        Collection = coll,
+                        Source = info
+                    };
+
+                    var colls = mapping.Collections.ToArray();
+                    res.Ordinal = mapping.Columns.Count() + Array.IndexOf(colls, coll);
+
+                    res.FieldType = coll.MakeCollectionReferenceType(coll.ReferencedMapping);
+
+                    res.EmittedProperty = builder.DefinePropertyFromPropertyInfo(info);
+                    res.EmittedField = builder.DefineField(fieldName, res.FieldType);
+                    return res;
+                }
+
+                public static MemberRec CreateOnCollection(IMapping<TDataModel> mapping, Type intf, EmittedClass builder,
+                    CollectionMapping<TDataModel> coll, MethodInfo info)
+                {
+                    var fieldName = String.Concat("<", intf.Name, "_", coll.Name, ">");
+                    var res = new MemberRec
+                    {
+                        Collection = coll,
+                        Source = info
+                    };
+
+                    var colls = mapping.Collections.ToArray();
+                    res.Ordinal = mapping.Columns.Count() + Array.IndexOf(colls, coll);
+
+                    res.FieldType = coll.MakeCollectionReferenceType(coll.ReferencedMapping);
+
+                    res.EmittedField = builder.DefineField(fieldName, res.FieldType);
+                    return res;
+                }
+
+                public EmittedMethod CollectionChanged { get; set; }
+
+                public EmittedField CollectionStaticLazyCommand { get; set; }
+
+                public EmittedMethod CollectionMakeResolve { get; set; }
+            }
         }
-
-        public static MemberRec CreateOnCollection(IMapping<TDataModel> mapping, Type intf, EmittedClass builder,
-          CollectionMapping<TDataModel> coll, PropertyInfo info)
-        {
-          var fieldName = String.Concat("<", intf.Name, "_", coll.Name, ">");
-          var res = new MemberRec
-          {
-            Collection = coll,
-            Source = info
-          };
-
-          var colls = mapping.Collections.ToArray();
-          res.Ordinal = mapping.Columns.Count() + Array.IndexOf(colls, coll);
-
-          res.FieldType = coll.MakeCollectionReferenceType(coll.ReferencedMapping);
-
-          res.EmittedProperty = builder.DefinePropertyFromPropertyInfo(info);
-          res.EmittedField = builder.DefineField(fieldName, res.FieldType);
-          return res;
-        }
-
-        public static MemberRec CreateOnCollection(IMapping<TDataModel> mapping, Type intf, EmittedClass builder,
-          CollectionMapping<TDataModel> coll, MethodInfo info)
-        {
-          var fieldName = String.Concat("<", intf.Name, "_", coll.Name, ">");
-          var res = new MemberRec
-          {
-            Collection = coll,
-            Source = info
-          };
-
-          var colls = mapping.Collections.ToArray();
-          res.Ordinal = mapping.Columns.Count() + Array.IndexOf(colls, coll);
-
-          res.FieldType = coll.MakeCollectionReferenceType(coll.ReferencedMapping);
-
-          res.EmittedField = builder.DefineField(fieldName, res.FieldType);
-          return res;
-        }
-
-        public EmittedMethod CollectionChanged { get; set; }
-
-        public EmittedField CollectionStaticLazyCommand { get; set; }
-
-        public EmittedMethod CollectionMakeResolve { get; set; }
-      }
     }
-  }
 }

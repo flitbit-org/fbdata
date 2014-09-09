@@ -6,9 +6,9 @@
 
 namespace FlitBit.Data.Meta.DDL
 {
-  public class DDLBatch : DDLNode
-  {
-    public DDLBatch(DDLBehaviors behaviors)
-      : base(DDLNodeKind.None, null, "", behaviors) { }
-  }
+    public class DDLBatch : DDLNode
+    {
+        public DDLBatch(DDLBehaviors behaviors)
+            : base(DDLNodeKind.None, null, "", behaviors) { }
+    }
 }

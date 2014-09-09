@@ -11,16 +11,12 @@ using FlitBit.Data.Meta;
 
 namespace FlitBit.Data.SqlServer
 {
-  internal class SqlMappedSingleEmitter : SqlDbTypeEmitter<float>
-  {
-    internal SqlMappedSingleEmitter()
-      : base(DbType.Single, SqlDbType.Real)
+    internal class SqlMappedSingleEmitter : SqlDbTypeEmitter<float>
     {
-      DbDataReaderGetValueMethodName = "GetFloat";
-    }
+        internal SqlMappedSingleEmitter()
+            : base(DbType.Single, SqlDbType.Real) { DbDataReaderGetValueMethodName = "GetFloat"; }
 
-    public override void EmitColumnInitializationDDL<TModel>(StringBuilder buffer, IMapping<TModel> mapping,
-      ColumnMapping<TModel> col)
-    {}
-  }
+        public override void EmitColumnInitializationDDL<TModel>(StringBuilder buffer, IMapping<TModel> mapping,
+            ColumnMapping<TModel> col) { }
+    }
 }

@@ -8,15 +8,15 @@ using System.Data;
 
 namespace FlitBit.Data.DataModel.DbTypeEmitters
 {
-  internal class MappedDecimalEmitter : MappedDbTypeEmitter<decimal, DbType>
-  {
-    internal MappedDecimalEmitter()
-      : base(DbType.Decimal, DbType.Decimal)
+    internal class MappedDecimalEmitter : MappedDbTypeEmitter<decimal, DbType>
     {
-      this.LengthRequirements = DbTypeLengthRequirements.Precision | DbTypeLengthRequirements.Scale
-                                | DbTypeLengthRequirements.OptionalScale;
+        internal MappedDecimalEmitter()
+            : base(DbType.Decimal, DbType.Decimal)
+        {
+            this.LengthRequirements = DbTypeLengthRequirements.Precision | DbTypeLengthRequirements.Scale
+                                      | DbTypeLengthRequirements.OptionalScale;
 
-      DbDataReaderGetValueMethodName = "GetDecimal";
+            DbDataReaderGetValueMethodName = "GetDecimal";
+        }
     }
-  }
 }

@@ -8,21 +8,21 @@ using System.Collections.Generic;
 
 namespace FlitBit.Data.Meta.DDL
 {
-  public class DDLTable : DDLNode
-  {
-    readonly Dictionary<string, DDLTableColumn> _columns = new Dictionary<string, DDLTableColumn>();
-
-    public DDLTable(DDLNode parent, string name, DDLBehaviors behaviors)
-      : base(DDLNodeKind.Table, parent, name, behaviors) { }
-
-    public DDLTableColumn DefineColumn(ColumnMapping col, DDLBehaviors behaviors)
+    public class DDLTable : DDLNode
     {
-      var child = GetChild<DDLTableColumn>(DDLNodeKind.Column, col.TargetName);
-      if (child == null)
-      {
-        AddChild(child = new DDLTableColumn(this, col, _columns.Count, behaviors));
-      }
-      return child;
+        readonly Dictionary<string, DDLTableColumn> _columns = new Dictionary<string, DDLTableColumn>();
+
+        public DDLTable(DDLNode parent, string name, DDLBehaviors behaviors)
+            : base(DDLNodeKind.Table, parent, name, behaviors) { }
+
+        public DDLTableColumn DefineColumn(ColumnMapping col, DDLBehaviors behaviors)
+        {
+            var child = GetChild<DDLTableColumn>(DDLNodeKind.Column, col.TargetName);
+            if (child == null)
+            {
+                AddChild(child = new DDLTableColumn(this, col, _columns.Count, behaviors));
+            }
+            return child;
+        }
     }
-  }
 }

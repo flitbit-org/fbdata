@@ -10,46 +10,53 @@ using System.Diagnostics.Contracts;
 using System.Transactions;
 using FlitBit.Core;
 using FlitBit.Data.Cluster;
+using FlitBit.Data.CodeContracts;
 
 namespace FlitBit.Data
 {
     /// <summary>
     ///     Quasi unit-of-work and scoping mechanism for database operations.
     /// </summary>
-    [ContractClass(typeof(CodeContracts.ContractsForIDbContext))]
+    [ContractClass(typeof(ContractsForIDbContext))]
     public interface IDbContext : IInterrogateDisposable
     {
         /// <summary>
-        /// Gets the context behaviors established when the context began.
+        ///     Gets the context behaviors established when the context began.
         /// </summary>
         DbContextBehaviors Behaviors { get; }
 
         /// <summary>
-        /// Indicates the number of cache attempts during the context.
+        ///     Indicates the number of cache attempts during the context.
         /// </summary>
         int CacheAttempts { get; }
+
         /// <summary>
-        /// Indicates the number of cache hits during the context.
+        ///     Indicates the number of cache hits during the context.
         /// </summary>
         int CacheHits { get; }
+
         /// <summary>
-        /// Indicates the number of cache puts during the context.
+        ///     Indicates the number of cache puts during the context.
         /// </summary>
         int CachePuts { get; }
+
         /// <summary>
-        /// Indicates the number of cache removals during the context.
+        ///     Indicates the number of cache removals during the context.
         /// </summary>
         int CacheRemoves { get; }
+
         /// <summary>
-        /// Indicates the number of queries observed by the context.
+        ///     Indicates the number of queries observed by the context.
         /// </summary>
         int QueryCount { get; }
+
         /// <summary>
-        /// Indicates the number of objects known to be affected by the context.
+        ///     Indicates the number of objects known to be affected by the context.
         /// </summary>
         int ObjectsAffected { get; }
+
         /// <summary>
-        /// Indicates the number of objects fetched by the context.
+        ///     Indicates the number of objects fetched by the context.
         /// </summary>
         int ObjectsFetched { get; }
 
@@ -70,7 +77,7 @@ namespace FlitBit.Data
         /// <summary>
         ///     Tries to get an item from the context cache.
         /// </summary>
-        /// <typeparam name="T">the item's type</typeparam> 
+        /// <typeparam name="T">the item's type</typeparam>
         /// <param name="sharedCache">an ambient shared cache</param>
         /// <param name="key">the item's key</param>
         /// <param name="item">a reference that will contain the ached item upon success.</param>
@@ -106,81 +113,93 @@ namespace FlitBit.Data
         void Delete(string key, ICachePromotionHandler promotion);
 
         /// <summary>
-        /// Gets the DbProviderHelper for the specified connection.
+        ///     Gets the DbProviderHelper for the specified connection.
         /// </summary>
         /// <param name="cn">the connection</param>
         /// <returns></returns>
         DbProviderHelper HelperForConnection(DbConnection cn);
 
         /// <summary>
-        /// Increments the context's query count.
+        ///     Increments the context's query count.
         /// </summary>
         /// <returns></returns>
         int IncrementQueryCounter();
 
         /// <summary>
-        /// Increments the context's query count by the specified number.
+        ///     Increments the context's query count by the specified number.
         /// </summary>
         /// <param name="count"></param>
         /// <returns></returns>
         int IncrementQueryCounter(int count);
 
         /// <summary>
-        /// Increments the context's objects affected count by the supecified number.
+        ///     Increments the context's objects affected count by the supecified number.
         /// </summary>
         /// <param name="count"></param>
         /// <returns></returns>
         int IncrementObjectsAffected(int count);
 
         /// <summary>
-        /// Increments the context's objects fetched count.
+        ///     Increments the context's objects fetched count.
         /// </summary>
         /// <returns></returns>
         int IncrementObjectsFetched();
 
         /// <summary>
-        /// Increments the context's objects fetched count by the supecified number.
+        ///     Increments the context's objects fetched count by the supecified number.
         /// </summary>
         /// <param name="count"></param>
         /// <returns></returns>
         int IncrementObjectsFetched(int count);
-        
+
         /// <summary>
-        /// Gets a new connection from ambient connection providers and
-        /// associates it with the context.
+        ///     Gets a new connection from ambient connection providers and
+        ///     associates it with the context.
         /// </summary>
         /// <param name="connectionName">the connection's name</param>
         /// <returns></returns>
-        /// <exception cref="ArgumentOutOfRangeException">thrown if the connection providers cannot create a connection for the specified name.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">
+        ///     thrown if the connection providers cannot create a connection for the
+        ///     specified name.
+        /// </exception>
         DbConnection NewConnection(string connectionName);
 
         /// <summary>
-        /// Gets a strongly typed connection from ambient connection providers
-        /// and associates it with the context.
+        ///     Gets a strongly typed connection from ambient connection providers
+        ///     and associates it with the context.
         /// </summary>
         /// <param name="connectionName">the connection's name</param>
         /// <typeparam name="TDbConnection">the connection's type</typeparam>
         /// <returns></returns>
-        /// <exception cref="ArgumentOutOfRangeException">thrown if the connection providers cannot create a connection for the specified name.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">
+        ///     thrown if the connection providers cannot create a connection for the
+        ///     specified name.
+        /// </exception>
         /// <exception cref="InvalidCastException">thrown if the connection's type is not a TDbConnection.</exception>
         TDbConnection NewConnection<TDbConnection>(string connectionName)
             where TDbConnection : DbConnection;
 
         /// <summary>
-        /// Gets or creates a shared connection from the context.
+        ///     Gets or creates a shared connection from the context.
         /// </summary>
         /// <param name="connectionName">the connection's name</param>
         /// <returns></returns>
-        /// <exception cref="ArgumentOutOfRangeException">thrown if the connection providers cannot create a connection for the specified name.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">
+        ///     thrown if the connection providers cannot create a connection for the
+        ///     specified name.
+        /// </exception>
         DbConnection SharedOrNewConnection(string connectionName);
 
         /// <summary>
-        /// Gets or creates a strongly typed shared connection from the context.
+        ///     Gets or creates a strongly typed shared connection from the context.
         /// </summary>
         /// <param name="connectionName">the connection's name</param>
         /// <typeparam name="TDbConnection">the connection's type</typeparam>
         /// <returns></returns>
-        /// <exception cref="ArgumentOutOfRangeException">thrown if the connection providers cannot create a connection for the specified name.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">
+        ///     thrown if the connection providers cannot create a connection for the
+        ///     specified name.
+        /// </exception>
         /// <exception cref="InvalidCastException">thrown if the connection's type is not a TDbConnection.</exception>
         TDbConnection SharedOrNewConnection<TDbConnection>(string connectionName)
             where TDbConnection : DbConnection;
@@ -192,7 +211,7 @@ namespace FlitBit.Data
         IDbContext ShareContext();
 
         /// <summary>
-        /// Indicates whether the context or transaction completed.
+        ///     Indicates whether the context or transaction completed.
         /// </summary>
         bool IsCompleted { get; }
 
@@ -205,58 +224,58 @@ namespace FlitBit.Data
     namespace CodeContracts
     {
         /// <summary>
-        ///   CodeContracts Class for IDbContext
+        ///     CodeContracts Class for IDbContext
         /// </summary>
         [ContractClassFor(typeof(IDbContext))]
         internal abstract class ContractsForIDbContext : IDbContext
         {
             /// <summary>
-            /// Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
+            ///     Performs application-defined tasks associated with freeing, releasing, or resetting unmanaged resources.
             /// </summary>
             public void Dispose() { throw new NotImplementedException(); }
 
             /// <summary>
-            /// Indicates whether the disposable has been disposed.
+            ///     Indicates whether the disposable has been disposed.
             /// </summary>
             public bool IsDisposed { get; private set; }
 
             /// <summary>
-            /// Gets the context behaviors established when the context began.
+            ///     Gets the context behaviors established when the context began.
             /// </summary>
             public DbContextBehaviors Behaviors { get; private set; }
 
             /// <summary>
-            /// Indicates the number of cache attempts during the context.
+            ///     Indicates the number of cache attempts during the context.
             /// </summary>
             public int CacheAttempts { get; private set; }
 
             /// <summary>
-            /// Indicates the number of cache hits during the context.
+            ///     Indicates the number of cache hits during the context.
             /// </summary>
             public int CacheHits { get; private set; }
 
             /// <summary>
-            /// Indicates the number of cache puts during the context.
+            ///     Indicates the number of cache puts during the context.
             /// </summary>
             public int CachePuts { get; private set; }
 
             /// <summary>
-            /// Indicates the number of cache removals during the context.
+            ///     Indicates the number of cache removals during the context.
             /// </summary>
             public int CacheRemoves { get; private set; }
 
             /// <summary>
-            /// Indicates the number of queries observed by the context.
+            ///     Indicates the number of queries observed by the context.
             /// </summary>
             public int QueryCount { get; private set; }
 
             /// <summary>
-            /// Indicates the number of objects known to be affected by the context.
+            ///     Indicates the number of objects known to be affected by the context.
             /// </summary>
             public int ObjectsAffected { get; private set; }
 
             /// <summary>
-            /// Indicates the number of objects fetched by the context.
+            ///     Indicates the number of objects fetched by the context.
             /// </summary>
             public int ObjectsFetched { get; private set; }
 
@@ -271,15 +290,12 @@ namespace FlitBit.Data
             /// <param name="item"></param>
             /// <typeparam name="T"></typeparam>
             /// <returns></returns>
-            public T Add<T>(T item) where T : IDisposable
-            {
-                throw new NotImplementedException();
-            }
+            public T Add<T>(T item) where T : IDisposable { throw new NotImplementedException(); }
 
             /// <summary>
             ///     Tries to get an item from the context cache.
             /// </summary>
-            /// <typeparam name="T">the item's type</typeparam> 
+            /// <typeparam name="T">the item's type</typeparam>
             /// <param name="sharedCache">an ambient shared cache</param>
             /// <param name="key">the item's key</param>
             /// <param name="item">a reference that will contain the ached item upon success.</param>
@@ -340,25 +356,25 @@ namespace FlitBit.Data
             }
 
             /// <summary>
-            /// Gets the DbProviderHelper for the specified connection.
+            ///     Gets the DbProviderHelper for the specified connection.
             /// </summary>
             /// <param name="cn">the connection</param>
             /// <returns></returns>
             public DbProviderHelper HelperForConnection(DbConnection cn)
             {
                 Contract.Requires<ArgumentNullException>(cn != null);
-                
+
                 throw new NotImplementedException();
             }
 
             /// <summary>
-            /// Increments the context's query count.
+            ///     Increments the context's query count.
             /// </summary>
             /// <returns></returns>
             public int IncrementQueryCounter() { throw new NotImplementedException(); }
 
             /// <summary>
-            /// Increments the context's query count by the specified number.
+            ///     Increments the context's query count by the specified number.
             /// </summary>
             /// <param name="count"></param>
             /// <returns></returns>
@@ -370,7 +386,7 @@ namespace FlitBit.Data
             }
 
             /// <summary>
-            /// Increments the context's objects affected count by the supecified number.
+            ///     Increments the context's objects affected count by the supecified number.
             /// </summary>
             /// <param name="count"></param>
             /// <returns></returns>
@@ -382,16 +398,13 @@ namespace FlitBit.Data
             }
 
             /// <summary>
-            /// Increments the context's objects fetched count.
+            ///     Increments the context's objects fetched count.
             /// </summary>
             /// <returns></returns>
-            public int IncrementObjectsFetched()
-            {
-                throw new NotImplementedException();
-            }
+            public int IncrementObjectsFetched() { throw new NotImplementedException(); }
 
             /// <summary>
-            /// Increments the context's objects fetched count by the supecified number.
+            ///     Increments the context's objects fetched count by the supecified number.
             /// </summary>
             /// <param name="count"></param>
             /// <returns></returns>
@@ -403,12 +416,15 @@ namespace FlitBit.Data
             }
 
             /// <summary>
-            /// Gets a new connection from ambient connection providers and
-            /// associates it with the context.
+            ///     Gets a new connection from ambient connection providers and
+            ///     associates it with the context.
             /// </summary>
             /// <param name="connectionName">the connection's name</param>
             /// <returns></returns>
-            /// <exception cref="ArgumentOutOfRangeException">thrown if the connection providers cannot create a connection for the specified name.</exception>
+            /// <exception cref="ArgumentOutOfRangeException">
+            ///     thrown if the connection providers cannot create a connection for the
+            ///     specified name.
+            /// </exception>
             public DbConnection NewConnection(string connectionName)
             {
                 Contract.Requires<ArgumentNullException>(connectionName != null);
@@ -419,13 +435,16 @@ namespace FlitBit.Data
             }
 
             /// <summary>
-            /// Gets a strongly typed connection from ambient connection providers
-            /// and associates it with the context.
+            ///     Gets a strongly typed connection from ambient connection providers
+            ///     and associates it with the context.
             /// </summary>
             /// <param name="connectionName">the connection's name</param>
             /// <typeparam name="TDbConnection">the connection's type</typeparam>
             /// <returns></returns>
-            /// <exception cref="ArgumentOutOfRangeException">thrown if the connection providers cannot create a connection for the specified name.</exception>
+            /// <exception cref="ArgumentOutOfRangeException">
+            ///     thrown if the connection providers cannot create a connection for the
+            ///     specified name.
+            /// </exception>
             /// <exception cref="InvalidCastException">thrown if the connection's type is not a TDbConnection.</exception>
             public TDbConnection NewConnection<TDbConnection>(string connectionName) where TDbConnection : DbConnection
             {
@@ -437,11 +456,14 @@ namespace FlitBit.Data
             }
 
             /// <summary>
-            /// Gets or creates a shared connection from the context.
+            ///     Gets or creates a shared connection from the context.
             /// </summary>
             /// <param name="connectionName">the connection's name</param>
             /// <returns></returns>
-            /// <exception cref="ArgumentOutOfRangeException">thrown if the connection providers cannot create a connection for the specified name.</exception>
+            /// <exception cref="ArgumentOutOfRangeException">
+            ///     thrown if the connection providers cannot create a connection for the
+            ///     specified name.
+            /// </exception>
             public DbConnection SharedOrNewConnection(string connectionName)
             {
                 Contract.Requires<ArgumentNullException>(connectionName != null);
@@ -452,12 +474,15 @@ namespace FlitBit.Data
             }
 
             /// <summary>
-            /// Gets or creates a strongly typed shared connection from the context.
+            ///     Gets or creates a strongly typed shared connection from the context.
             /// </summary>
             /// <param name="connectionName">the connection's name</param>
             /// <typeparam name="TDbConnection">the connection's type</typeparam>
             /// <returns></returns>
-            /// <exception cref="ArgumentOutOfRangeException">thrown if the connection providers cannot create a connection for the specified name.</exception>
+            /// <exception cref="ArgumentOutOfRangeException">
+            ///     thrown if the connection providers cannot create a connection for the
+            ///     specified name.
+            /// </exception>
             /// <exception cref="InvalidCastException">thrown if the connection's type is not a TDbConnection.</exception>
             public TDbConnection SharedOrNewConnection<TDbConnection>(string connectionName)
                 where TDbConnection : DbConnection
@@ -465,7 +490,7 @@ namespace FlitBit.Data
                 Contract.Requires<ArgumentNullException>(connectionName != null);
                 Contract.Requires<ArgumentException>(connectionName.Length > 0, "Connection name cannot be empty.");
                 Contract.Ensures(Contract.Result<TDbConnection>() != null);
-                
+
                 throw new NotImplementedException();
             }
 
@@ -481,7 +506,7 @@ namespace FlitBit.Data
             }
 
             /// <summary>
-            /// Indicates whether the context or transaction completed.
+            ///     Indicates whether the context or transaction completed.
             /// </summary>
             public bool IsCompleted { get { throw new NotImplementedException(); } }
 
@@ -490,7 +515,7 @@ namespace FlitBit.Data
                 add
                 {
                     Contract.Requires<InvalidOperationException>(!IsCompleted);
-                    
+
                     throw new NotImplementedException();
                 }
                 remove
@@ -502,5 +527,4 @@ namespace FlitBit.Data
             }
         }
     }
-
 }

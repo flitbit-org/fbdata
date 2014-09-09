@@ -8,6 +8,6 @@ using System;
 
 namespace FlitBit.Data.Meta
 {
-  public class MapInplaceEntityAttribute : Attribute
-  {}
+    public class MapInplaceEntityAttribute : Attribute
+    {}
 }

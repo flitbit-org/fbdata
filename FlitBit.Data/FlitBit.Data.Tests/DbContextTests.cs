@@ -1,11 +1,11 @@
-﻿using FlitBit.Data.Cluster;
-using Moq;
-using NUnit.Framework;
-using System;
+﻿using System;
 using System.Data;
 using System.Data.Common;
 using System.Data.SqlClient;
 using System.Transactions;
+using FlitBit.Data.Cluster;
+using Moq;
+using NUnit.Framework;
 
 namespace FlitBit.Data.Tests
 {
@@ -102,7 +102,7 @@ namespace FlitBit.Data.Tests
         [Test]
         public void DbContext_OnContextOrTransactionCompleted_FiresWhenContextEnds()
         {
-            bool observedContextEnd = false;
+            var observedContextEnd = false;
             using (var context = DbContext.NewContext())
             {
                 context.OnContextOrTransactionCompleted += (sender, args) =>
@@ -138,7 +138,7 @@ namespace FlitBit.Data.Tests
         [Test]
         public void DbContext_OnContextOrTransactionCompleted_DelayedUntilAmbientTransactionCompletes()
         {
-            bool observedContextEnd = false;
+            var observedContextEnd = false;
             using (new TransactionScope(TransactionScopeOption.RequiresNew))
             {
                 using (var context = DbContext.NewContext())
@@ -146,7 +146,8 @@ namespace FlitBit.Data.Tests
                     context.OnContextOrTransactionCompleted += (sender, args) =>
                     {
                         Assert.IsTrue(args.HasTransactionStatus);
-                        Assert.AreEqual(TransactionStatus.Aborted, args.TransactionStatus, "Should observed the transaction aborted.");
+                        Assert.AreEqual(TransactionStatus.Aborted, args.TransactionStatus,
+                            "Should observed the transaction aborted.");
                         observedContextEnd = true;
                     };
 
@@ -171,7 +172,7 @@ namespace FlitBit.Data.Tests
                 Item = new object(),
                 Created = true
             };
-            
+
             using (var context = DbContext.NewContext())
             {
                 context.Put(item.Key, item.Item, item.Created, null);
@@ -249,8 +250,9 @@ namespace FlitBit.Data.Tests
             };
 
             var promotionHandler = new Mock<ICachePromotionHandler>();
-            SetupPromotionHandlerFor<object>(promotionHandler, (key, it, created) => 
-                Assert.Fail("Promotion should not happen when transaction aborts."));
+            SetupPromotionHandlerFor<object>(promotionHandler, (key, it, created) =>
+                                                               Assert.Fail(
+                                                                   "Promotion should not happen when transaction aborts."));
 
             using (new TransactionScope(TransactionScopeOption.RequiresNew))
             {
@@ -283,7 +285,6 @@ namespace FlitBit.Data.Tests
                             })
                             .Returns(false);
 
-
             using (var context = DbContext.NewContext())
             {
                 context.Put(item.Key, item.Item, item.Created, null);
@@ -308,31 +309,32 @@ namespace FlitBit.Data.Tests
                 Item = new object(),
                 Created = true
             };
-            
+
             using (var context = DbContext.NewContext())
             {
                 context.Put(item.Key, item.Item, item.Created, null);
-                
+
                 object retrieved;
 
                 Assert.IsTrue(context.TryGet(null, item.Key, out retrieved));
                 Assert.AreSame(item.Item, retrieved);
             }
         }
-        
+
         void SetupPromotionHandlerFor<T>(Mock<ICachePromotionHandler> promotionHandler,
             Action<string, T, bool> callback)
         {
             promotionHandler.Setup(x => x.PromoteCacheItem(It.IsAny<string>(), It.IsAny<T>(), It.IsAny<bool>()))
-                .Callback(callback);
+                            .Callback(callback);
         }
 
 // ReSharper disable once UnusedMember.Local
         void SetupPromotionHandlerFor<T>(Mock<ICachePromotionHandler> promotionHandler,
             Action<string, TimeSpan, T, bool> callback)
         {
-            promotionHandler.Setup(x => x.PromoteCacheItem(It.IsAny<string>(), It.IsAny<TimeSpan>(), It.IsAny<T>(), It.IsAny<bool>()))
-                .Callback(callback);
+            promotionHandler.Setup(
+                x => x.PromoteCacheItem(It.IsAny<string>(), It.IsAny<TimeSpan>(), It.IsAny<T>(), It.IsAny<bool>()))
+                            .Callback(callback);
         }
     }
 }

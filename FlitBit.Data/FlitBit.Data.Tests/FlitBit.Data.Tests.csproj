@@ -160,12 +160,15 @@
     <Compile Include="AssemblyWireup.cs" />
     <Compile Include="ConnectionProvidersTests.cs" />
     <Compile Include="ConnectionProviderTests.cs" />
+    <Compile Include="DataModelRepositoryTests.cs" />
+    <Compile Include="DataModelTests.cs" />
     <Compile Include="DataRepositoryTests.cs" />
     <Compile Include="DbConnectionExtensionsImmediateExecutNonQueryTests.cs" />
     <Compile Include="DbConnectionExtensionsTests.cs" />
     <Compile Include="DefaultConnectionTests.cs" />
     <Compile Include="DbContextTests.cs" />
     <Compile Include="ExternalWireup\Dependency.FlitBit.Wireup.cs" />
+    <Compile Include="Models\IPerson.cs" />
     <Compile Include="Models\Peep.cs" />
     <Compile Include="Models\PeepsRepository.cs" />
     <Compile Include="MoqExtensions.cs" />

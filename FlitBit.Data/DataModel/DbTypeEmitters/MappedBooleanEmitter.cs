@@ -8,9 +8,9 @@ using System.Data;
 
 namespace FlitBit.Data.DataModel.DbTypeEmitters
 {
-  internal class MappedBooleanEmitter : MappedDbTypeEmitter<bool, DbType>
-  {
-    internal MappedBooleanEmitter()
-      : base(DbType.Boolean, DbType.Boolean) { DbDataReaderGetValueMethodName = "GetBoolean"; }
-  }
+    internal class MappedBooleanEmitter : MappedDbTypeEmitter<bool, DbType>
+    {
+        internal MappedBooleanEmitter()
+            : base(DbType.Boolean, DbType.Boolean) { DbDataReaderGetValueMethodName = "GetBoolean"; }
+    }
 }

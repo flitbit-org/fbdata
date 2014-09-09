@@ -9,48 +9,48 @@ using FlitBit.Data.DataModel;
 
 namespace FlitBit.Data.SqlServer
 {
-  /// <summary>
-  ///   Abstract base; command intended to produce a single instance result.
-  /// </summary>
-  /// <typeparam name="TDataModel"></typeparam>
-  /// <typeparam name="TImpl"></typeparam>
-  /// <typeparam name="TParam"></typeparam>
-  public abstract class SqlDataModelNonQueryCommand<TDataModel, TParam> :
-    IDataModelNonQueryCommand<TDataModel, SqlConnection, TParam>
-  {
-    readonly DynamicSql _sql;
-    readonly int[] _offsets;
-
     /// <summary>
-    ///   Creates a new instance.
+    ///     Abstract base; command intended to produce a single instance result.
     /// </summary>
-    /// <param name="sql">Initial command text.</param>
-    /// <param name="offsets">column offsets within the results returned by the command</param>
-    protected SqlDataModelNonQueryCommand(DynamicSql sql, int[] offsets)
+    /// <typeparam name="TDataModel"></typeparam>
+    /// <typeparam name="TImpl"></typeparam>
+    /// <typeparam name="TParam"></typeparam>
+    public abstract class SqlDataModelNonQueryCommand<TDataModel, TParam> :
+        IDataModelNonQueryCommand<TDataModel, SqlConnection, TParam>
     {
-      _sql = sql;
-      _offsets = offsets;
-    }
+        readonly DynamicSql _sql;
+        readonly int[] _offsets;
 
-    public int Execute(IDbContext cx, SqlConnection cn, TParam param)
-    {
-      var res = 0;
-      using (var cmd = cn.CreateCommand(_sql.Text, _sql.CommandType))
-      {
-        BindCommand((SqlCommand)cmd, param, _offsets);
-        res = cmd.ExecuteNonQuery();
-        cx.IncrementQueryCounter();
-      }
-      cx.IncrementObjectsAffected(res);
-      return res;
-    }
+        /// <summary>
+        ///     Creates a new instance.
+        /// </summary>
+        /// <param name="sql">Initial command text.</param>
+        /// <param name="offsets">column offsets within the results returned by the command</param>
+        protected SqlDataModelNonQueryCommand(DynamicSql sql, int[] offsets)
+        {
+            _sql = sql;
+            _offsets = offsets;
+        }
 
-    /// <summary>
-    ///   Implemented by specialized classes to bind the criteria to the command.
-    /// </summary>
-    /// <param name="cmd"></param>
-    /// <param name="param"></param>
-    /// <param name="offsets"></param>
-    protected abstract void BindCommand(SqlCommand cmd, TParam param, int[] offsets);
-  }
+        public int Execute(IDbContext cx, SqlConnection cn, TParam param)
+        {
+            var res = 0;
+            using (var cmd = cn.CreateCommand(_sql.Text, _sql.CommandType))
+            {
+                BindCommand((SqlCommand)cmd, param, _offsets);
+                res = cmd.ExecuteNonQuery();
+                cx.IncrementQueryCounter();
+            }
+            cx.IncrementObjectsAffected(res);
+            return res;
+        }
+
+        /// <summary>
+        ///     Implemented by specialized classes to bind the criteria to the command.
+        /// </summary>
+        /// <param name="cmd"></param>
+        /// <param name="param"></param>
+        /// <param name="offsets"></param>
+        protected abstract void BindCommand(SqlCommand cmd, TParam param, int[] offsets);
+    }
 }

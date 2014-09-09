@@ -9,18 +9,15 @@ using System.Collections.Concurrent;
 using System.Data;
 using System.Data.Common;
 using System.Diagnostics;
-using System.Diagnostics.Contracts;
 using System.Threading;
 using System.Transactions;
 using FlitBit.Core;
-using FlitBit.Core.Log;
-using FlitBit.Data.Cluster;
 using FlitBit.Data.Properties;
 
 namespace FlitBit.Data
 {
     /// <summary>
-    /// Default implementation of IDbContext.
+    ///     Default implementation of IDbContext.
     /// </summary>
     public partial class DbContext : Disposable, IDbContext
     {
@@ -43,7 +40,7 @@ namespace FlitBit.Data
         int _txCompleted;
 
         /// <summary>
-        /// Creaets a new instance.
+        ///     Creaets a new instance.
         /// </summary>
         public DbContext()
             : this(Current, Transaction.Current, DbContextBehaviors.Default)
@@ -56,7 +53,7 @@ namespace FlitBit.Data
         }
 
         /// <summary>
-        /// Creates a new instance with the specified parent, transaction and behaviors.
+        ///     Creates a new instance with the specified parent, transaction and behaviors.
         /// </summary>
         /// <param name="parent"></param>
         /// <param name="transaction"></param>
@@ -93,29 +90,23 @@ namespace FlitBit.Data
         }
 
         /// <summary>
-        /// Indicates whether the context or transaction completed.
+        ///     Indicates whether the context or transaction completed.
         /// </summary>
         public bool IsCompleted { get { return Thread.VolatileRead(ref _txCompleted) > 0; } }
 
         public Transaction Transaction { get; private set; }
 
         /// <summary>
-        /// Event fired when the db context completes or when it's transaction is completed; whichever occurs later.
+        ///     Event fired when the db context completes or when it's transaction is completed; whichever occurs later.
         /// </summary>
         public event EventHandler<DbContextOrTransactionCompletedEventArgs> OnContextOrTransactionCompleted
         {
-            add
-            {
-                _onContextOrTransactionCompleted += value;
-            }
-            remove
-            {
-                _onContextOrTransactionCompleted -= value;
-            }
+            add { _onContextOrTransactionCompleted += value; }
+            remove { _onContextOrTransactionCompleted -= value; }
         }
 
-        private event EventHandler<DbContextOrTransactionCompletedEventArgs> _onContextOrTransactionCompleted;
-        
+        event EventHandler<DbContextOrTransactionCompletedEventArgs> _onContextOrTransactionCompleted;
+
         void ContextOrTransactionCompleted(object sender, TransactionEventArgs ev)
         {
             if (!IsCompleted)
@@ -179,7 +170,7 @@ namespace FlitBit.Data
         }
 
         TDbConnection InnerSharedOrNewConnection<TDbConnection>(string name)
-            where TDbConnection: DbConnection
+            where TDbConnection : DbConnection
         {
             while (true)
             {
@@ -225,7 +216,7 @@ namespace FlitBit.Data
             where TDbConnection : DbConnection
         {
             var cn = ConnectionProviders.Instance.GetConnection<TDbConnection>(name);
-            
+
             // Ensure the connection will close when the dbcontext's scope closes.
             var cnObj = cn.UntypedDbConnection;
             var disposals = 0;
@@ -242,10 +233,7 @@ namespace FlitBit.Data
             return cn;
         }
 
-        void TryRemoveSharedConnection(string name, DbConnection cn)
-        {
-            throw new NotImplementedException();
-        }
+        void TryRemoveSharedConnection(string name, DbConnection cn) { throw new NotImplementedException(); }
 
         public DbConnection NewConnection(string connectionName)
         {
@@ -265,7 +253,6 @@ namespace FlitBit.Data
         {
             return InnerNewConnection<TDbConnection>(connectionName).DbConnection;
         }
-
 
         public IDbContext ShareContext()
         {

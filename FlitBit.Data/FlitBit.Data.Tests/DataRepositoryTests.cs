@@ -11,7 +11,7 @@ using NUnit.Framework;
 
 namespace FlitBit.Data.Tests
 {
-    static class StringExtensions
+    internal static class StringExtensions
     {
         internal static string Truncate(this string input, int max)
         {
@@ -135,7 +135,7 @@ DROP TABLE [{0}].[Peeps]";
                         Assert.AreEqual(item.Item1, oldPeep.Name);
 
                         oldPeep.Description = items[rand.Next(0, items.Count - 1)].Item2;
-                        
+
                         using (var cmd = new SqlCommand(updateCommand, cn))
                         {
                             queries++;
@@ -163,7 +163,7 @@ DROP TABLE [{0}].[Peeps]";
                         var it = new Peep();
                         it.Name = item.Item1;
                         it.Description = item.Item2;
-                        
+
                         var newPeep = default(Peep);
                         using (var cmd = new SqlCommand(insertCommand, cn))
                         {
@@ -254,7 +254,7 @@ DROP TABLE [{0}].[Peeps]";
                         var it = new Peep();
                         it.Name = item.Item1;
                         it.Description = item.Item2;
-                        
+
                         var newPeep = repo.Create(ctx, it);
                         Assert.AreEqual(it.Name, newPeep.Name);
                         Assert.AreEqual(it.Description, newPeep.Description);
@@ -315,7 +315,7 @@ DROP TABLE [{0}].[Peeps]";
                         Assert.AreEqual(item.Item1, oldPeep.Name);
 
                         oldPeep.Description = items[rand.Next(0, items.Count - 1)].Item2;
-                        
+
                         repo.Update(ctx, oldPeep);
                     }
                     else
@@ -323,7 +323,7 @@ DROP TABLE [{0}].[Peeps]";
                         var it = new Peep();
                         it.Name = item.Item1;
                         it.Description = item.Item2;
-                        
+
                         var newPeep = repo.Create(ctx, it);
                         Assert.AreEqual(it.Name, newPeep.Name);
                         Assert.AreEqual(it.Description, newPeep.Description);

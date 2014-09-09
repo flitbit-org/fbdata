@@ -10,74 +10,75 @@ using System.Text;
 
 namespace FlitBit.Data.SqlServer
 {
-  internal class SqlDbTypeTranslation : DbTypeTranslation
-  {
-    public SqlDbTypeTranslation(DbType dbType, SqlDbType specializedDbType, Type runtimeType,
-      bool isDefaultForRuntimeType)
-      : base(dbType, (int)specializedDbType, runtimeType, isDefaultForRuntimeType,
-        specializedDbType.ToString()
-                         .ToUpper(), DbTypeLengthRequirements.None)
-    {}
-
-    public SqlDbTypeTranslation(DbType dbType, SqlDbType specializedDbType, Type runtimeType,
-      bool isDefaultForRuntimeType, DbTypeLengthRequirements lengthRequirements)
-      : base(dbType, (int)specializedDbType, runtimeType, isDefaultForRuntimeType,
-        specializedDbType.ToString()
-                         .ToUpper(), lengthRequirements)
-    {}
-
-    public SqlDbTypeTranslation(DbType dbType, SqlDbType specializedDbType, Type runtimeType,
-      bool isDefaultForRuntimeType, string providerSqlTypeName, DbTypeLengthRequirements lengthRequirements)
-      : base(dbType, (int)specializedDbType, runtimeType, isDefaultForRuntimeType,
-        providerSqlTypeName, lengthRequirements)
-    {}
-
-    public SqlDbTypeTranslation(DbType dbType, SqlDbType specializedDbType, Type runtimeType,
-      bool isDefaultForRuntimeType, DbTypeLengthRequirements lengthRequirements,
-      string defaultLength)
-      : base(dbType, (int)specializedDbType, runtimeType, isDefaultForRuntimeType,
-        specializedDbType.ToString()
-                         .ToUpper(), lengthRequirements, defaultLength)
-    {}
-
-    public SqlDbTypeTranslation(DbType dbType, SqlDbType specializedDbType, Type runtimeType,
-      bool isDefaultForRuntimeType, string providerSqlTypeName, DbTypeLengthRequirements lengthRequirements,
-      string defaultLength)
-      : base(dbType, (int)specializedDbType, runtimeType, isDefaultForRuntimeType,
-        providerSqlTypeName, lengthRequirements, defaultLength)
-    {}
-
-    public override bool MustWriteLength(int declaredLength, int declaredScale)
+    internal class SqlDbTypeTranslation : DbTypeTranslation
     {
-      return (this.LengthRequirements & (DbTypeLengthRequirements.LengthSpecifierMask)) != DbTypeLengthRequirements.None;
-    }
+        public SqlDbTypeTranslation(DbType dbType, SqlDbType specializedDbType, Type runtimeType,
+            bool isDefaultForRuntimeType)
+            : base(dbType, (int)specializedDbType, runtimeType, isDefaultForRuntimeType,
+                specializedDbType.ToString()
+                                 .ToUpper(), DbTypeLengthRequirements.None)
+        {}
 
-    public override void WriteLength(int declaredLength, int declaredScale, StringBuilder sql)
-    {
-      var len = declaredLength;
-      if (RuntimeType == typeof(decimal)
-          && len == 0)
-      {
-        return;
-      }
-      sql.Append('(');
-      if ((this.LengthRequirements & DbTypeLengthRequirements.Length) == DbTypeLengthRequirements.Length
-          || (this.LengthRequirements & DbTypeLengthRequirements.Precision) == DbTypeLengthRequirements.Precision)
-      {
-        if (len == 0)
+        public SqlDbTypeTranslation(DbType dbType, SqlDbType specializedDbType, Type runtimeType,
+            bool isDefaultForRuntimeType, DbTypeLengthRequirements lengthRequirements)
+            : base(dbType, (int)specializedDbType, runtimeType, isDefaultForRuntimeType,
+                specializedDbType.ToString()
+                                 .ToUpper(), lengthRequirements)
+        {}
+
+        public SqlDbTypeTranslation(DbType dbType, SqlDbType specializedDbType, Type runtimeType,
+            bool isDefaultForRuntimeType, string providerSqlTypeName, DbTypeLengthRequirements lengthRequirements)
+            : base(dbType, (int)specializedDbType, runtimeType, isDefaultForRuntimeType,
+                providerSqlTypeName, lengthRequirements)
+        {}
+
+        public SqlDbTypeTranslation(DbType dbType, SqlDbType specializedDbType, Type runtimeType,
+            bool isDefaultForRuntimeType, DbTypeLengthRequirements lengthRequirements,
+            string defaultLength)
+            : base(dbType, (int)specializedDbType, runtimeType, isDefaultForRuntimeType,
+                specializedDbType.ToString()
+                                 .ToUpper(), lengthRequirements, defaultLength)
+        {}
+
+        public SqlDbTypeTranslation(DbType dbType, SqlDbType specializedDbType, Type runtimeType,
+            bool isDefaultForRuntimeType, string providerSqlTypeName, DbTypeLengthRequirements lengthRequirements,
+            string defaultLength)
+            : base(dbType, (int)specializedDbType, runtimeType, isDefaultForRuntimeType,
+                providerSqlTypeName, lengthRequirements, defaultLength)
+        {}
+
+        public override bool MustWriteLength(int declaredLength, int declaredScale)
         {
-          sql.Append(this.DefaultLength);
+            return (this.LengthRequirements & (DbTypeLengthRequirements.LengthSpecifierMask))
+                   != DbTypeLengthRequirements.None;
         }
-        else
+
+        public override void WriteLength(int declaredLength, int declaredScale, StringBuilder sql)
         {
-          sql.Append(len);
-        }
-      }
-      if ((this.LengthRequirements & DbTypeLengthRequirements.Scale) == DbTypeLengthRequirements.Scale)
-      {
+            var len = declaredLength;
+            if (RuntimeType == typeof(decimal)
+                && len == 0)
+            {
+                return;
+            }
+            sql.Append('(');
+            if ((this.LengthRequirements & DbTypeLengthRequirements.Length) == DbTypeLengthRequirements.Length
+                || (this.LengthRequirements & DbTypeLengthRequirements.Precision) == DbTypeLengthRequirements.Precision)
+            {
+                if (len == 0)
+                {
+                    sql.Append(this.DefaultLength);
+                }
+                else
+                {
+                    sql.Append(len);
+                }
+            }
+            if ((this.LengthRequirements & DbTypeLengthRequirements.Scale) == DbTypeLengthRequirements.Scale)
+            {
 #warning TODO: implement scale on col and type translations.
-      }
-      sql.Append(')');
+            }
+            sql.Append(')');
+        }
     }
-  }
 }

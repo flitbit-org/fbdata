@@ -21,8 +21,8 @@ using FlitBit.Emit;
 namespace FlitBit.Data
 {
     /// <summary>
-    /// Utility class that provides additional abstractions to the data
-    /// framework when working with DbProviderFactories and DbConnections.
+    ///     Utility class that provides additional abstractions to the data
+    ///     framework when working with DbProviderFactories and DbConnections.
     /// </summary>
     public abstract class DbProviderHelper
     {
@@ -35,9 +35,9 @@ namespace FlitBit.Data
         string _commandTextViewExists;
         string _commandTextStoredProcExists;
         string _commandTextFunctionExists;
-        
+
         /// <summary>
-        /// Creates a new instance.
+        ///     Creates a new instance.
         /// </summary>
         /// <param name="dbconnectionType"></param>
         protected DbProviderHelper(Type dbconnectionType)
@@ -48,7 +48,7 @@ namespace FlitBit.Data
         }
 
         /// <summary>
-        /// Initializes the helper.
+        ///     Initializes the helper.
         /// </summary>
         public virtual void Initialize()
         {
@@ -79,7 +79,7 @@ namespace FlitBit.Data
         }
 
         /// <summary>
-        /// Registers a mapping between the runtime type T and the specified MappedDbTypeEmitter.
+        ///     Registers a mapping between the runtime type T and the specified MappedDbTypeEmitter.
         /// </summary>
         /// <param name="map">the mapping emitter</param>
         /// <typeparam name="T">the runtime type T</typeparam>
@@ -90,25 +90,25 @@ namespace FlitBit.Data
         }
 
         /// <summary>
-        /// Gets the helper's DbProviderFactory.
+        ///     Gets the helper's DbProviderFactory.
         /// </summary>
         public DbProviderFactory Factory { get; protected set; }
 
         /// <summary>
-        /// The concrete DbConnection type that the factory and this hepler
-        /// uses and extends.
+        ///     The concrete DbConnection type that the factory and this hepler
+        ///     uses and extends.
         /// </summary>
         public Type DbConnectionType { get; private set; }
 
         /// <summary>
-        /// Defines an executable on the specified connection.
+        ///     Defines an executable on the specified connection.
         /// </summary>
         /// <param name="connectionName">the connection's name</param>
         /// <returns></returns>
         public abstract IDbExecutable DefineExecutableOnConnection(string connectionName);
 
         /// <summary>
-        /// Defines an executable for the specified command text on the specified connection.
+        ///     Defines an executable for the specified command text on the specified connection.
         /// </summary>
         /// <param name="connectionName">the connection's name</param>
         /// <param name="cmdText">the executable's command text</param>
@@ -116,7 +116,7 @@ namespace FlitBit.Data
         public abstract IDbExecutable DefineExecutableOnConnection(string connectionName, string cmdText);
 
         /// <summary>
-        /// Defines an executable for the specified command text on the specified connection.
+        ///     Defines an executable for the specified command text on the specified connection.
         /// </summary>
         /// <param name="connectionName">the connection's name</param>
         /// <param name="cmdText">the executable's command text</param>
@@ -126,7 +126,7 @@ namespace FlitBit.Data
             CommandType cmdType);
 
         /// <summary>
-        /// Defines an executable for the specified command text on the specified connection.
+        ///     Defines an executable for the specified command text on the specified connection.
         /// </summary>
         /// <param name="connectionName">the connection's name</param>
         /// <param name="cmdText">the executable's command text</param>
@@ -138,7 +138,7 @@ namespace FlitBit.Data
             int cmdTimeout);
 
         /// <summary>
-        /// Defines an executable on the specified connection from the specified executable definition.
+        ///     Defines an executable on the specified connection from the specified executable definition.
         /// </summary>
         /// <param name="connectionName"></param>
         /// <param name="definition"></param>
@@ -146,7 +146,7 @@ namespace FlitBit.Data
         public abstract IDbExecutable DefineExecutableOnConnection(string connectionName, IDbExecutable definition);
 
         /// <summary>
-        /// Defines an executable on the specified connection from the specified executable definition.
+        ///     Defines an executable on the specified connection from the specified executable definition.
         /// </summary>
         /// <param name="connection"></param>
         /// <param name="definition"></param>
@@ -154,7 +154,7 @@ namespace FlitBit.Data
         public abstract IDbExecutable DefineExecutableOnConnection(DbConnection connection, IDbExecutable definition);
 
         /// <summary>
-        /// Defines an executable for the specified command text on the specified connection.
+        ///     Defines an executable for the specified command text on the specified connection.
         /// </summary>
         /// <param name="connection">the connection's name</param>
         /// <param name="cmdText">the executable's command text</param>
@@ -162,7 +162,7 @@ namespace FlitBit.Data
         public abstract IDbExecutable DefineExecutableOnConnection(DbConnection connection, string cmdText);
 
         /// <summary>
-        /// Defines an executable for the specified command text on the specified connection.
+        ///     Defines an executable for the specified command text on the specified connection.
         /// </summary>
         /// <param name="connection">the connection's name</param>
         /// <param name="cmdText">the executable's command text</param>
@@ -172,7 +172,7 @@ namespace FlitBit.Data
             CommandType cmdType);
 
         /// <summary>
-        /// Defines an executable for the specified command text on the specified connection.
+        ///     Defines an executable for the specified command text on the specified connection.
         /// </summary>
         /// <param name="connection">the connection's name</param>
         /// <param name="cmdText">the executable's command text</param>
@@ -183,59 +183,60 @@ namespace FlitBit.Data
             CommandType cmdType, int cmdTimeout);
 
         /// <summary>
-        /// Formats a raw parameter name using the underlying database's naming rules for parameters.
+        ///     Formats a raw parameter name using the underlying database's naming rules for parameters.
         /// </summary>
         /// <param name="rawParameterName"></param>
         /// <returns></returns>
         public abstract string FormatParameterName(string rawParameterName);
 
         /// <summary>
-        /// For use with data models; gets a data model binder for the specified generic argument TDataModel
-        /// with the specified generic arguement TIdentity.
+        ///     For use with data models; gets a data model binder for the specified generic argument TDataModel
+        ///     with the specified generic arguement TIdentity.
         /// </summary>
         /// <typeparam name="TDataModel">data model type TDataModel</typeparam>
         /// <typeparam name="TIdentity">identity type TIdentity</typeparam>
         /// <param name="mapping">The data model's mapping.</param>
         /// <returns>the data model's binder implementation</returns>
-        public abstract IDataModelBinder<TDataModel, TIdentity> GetModelBinder<TDataModel, TIdentity>(IMapping<TDataModel> mapping);
+        public abstract IDataModelBinder<TDataModel, TIdentity> GetModelBinder<TDataModel, TIdentity>(
+            IMapping<TDataModel> mapping);
 
         /// <summary>
-        /// Gets the server name for the specified connection.
+        ///     Gets the server name for the specified connection.
         /// </summary>
         /// <param name="connection"></param>
         /// <returns></returns>
         public abstract string GetServerName(DbConnection connection);
 
         /// <summary>
-        /// Factory method; creates a parameter binder.
+        ///     Factory method; creates a parameter binder.
         /// </summary>
         /// <returns>a parameter binder</returns>
         public abstract IDataParameterBinder MakeParameterBinder();
 
         /// <summary>
-        /// Factory method; creates a parameter binder for the specified command.
+        ///     Factory method; creates a parameter binder for the specified command.
         /// </summary>
         /// <param name="cmd">the command</param>
         /// <returns>a parameter binder</returns>
         public abstract IDataParameterBinder MakeParameterBinder(DbCommand cmd);
 
         /// <summary>
-        /// Gets an object that describes how the specified runtime type is translated
-        /// to the underlying database's type system.
+        ///     Gets an object that describes how the specified runtime type is translated
+        ///     to the underlying database's type system.
         /// </summary>
         /// <param name="type"></param>
         /// <returns></returns>
         public abstract DbTypeTranslation TranslateRuntimeType(Type type);
 
         /// <summary>
-        /// When implemented by subclass, begins asynchronous execution of the specified non-query command.
+        ///     When implemented by subclass, begins asynchronous execution of the specified non-query command.
         /// </summary>
         /// <param name="command">the command</param>
         /// <param name="callback">an async callback object</param>
         /// <param name="stateObject">an opaque state object returned to the async callback when the command completes.</param>
         /// <returns>an async result where the asynchrounous execution can be monitored</returns>
         /// <exception cref="NotImplementedException">thrown if the subclass doesn't support async execution</exception>
-        /// <seealso cref="EndExecuteNonQuery"/>
+        /// <seealso cref="EndExecuteNonQuery" />
         public virtual IAsyncResult BeginExecuteNonQuery(DbCommand command, AsyncCallback callback, Object stateObject)
         {
             Contract.Requires<ArgumentNullException>(command != null);
@@ -245,14 +246,14 @@ namespace FlitBit.Data
         }
 
         /// <summary>
-        /// When implemented by subclass, begins asynchronous execution of the specified query command.
+        ///     When implemented by subclass, begins asynchronous execution of the specified query command.
         /// </summary>
         /// <param name="command">the command</param>
         /// <param name="callback">an async callback object</param>
         /// <param name="stateObject">an opaque state object returned to the async callback when the command completes.</param>
         /// <returns>an async result where the asynchrounous execution can be monitored</returns>
         /// <exception cref="NotImplementedException">thrown if the subclass doesn't support async execution</exception>
-        /// <seealso cref="EndExecuteReader"/>
+        /// <seealso cref="EndExecuteReader" />
         public virtual IAsyncResult BeginExecuteReader(DbCommand command, AsyncCallback callback, Object stateObject)
         {
             Contract.Requires<ArgumentNullException>(command != null);
@@ -262,12 +263,15 @@ namespace FlitBit.Data
         }
 
         /// <summary>
-        /// Determines if the specified exception trapped by user code may allow the
-        /// transaction to be retried (such as connection failture, etc).
+        ///     Determines if the specified exception trapped by user code may allow the
+        ///     transaction to be retried (such as connection failture, etc).
         /// </summary>
         /// <param name="ex">the observed exception</param>
         /// <returns><em>true</em> if the transaction may be retried; otherwise <em>false</em>.</returns>
-        public virtual bool CanRetryTransaction(Exception ex) { return false; }
+        public virtual bool CanRetryTransaction(Exception ex)
+        {
+            return false;
+        }
 
         /// <summary>
         ///     Determines if a catalog (database) exists on the connection.
@@ -280,12 +284,12 @@ namespace FlitBit.Data
         }
 
         /// <summary>
-        /// When implemented by subclass, ends asynchronous execution of the specified non-query command.
+        ///     When implemented by subclass, ends asynchronous execution of the specified non-query command.
         /// </summary>
         /// <param name="command">the command</param>
-        /// <param name="ar">the async result returned from a prior call to <see cref="BeginExecuteNonQuery"/></param>
+        /// <param name="ar">the async result returned from a prior call to <see cref="BeginExecuteNonQuery" /></param>
         /// <returns>the number of objects affected by the operation</returns>
-        /// <seealso cref="BeginExecuteNonQuery"/>
+        /// <seealso cref="BeginExecuteNonQuery" />
         public virtual int EndExecuteNonQuery(DbCommand command, IAsyncResult ar)
         {
             Contract.Requires<ArgumentNullException>(command != null);
@@ -295,12 +299,12 @@ namespace FlitBit.Data
         }
 
         /// <summary>
-        /// When implemented by subclass, ends asynchronous execution of the specified query command.
+        ///     When implemented by subclass, ends asynchronous execution of the specified query command.
         /// </summary>
         /// <param name="command">the command</param>
-        /// <param name="ar">the async result returned from a prior call to <see cref="BeginExecuteReader"/></param>
+        /// <param name="ar">the async result returned from a prior call to <see cref="BeginExecuteReader" /></param>
         /// <returns>a data reader</returns>
-        /// <seealso cref="BeginExecuteReader"/>
+        /// <seealso cref="BeginExecuteReader" />
         public virtual DbDataReader EndExecuteReader(DbCommand command, IAsyncResult ar)
         {
             Contract.Requires<ArgumentNullException>(command != null);
@@ -311,7 +315,7 @@ namespace FlitBit.Data
         }
 
         /// <summary>
-        /// Wraps the specified name in quotes according to the underlying database's naming rules.
+        ///     Wraps the specified name in quotes according to the underlying database's naming rules.
         /// </summary>
         /// <param name="name">the database object name</param>
         /// <returns></returns>
@@ -322,27 +326,36 @@ namespace FlitBit.Data
             Contract.Ensures(Contract.Result<string>() != null);
 
             if (name[0] == '['
-                && name[name.Length - 1] == ']') return name;
+                && name[name.Length - 1] == ']')
+            {
+                return name;
+            }
 
             return String.Concat('[', name.Replace("]", "]]"), ']');
         }
-        
+
         /// <summary>
-        /// Determins if the connection supports asynchronous processing.
+        ///     Determins if the connection supports asynchronous processing.
         /// </summary>
         /// <param name="connection"></param>
         /// <returns></returns>
-        public virtual bool SupportsAsynchronousProcessing(DbConnection connection) { return false; }
+        public virtual bool SupportsAsynchronousProcessing(DbConnection connection)
+        {
+            return false;
+        }
 
         /// <summary>
-        /// Determins if the connection supports multiple active result sets.
+        ///     Determins if the connection supports multiple active result sets.
         /// </summary>
         /// <param name="connection"></param>
         /// <returns></returns>
-        public virtual bool SupportsMultipleActiveResultSets(DbConnection connection) { return false; }
+        public virtual bool SupportsMultipleActiveResultSets(DbConnection connection)
+        {
+            return false;
+        }
 
         /// <summary>
-        /// Determins if the specified catalog and schema exist on the specified connection.
+        ///     Determins if the specified catalog and schema exist on the specified connection.
         /// </summary>
         /// <param name="connection">the connection</param>
         /// <param name="catalog">the catalog name</param>
@@ -355,12 +368,12 @@ namespace FlitBit.Data
             Contract.Requires<ArgumentException>(catalog.Length > 0);
             Contract.Requires<ArgumentNullException>(schema != null);
             Contract.Requires<ArgumentException>(schema.Length > 0);
-            
+
             return PerformSchemaExists(connection, catalog, schema);
         }
 
         /// <summary>
-        /// Determins if the specified catalog and schema exist on the specified connection.
+        ///     Determins if the specified catalog and schema exist on the specified connection.
         /// </summary>
         /// <param name="connection">the connection</param>
         /// <param name="catalog">the catalog name</param>
@@ -377,17 +390,17 @@ WHERE CATALOG_NAME = {0}
                     FormatParameterName("schema")));
 
             return ExecuteEnumerable(connection, commandText,
-                    binder =>
-                    {
-                        binder.DefineAndBindParameter("catalog", catalog);
-                        binder.DefineAndBindParameter("schema", schema);
-                    },
-                    record => record.GetInt32(0))
-                    .First() > 0;
+                binder =>
+                {
+                    binder.DefineAndBindParameter("catalog", catalog);
+                    binder.DefineAndBindParameter("schema", schema);
+                },
+                record => record.GetInt32(0))
+                       .First() > 0;
         }
 
         /// <summary>
-        /// Creates the specified schema in the specified catalog.
+        ///     Creates the specified schema in the specified catalog.
         /// </summary>
         /// <param name="connection"></param>
         /// <param name="catalog"></param>
@@ -404,16 +417,15 @@ WHERE CATALOG_NAME = {0}
         }
 
         /// <summary>
-        /// When implemented by subclass; creates the specified schema in the specified catalog.
+        ///     When implemented by subclass; creates the specified schema in the specified catalog.
         /// </summary>
         /// <param name="connection"></param>
         /// <param name="catalog"></param>
         /// <param name="schema"></param>
         protected abstract void PerformCreateSchema(DbConnection connection, string catalog, string schema);
-        
 
         /// <summary>
-        /// Determines if the specified function exists on the specified database connection.
+        ///     Determines if the specified function exists on the specified database connection.
         /// </summary>
         /// <param name="connection"></param>
         /// <param name="catalog"></param>
@@ -434,7 +446,7 @@ WHERE CATALOG_NAME = {0}
         }
 
         /// <summary>
-        /// Determines if the specified stored procedure exists on the specified database connection.
+        ///     Determines if the specified stored procedure exists on the specified database connection.
         /// </summary>
         /// <param name="connection"></param>
         /// <param name="catalog"></param>
@@ -456,18 +468,18 @@ WHERE ROUTINE_CATALOG = {0}
                     FormatParameterName("fun")));
 
             return ExecuteEnumerable(connection, commandText,
-                    binder =>
-                    {
-                        binder.DefineAndBindParameter("catalog", catalog);
-                        binder.DefineAndBindParameter("schema", schema);
-                        binder.DefineAndBindParameter("fun", fun);
-                    },
-                    record => record.GetInt32(0))
-                    .First() > 0;
+                binder =>
+                {
+                    binder.DefineAndBindParameter("catalog", catalog);
+                    binder.DefineAndBindParameter("schema", schema);
+                    binder.DefineAndBindParameter("fun", fun);
+                },
+                record => record.GetInt32(0))
+                       .First() > 0;
         }
 
         /// <summary>
-        /// Determines if the specified stored procedure exists on the specified database connection.
+        ///     Determines if the specified stored procedure exists on the specified database connection.
         /// </summary>
         /// <param name="connection"></param>
         /// <param name="catalog"></param>
@@ -488,7 +500,7 @@ WHERE ROUTINE_CATALOG = {0}
         }
 
         /// <summary>
-        /// Determines if the specified stored procedure exists on the specified database connection.
+        ///     Determines if the specified stored procedure exists on the specified database connection.
         /// </summary>
         /// <param name="connection"></param>
         /// <param name="catalog"></param>
@@ -510,18 +522,18 @@ WHERE ROUTINE_CATALOG = {0}
                     FormatParameterName("storedProcedure")));
 
             return ExecuteEnumerable(connection, commandText,
-                    binder =>
-                    {
-                        binder.DefineAndBindParameter("catalog", catalog);
-                        binder.DefineAndBindParameter("schema", schema);
-                        binder.DefineAndBindParameter("storedProcedure", storedProcedure);
-                    },
-                    record => record.GetInt32(0))
-                    .First() > 0;
+                binder =>
+                {
+                    binder.DefineAndBindParameter("catalog", catalog);
+                    binder.DefineAndBindParameter("schema", schema);
+                    binder.DefineAndBindParameter("storedProcedure", storedProcedure);
+                },
+                record => record.GetInt32(0))
+                       .First() > 0;
         }
 
         /// <summary>
-        /// Determines if the specified table exists on the specified database connection.
+        ///     Determines if the specified table exists on the specified database connection.
         /// </summary>
         /// <param name="connection"></param>
         /// <param name="catalog"></param>
@@ -542,7 +554,7 @@ WHERE ROUTINE_CATALOG = {0}
         }
 
         /// <summary>
-        /// Determines if the specified table exists on the specified database connection.
+        ///     Determines if the specified table exists on the specified database connection.
         /// </summary>
         /// <param name="connection"></param>
         /// <param name="catalog"></param>
@@ -563,18 +575,18 @@ WHERE TABLE_CATALOG = {0}
                     FormatParameterName("table")));
 
             return ExecuteEnumerable(connection, commandText,
-                    binder =>
-                    {
-                        binder.DefineAndBindParameter("catalog", catalog);
-                        binder.DefineAndBindParameter("schema", schema);
-                        binder.DefineAndBindParameter("table", table);
-                    },
-                    record => record.GetInt32(0))
-                    .First() > 0;
+                binder =>
+                {
+                    binder.DefineAndBindParameter("catalog", catalog);
+                    binder.DefineAndBindParameter("schema", schema);
+                    binder.DefineAndBindParameter("table", table);
+                },
+                record => record.GetInt32(0))
+                       .First() > 0;
         }
 
         /// <summary>
-        /// Determines if the specified table exists on the specified database connection.
+        ///     Determines if the specified table exists on the specified database connection.
         /// </summary>
         /// <param name="connection"></param>
         /// <param name="catalog"></param>
@@ -595,7 +607,7 @@ WHERE TABLE_CATALOG = {0}
         }
 
         /// <summary>
-        /// Determines if the specified table exists on the specified database connection.
+        ///     Determines if the specified table exists on the specified database connection.
         /// </summary>
         /// <param name="connection"></param>
         /// <param name="catalog"></param>
@@ -615,18 +627,19 @@ WHERE TABLE_CATALOG = {0}
                     FormatParameterName("view")));
 
             return ExecuteEnumerable(connection, commandText,
-                    binder =>
-                    {
-                        binder.DefineAndBindParameter("catalog", catalog);
-                        binder.DefineAndBindParameter("schema", schema);
-                        binder.DefineAndBindParameter("view", view);
-                    }, 
-                    record => record.GetInt32(0))
-                    .First() > 0;
+                binder =>
+                {
+                    binder.DefineAndBindParameter("catalog", catalog);
+                    binder.DefineAndBindParameter("schema", schema);
+                    binder.DefineAndBindParameter("view", view);
+                },
+                record => record.GetInt32(0))
+                       .First() > 0;
         }
 
         /// <summary>
-        /// Executes the specified command on the specified connection and transforms each result using the specified transform. Optionally binding parameters with the specified binder.
+        ///     Executes the specified command on the specified connection and transforms each result using the specified
+        ///     transform. Optionally binding parameters with the specified binder.
         /// </summary>
         /// <param name="connection">a connection</param>
         /// <param name="command">The command's text.</param>
@@ -634,7 +647,8 @@ WHERE TABLE_CATALOG = {0}
         /// <param name="transform">the transform, called for each row of results</param>
         /// <typeparam name="T">result type T</typeparam>
         /// <returns>an unenumerated enumerable of result type T</returns>
-        public virtual IEnumerable<T> ExecuteEnumerable<T>(DbConnection connection, string command, Action<IDataParameterBinder> binder, Func<DbDataReader, T> transform)
+        public virtual IEnumerable<T> ExecuteEnumerable<T>(DbConnection connection, string command,
+            Action<IDataParameterBinder> binder, Func<DbDataReader, T> transform)
         {
             Contract.Requires<ArgumentNullException>(connection != null);
             Contract.Requires<InvalidOperationException>(connection.State.HasFlag(ConnectionState.Open));
@@ -661,7 +675,7 @@ WHERE TABLE_CATALOG = {0}
         }
 
         /// <summary>
-        /// Executes a non-query command on the specified connection.
+        ///     Executes a non-query command on the specified connection.
         /// </summary>
         /// <param name="connection">the connection</param>
         /// <param name="prepareCommand">callback method that prepares the command</param>
@@ -698,7 +712,7 @@ WHERE TABLE_CATALOG = {0}
         }
 
         /// <summary>
-        /// Binds and executes the specified command for each of the specified data items.
+        ///     Binds and executes the specified command for each of the specified data items.
         /// </summary>
         /// <param name="connection">the connection upon which the command will be executed</param>
         /// <param name="data">the data items used in the batch</param>
@@ -706,7 +720,7 @@ WHERE TABLE_CATALOG = {0}
         /// <param name="binder">callback method that binds the command's parameters for each item of data</param>
         /// <param name="observer">an optional callback method for observing the result for each item of data</param>
         /// <returns>an enumerable over the items' results</returns>
-        public IEnumerable<int> ImmediateExecuteNonQueryBatch<TData>(DbConnection connection, 
+        public IEnumerable<int> ImmediateExecuteNonQueryBatch<TData>(DbConnection connection,
             IEnumerable<TData> data,
             Action<DbCommand, IDataParameterBinder> setup,
             Action<DbCommand, IDataParameterBinder, TData> binder,
@@ -718,7 +732,7 @@ WHERE TABLE_CATALOG = {0}
             Contract.Requires<ArgumentNullException>(setup != null);
             Contract.Requires<ArgumentNullException>(binder != null);
             Contract.Ensures(Contract.Result<IEnumerable<int>>() != null);
-            
+
             using (var cmd = connection.CreateCommand())
             {
                 var b = MakeParameterBinder(cmd);
@@ -740,15 +754,15 @@ WHERE TABLE_CATALOG = {0}
                 return res;
             }
         }
-       
+
         /// <summary>
-        /// Executes a non-query command on the specified connection.
+        ///     Executes a non-query command on the specified connection.
         /// </summary>
         /// <param name="connection">the connection</param>
         /// <param name="prepareCommand">a callback that will prepare the command</param>
         /// <param name="postCommand">an optional callback invoked after the command completes.</param>
         /// <returns></returns>
-        protected virtual int ExecuteNonQuery(DbConnection connection, 
+        protected virtual int ExecuteNonQuery(DbConnection connection,
             Action<DbCommand> prepareCommand,
             Action<DbCommand, int> postCommand)
         {
@@ -770,7 +784,7 @@ WHERE TABLE_CATALOG = {0}
                 return res;
             }
         }
-       
+
         internal MappedDbTypeEmitter GetDbTypeEmitter(IMapping mapping, ColumnMapping column)
         {
             var type = column.RuntimeType;
@@ -812,7 +826,7 @@ WHERE TABLE_CATALOG = {0}
         }
 
         /// <summary>
-        /// Creates a mapped emitter for the specified enum type.
+        ///     Creates a mapped emitter for the specified enum type.
         /// </summary>
         /// <param name="enumType"></param>
         /// <returns></returns>
@@ -825,7 +839,7 @@ WHERE TABLE_CATALOG = {0}
         }
 
         /// <summary>
-        /// Creates a mapped emitter for the specified enum type.
+        ///     Creates a mapped emitter for the specified enum type.
         /// </summary>
         /// <param name="enumType"></param>
         /// <returns></returns>
@@ -838,7 +852,7 @@ WHERE TABLE_CATALOG = {0}
         }
 
         /// <summary>
-        /// When implemented by subclass; gets a mapped type emitter for the specified type.
+        ///     When implemented by subclass; gets a mapped type emitter for the specified type.
         /// </summary>
         /// <param name="mapping"></param>
         /// <param name="type"></param>
@@ -851,7 +865,7 @@ WHERE TABLE_CATALOG = {0}
         }
 
         /// <summary>
-        /// When implemented by subclass; adds a create schema command to the specified batch.
+        ///     When implemented by subclass; adds a create schema command to the specified batch.
         /// </summary>
         /// <param name="batch"></param>
         /// <param name="schemaName"></param>

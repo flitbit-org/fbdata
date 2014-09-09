@@ -8,13 +8,13 @@ using System.Data;
 
 namespace FlitBit.Data.DataModel.DbTypeEmitters
 {
-  internal class MappedInt32Emitter : MappedDbTypeEmitter<int, DbType>
-  {
-    internal MappedInt32Emitter()
-      : base(DbType.Int32, DbType.Int32)
+    internal class MappedInt32Emitter : MappedDbTypeEmitter<int, DbType>
     {
-      this.SpecializedSqlTypeName = "INT";
-      DbDataReaderGetValueMethodName = "GetInt32";
+        internal MappedInt32Emitter()
+            : base(DbType.Int32, DbType.Int32)
+        {
+            this.SpecializedSqlTypeName = "INT";
+            DbDataReaderGetValueMethodName = "GetInt32";
+        }
     }
-  }
 }

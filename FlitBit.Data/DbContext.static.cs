@@ -9,7 +9,6 @@ using System.Collections.Generic;
 using System.Diagnostics.Contracts;
 using System.Threading;
 using System.Transactions;
-using FlitBit.Core;
 using FlitBit.Core.Parallel;
 
 namespace FlitBit.Data
@@ -21,6 +20,7 @@ namespace FlitBit.Data
             static readonly Lazy<DbContextFlowProvider> __provider =
                 new Lazy<DbContextFlowProvider>(CreateAndRegisterContextFlowProvider,
                     LazyThreadSafetyMode.ExecutionAndPublication);
+
             static void EnsureContextFlowProviderExists()
             {
                 if (!__provider.IsValueCreated)
@@ -164,12 +164,12 @@ namespace FlitBit.Data
         }
 
         /// <summary>
-        ///   Gets the current "ambient" db context.
+        ///     Gets the current "ambient" db context.
         /// </summary>
         public static IDbContext Current { get { return DbContextFlowProvider.Peek(); } }
 
         /// <summary>
-        ///   Creates a new context.
+        ///     Creates a new context.
         /// </summary>
         /// <param name="behaviors">indicates the context's behaviors</param>
         /// <returns>a db context</returns>
@@ -183,7 +183,7 @@ namespace FlitBit.Data
         }
 
         /// <summary>
-        ///   Creates a new context.
+        ///     Creates a new context.
         /// </summary>
         /// <returns>a db context</returns>
         public static IDbContext NewContext()
@@ -192,7 +192,7 @@ namespace FlitBit.Data
         }
 
         /// <summary>
-        ///   Shares the ambient context if it exists; otherwise, creates a new context.
+        ///     Shares the ambient context if it exists; otherwise, creates a new context.
         /// </summary>
         /// <returns>a db context</returns>
         public static IDbContext SharedOrNewContext()

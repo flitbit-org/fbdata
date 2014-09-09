@@ -8,14 +8,14 @@ using System.Data;
 
 namespace FlitBit.Data.SqlServer
 {
-  internal class SqlMappedNullableDecimalEmitter : SqlDbTypeNullableEmitter<decimal>
-  {
-    internal SqlMappedNullableDecimalEmitter()
-      : base(DbType.Decimal, SqlDbType.Decimal)
+    internal class SqlMappedNullableDecimalEmitter : SqlDbTypeNullableEmitter<decimal>
     {
-      this.LengthRequirements = DbTypeLengthRequirements.Precision | DbTypeLengthRequirements.Scale
-                                | DbTypeLengthRequirements.OptionalScale;
-      this.DbDataReaderGetValueMethodName = "GetDecimal";
+        internal SqlMappedNullableDecimalEmitter()
+            : base(DbType.Decimal, SqlDbType.Decimal)
+        {
+            this.LengthRequirements = DbTypeLengthRequirements.Precision | DbTypeLengthRequirements.Scale
+                                      | DbTypeLengthRequirements.OptionalScale;
+            this.DbDataReaderGetValueMethodName = "GetDecimal";
+        }
     }
-  }
 }

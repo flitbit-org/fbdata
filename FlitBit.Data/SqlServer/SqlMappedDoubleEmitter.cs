@@ -11,23 +11,19 @@ using FlitBit.Data.Meta;
 
 namespace FlitBit.Data.SqlServer
 {
-  internal class SqlMappedDoubleEmitter : SqlDbTypeEmitter<double>
-  {
-    internal SqlMappedDoubleEmitter()
-      : base(DbType.Double, SqlDbType.Float)
+    internal class SqlMappedDoubleEmitter : SqlDbTypeEmitter<double>
     {
-      DbDataReaderGetValueMethodName = "GetDouble";
+        internal SqlMappedDoubleEmitter()
+            : base(DbType.Double, SqlDbType.Float) { DbDataReaderGetValueMethodName = "GetDouble"; }
+
+        public override void EmitColumnInitializationDDL<TModel>(StringBuilder buffer, IMapping<TModel> mapping,
+            ColumnMapping<TModel> col) { }
+
+        //protected override void EmitTranslateRuntimeType(ILGenerator il, LocalBuilder local)
+        //{
+        //  il.LoadLocal(local);
+        //  il.NewObj(typeof(SqlDouble).GetConstructor(new[] { typeof(double) }));
+        //  il.Box(typeof(SqlDouble));
+        //}
     }
-
-    public override void EmitColumnInitializationDDL<TModel>(StringBuilder buffer, IMapping<TModel> mapping,
-      ColumnMapping<TModel> col)
-    {}
-
-    //protected override void EmitTranslateRuntimeType(ILGenerator il, LocalBuilder local)
-    //{
-    //  il.LoadLocal(local);
-    //  il.NewObj(typeof(SqlDouble).GetConstructor(new[] { typeof(double) }));
-    //  il.Box(typeof(SqlDouble));
-    //}
-  }
 }

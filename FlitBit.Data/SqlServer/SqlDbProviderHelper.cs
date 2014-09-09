@@ -295,8 +295,7 @@ namespace FlitBit.Data.SqlServer
                  .AppendLine("BEGIN")
                  .Append("\tEXEC( 'CREATE SCHEMA [").Append(schemaName).Append("]' )")
                  .Append(Environment.NewLine)
-                 .AppendLine("END")
-                 .AppendLine("GO")
+                 .AppendLine("END;")
                 ;
         }
     }

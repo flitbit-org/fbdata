@@ -9,9 +9,9 @@ using System.Data;
 
 namespace FlitBit.Data.DataModel.DbTypeEmitters
 {
-  internal class MappedDateTimeEmitter : MappedDbTypeEmitter<DateTime, DbType>
-  {
-    internal MappedDateTimeEmitter()
-      : base(DbType.DateTime, DbType.DateTime) { DbDataReaderGetValueMethodName = "GetDateTime"; }
-  }
+    internal class MappedDateTimeEmitter : MappedDbTypeEmitter<DateTime, DbType>
+    {
+        internal MappedDateTimeEmitter()
+            : base(DbType.DateTime, DbType.DateTime) { DbDataReaderGetValueMethodName = "GetDateTime"; }
+    }
 }

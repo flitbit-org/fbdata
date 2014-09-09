@@ -10,22 +10,22 @@ using FlitBit.Data.Configuration;
 namespace FlitBit.Data
 {
     /// <summary>
-    /// Default connection providers implementation.
+    ///     Default connection providers implementation.
     /// </summary>
     /// <remarks>
-    /// This class is thread safe and designed for concurrent use. This 
-    /// implementation expects that connection providers will be few (less 
-    /// than a 20 or so), and added during application startup. Connections are 
-    /// created by the first provider that indicates it can create the 
-    /// connection by name. When providers are interrogated, it occurs in 
-    /// priority order (lower priority first). If more than one provider
-    /// has the same priority, interrogation proceeds in the order the
-    /// providers where added.
+    ///     This class is thread safe and designed for concurrent use. This
+    ///     implementation expects that connection providers will be few (less
+    ///     than a 20 or so), and added during application startup. Connections are
+    ///     created by the first provider that indicates it can create the
+    ///     connection by name. When providers are interrogated, it occurs in
+    ///     priority order (lower priority first). If more than one provider
+    ///     has the same priority, interrogation proceeds in the order the
+    ///     providers where added.
     /// </remarks>
     public sealed class ConnectionProviders : IConnectionProviders
     {
         /// <summary>
-        /// Default priority used when none is assigned.
+        ///     Default priority used when none is assigned.
         /// </summary>
         public static readonly int BasePriority = 100;
 
@@ -33,7 +33,7 @@ namespace FlitBit.Data
         static ConnectionProviders __instance;
 
         /// <summary>
-        /// Static access to the IConnectionProivders instance.
+        ///     Static access to the IConnectionProivders instance.
         /// </summary>
         public static IConnectionProviders Instance
         {
@@ -47,24 +47,31 @@ namespace FlitBit.Data
                 return Util.LazyInitializeWithLock(ref __instance, __Sync);
             }
         }
-        
+
         readonly DataModelConfigSection _config;
-        readonly ConcurrentDictionary<int, Tuple<int, int, IConnectionProvider>> _providers = new ConcurrentDictionary<int, Tuple<int, int, IConnectionProvider>>();
+
+        readonly ConcurrentDictionary<int, Tuple<int, int, IConnectionProvider>> _providers =
+            new ConcurrentDictionary<int, Tuple<int, int, IConnectionProvider>>();
+
         object _capture = Tuple.Create(0, new IConnectionProvider[0]);
         int _sequence;
 
         /// <summary>
-        /// Creates a new instance.
+        ///     Creates a new instance.
         /// </summary>
-        public ConnectionProviders(int defaultPriority) : this(defaultPriority, DataModelConfigSection.Instance) { }
+        public ConnectionProviders(int defaultPriority)
+            : this(defaultPriority, DataModelConfigSection.Instance)
+        {}
 
         /// <summary>
-        /// Creates a new instance.
+        ///     Creates a new instance.
         /// </summary>
-        public ConnectionProviders() : this(BasePriority, DataModelConfigSection.Instance) { }
+        public ConnectionProviders()
+            : this(BasePriority, DataModelConfigSection.Instance)
+        {}
 
         /// <summary>
-        /// Creates a new instance.
+        ///     Creates a new instance.
         /// </summary>
         /// <param name="defaultPriority"></param>
         /// <param name="config"></param>
@@ -79,7 +86,7 @@ namespace FlitBit.Data
         }
 
         /// <summary>
-        /// Indicates whether the provider can create a connection for the specified name.
+        ///     Indicates whether the provider can create a connection for the specified name.
         /// </summary>
         /// <param name="name">The connection's name.</param>
         /// <returns><em>true</em> if the provider can create the specified connection; otherwise <em>false</em></returns>
@@ -92,52 +99,69 @@ namespace FlitBit.Data
         }
 
         /// <summary>
-        /// Gets a connection for the specified name.
+        ///     Gets a connection for the specified name.
         /// </summary>
         /// <param name="name">The connection's name.</param>
         /// <returns>A connection for the specified name.</returns>
-        /// <exception cref="ArgumentOutOfRangeException">thrown if the provider cannot provide a connection for the specified name.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">
+        ///     thrown if the provider cannot provide a connection for the specified
+        ///     name.
+        /// </exception>
         public IConnection GetConnection(string name)
         {
             var map = _config.MapConnectionStrings[name];
             var n = (map != null) ? map.ToName : name;
 
             var first = CaptureProviders().FirstOrDefault(it => it.CanCreate(n));
-            if (first == null) throw new ArgumentOutOfRangeException("name", String.Concat("No providers can create connections with the specified name: ", n));
+            if (first == null)
+            {
+                throw new ArgumentOutOfRangeException("name",
+                    String.Concat("No providers can create connections with the specified name: ", n));
+            }
             return first.GetConnection(n);
         }
 
         /// <summary>
-        /// Gets a connection for the specified name, of type TDbConnection.
+        ///     Gets a connection for the specified name, of type TDbConnection.
         /// </summary>
         /// <param name="name">the connection's name</param>
         /// <typeparam name="TDbConnection">the connection's type</typeparam>
         /// <returns>A connection for the specified name.</returns>
-        /// <exception cref="ArgumentOutOfRangeException">thrown if the provider cannot provide a connection for the specified name.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">
+        ///     thrown if the provider cannot provide a connection for the specified
+        ///     name.
+        /// </exception>
         /// <exception cref="InvalidCastException">thrown if the connection's type is not a TDbConnection.</exception>
-        public IConnection<TDbConnection> GetConnection<TDbConnection>(string name) where TDbConnection : System.Data.Common.DbConnection
+        public IConnection<TDbConnection> GetConnection<TDbConnection>(string name) where TDbConnection : DbConnection
         {
             var map = _config.MapConnectionStrings[name];
             var n = (map != null) ? map.ToName : name;
 
             var first = CaptureProviders().FirstOrDefault(it => it.CanCreate(n));
-            if (first == null) throw new ArgumentOutOfRangeException("name", String.Concat("No providers can create connections with the specified name: ", n));
+            if (first == null)
+            {
+                throw new ArgumentOutOfRangeException("name",
+                    String.Concat("No providers can create connections with the specified name: ", n));
+            }
             return first.GetConnection<TDbConnection>(n);
         }
 
         /// <summary>
-        /// Gets the default priority assigned to providers.
+        ///     Gets the default priority assigned to providers.
         /// </summary>
         public int DefaultPriority { get; private set; }
 
         /// <summary>
-        /// Adds a provider with the default priority.
+        ///     Adds a provider with the default priority.
         /// </summary>
         /// <param name="provider">the priority</param>
-        public void Add(IConnectionProvider provider) { Add(provider, DefaultPriority); }
+        public void Add(IConnectionProvider provider)
+        {
+            Add(provider, DefaultPriority);
+        }
 
         /// <summary>
-        /// Adds a provider with the specified priority.
+        ///     Adds a provider with the specified priority.
         /// </summary>
         /// <param name="provider">the provider</param>
         /// <param name="priority">the priority; must be greater than or equal to 0 (zero).</param>
@@ -149,7 +173,7 @@ namespace FlitBit.Data
         }
 
         /// <summary>
-        /// Removes a connection provider.
+        ///     Removes a connection provider.
         /// </summary>
         /// <param name="provider">the provider.</param>
         public void Remove(IConnectionProvider provider)
@@ -168,17 +192,20 @@ namespace FlitBit.Data
 // ReSharper disable once ReturnTypeCanBeEnumerable.Local
         IConnectionProvider[] CaptureProviders()
         {
-            var res = (Tuple<int, IConnectionProvider[]>)Thread.VolatileRead( ref _capture);
-            
+            var res = (Tuple<int, IConnectionProvider[]>)Thread.VolatileRead(ref _capture);
+
             while (true)
             {
                 var seq = Thread.VolatileRead(ref _sequence);
-                if (seq == res.Item1) break;
+                if (seq == res.Item1)
+                {
+                    break;
+                }
 
                 var capture = Tuple.Create(seq, _providers.Values
-                    .OrderBy(it => it.Item1)
-                    .ThenBy(it => it.Item2)
-                    .Select(it => it.Item3).ToArray());
+                                                          .OrderBy(it => it.Item1)
+                                                          .ThenBy(it => it.Item2)
+                                                          .Select(it => it.Item3).ToArray());
                 if (ReferenceEquals(Interlocked.CompareExchange(ref _capture, capture, res), res))
                 {
                     res = capture;
@@ -190,12 +217,15 @@ namespace FlitBit.Data
         }
 
         /// <summary>
-        /// Utility method; gets the first connection with the specified name
-        /// from configured providers.
+        ///     Utility method; gets the first connection with the specified name
+        ///     from configured providers.
         /// </summary>
         /// <param name="name">the connection name</param>
         /// <returns></returns>
-        /// <exception cref="ArgumentOutOfRangeException">thrown if the provider cannot provide a connection for the specified name.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">
+        ///     thrown if the provider cannot provide a connection for the specified
+        ///     name.
+        /// </exception>
         public static DbConnection GetDbConnection(string name)
         {
             Contract.Requires<ArgumentNullException>(name != null);
@@ -205,13 +235,16 @@ namespace FlitBit.Data
         }
 
         /// <summary>
-        /// Utility method; gets the first connection with the specified name
-        /// from configured providers.
+        ///     Utility method; gets the first connection with the specified name
+        ///     from configured providers.
         /// </summary>
         /// <param name="name">the connection name</param>
         /// <typeparam name="TDbConnection"></typeparam>
         /// <returns></returns>
-        /// <exception cref="ArgumentOutOfRangeException">thrown if the provider cannot provide a connection for the specified name.</exception>
+        /// <exception cref="ArgumentOutOfRangeException">
+        ///     thrown if the provider cannot provide a connection for the specified
+        ///     name.
+        /// </exception>
         public static TDbConnection GetDbConnection<TDbConnection>(string name)
             where TDbConnection : DbConnection
         {

@@ -1,6 +1,6 @@
-﻿using Moq.Language;
+﻿using System.Reflection;
+using Moq.Language;
 using Moq.Language.Flow;
-using System.Reflection;
 
 namespace FlitBit.Data.Tests
 {
@@ -9,27 +9,35 @@ namespace FlitBit.Data.Tests
         // From: http://stackoverflow.com/questions/1068095/assigning-out-ref-parameters-in-moq#15
 
         public delegate void OutAction<TOut>(out TOut outVal);
+
         public delegate void OutAction<in T1, TOut>(T1 arg1, out TOut outVal);
 
-        public static IReturnsThrows<TMock, TReturn> OutCallback<TMock, TReturn, TOut>(this ICallback<TMock, TReturn> mock, OutAction<TOut> action)
+        public static IReturnsThrows<TMock, TReturn> OutCallback<TMock, TReturn, TOut>(
+            this ICallback<TMock, TReturn> mock, OutAction<TOut> action)
             where TMock : class
         {
             return OutCallbackInternal(mock, action);
         }
 
-        public static IReturnsThrows<TMock, TReturn> OutCallback<TMock, TReturn, T1, TOut>(this ICallback<TMock, TReturn> mock, OutAction<T1, TOut> action)
+        public static IReturnsThrows<TMock, TReturn> OutCallback<TMock, TReturn, T1, TOut>(
+            this ICallback<TMock, TReturn> mock, OutAction<T1, TOut> action)
             where TMock : class
         {
             return OutCallbackInternal(mock, action);
         }
 
-        private static IReturnsThrows<TMock, TReturn> OutCallbackInternal<TMock, TReturn>(ICallback<TMock, TReturn> mock, object action)
+        static IReturnsThrows<TMock, TReturn> OutCallbackInternal<TMock, TReturn>(ICallback<TMock, TReturn> mock,
+            object action)
             where TMock : class
         {
             mock.GetType()
                 .Assembly.GetType("Moq.MethodCall")
-                .InvokeMember("SetCallbackWithArguments", BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Instance, null, mock,
-                    new[] { action });
+                .InvokeMember("SetCallbackWithArguments",
+                    BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Instance, null, mock,
+                    new[]
+                    {
+                        action
+                    });
             return mock as IReturnsThrows<TMock, TReturn>;
         }
 
@@ -43,10 +51,14 @@ namespace FlitBit.Data.Tests
             return OutCallbackInternal(mock, action);
         }
 
-        private static ICallbackResult OutCallbackInternal(ICallback mock, object action)
+        static ICallbackResult OutCallbackInternal(ICallback mock, object action)
         {
             mock.GetType().Assembly.GetType("Moq.MethodCall")
-                .InvokeMember("SetCallbackWithArguments", BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Instance, null, mock, new[] { action });
+                .InvokeMember("SetCallbackWithArguments",
+                    BindingFlags.InvokeMethod | BindingFlags.NonPublic | BindingFlags.Instance, null, mock, new[]
+                    {
+                        action
+                    });
             return (ICallbackResult)mock;
         }
     }

@@ -1,35 +1,36 @@
 ﻿using System;
 using System.Data.Common;
 using System.Diagnostics.Contracts;
+using FlitBit.Data.CodeContracts;
 
 namespace FlitBit.Data
 {
     /// <summary>
-    /// Registry of connection providers.
+    ///     Registry of connection providers.
     /// </summary>
-    [ContractClass(typeof(CodeContracts.ContractsForIConnectionProviders))]
+    [ContractClass(typeof(ContractsForIConnectionProviders))]
     public interface IConnectionProviders : IConnectionProvider
     {
         /// <summary>
-        /// Gets the default priority assigned to providers.
+        ///     Gets the default priority assigned to providers.
         /// </summary>
         int DefaultPriority { get; }
 
         /// <summary>
-        /// Adds a provider with the default priority.
+        ///     Adds a provider with the default priority.
         /// </summary>
         /// <param name="provider">the priority</param>
         void Add(IConnectionProvider provider);
 
         /// <summary>
-        /// Adds a provider with the specified priority.
+        ///     Adds a provider with the specified priority.
         /// </summary>
         /// <param name="provider">the provider</param>
         /// <param name="priority">the priority; must be greater than 0 (zero).</param>
         void Add(IConnectionProvider provider, int priority);
 
         /// <summary>
-        /// Removes a connection provider.
+        ///     Removes a connection provider.
         /// </summary>
         /// <param name="provider">the provider.</param>
         void Remove(IConnectionProvider provider);
@@ -38,7 +39,7 @@ namespace FlitBit.Data
     namespace CodeContracts
     {
         /// <summary>
-        ///   CodeContracts Class for IConnectionProvider
+        ///     CodeContracts Class for IConnectionProvider
         /// </summary>
         [ContractClassFor(typeof(IConnectionProviders))]
         internal abstract class ContractsForIConnectionProviders : IConnectionProviders
@@ -67,10 +68,7 @@ namespace FlitBit.Data
                 throw new NotImplementedException();
             }
 
-            public int DefaultPriority
-            {
-                get { throw new NotImplementedException(); }
-            }
+            public int DefaultPriority { get { throw new NotImplementedException(); } }
 
             public void Add(IConnectionProvider provider)
             {

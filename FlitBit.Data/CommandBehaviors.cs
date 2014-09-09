@@ -8,20 +8,20 @@ using System;
 
 namespace FlitBit.Data
 {
-  /// <summary>
-  ///   Enumeration of command behaviors.
-  /// </summary>
-  [Flags]
-  public enum CommandBehaviors
-  {
     /// <summary>
-    ///   Default; indicates none specified.
+    ///     Enumeration of command behaviors.
     /// </summary>
-    None = 0,
+    [Flags]
+    public enum CommandBehaviors
+    {
+        /// <summary>
+        ///     Default; indicates none specified.
+        /// </summary>
+        None = 0,
 
-    /// <summary>
-    ///   Indicates the command should use a shared connection if available.
-    /// </summary>
-    ShareConnectionIfAvailable = 1,
-  }
+        /// <summary>
+        ///     Indicates the command should use a shared connection if available.
+        /// </summary>
+        ShareConnectionIfAvailable = 1,
+    }
 }

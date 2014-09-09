@@ -1,6 +1,6 @@
-﻿using Moq;
+﻿using System;
+using Moq;
 using NUnit.Framework;
-using System;
 
 namespace FlitBit.Data.Tests
 {
@@ -17,7 +17,7 @@ namespace FlitBit.Data.Tests
             var prov = new Mock<IConnectionProvider>();
             prov.Setup(t => t.CanCreate(KnownName)).Returns(true);
             prov.Setup(t => t.GetConnection(KnownName))
-                     .Returns(new DefaultConnection(KnownName, DbExtensions.CreateConnection(KnownName)));
+                .Returns(new DefaultConnection(KnownName, DbExtensions.CreateConnection(KnownName)));
 
             prov.Setup(t => t.CanCreate(It.IsNotIn(KnownName))).Returns(false);
             prov.Setup(t => t.GetConnection(It.IsNotIn(KnownName))).Throws<ArgumentOutOfRangeException>();
@@ -25,18 +25,11 @@ namespace FlitBit.Data.Tests
         }
 
         [Test]
-        public void CanCreate_KnownName_ReturnsTrue()
-        {
-            Assert.IsTrue(_provider.CanCreate(KnownName));
-        }
+        public void CanCreate_KnownName_ReturnsTrue() { Assert.IsTrue(_provider.CanCreate(KnownName)); }
 
         [Test]
-        public void CanCreate_UnknownName_ReturnsFalse()
-        {
-            Assert.IsFalse(_provider.CanCreate(UnknownName));
-        }
+        public void CanCreate_UnknownName_ReturnsFalse() { Assert.IsFalse(_provider.CanCreate(UnknownName)); }
 
-       
         [Test]
         [ExpectedException(typeof(ArgumentOutOfRangeException))]
         public void GetConnection_UnknownName_ThrowsException()

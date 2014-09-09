@@ -9,22 +9,22 @@ using System.Diagnostics.Contracts;
 
 namespace FlitBit.Data.Meta.DDL
 {
-  public class DDLTableColumn : DDLNode
-  {
-    ColumnMapping _col;
-    int _index;
-
-    public DDLTableColumn(DDLTable table, string name, int index, DDLBehaviors behaviors)
-      : base(DDLNodeKind.Column, table, name, behaviors) { _index = index; }
-
-    public DDLTableColumn(DDLTable table, ColumnMapping col, int index, DDLBehaviors behaviors)
-      : base(DDLNodeKind.Column, table, col.TargetName, behaviors)
+    public class DDLTableColumn : DDLNode
     {
-      Contract.Requires<ArgumentNullException>(col != null);
-      this._col = col;
-      this._index = index;
-    }
+        ColumnMapping _col;
+        int _index;
 
-    public DDLTable Table { get { return (DDLTable)Parent; } }
-  }
+        public DDLTableColumn(DDLTable table, string name, int index, DDLBehaviors behaviors)
+            : base(DDLNodeKind.Column, table, name, behaviors) { _index = index; }
+
+        public DDLTableColumn(DDLTable table, ColumnMapping col, int index, DDLBehaviors behaviors)
+            : base(DDLNodeKind.Column, table, col.TargetName, behaviors)
+        {
+            Contract.Requires<ArgumentNullException>(col != null);
+            this._col = col;
+            this._index = index;
+        }
+
+        public DDLTable Table { get { return (DDLTable)Parent; } }
+    }
 }

@@ -14,37 +14,37 @@ using FlitBit.Emit;
 
 namespace FlitBit.Data.SqlServer
 {
-  internal class SqlMappedTypeToStringEmitter : SqlMappedAnyToStringEmitter<Type>
-  {
-    public SqlMappedTypeToStringEmitter()
-      : base(SqlDbType.NVarChar, typeof(string))
-    {}
-
-    protected override void EmitTranslateDbType(ILGenerator il)
+    internal class SqlMappedTypeToStringEmitter : SqlMappedAnyToStringEmitter<Type>
     {
-      il.Call<Type>("GetType", BindingFlags.Static | BindingFlags.Public, typeof(string));
-    }
+        public SqlMappedTypeToStringEmitter()
+            : base(SqlDbType.NVarChar, typeof(string))
+        {}
 
-    /// <summary>
-    ///   Emits IL to translate the runtime type to the dbtype.
-    /// </summary>
-    /// <param name="il"></param>
-    /// <param name="local"></param>
-    /// <remarks>
-    ///   It is the responsibility of this method to ensure the local is loaded,
-    ///   translated, and on the top of the stack.
-    /// </remarks>
-    protected override void EmitTranslateRuntimeType(ILGenerator il, LocalBuilder local)
-    {
-      il.LoadLocal(local);
-      il.CallVirtual<Type>("get_FullName");
-    }
+        protected override void EmitTranslateDbType(ILGenerator il)
+        {
+            il.Call<Type>("GetType", BindingFlags.Static | BindingFlags.Public, typeof(string));
+        }
 
-    public override DbTypeDetails GetDbTypeDetails(ColumnMapping column)
-    {
-      Debug.Assert(column.Member.DeclaringType != null, "column.Member.DeclaringType != null");
-      var bindingName = String.Concat(column.Member.DeclaringType.Name, "_", column.Member.Name);
-      return new DbTypeDetails(column.Member.Name, bindingName, 400, null, null);
+        /// <summary>
+        ///     Emits IL to translate the runtime type to the dbtype.
+        /// </summary>
+        /// <param name="il"></param>
+        /// <param name="local"></param>
+        /// <remarks>
+        ///     It is the responsibility of this method to ensure the local is loaded,
+        ///     translated, and on the top of the stack.
+        /// </remarks>
+        protected override void EmitTranslateRuntimeType(ILGenerator il, LocalBuilder local)
+        {
+            il.LoadLocal(local);
+            il.CallVirtual<Type>("get_FullName");
+        }
+
+        public override DbTypeDetails GetDbTypeDetails(ColumnMapping column)
+        {
+            Debug.Assert(column.Member.DeclaringType != null, "column.Member.DeclaringType != null");
+            var bindingName = String.Concat(column.Member.DeclaringType.Name, "_", column.Member.Name);
+            return new DbTypeDetails(column.Member.Name, bindingName, 400, null, null);
+        }
     }
-  }
 }

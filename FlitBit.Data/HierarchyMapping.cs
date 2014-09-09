@@ -10,41 +10,41 @@ using FlitBit.Data.DataModel;
 
 namespace FlitBit.Data
 {
-  /// <summary>
-  ///   Maintains a model's hierarchy mappings.
-  /// </summary>
-  /// <typeparam name="TModel">model type TModel</typeparam>
-  public class HierarchyMapping<TModel> : IHierarchyMapping<TModel>, IHierarchyMappings
-  {
-    readonly List<IMapping> _knownSubtypes = new List<IMapping>();
-
-    #region IHierarchyMapping<M> Members
-
     /// <summary>
-    ///   Notifies the hierarchy of a new subtype of TModel.
+    ///     Maintains a model's hierarchy mappings.
     /// </summary>
-    /// <typeparam name="TSubModel">sub model type</typeparam>
-    /// <param name="mapping">the submodel's mapping.</param>
-    public void NotifySubtype<TSubModel>(IMapping<TSubModel> mapping) where TSubModel : TModel
+    /// <typeparam name="TModel">model type TModel</typeparam>
+    public class HierarchyMapping<TModel> : IHierarchyMapping<TModel>, IHierarchyMappings
     {
-      _knownSubtypes.Add(mapping);
-      if (OnChanged != null)
-      {
-        OnChanged(this, new EventArgs());
-      }
+        readonly List<IMapping> _knownSubtypes = new List<IMapping>();
+
+        #region IHierarchyMapping<M> Members
+
+        /// <summary>
+        ///     Notifies the hierarchy of a new subtype of TModel.
+        /// </summary>
+        /// <typeparam name="TSubModel">sub model type</typeparam>
+        /// <param name="mapping">the submodel's mapping.</param>
+        public void NotifySubtype<TSubModel>(IMapping<TSubModel> mapping) where TSubModel : TModel
+        {
+            _knownSubtypes.Add(mapping);
+            if (OnChanged != null)
+            {
+                OnChanged(this, new EventArgs());
+            }
+        }
+
+        #endregion
+
+        #region IHierarchyMappings Members
+
+        /// <summary>
+        ///     Gets a model's known subtype's mappings.
+        /// </summary>
+        public IEnumerable<IMapping> KnownSubtypes { get { return _knownSubtypes.AsReadOnly(); } }
+
+        #endregion
+
+        public event EventHandler<EventArgs> OnChanged;
     }
-
-    #endregion
-
-    #region IHierarchyMappings Members
-
-    /// <summary>
-    ///   Gets a model's known subtype's mappings.
-    /// </summary>
-    public IEnumerable<IMapping> KnownSubtypes { get { return _knownSubtypes.AsReadOnly(); } }
-
-    #endregion
-
-    public event EventHandler<EventArgs> OnChanged;
-  }
 }

@@ -1,41 +1,41 @@
 ﻿using System;
 using System.Data.Common;
 using System.Diagnostics.Contracts;
+using FlitBit.Data.CodeContracts;
 
 namespace FlitBit.Data
 {
     /// <summary>
-    /// An untyped connection to a db.
+    ///     An untyped connection to a db.
     /// </summary>
-    [ContractClass(typeof(CodeContracts.ContractsForIConnection))]
+    [ContractClass(typeof(ContractsForIConnection))]
     public interface IConnection
     {
         /// <summary>
-        /// The connection's name.
+        ///     The connection's name.
         /// </summary>
         string Name { get; }
 
         /// <summary>
-        /// Indicates whether the connection can be shared.
+        ///     Indicates whether the connection can be shared.
         /// </summary>
         bool CanShareConnection { get; }
 
         /// <summary>
-        /// The untyped connection.
+        ///     The untyped connection.
         /// </summary>
         DbConnection UntypedDbConnection { get; }
     }
 
     /// <summary>
-    /// A strongly typed connection to a db.
+    ///     A strongly typed connection to a db.
     /// </summary>
     /// <typeparam name="TDbConnection">the db connection's type</typeparam>
     public interface IConnection<out TDbConnection> : IConnection
-        where TDbConnection: DbConnection
+        where TDbConnection : DbConnection
     {
-        
         /// <summary>
-        /// The connection.
+        ///     The connection.
         /// </summary>
         TDbConnection DbConnection { get; }
     }
@@ -43,7 +43,7 @@ namespace FlitBit.Data
     namespace CodeContracts
     {
         /// <summary>
-        ///   CodeContracts Class for IConnection
+        ///     CodeContracts Class for IConnection
         /// </summary>
         [ContractClassFor(typeof(IConnection))]
         internal abstract class ContractsForIConnection : IConnection
@@ -64,12 +64,12 @@ namespace FlitBit.Data
             {
                 get
                 {
-                    Contract.Ensures(Contract.Result<DbConnection>() != null); 
+                    Contract.Ensures(Contract.Result<DbConnection>() != null);
 
                     throw new NotImplementedException();
                 }
             }
-            
+
             [ContractInvariantMethod]
             void InvariantContracts()
             {
