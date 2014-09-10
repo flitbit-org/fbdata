@@ -29,11 +29,11 @@ namespace FlitBit.Data.DataModel
         MappingStrategy Strategy { get; }
 
         /// <summary>
-        ///     Adds the model's DDL to a string builder.
+        ///     Adds the model's DDL to a SQL writer.
         /// </summary>
         /// <param name="batch"></param>
         /// <param name="members"></param>
-        void BuildDdlBatch(StringBuilder batch, IList<Type> members);
+        void BuildDdlBatch(SqlWriter batch, IList<Type> members);
 
         /// <summary>
         ///     Initializes the binder.
@@ -45,7 +45,6 @@ namespace FlitBit.Data.DataModel
     ///     Binds a model to an underlying database structure.
     /// </summary>
     /// <typeparam name="TModel">the model's type.</typeparam>
-    /// <typeparam name="TIdentityKey">the model's identity type</typeparam>
     public interface IDataModelBinder<TModel> : IDataModelBinder
     {
         /// <summary>

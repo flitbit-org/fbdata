@@ -12,6 +12,7 @@ using System.Diagnostics.Contracts;
 using System.Linq;
 using System.Text;
 using FlitBit.Data.DataModel;
+using FlitBit.Data.Expressions;
 using FlitBit.Data.Meta;
 
 namespace FlitBit.Data.SqlServer
@@ -285,17 +286,16 @@ namespace FlitBit.Data.SqlServer
             return SqlDbTypeTranslations.TranslateRuntimeType(type);
         }
 
-        public override void EmitCreateSchema(StringBuilder batch, string schemaName)
+        public override void EmitCreateSchema(SqlWriter batch, string schemaName)
         {
-            batch.Append(Environment.NewLine)
-                 .Append("IF NOT EXISTS (SELECT 1 FROM sys.schemas WHERE name = '")
+            batch.NewLine("IF NOT EXISTS (SELECT 1 FROM sys.schemas WHERE name = '")
                  .Append(schemaName)
                  .Append("')")
-                 .Append(Environment.NewLine)
-                 .AppendLine("BEGIN")
-                 .Append("\tEXEC( 'CREATE SCHEMA [").Append(schemaName).Append("]' )")
-                 .Append(Environment.NewLine)
-                 .AppendLine("END;")
+                 .NewLine("BEGIN")
+                 .Indent()
+                 .NewLine("EXEC( 'CREATE SCHEMA [").Append(schemaName).Append("]' )")
+                 .Outdent()
+                 .NewLine("END;")
                 ;
         }
     }

@@ -1,14 +1,18 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.Data.Common;
 using System.Text;
 using System.Transactions;
 using FlitBit.Core;
 using FlitBit.Data.DataModel;
+using FlitBit.Data.Expressions;
 using FlitBit.Data.Meta;
 using NUnit.Framework;
 
 namespace FlitBit.Data.Tests
 {
-    public class DataModelTests<TDataModel, TIdentityKey>
+    public abstract class DataModelTests<TDataModel, TIdentityKey>
     {
         public DataModelTests()
             : this(10, 10) { }
@@ -19,12 +23,13 @@ namespace FlitBit.Data.Tests
             PageCount = pageCount;
         }
 
-        public void CreateStorage()
+        public IDataModelRepository<TDataModel, TIdentityKey, TDbConnection> CreateStorage<TDbConnection>()
+            where TDbConnection: DbConnection
         {
             var binder = DataModel<TDataModel>.Binder;
-            var builder = new StringBuilder(2000);
+            var builder = new SqlWriter(2000, Environment.NewLine, "\t");
             binder.BuildDdlBatch(builder);
-            var sql = builder.ToString();
+            var sql = builder.Text;
             using (var tx = new TransactionScope(TransactionScopeOption.Required))
             {
                 using (var cn = ConnectionProviders.GetDbConnection(binder.UntypedMapping.ConnectionName))
@@ -34,7 +39,25 @@ namespace FlitBit.Data.Tests
                     tx.Complete();
                 }
             }
+            return DataModel<TDataModel>.GetRepository<TIdentityKey>() as
+                IDataModelRepository<TDataModel, TIdentityKey, TDbConnection>;
         }
+
+        public IList<TDataModel> CreateDataModels(int count)
+        {
+            var gen = new DataGenerator();
+            var res = new List<TDataModel>();
+            var factory = FactoryProvider.Factory;
+            for (var i = 0; i < count; i++)
+            {
+                var item = factory.CreateInstance<TDataModel>();
+                PopulateItem(gen, item);
+                res.Add(item);
+            }
+            return res;
+        }
+
+        protected abstract void PopulateItem(DataGenerator gen, TDataModel item);
 
         public int PageSize { get; set; }
         public int PageCount { get; set; }

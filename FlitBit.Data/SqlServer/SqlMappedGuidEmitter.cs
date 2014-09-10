@@ -12,6 +12,7 @@ using System.Linq;
 using System.Reflection.Emit;
 using System.Text;
 using FlitBit.Data.DataModel;
+using FlitBit.Data.Expressions;
 using FlitBit.Data.Meta;
 using FlitBit.Emit;
 
@@ -27,7 +28,7 @@ namespace FlitBit.Data.SqlServer
             DbDataReaderGetValueMethodName = "GetGuid";
         }
 
-        public override void EmitColumnConstraintsDDL<TModel>(StringBuilder buffer, IMapping<TModel> mapping,
+        public override void EmitColumnConstraintsDDL<TModel>(SqlWriter buffer, IMapping<TModel> mapping,
             ColumnMapping<TModel> col, List<string> tableConstraints)
         {
             if (col.IsIdentity
@@ -70,7 +71,7 @@ namespace FlitBit.Data.SqlServer
             il.CallVirtual<DbDataReader>("GetGuid", typeof(int));
         }
 
-        public override void EmitColumnConstraintsDDL<TModel>(StringBuilder buffer, IMapping<TModel> mapping,
+        public override void EmitColumnConstraintsDDL<TModel>(SqlWriter buffer, IMapping<TModel> mapping,
             ColumnMapping<TModel> col, List<string> tableConstraints)
         {
             if (col.IsIdentity

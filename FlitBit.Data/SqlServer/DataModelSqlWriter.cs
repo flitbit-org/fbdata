@@ -106,7 +106,7 @@ namespace FlitBit.Data.SqlServer
                     foreach (var id in Mapping.Identity.Columns)
                     {
                         var idex = new SqlValueExpression(SqlExpressionKind.MemberAccess,
-                            String.Concat(this.SelfRef, ".", id.Column.TargetName),
+                            String.Concat(this.SelfRef, ".", Mapping.QuoteObjectName(id.Column.TargetName)),
                             id.Column.RuntimeType
                             );
                         res.Add(idex, SortOrderKind.Asc);

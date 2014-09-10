@@ -6,13 +6,13 @@
 
 using System;
 using System.Collections.Generic;
-using System.Text;
+using FlitBit.Data.Expressions;
 
 namespace FlitBit.Data.DataModel
 {
     public static class IDataModelBinderExtensions
     {
-        public static void BuildDdlBatch(this IDataModelBinder binder, StringBuilder batch)
+        public static void BuildDdlBatch(this IDataModelBinder binder, SqlWriter batch)
         {
             var members = new List<Type>();
             binder.BuildDdlBatch(batch, members);

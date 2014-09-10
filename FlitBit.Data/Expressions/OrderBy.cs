@@ -26,7 +26,7 @@ namespace FlitBit.Data.Expressions
 
         public void WriteConditions(IMapping mapping, SqlWriter writer, bool inverse)
         {
-            writer.Append(mapping.QuoteObjectName(Expression.Text));
+            writer.Append(Expression.Text);
             if (inverse)
             {
                 writer.Append(Kind == SortOrderKind.Asc ? " DESC" : " ASC");

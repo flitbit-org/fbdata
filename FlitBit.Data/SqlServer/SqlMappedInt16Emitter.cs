@@ -7,6 +7,7 @@
 using System.Data;
 using System.Text;
 using FlitBit.Data.DataModel;
+using FlitBit.Data.Expressions;
 using FlitBit.Data.Meta;
 
 namespace FlitBit.Data.SqlServer
@@ -16,7 +17,7 @@ namespace FlitBit.Data.SqlServer
         internal SqlMappedInt16Emitter()
             : base(DbType.Int16, SqlDbType.SmallInt) { DbDataReaderGetValueMethodName = "GetInt16"; }
 
-        public override void EmitColumnInitializationDDL<TModel>(StringBuilder buffer, IMapping<TModel> mapping,
+        public override void EmitColumnInitializationDDL<TModel>(SqlWriter buffer, IMapping<TModel> mapping,
             ColumnMapping<TModel> col)
         {
             if (col.IsSynthetic)

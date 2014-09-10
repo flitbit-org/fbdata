@@ -410,7 +410,7 @@ namespace FlitBit.Data
             /// <returns></returns>
             public int IncrementObjectsFetched(int count)
             {
-                Contract.Requires<ArgumentOutOfRangeException>(count > 0);
+                Contract.Requires<ArgumentOutOfRangeException>(count >= 0);
 
                 throw new NotImplementedException();
             }

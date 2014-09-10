@@ -287,7 +287,7 @@ namespace FlitBit.Data.DataModel
             return new DbTypeDetails(column.Member.Name, bindingName, len, precision, scale);
         }
 
-        public virtual object EmitColumnDDL<TModel>(StringBuilder buffer, int ordinal, IMapping<TModel> mapping,
+        public virtual object EmitColumnDDL<TModel>(SqlWriter buffer, int ordinal, IMapping<TModel> mapping,
             ColumnMapping<TModel> col)
         {
             var tableConstraints = new List<string>();
@@ -296,9 +296,7 @@ namespace FlitBit.Data.DataModel
             {
                 buffer.Append(',');
             }
-            buffer.Append(Environment.NewLine)
-                  .Append("\t")
-                  .Append(NameDelimiterBegin)
+            buffer.NewLine(NameDelimiterBegin)
                   .Append(col.TargetName)
                   .Append(NameDelimiterEnd)
                   .Append(' ')
@@ -308,7 +306,7 @@ namespace FlitBit.Data.DataModel
                 if (details.Length.HasValue)
                 {
                     buffer.Append(LengthDelimiterBegin)
-                          .Append(details.Length)
+                          .Append((int)details.Length)
                           .Append(LengthDelimiterEnd);
                 }
                 else if (TreatMissingLengthAsMaximum)
@@ -322,12 +320,12 @@ namespace FlitBit.Data.DataModel
             {
                 buffer
                     .Append(LengthDelimiterBegin)
-                    .Append(details.Precision);
+                    .Append((int)details.Precision);
                 if (details.Scale.HasValue)
                 {
                     buffer
                         .Append(PrecisionScaleSeparator)
-                        .Append(details.Scale);
+                        .Append((int)details.Scale);
                 }
                 buffer.Append(LengthDelimiterEnd);
             }
@@ -346,40 +344,43 @@ namespace FlitBit.Data.DataModel
             return (tableConstraints.Count > 0) ? tableConstraints : null;
         }
 
-        public virtual void EmitColumnConstraintsDDL<TModel>(StringBuilder buffer, IMapping<TModel> mapping,
+        public virtual void EmitColumnConstraintsDDL<TModel>(SqlWriter buffer, IMapping<TModel> mapping,
             ColumnMapping<TModel> col, List<string> tableConstraints)
         {
             if (col.IsIdentity
                 && mapping.Identity.Columns.Count() == 1)
             {
-                buffer.Append(Environment.NewLine)
-                      .Append("\t\tCONSTRAINT PK_")
+                buffer.Indent()
+                      .NewLine("CONSTRAINT PK_")
                       .Append(mapping.TargetSchema)
                       .Append(mapping.TargetObject)
-                      .Append(" PRIMARY KEY");
+                      .Append(" PRIMARY KEY")
+                      .Outdent();
             }
-            if (col.IsAlternateKey)
+            else if (col.IsAlternateKey)
             {
-                buffer.Append(Environment.NewLine)
-                      .Append("\t\tCONSTRAINT AK_")
+                buffer.Indent()
+                      .NewLine("CONSTRAINT AK_")
                       .Append(mapping.TargetSchema)
                       .Append(mapping.TargetObject)
                       .Append('_')
                       .Append(col.TargetName)
-                      .Append(" UNIQUE");
+                      .Append(" UNIQUE")
+                      .Outdent();
             }
             if (col.RuntimeType == typeof(DateTime))
             {
                 if (col.IsTimestampOnInsert
                     || col.IsTimestampOnUpdate)
                 {
-                    buffer.Append(Environment.NewLine)
-                          .Append("\t\tCONSTRAINT DF_")
+                    buffer.Indent()
+                      .NewLine("CONSTRAINT DF_")
                           .Append(mapping.TargetSchema)
                           .Append(mapping.TargetObject)
                           .Append('_')
                           .Append(col.TargetName)
-                          .Append(" DEFAULT (GETUTCDATE())");
+                          .Append(" DEFAULT (GETUTCDATE())")
+                          .Outdent();
                 }
                 if (col.IsTimestampOnUpdate)
                 {
@@ -387,8 +388,8 @@ namespace FlitBit.Data.DataModel
                     if (timestampOnInsertCol != null)
                     {
                         buffer.Append(',')
-                              .Append(Environment.NewLine)
-                              .Append("\t\tCONSTRAINT CK_")
+                              .Indent()
+                              .NewLine("CONSTRAINT CK_")
                               .Append(mapping.TargetSchema)
                               .Append(mapping.TargetObject)
                               .Append('_')
@@ -401,7 +402,8 @@ namespace FlitBit.Data.DataModel
                               .Append(NameDelimiterBegin)
                               .Append(timestampOnInsertCol.TargetName)
                               .Append(NameDelimiterEnd)
-                              .Append(")");
+                              .Append(")")
+                              .Outdent();
                     }
                 }
             }
@@ -410,52 +412,57 @@ namespace FlitBit.Data.DataModel
             {
                 var foreign = Mappings.AccessMappingFor(col.ReferenceTargetMember.DeclaringType);
                 var foreignCol = foreign.Columns.First(c => c.Member == col.ReferenceTargetMember);
-                buffer.Append(Environment.NewLine)
-                      .Append("\t\tCONSTRAINT FK_")
+                buffer.Indent()
+                      .NewLine("CONSTRAINT FK_")
                       .Append(mapping.TargetSchema)
                       .Append(mapping.TargetObject)
                       .Append('_')
                       .Append(col.TargetName)
-                      .Append(Environment.NewLine)
-                      .Append("\t\t\tFOREIGN KEY REFERENCES ")
+                      .Indent()
+                      .NewLine("FOREIGN KEY REFERENCES ")
                       .Append(foreign.DbObjectReference)
                       .Append('(')
                       .Append(NameDelimiterBegin)
                       .Append(foreignCol.TargetName)
                       .Append(NameDelimiterEnd)
-                      .Append(')');
+                      .Append(')')
+                      .Outdent();
                 if (col.ReferenceBehaviors.HasFlag(ReferenceBehaviors.OnUpdateCascade))
                 {
-                    buffer.Append(Environment.NewLine)
-                          .Append("\t\t\tON UPDATE CASCADE");
+                    buffer.Indent()
+                          .NewLine("ON UPDATE CASCADE")
+                          .Outdent();
                 }
                 if (col.ReferenceBehaviors.HasFlag(ReferenceBehaviors.OnDeleteCascade))
                 {
-                    buffer.Append(Environment.NewLine)
-                          .Append("\t\t\tON DELETE CASCADE");
+                    buffer.Indent()
+                          .NewLine("ON DELETE CASCADE")
+                          .Outdent();
                 }
                 else if (col.ReferenceBehaviors.HasFlag(ReferenceBehaviors.OnDeleteSetNull))
                 {
-                    buffer.Append(Environment.NewLine)
-                          .Append("\t\t\tON DELETE SET NULL");
+                    buffer.Indent()
+                          .NewLine("ON DELETE SET NULL")
+                          .Outdent();
                 }
                 else if (col.ReferenceBehaviors.HasFlag(ReferenceBehaviors.OnDeleteSetDefault))
                 {
-                    buffer.Append(Environment.NewLine)
-                          .Append("\t\t\tON DELETE SET DEFAULT");
+                    buffer.Indent()
+                          .NewLine("ON DELETE SET DEFAULT")
+                          .Outdent();
                 }
             }
         }
 
-        public virtual void EmitColumnInitializationDDL<TModel>(StringBuilder buffer, IMapping<TModel> mapping,
+        public virtual void EmitColumnInitializationDDL<TModel>(SqlWriter buffer, IMapping<TModel> mapping,
             ColumnMapping<TModel> col)
         {}
 
-        public virtual void EmitTableConstraintDDL<TModel>(StringBuilder buffer, IMapping<TModel> mapping,
+        public virtual void EmitTableConstraintDDL<TModel>(SqlWriter buffer, IMapping<TModel> mapping,
             ColumnMapping<TModel> col, object handback)
         {}
 
-        public virtual void EmitColumnDDLForHierarchy<TModel>(StringBuilder buffer, int ordinal,
+        public virtual void EmitColumnDDLForHierarchy<TModel>(SqlWriter buffer, int ordinal,
             IMapping<TModel> mapping,
             IMapping baseMapping, ColumnMapping col)
         {
@@ -476,7 +483,7 @@ namespace FlitBit.Data.DataModel
                 if (details.Length.HasValue)
                 {
                     buffer.Append(LengthDelimiterBegin)
-                          .Append(details.Length)
+                          .Append((int)details.Length)
                           .Append(LengthDelimiterEnd);
                 }
                 else if (TreatMissingLengthAsMaximum)
@@ -490,12 +497,12 @@ namespace FlitBit.Data.DataModel
             {
                 buffer
                     .Append(LengthDelimiterBegin)
-                    .Append(details.Precision);
+                    .Append((int)details.Precision);
                 if (details.Scale.HasValue)
                 {
                     buffer
                         .Append(PrecisionScaleSeparator)
-                        .Append(details.Scale);
+                        .Append((int)details.Scale);
                 }
                 buffer.Append(LengthDelimiterEnd);
             }

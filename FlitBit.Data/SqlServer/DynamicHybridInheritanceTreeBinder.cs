@@ -34,7 +34,7 @@ namespace FlitBit.Data.SqlServer
             : base(mapping, strategy)
         {}
 
-        public override void BuildDdlBatch(StringBuilder batch, IList<Type> members)
+        public override void BuildDdlBatch(SqlWriter batch, IList<Type> members)
         {
             throw new NotImplementedException();
         }

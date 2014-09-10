@@ -38,7 +38,7 @@ namespace FlitBit.Data.SqlServer
             Contract.Requires<ArgumentException>(mapping.Strategy == MappingStrategy.OneClassOneTable);
         }
 
-        public override void BuildDdlBatch(StringBuilder batch, IList<Type> members)
+        public override void BuildDdlBatch(SqlWriter batch, IList<Type> members)
         {
             var mapping = Mapping;
             if (!members.Contains(mapping.RuntimeType))
@@ -70,10 +70,10 @@ namespace FlitBit.Data.SqlServer
                     var providerHelper = mapping.GetDbProviderHelper();
                     providerHelper.EmitCreateSchema(batch, mapping.TargetSchema);
                 }
-                batch.Append("CREATE TABLE ")
+                batch.NewLine("CREATE TABLE ")
                      .Append(mapping.DbObjectReference)
-                     .Append(Environment.NewLine)
-                     .Append('(');
+                     .NewLine("(")
+                     .Indent();
 
                 // Write each field's definition...
                 var columnsWithTableConstraints = new List<Tuple<ColumnMapping<TDataModel>, object>>();
@@ -100,8 +100,8 @@ namespace FlitBit.Data.SqlServer
                 //  sql.Append(Environment.NewLine).Append("\t[ETLCategory] VARCHAR(64) NULL");
                 //}
                 AddTableConstraintsForIndexes(mapping, batch);
-                batch.Append(Environment.NewLine)
-                     .Append(')');
+                batch.Outdent()
+                     .NewLine(")");
                 AddIndexesForTable(mapping, batch);
             }
         }

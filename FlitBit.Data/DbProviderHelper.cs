@@ -15,6 +15,7 @@ using System.Text;
 using FlitBit.Core;
 using FlitBit.Data.DataModel;
 using FlitBit.Data.DataModel.DbTypeEmitters;
+using FlitBit.Data.Expressions;
 using FlitBit.Data.Meta;
 using FlitBit.Emit;
 
@@ -870,7 +871,7 @@ WHERE TABLE_CATALOG = {0}
         /// <param name="batch"></param>
         /// <param name="schemaName"></param>
         /// <exception cref="NotImplementedException"></exception>
-        public virtual void EmitCreateSchema(StringBuilder batch, string schemaName)
+        public virtual void EmitCreateSchema(SqlWriter batch, string schemaName)
         {
             throw new NotImplementedException();
         }

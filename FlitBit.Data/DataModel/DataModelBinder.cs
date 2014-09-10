@@ -38,7 +38,7 @@ namespace FlitBit.Data.DataModel
 
         public MappingStrategy Strategy { get; private set; }
 
-        public abstract void BuildDdlBatch(StringBuilder batch, IList<Type> members);
+        public abstract void BuildDdlBatch(SqlWriter batch, IList<Type> members);
 
         public IMapping<TModel> Mapping { get { return _mapping; } }
 
@@ -78,7 +78,7 @@ namespace FlitBit.Data.DataModel
         /// </summary>
         public abstract void Initialize();
 
-        protected virtual void AddGeneratorMethodsForLcgColumns(IMapping<TModel> mapping, StringBuilder sql)
+        protected virtual void AddGeneratorMethodsForLcgColumns(IMapping<TModel> mapping, SqlWriter sql)
         {
             var lcgColumns = mapping.Identity.Columns
                                     .Where(c => c.Column.Behaviors.HasFlag(ColumnBehaviors.LinearCongruentGenerated))
@@ -86,7 +86,7 @@ namespace FlitBit.Data.DataModel
 
             foreach (var col in lcgColumns)
             {
-                sql.Append(Environment.NewLine)
+                sql.NewLine()
                    .Append("EXEC [SyntheticID].[GenerateSyntheticIDGenerator] ")
                    .Append(mapping.TargetSchema)
                    .Append(", '")
@@ -101,7 +101,7 @@ namespace FlitBit.Data.DataModel
             }
         }
 
-        protected virtual void AddIndex(IMapping<TModel> mapping, StringBuilder sql, string dbObjectName,
+        protected virtual void AddIndex(IMapping<TModel> mapping, SqlWriter sql, string dbObjectName,
             string indexBaseName,
             MapIndexAttribute index, bool any)
         {
@@ -110,7 +110,7 @@ namespace FlitBit.Data.DataModel
             if (any || (!index.Behaviors.HasFlag(IndexBehaviors.Unique)
                         || columns.Any()))
             {
-                sql.Append(Environment.NewLine)
+                sql.NewLine()
                    .Append("CREATE ");
                 if (index.Behaviors.HasFlag(IndexBehaviors.Unique))
                 {
@@ -132,7 +132,7 @@ namespace FlitBit.Data.DataModel
 
                     sql.Append(col.TargetName);
                 }
-                sql.Append(Environment.NewLine)
+                sql.NewLine()
                    .Append("\tON ")
                    .Append(dbObjectName)
                    .Append(" (");
@@ -153,7 +153,7 @@ namespace FlitBit.Data.DataModel
                 sql.Append(")");
                 if (columns.Any())
                 {
-                    sql.Append(Environment.NewLine)
+                    sql.NewLine()
                        .Append("\tINCLUDE(");
                     j = 0;
                     foreach (var n in columns)
@@ -176,7 +176,7 @@ namespace FlitBit.Data.DataModel
             }
         }
 
-        protected virtual void AddIndexesForTable(IMapping<TModel> mapping, StringBuilder sql)
+        protected virtual void AddIndexesForTable(IMapping<TModel> mapping, SqlWriter sql)
         {
             var dbObjectName = mapping.DbObjectReference;
             var indexBaseName = String.Concat("AK_", mapping.TargetSchema, mapping.TargetObject, "_");
@@ -197,7 +197,7 @@ namespace FlitBit.Data.DataModel
             }
         }
 
-        protected virtual void AddTableConstraintsForIndexes(IMapping<TModel> mapping, StringBuilder sql)
+        protected virtual void AddTableConstraintsForIndexes(IMapping<TModel> mapping, SqlWriter sql)
         {
             var tableConstraints = 0;
             foreach (MapIndexAttribute index in typeof(TModel).GetCustomAttributes(typeof(MapIndexAttribute), false))
@@ -208,11 +208,11 @@ namespace FlitBit.Data.DataModel
                     sql.Append(',');
                     if (tableConstraints++ == 0)
                     {
-                        sql.Append(Environment.NewLine)
-                           .Append(Environment.NewLine)
+                        sql.NewLine()
+                           .NewLine()
                            .Append("\t-- Table Constraints");
                     }
-                    sql.Append(Environment.NewLine)
+                    sql.NewLine()
                        .Append("\tCONSTRAINT AK_")
                        .Append(mapping.TargetSchema)
                        .Append(mapping.TargetObject)
