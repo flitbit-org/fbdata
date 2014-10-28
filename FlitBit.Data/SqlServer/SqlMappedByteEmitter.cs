@@ -13,4 +13,5 @@ namespace FlitBit.Data.SqlServer
         internal SqlMappedByteEmitter()
             : base(DbType.Byte, SqlDbType.TinyInt) { DbDataReaderGetValueMethodName = "GetByte"; }
     }
+    
 }

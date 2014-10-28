@@ -74,7 +74,18 @@ namespace FlitBit.Data.Meta
         {
             if (declaringType == mapping.RuntimeType)
             {
-                if (!String.IsNullOrEmpty(TargetName))
+                if (String.IsNullOrEmpty(TargetName))
+                {
+                    var name = typeof(T).Name;
+                    if (name.Length > 1
+                        && name[0] == 'I'
+                        && Char.IsUpper(name[1]))
+                    {
+                        name = name.Substring(1);
+                    }
+                    mapping.WithName(name);
+                } 
+                else
                 {
                     mapping.WithName(TargetName);
                 }
@@ -89,15 +100,7 @@ namespace FlitBit.Data.Meta
                 mapping.Behaviors = Behaviors;
                 mapping.Strategy = Strategy;
             }
-            var name = typeof(T).Name;
-            if (name.Length > 1
-                && name[0] == 'I'
-                && Char.IsUpper(name[1]))
-            {
-                name = name.Substring(1);
-            }
-            mapping.TargetObject = name;
-
+            
             var mapAllProperties = Behaviors.HasFlag(EntityBehaviors.MapAllProperties);
             foreach (var p in declaringType.GetProperties())
             {

@@ -14,7 +14,7 @@ namespace FlitBit.Data.Tests
     namespace TestModel0
     {
         [MapEntity(EntityBehaviors.MapAllProperties | EntityBehaviors.Pluralized, MappingStrategy.OneClassOneTable,
-            ConnectionName = "adoWrapper", TargetSchema = "TestModel0")]
+            ConnectionName = "adoWrapper", TargetSchema = "TestModel0", TargetName = "Peeps")]
         public interface IPerson
         {
             [IdentityKey]
@@ -33,71 +33,72 @@ namespace FlitBit.Data.Tests
             [MapColumn(ColumnBehaviors.TimestampOnInsert)]
             DateTime DateCreated { get; }
         }
-    }
 
-    [TestFixture]
-    public class DataModelRepositoryTests : DataModelTests<IPerson, int>
-    {
-        IDataModelRepository<IPerson, int, SqlConnection> _repository;
-        IList<IPerson> _items;
 
-        [TestFixtureSetUp]
-        public void Setup()
+        [TestFixture]
+        public class DataModelRepositoryTests : DataModelTests<IPerson, int>
         {
-            _repository = CreateStorage<SqlConnection>();
-            _items = new List<IPerson>();
-            using (var cx = DbContext.NewContext())
-            {
-                foreach (var item in this.CreateDataModels(100))
-                {
-                    _items.Add(_repository.Create(cx, item));
-                }
-            }
-        }
+            IDataModelRepository<IPerson, int, SqlConnection> _repository;
+            IList<IPerson> _items;
 
-        [Test]
-        public void DataModelRepository_All_WithUnlimitedBehavior_RetrievesAllRows()
-        {
-            using (var cx = DbContext.NewContext())
+            [TestFixtureSetUp]
+            public void Setup()
             {
-                var all = _repository.All(cx);
-                
-                Assert.AreEqual(_items.Count, all.Results.Count());
-            }
-        }
-
-        [Test]
-        public void DataModelRepository_All_WithLimitedBehavior_RetrievesLimitedRows()
-        {
-            using (var cx = DbContext.NewContext())
-            {
-                var behaviors = new QueryBehavior(QueryBehaviors.Paged, 10, 1, 0);
-                var all = _repository.All(cx, behaviors);
-
-                Assert.AreEqual(behaviors.Limit, all.Results.Count());
-            }
-        }
-
-        [Test]
-        public void DataModelRepository_Read()
-        {
-            var random = new Random();
-            for (int i = 0; i < _items.Count; i++)
-            {
-                var randomItem = _items[random.Next(_items.Count - 1)];
+                _repository = CreateStorage<SqlConnection>();
+                _items = new List<IPerson>();
                 using (var cx = DbContext.NewContext())
                 {
-                    var retreived = _repository.ReadByIdentity(cx, randomItem.PersonID);
-                    Assert.AreEqual(randomItem, retreived);
+                    foreach (var item in this.CreateDataModels(100))
+                    {
+                        _items.Add(_repository.Create(cx, item));
+                    }
                 }
             }
-        }
 
-        protected override void PopulateItem(DataGenerator gen, IPerson item)
-        {
-            var ran = new Random();
-            item.FirstName = gen.GetString(ran.Next(20, 40));
-            item.LastName = gen.GetString(ran.Next(20, 40));
+            [Test]
+            public void DataModelRepository_All_WithUnlimitedBehavior_RetrievesAllRows()
+            {
+                using (var cx = DbContext.NewContext())
+                {
+                    var all = _repository.All(cx);
+
+                    Assert.AreEqual(_items.Count, all.Results.Count());
+                }
+            }
+
+            [Test]
+            public void DataModelRepository_All_WithLimitedBehavior_RetrievesLimitedRows()
+            {
+                using (var cx = DbContext.NewContext())
+                {
+                    var behaviors = new QueryBehavior(QueryBehaviors.Paged, 10, 1, 0);
+                    var all = _repository.All(cx, behaviors);
+
+                    Assert.AreEqual(behaviors.Limit, all.Results.Count());
+                }
+            }
+
+            [Test]
+            public void DataModelRepository_Read()
+            {
+                var random = new Random();
+                for (int i = 0; i < _items.Count; i++)
+                {
+                    var randomItem = _items[random.Next(_items.Count - 1)];
+                    using (var cx = DbContext.NewContext())
+                    {
+                        var retreived = _repository.ReadByIdentity(cx, randomItem.PersonID);
+                        Assert.AreEqual(randomItem, retreived);
+                    }
+                }
+            }
+
+            protected override void PopulateItem(DataGenerator gen, IPerson item)
+            {
+                var ran = new Random();
+                item.FirstName = gen.GetString(ran.Next(20, 40));
+                item.LastName = gen.GetString(ran.Next(20, 40));
+            }
         }
     }
 }
