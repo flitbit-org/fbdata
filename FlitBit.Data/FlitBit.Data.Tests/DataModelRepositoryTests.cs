@@ -14,7 +14,7 @@ namespace FlitBit.Data.Tests
     namespace TestModel0
     {
         [MapEntity(EntityBehaviors.MapAllProperties | EntityBehaviors.Pluralized, MappingStrategy.OneClassOneTable,
-            ConnectionName = "adoWrapper", TargetSchema = "TestModel0", TargetName = "Peeps")]
+            ConnectionName = "adoWrapper", TargetSchema = "TestModel0", TargetName = "Peep")]
         public interface IPerson
         {
             [IdentityKey]

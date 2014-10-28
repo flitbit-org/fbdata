@@ -721,8 +721,8 @@ namespace FlitBit.Data.Meta
         /// </summary>
         public string TargetObject
         {
-            get { return _targetObject; }
-            set { _targetObject = (IsPluralized) ? value.Pluralize() : value; }
+            get { return (IsPluralized) ? _targetObject.Pluralize() : _targetObject; }
+            set { _targetObject = value; }
         }
 
         /// <summary>
